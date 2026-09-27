@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { ShoppingBag, LayoutDashboard, ArrowRight, ShieldCheck, Zap, MapPin } from 'lucide-react';
+import { ShoppingBag, LayoutDashboard, ArrowRight, ShieldCheck, Zap, MapPin, Sparkles } from 'lucide-react';
 
 export default function LandingPortal() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center items-center p-6 selection:bg-slate-900 selection:text-white">
       
-      <div className="max-w-4xl w-full text-center space-y-8">
+      <div className="max-w-5xl w-full text-center space-y-8">
         
         {/* LOGO & TITULAR */}
         <div className="space-y-3">
@@ -13,65 +13,91 @@ export default function LandingPortal() {
             Plataforma de Comercio Electrónico & CRM
           </span>
           <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-            MERKATO <span className="font-light text-slate-500">STUDIO</span>
+            PANEL DE ACCESO
           </h1>
           <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Gestión completa de catálogo, tienda en línea para clientes y panel de control administrativo para inventario, costos y logística.
+            Hemos preparado 2 propuestas de diseño para la Tienda Cliente y el panel administrativo CRM.
           </p>
         </div>
 
-        {/* 2 APLICATIVOS TOTALMENTE INDEPENDIENTES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+        {/* 3 OPCIONES VISUALES */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
           
-          {/* APLICATIVO 1: TIENDA CLIENTE */}
+          {/* OPCIÓN 1: TIENDA KRONO (ESTILO MARKETPLACE MODERNO) */}
           <Link
             href="/tienda"
-            className="group bg-white border border-slate-200 hover:border-slate-400 rounded-3xl p-8 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+            className="group bg-white border border-slate-200 hover:border-blue-500 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
           >
             <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-900">
-                <ShoppingBag className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <ShoppingBag className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Aplicativo #1</span>
-                <h2 className="text-2xl font-bold text-slate-900 mt-1 group-hover:text-slate-700 transition">
-                  Tienda Cliente
+                <span className="text-[11px] font-bold text-blue-600 uppercase tracking-widest block">Propuesta A</span>
+                <h2 className="text-xl font-bold text-slate-900 mt-1 group-hover:text-blue-600 transition">
+                  Tienda Dinámica (KRONO)
                 </h2>
-                <p className="text-slate-500 text-xs mt-2.5 leading-relaxed">
-                  Catálogo con buscador en tiempo real, filtros, solicitudes de pedidos especiales, puntos de entrega en Puebla, validación de cuenta por código y pago en línea.
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                  Estilo marketplace moderno: fondo neutro claro, cabecera azul marino con buscador directo, badges de entrega en Puebla y barra de navegación inferior móvil.
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900">
-              <span>Ingresar a la Tienda</span>
-              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition" />
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
+              <span>Ver Propuesta A</span>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
             </div>
           </Link>
 
-          {/* APLICATIVO 2: CRM / ERP ADMINISTRATIVO */}
+          {/* OPCIÓN 2: TIENDA MAISON (ESTILO EDITORIAL MINIMALISTA) */}
           <Link
-            href="/admin"
-            className="group bg-white border border-slate-200 hover:border-slate-400 rounded-3xl p-8 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+            href="/tienda/v2"
+            className="group bg-[#FDFBF7] border border-[#EAE6DF] hover:border-black rounded-3xl p-6 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
           >
             <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white">
-                <LayoutDashboard className="w-7 h-7" />
+              <div className="w-12 h-12 rounded-2xl bg-[#EFECE6] text-black flex items-center justify-center font-serif text-lg font-bold">
+                M
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block">Aplicativo #2</span>
-                <h2 className="text-2xl font-bold text-slate-900 mt-1 group-hover:text-slate-700 transition">
-                  Panel de Control CRM
+                <span className="text-[11px] font-bold text-stone-500 uppercase tracking-widest block">Propuesta B</span>
+                <h2 className="text-xl font-serif font-bold text-stone-900 mt-1 group-hover:text-black transition">
+                  Tienda Editorial (Maison)
                 </h2>
-                <p className="text-slate-500 text-xs mt-2.5 leading-relaxed">
-                  Control de inventario, prorrateo de fletes de envío por lote, cálculo automático de márgenes y ganancias netas, pedidos y carritos inactivos con WhatsApp.
+                <p className="text-stone-500 text-xs mt-2 leading-relaxed">
+                  Estilo nórdico / revista: fondo crema suave (#FDFBF7), tipografía serif refinada, fichas limpias de producto y estética serena de estudio.
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900">
+            <div className="mt-6 pt-4 border-t border-[#EAE6DF] flex items-center justify-between text-xs font-bold text-stone-900">
+              <span>Ver Propuesta B</span>
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* OPCIÓN 3: PANEL CRM ADMINISTRATIVO */}
+          <Link
+            href="/admin"
+            className="group bg-white border border-slate-200 hover:border-slate-800 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+          >
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+                <LayoutDashboard className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Control Operativo</span>
+                <h2 className="text-xl font-bold text-slate-900 mt-1 group-hover:text-slate-700 transition">
+                  Panel de Control CRM
+                </h2>
+                <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                  Calculadora de prorrateo de fletes por lote, control de ganancia neta y margen en tiempo real, pedidos y carritos inactivos con WhatsApp.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-900">
               <span>Ingresar al CRM</span>
-              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition" />
+              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
             </div>
           </Link>
 
