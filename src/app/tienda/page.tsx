@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { 
-  Search, ShoppingCart, Heart, MapPin, Truck, Zap, ShieldCheck, ChevronRight, X, User,
-  ArrowRight, Plus, Minus, CreditCard, Sparkles, Filter, Home, Grid, MessageSquare, CheckCircle2,
-  SlidersHorizontal, ArrowLeft
+  Search, ShoppingBag, ShoppingCart, Heart, Truck, ShieldCheck, ChevronRight, X, User,
+  ArrowRight, Plus, Minus, CreditCard, Sparkles, Filter, Home, Grid, CheckCircle2, MapPin
 } from 'lucide-react';
 import { INITIAL_PRODUCTS } from '@/data/mockData';
 import { Product } from '@/types';
@@ -27,15 +26,15 @@ export default function TiendaCliente() {
   const [authName, setAuthName] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
-  // Proceso de Checkout integrado
+  // Proceso de Checkout
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
-  const [deliveryType, setDeliveryType] = useState<'puebla_pickup' | 'puebla_delivery' | 'national'>('puebla_pickup');
-  const [pickupPoint, setPickupPoint] = useState('Punto de Encuentro: Plaza Dorada');
-  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card' | 'cash_delivery'>('spei');
+  const [shippingMethod, setShippingMethod] = useState<'puebla_local' | 'national'>('puebla_local');
+  const [shippingAddress, setShippingAddress] = useState({ street: '', neighborhood: '', city: 'Puebla', zip: '' });
+  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card'>('spei');
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
   // Navegación móvil nativa (Bottom Bar)
-  const [mobileTab, setMobileTab] = useState<'home' | 'categories' | 'orders' | 'profile'>('home');
+  const [mobileTab, setMobileTab] = useState<'home' | 'categories' | 'custom' | 'profile'>('home');
   const [showCustomOrderModal, setShowCustomOrderModal] = useState(false);
   const [customItemText, setCustomItemText] = useState('');
 
@@ -108,16 +107,14 @@ export default function TiendaCliente() {
   };
 
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
-  const shippingFee = deliveryType === 'puebla_delivery' ? 45.00 : deliveryType === 'national' ? 140.00 : 0;
+  const shippingFee = shippingMethod === 'puebla_local' ? 50.00 : 140.00;
   const cartTotal = cartSubtotal + shippingFee;
   const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans pb-20 md:pb-0">
       
-      {/* ======================================================== */}
-      {/* 1. HEADER MODERNO CON PERSONALIDAD PROPIA (AZUL MARINO / ÍNDIGO) */}
-      {/* ======================================================== */}
+      {/* 1. HEADER LIMPIO */}
       <header className="bg-slate-900 text-white sticky top-0 z-40 shadow-sm border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 space-y-2.5">
           
@@ -134,14 +131,14 @@ export default function TiendaCliente() {
               </div>
             </div>
 
-            {/* BUSCADOR PROMINENTE */}
+            {/* BUSCADOR */}
             <div className="flex-1 max-w-xl relative">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Buscar artículos, snacks, marcas..."
-                className="w-full bg-slate-800/90 text-white placeholder-slate-400 pl-4 pr-10 py-2 sm:py-2.5 rounded-xl border border-slate-700/80 focus:outline-none focus:border-blue-500 focus:bg-slate-800 text-xs sm:text-sm transition shadow-inner"
+                placeholder="Buscar en el catálogo..."
+                className="w-full bg-slate-800/90 text-white placeholder-slate-400 pl-4 pr-10 py-2 sm:py-2.5 rounded-xl border border-slate-700/80 focus:outline-none focus:border-blue-500 focus:bg-slate-800 text-xs sm:text-sm transition"
               />
               <button className="absolute right-0 top-0 bottom-0 px-3.5 text-slate-400 hover:text-white flex items-center justify-center">
                 <Search className="w-4 h-4" />
@@ -176,7 +173,7 @@ export default function TiendaCliente() {
                 className="relative bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl transition shadow flex items-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span className="hidden lg:inline">Carrito</span>
+                <span className="hidden lg:inline">Bolsa</span>
                 {cartItemCount > 0 && (
                   <span className="bg-white text-blue-600 text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
                     {cartItemCount}
@@ -199,26 +196,18 @@ export default function TiendaCliente() {
             </button>
           </div>
 
-          {/* BARRA INFORMATIVA DE ENTREGAS */}
+          {/* INFORMACIÓN SOBRE ENVÍOS */}
           <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5 border-t border-slate-800/80">
             <div className="flex items-center space-x-1.5">
-              <MapPin className="w-3.5 h-3.5 text-blue-400" />
-              <span>Entregas personales sin costo en <strong className="text-slate-200 font-semibold">Puebla y alrededores</strong></span>
-            </div>
-
-            <div className="hidden sm:flex items-center space-x-3 text-slate-300">
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5" /> Entrega disponible en 24h
-              </span>
+              <Truck className="w-3.5 h-3.5 text-blue-400" />
+              <span>Envíos locales en Puebla & paquetería a todo México</span>
             </div>
           </div>
 
         </div>
       </header>
 
-      {/* ======================================================== */}
       {/* 2. CARRUSEL HORIZONTAL DE CATEGORÍAS */}
-      {/* ======================================================== */}
       <div className="bg-white border-b border-slate-200 py-2.5 px-4 sm:px-6 overflow-x-auto no-scrollbar shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center space-x-2 text-xs">
           {categories.map(cat => (
@@ -237,37 +226,33 @@ export default function TiendaCliente() {
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* 3. CONTENIDO PRINCIPAL: CATÁLOGO DE PRODUCTOS */}
-      {/* ======================================================== */}
+      {/* 3. CONTENIDO PRINCIPAL: CATÁLOGO */}
       <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-5 flex-1">
 
-        {/* HERO BANNER EDITORIAL */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950 rounded-2xl text-white p-5 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
-          <div className="space-y-1.5 relative z-10 max-w-lg">
-            <span className="inline-block bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider border border-blue-500/30">
-              Logística Local Puebla
-            </span>
-            <h2 className="text-xl sm:text-3xl font-black tracking-tight leading-tight">
-              Puntos de Entrega Seguros & Envíos Directos
+        {/* HERO BANNER SENCILLO */}
+        <div className="bg-slate-900 rounded-2xl text-white p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="space-y-1 max-w-lg">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Catálogo en línea</span>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
+              Artículos Selectos con Envío a Domicilio
             </h2>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Recibe tus artículos en Plaza Dorada, Angelópolis o Zócalo de Puebla sin costo adicional, o pide entrega a domicilio.
+            <p className="text-xs text-slate-300">
+              Cotiza tu envío al momento del checkout y recibe tus productos de forma segura.
             </p>
           </div>
           <button
             onClick={() => setShowCustomOrderModal(true)}
-            className="self-start sm:self-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow-md transition whitespace-nowrap"
+            className="self-start sm:self-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition whitespace-nowrap"
           >
-            Solicitar Pedido Especial
+            Hacer Pedido Especial
           </button>
         </div>
 
-        {/* SECCIÓN DE PRODUCTOS */}
+        {/* PRODUCTOS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h3 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
-              Artículos Destacados ({filteredProducts.length})
+              Productos Disponibles ({filteredProducts.length})
             </h3>
           </div>
 
@@ -278,7 +263,7 @@ export default function TiendaCliente() {
                 onClick={() => setSelectedProduct(product)}
                 className="bg-white rounded-2xl border border-slate-200/90 product-card-shadow transition duration-200 flex flex-col justify-between overflow-hidden cursor-pointer group relative"
               >
-                {/* BOTÓN FAVORITO */}
+                {/* FAVORITO */}
                 <button
                   onClick={(e) => toggleFav(product.id, e)}
                   className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white text-slate-400 hover:text-rose-500 shadow-sm transition"
@@ -286,7 +271,7 @@ export default function TiendaCliente() {
                   <Heart className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
                 </button>
 
-                {/* IMAGEN DEL ARTÍCULO */}
+                {/* IMAGEN */}
                 <div className="aspect-square bg-slate-100/60 p-3 flex items-center justify-center border-b border-slate-100 overflow-hidden">
                   <img
                     src={product.images[0]}
@@ -295,25 +280,18 @@ export default function TiendaCliente() {
                   />
                 </div>
 
-                {/* DETALLES */}
+                {/* INFO */}
                 <div className="p-3 space-y-1.5 flex flex-col justify-between flex-1">
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                       {product.category}
                     </span>
 
-                    {/* PRECIO CLARO */}
                     <div className="flex items-baseline space-x-1 mt-1">
                       <span className="text-lg sm:text-xl font-black text-slate-900">
                         ${product.publicPrice.toFixed(2)}
                       </span>
                       <span className="text-[10px] text-slate-400 font-medium">MXN</span>
-                    </div>
-
-                    {/* BENEFICIO LOCAL */}
-                    <div className="flex items-center space-x-1 text-[11px] text-emerald-600 font-bold mt-0.5">
-                      <Truck className="w-3 h-3 text-emerald-500" />
-                      <span>Entrega personal Puebla</span>
                     </div>
 
                     <p className="text-xs text-slate-600 line-clamp-2 leading-snug mt-1 group-hover:text-blue-600 transition">
@@ -323,9 +301,9 @@ export default function TiendaCliente() {
 
                   <button
                     onClick={(e) => addToCart(product, e)}
-                    className="w-full mt-2.5 bg-slate-100 hover:bg-blue-600 text-slate-800 hover:text-white font-bold py-2 rounded-xl text-xs transition shadow-2xs"
+                    className="w-full mt-2.5 bg-slate-100 hover:bg-blue-600 text-slate-800 hover:text-white font-bold py-2 rounded-xl text-xs transition"
                   >
-                    Agregar al carrito
+                    Agregar
                   </button>
                 </div>
               </div>
@@ -335,9 +313,7 @@ export default function TiendaCliente() {
 
       </main>
 
-      {/* ======================================================== */}
-      {/* 4. EXPERIENCIA MÓVIL EXCLUSIVA: BOTTOM NAVIGATION BAR */}
-      {/* ======================================================== */}
+      {/* 4. EXPERIENCIA MÓVIL: BARRA INFERIOR */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around py-2 px-1 text-[10px] font-semibold text-slate-500 shadow-xl">
         <button
           onClick={() => { setMobileTab('home'); setSelectedCategory('Todas'); }}
@@ -360,7 +336,7 @@ export default function TiendaCliente() {
           className="flex flex-col items-center space-y-1 text-indigo-600"
         >
           <Sparkles className="w-5 h-5" />
-          <span>Encargos</span>
+          <span>Encargo</span>
         </button>
 
         <button
@@ -368,7 +344,7 @@ export default function TiendaCliente() {
           className="flex flex-col items-center space-y-1 relative"
         >
           <ShoppingCart className="w-5 h-5" />
-          <span>Carrito</span>
+          <span>Bolsa</span>
           {cartItemCount > 0 && (
             <span className="absolute -top-1 right-2 bg-blue-600 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
               {cartItemCount}
@@ -385,9 +361,7 @@ export default function TiendaCliente() {
         </button>
       </nav>
 
-      {/* ======================================================== */}
-      {/* 5. MODAL DE DETALLE DE PRODUCTO */}
-      {/* ======================================================== */}
+      {/* 5. MODAL DE PRODUCTO */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-7 space-y-4 relative shadow-2xl">
@@ -413,10 +387,6 @@ export default function TiendaCliente() {
                     <span className="text-xs text-slate-400 font-semibold">MXN</span>
                   </div>
 
-                  <div className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1.5">
-                    <Truck className="w-4 h-4" /> Entrega disponible en Puebla (Punto o domicilio)
-                  </div>
-
                   <p className="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
                     {selectedProduct.description}
                   </p>
@@ -427,13 +397,7 @@ export default function TiendaCliente() {
                     onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
                     className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm"
                   >
-                    Agregar al carrito
-                  </button>
-                  <button
-                    onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); handleCheckoutInit(); }}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 rounded-xl text-sm transition"
-                  >
-                    Comprar ahora
+                    Agregar a la bolsa
                   </button>
                 </div>
               </div>
@@ -442,9 +406,7 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 6. DRAWER DEL CARRITO & CHECKOUT COMPLETO */}
-      {/* ======================================================== */}
+      {/* 6. DRAWER DEL CARRITO & CHECKOUT */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex justify-end">
           <div className="bg-white w-full max-w-md h-full flex flex-col justify-between p-5 sm:p-6 space-y-4 overflow-y-auto shadow-2xl">
@@ -458,14 +420,13 @@ export default function TiendaCliente() {
               </button>
             </div>
 
-            {/* PASO 1: LISTADO */}
             {checkoutStep === 'cart' && (
               <div className="flex-1 flex flex-col justify-between space-y-4">
                 {cart.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
                     <ShoppingCart className="w-12 h-12 mb-2 stroke-1" />
                     <p className="text-sm font-semibold text-slate-600">Tu bolsa está vacía</p>
-                    <p className="text-xs text-slate-400 mt-1">Explora los artículos del catálogo.</p>
+                    <p className="text-xs text-slate-400 mt-1">Explora los artículos disponibles.</p>
                   </div>
                 ) : (
                   <>
@@ -501,7 +462,7 @@ export default function TiendaCliente() {
                         onClick={handleCheckoutInit}
                         className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-md"
                       >
-                        Continuar compra <ArrowRight className="w-4 h-4" />
+                        Continuar al envío <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </>
@@ -509,72 +470,59 @@ export default function TiendaCliente() {
               </div>
             )}
 
-            {/* PASO 2: ENVÍO */}
+            {/* SELECCIÓN DE ENVÍO SENCILLA Y REALISTA */}
             {checkoutStep === 'shipping' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Selecciona forma de entrega</h4>
+                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Selecciona la zona de entrega</h4>
                 
                 <div className="space-y-2">
                   <label
-                    onClick={() => setDeliveryType('puebla_pickup')}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${deliveryType === 'puebla_pickup' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
+                    onClick={() => setShippingMethod('puebla_local')}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'puebla_local' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
                   >
                     <div>
-                      <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-blue-600" /> Punto de Encuentro Personal (Puebla)
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Plaza Dorada, Angelópolis o Zócalo</p>
+                      <p className="font-bold text-slate-900">Envío Local (Puebla y alrededores)</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Entrega a domicilio por mensajería local</p>
                     </div>
-                    <span className="font-bold text-emerald-600">GRATIS</span>
+                    <span className="font-bold text-slate-900">$50.00 MXN</span>
                   </label>
 
                   <label
-                    onClick={() => setDeliveryType('puebla_delivery')}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${deliveryType === 'puebla_delivery' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
+                    onClick={() => setShippingMethod('national')}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'national' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
                   >
                     <div>
-                      <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5 text-blue-600" /> Envío local a domicilio Puebla
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Entrega express garantizada</p>
-                    </div>
-                    <span className="font-bold text-slate-900">$45.00 MXN</span>
-                  </label>
-
-                  <label
-                    onClick={() => setDeliveryType('national')}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${deliveryType === 'national' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
-                  >
-                    <div>
-                      <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5 text-blue-600" /> Paquetería nacional
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">FedEx / Estafeta (Todo México)</p>
+                      <p className="font-bold text-slate-900">Envío Nacional por Paquetería</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Guía con seguimiento en línea</p>
                     </div>
                     <span className="font-bold text-slate-900">$140.00 MXN</span>
                   </label>
                 </div>
 
-                {deliveryType === 'puebla_pickup' && (
-                  <div className="space-y-1 pt-2">
-                    <label className="font-bold text-slate-700">Elige el punto de entrega:</label>
-                    <select
-                      value={pickupPoint}
-                      onChange={e => setPickupPoint(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
-                    >
-                      <option>Punto de Encuentro: Plaza Dorada</option>
-                      <option>Punto de Encuentro: Angelópolis Mall</option>
-                      <option>Punto de Encuentro: Zócalo de Puebla</option>
-                      <option>Punto de Encuentro: Central CAPU</option>
-                    </select>
-                  </div>
-                )}
+                <div className="space-y-2 pt-2">
+                  <label className="font-bold text-slate-700">Dirección de entrega:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Calle, Número y Colonia..."
+                    value={shippingAddress.street}
+                    onChange={e => setShippingAddress({ ...shippingAddress, street: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                  />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Código Postal..."
+                    value={shippingAddress.zip}
+                    onChange={e => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                  />
+                </div>
 
                 <div className="pt-4 border-t border-slate-100 space-y-2">
                   <div className="flex justify-between font-bold text-sm">
-                    <span>Total con entrega:</span>
-                    <span className="text-emerald-600">${cartTotal.toFixed(2)} MXN</span>
+                    <span>Total con envío:</span>
+                    <span className="text-blue-600">${cartTotal.toFixed(2)} MXN</span>
                   </div>
                   <button
                     onClick={() => setCheckoutStep('payment')}
@@ -586,26 +534,26 @@ export default function TiendaCliente() {
               </div>
             )}
 
-            {/* PASO 3: PAGO */}
+            {/* SELECCIÓN DE PAGO */}
             {checkoutStep === 'payment' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Forma de pago</h4>
+                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Método de pago</h4>
                 
                 <div className="space-y-2">
                   <label onClick={() => setPaymentMethod('spei')} className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer ${paymentMethod === 'spei' ? 'bg-blue-50/50 border-blue-600' : 'border-slate-200'}`}>
-                    <span className="font-bold text-slate-800">🏦 Transferencia bancaria SPEI</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">Sin Recargo</span>
+                    <div>
+                      <p className="font-bold text-slate-800">Transferencia bancaria SPEI</p>
+                      <p className="text-[11px] text-slate-500">Datos bancarios al confirmar</p>
+                    </div>
+                    <span className="text-[10px] text-emerald-600 font-bold">Sin Comisión</span>
                   </label>
 
                   <label onClick={() => setPaymentMethod('card')} className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer ${paymentMethod === 'card' ? 'bg-blue-50/50 border-blue-600' : 'border-slate-200'}`}>
-                    <span className="font-bold text-slate-800">💳 Tarjeta Débito / Crédito</span>
+                    <div>
+                      <p className="font-bold text-slate-800">Tarjeta Débito / Crédito</p>
+                      <p className="text-[11px] text-slate-500">Pasarela en línea protegida</p>
+                    </div>
                   </label>
-
-                  {deliveryType === 'puebla_pickup' && (
-                    <label onClick={() => setPaymentMethod('cash_delivery')} className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer ${paymentMethod === 'cash_delivery' ? 'bg-blue-50/50 border-blue-600' : 'border-slate-200'}`}>
-                      <span className="font-bold text-slate-800">💵 Pago en efectivo al entregar (Puebla)</span>
-                    </label>
-                  )}
                 </div>
 
                 <div className="pt-4 border-t border-slate-100">
@@ -619,17 +567,17 @@ export default function TiendaCliente() {
               </div>
             )}
 
-            {/* PASO 4: ÉXITO */}
+            {/* CONFIRMACIÓN */}
             {checkoutStep === 'success' && (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-4 space-y-3">
                 <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h4 className="text-lg font-black text-slate-900">¡Pedido registrado con éxito!</h4>
-                <p className="text-xs text-slate-500">Tu número de pedido es <strong className="text-slate-900">{confirmedOrderId}</strong>.</p>
+                <h4 className="text-lg font-black text-slate-900">¡Pedido recibido!</h4>
+                <p className="text-xs text-slate-500">Número de orden: <strong className="text-slate-900">{confirmedOrderId}</strong>.</p>
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs text-left w-full space-y-1">
                   <p><strong className="text-slate-700">Cliente:</strong> {user?.name}</p>
-                  <p><strong className="text-slate-700">Entrega:</strong> {deliveryType === 'puebla_pickup' ? pickupPoint : 'Envío a Domicilio'}</p>
+                  <p><strong className="text-slate-700">Envío:</strong> {shippingMethod === 'puebla_local' ? 'Local Puebla' : 'Nacional'}</p>
                   <p><strong className="text-slate-700">Pago:</strong> {paymentMethod.toUpperCase()}</p>
                 </div>
                 <button
@@ -645,9 +593,7 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* ======================================================== */}
       {/* 7. MODAL REGISTRO OTP OBLIGATORIO */}
-      {/* ======================================================== */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
@@ -730,29 +676,27 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* ======================================================== */}
       {/* 8. MODAL ENCARGO ESPECIAL */}
-      {/* ======================================================== */}
       {showCustomOrderModal && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-3 relative shadow-2xl">
             <button onClick={() => setShowCustomOrderModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="font-bold text-base text-slate-900">Solicitar Encargo Especial</h3>
-            <p className="text-xs text-slate-500">¿Buscas un artículo en particular que no está en catálogo? Lo conseguimos para ti.</p>
+            <h3 className="font-bold text-base text-slate-900">Solicitar Pedido Especial</h3>
+            <p className="text-xs text-slate-500">¿Buscas un artículo en particular que no ves en el catálogo? Dinos cuál y te lo conseguimos.</p>
             <textarea
               rows={4}
-              placeholder="Escribe el nombre del producto, marca o descripción..."
+              placeholder="Nombre del producto, marca o descripción..."
               value={customItemText}
               onChange={e => setCustomItemText(e.target.value)}
               className="w-full border border-slate-200 bg-slate-50 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white"
             />
             <button
-              onClick={() => { alert('Solicitud enviada. Te responderemos a la brevedad.'); setShowCustomOrderModal(false); }}
+              onClick={() => { alert('Solicitud enviada con éxito.'); setShowCustomOrderModal(false); }}
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs shadow"
             >
-              Enviar encargo
+              Enviar solicitud
             </button>
           </div>
         </div>

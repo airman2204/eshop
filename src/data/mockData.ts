@@ -5,7 +5,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '1',
     sku: 'PROD-001',
     title: 'Papas Crunch Fuego Especial (Presentación Grande)',
-    description: 'Textura crujiente artesanal con receta picante balanceada e intensa. Calidad gourmet de importación selecta.',
+    description: 'Textura crujiente artesanal con receta picante balanceada e intensa. Selección de importación.',
     category: 'Botanas & Snacks',
     baseCostUsd: 4.50,
     baseCostMxn: 90.00,
@@ -23,7 +23,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '2',
     sku: 'PROD-002',
     title: 'Refresco Vainilla & Cereza Selección (12 Pack)',
-    description: 'Bebida carbonatada de edición especial con infusión de vainilla suave y notas frutales de cereza silvestre.',
+    description: 'Bebida carbonatada de edición especial con notas de vainilla cremosa y cereza.',
     category: 'Bebidas Selectas',
     baseCostUsd: 7.50,
     baseCostMxn: 150.00,
@@ -41,7 +41,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '3',
     sku: 'PROD-003',
     title: 'Limpiador Facial Hidratante Esencial (473ml)',
-    description: 'Loción limpiadora no espumosa con complejo de ceramidas y ácido hialurónico para barrera cutánea delicada.',
+    description: 'Loción limpiadora no espumosa con ceramidas esenciales y ácido hialurónico.',
     category: 'Cuidado Facial & Skincare',
     baseCostUsd: 13.00,
     baseCostMxn: 260.00,
@@ -59,7 +59,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '4',
     sku: 'PROD-004',
     title: 'Chocolate Relleno de Crema de Avellana y Maní (450g)',
-    description: 'Copas de chocolate con leche rellenas de suave mantequilla cremosa tostada. Empaque de colección.',
+    description: 'Copas de chocolate con leche rellenas de suave crema tostada.',
     category: 'Chocolates & Confitería',
     baseCostUsd: 6.00,
     baseCostMxn: 120.00,
@@ -77,7 +77,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '5',
     sku: 'PROD-005',
     title: 'Rollitos de Maíz Fuego Intenso (Edición Especial)',
-    description: 'Tortilla enrollada con sazón picante intenso de toque cítrico y color distintivo.',
+    description: 'Tortilla enrollada sazonada con receta picante y toque cítrico.',
     category: 'Botanas & Snacks',
     baseCostUsd: 4.80,
     baseCostMxn: 96.00,
@@ -95,7 +95,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     id: '6',
     sku: 'PROD-006',
     title: 'Bebida Energizante Durazno Sin Azúcar (473ml)',
-    description: 'Bebida energética ligera con cafeína natural y extracto de durazno suave. Cero calorías.',
+    description: 'Bebida energética ligera con cafeína y extracto suave de durazno. Cero azúcar.',
     category: 'Bebidas Selectas',
     baseCostUsd: 2.80,
     baseCostMxn: 56.00,
@@ -118,10 +118,9 @@ export const INITIAL_ORDERS: Order[] = [
     clientPhone: '+52 222 345 6789',
     status: 'processing',
     shippingType: 'puebla_local',
-    pickupPoint: 'Punto de Entrega: Plaza Dorada',
     subtotal: 470.00,
-    shippingCost: 0.00,
-    total: 470.00,
+    shippingCost: 50.00,
+    total: 520.00,
     createdAt: '2026-09-26 18:30',
     itemsCount: 2
   },
@@ -136,19 +135,6 @@ export const INITIAL_ORDERS: Order[] = [
     total: 1005.00,
     trackingNumber: 'FEDEX-MX-8839201',
     createdAt: '2026-09-26 15:10',
-    itemsCount: 3
-  },
-  {
-    id: 'ORD-9023',
-    clientName: 'Rodrigo Alarcón',
-    clientPhone: '+52 222 654 3210',
-    status: 'delivered',
-    shippingType: 'puebla_local',
-    pickupPoint: 'Punto de Entrega: Angelópolis',
-    subtotal: 620.00,
-    shippingCost: 0.00,
-    total: 620.00,
-    createdAt: '2026-09-25 12:45',
     itemsCount: 3
   }
 ];
@@ -165,16 +151,5 @@ export const INITIAL_ABANDONED_CARTS: AbandonedCart[] = [
     total: 645.00,
     lastActive: 'Hace 2 horas',
     followedUp: false
-  },
-  {
-    id: 'CART-102',
-    clientName: 'Eduardo Valdés',
-    clientPhone: '+52 222 777 8899',
-    items: [
-      { title: 'Limpiador Facial Hidratante Esencial', quantity: 1, price: 440.00 }
-    ],
-    total: 440.00,
-    lastActive: 'Hace 4 horas',
-    followedUp: true
   }
 ];

@@ -9,7 +9,7 @@ import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_ABANDONED_CARTS } from '@/dat
 import { Product, Order, AbandonedCart } from '@/types';
 
 export default function AdminCRM() {
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'finance' | 'orders' | 'carts' | 'ai'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'finance' | 'orders' | 'carts'>('inventory');
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>(INITIAL_ABANDONED_CARTS);
@@ -84,7 +84,7 @@ export default function AdminCRM() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-slate-900 selection:text-white">
       
-      {/* HEADER DEL CRM LIMPIO */}
+      {/* HEADER DEL CRM */}
       <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
@@ -95,7 +95,7 @@ export default function AdminCRM() {
               <h1 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
                 PANEL DE CONTROL <span className="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-slate-200">Admin</span>
               </h1>
-              <p className="text-[10px] text-slate-500 font-medium">Inventario, Prorrateo de Envíos & Seguimiento Puebla</p>
+              <p className="text-[10px] text-slate-500 font-medium">Inventario, Prorrateo de Envíos & Pedidos</p>
             </div>
           </div>
 
@@ -299,9 +299,7 @@ export default function AdminCRM() {
                       </span>
                     </div>
                     <p className="text-slate-800 font-medium">{order.clientName} • <span className="text-slate-500">{order.clientPhone}</span></p>
-                    {order.pickupPoint && (
-                      <p className="text-slate-600 font-medium flex items-center gap-1">📍 {order.pickupPoint}</p>
-                    )}
+                    <p className="text-slate-500 text-[11px]">Tipo de envío: {order.shippingType === 'puebla_local' ? 'Local Puebla' : 'Nacional'}</p>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
