@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
-  Gamepad2, Facebook, Twitter, Instagram, Youtube, Heart, Phone, Mail, ArrowUpRight
+  Gamepad2, Heart, Phone, Mail, ArrowUpRight
 } from 'lucide-react';
 import { INITIAL_PRODUCTS } from '@/data/mockData';
 import { Product } from '@/types';
@@ -511,14 +511,14 @@ export default function TiendaFoxDrop() {
 
           </div>
 
-          {/* COPYRIGHT */}
+          {/* COPYRIGHT & REDES */}
           <div className="pt-6 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-400 gap-4">
             <p>© 2026 - Foxdrop international design. Todos los derechos reservados.</p>
-            <div className="flex items-center space-x-4">
-              <Facebook className="w-4 h-4 hover:text-white cursor-pointer" />
-              <Twitter className="w-4 h-4 hover:text-white cursor-pointer" />
-              <Instagram className="w-4 h-4 hover:text-white cursor-pointer" />
-              <Youtube className="w-4 h-4 hover:text-white cursor-pointer" />
+            <div className="flex items-center space-x-3 text-gray-300">
+              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">f</span>
+              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">𝕏</span>
+              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">in</span>
+              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">▶</span>
             </div>
           </div>
 
