@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { 
-  Search, ShoppingBag, ShoppingCart, Heart, Truck, ShieldCheck, ChevronRight, X, User,
-  ArrowRight, Plus, Minus, CreditCard, Sparkles, Filter, Home, Grid, CheckCircle2, MapPin
+  Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
+  ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
+  Gamepad2, Facebook, Twitter, Instagram, Youtube, Heart, Phone, Mail, ArrowUpRight
 } from 'lucide-react';
 import { INITIAL_PRODUCTS } from '@/data/mockData';
 import { Product } from '@/types';
 
-export default function TiendaCliente() {
+export default function TiendaFoxDrop() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [products] = useState<Product[]>(INITIAL_PRODUCTS);
@@ -17,7 +18,7 @@ export default function TiendaCliente() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Registro y verificación OTP obligatoria al comprar
+  // Autenticación OTP al hacer checkout
   const [user, setUser] = useState<{ name: string; email: string; phone: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authStep, setAuthStep] = useState<'details' | 'otp' | 'success'>('details');
@@ -26,19 +27,47 @@ export default function TiendaCliente() {
   const [authName, setAuthName] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
-  // Proceso de Checkout
+  // Proceso de Checkout en la plataforma
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
   const [shippingMethod, setShippingMethod] = useState<'puebla_local' | 'national'>('puebla_local');
-  const [shippingAddress, setShippingAddress] = useState({ street: '', neighborhood: '', city: 'Puebla', zip: '' });
+  const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: 'Puebla' });
   const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card'>('spei');
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
-  // Navegación móvil nativa (Bottom Bar)
-  const [mobileTab, setMobileTab] = useState<'home' | 'categories' | 'custom' | 'profile'>('home');
+  // Encargo especial modal
   const [showCustomOrderModal, setShowCustomOrderModal] = useState(false);
   const [customItemText, setCustomItemText] = useState('');
 
-  const categories = ['Todas', ...Array.from(new Set(products.map(p => p.category)))];
+  // Hero carousel index
+  const [heroSlide, setHeroSlide] = useState(0);
+
+  const heroBanners = [
+    {
+      title: "Descubre Tesoros Globales.",
+      subtitle: "Importación Directa, Calidad Garantizada.",
+      image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&auto=format&fit=crop&q=80",
+      tag: "Premium Leather Bag"
+    },
+    {
+      title: "Precisión & Relojería Fina.",
+      subtitle: "Mecanismos Japoneses de Alta Calidad.",
+      image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&auto=format&fit=crop&q=80",
+      tag: "Japanese Precision"
+    },
+    {
+      title: "Cuidado Facial & Skincare.",
+      subtitle: "Fórmulas Asiáticas para una Piel Radiante.",
+      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&auto=format&fit=crop&q=80",
+      tag: "South Korean Cosmetic"
+    }
+  ];
+
+  const popularCategories = [
+    { name: "Electrónica", icon: Monitor, count: "48 productos" },
+    { name: "Moda", icon: Shirt, count: "62 productos" },
+    { name: "Hogar", icon: HomeIcon, count: "35 productos" },
+    { name: "Juguetes", icon: Gamepad2, count: "21 productos" },
+  ];
 
   const filteredProducts = products.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -100,7 +129,7 @@ export default function TiendaCliente() {
   };
 
   const handleFinishOrder = () => {
-    const newId = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const newId = `FX-${Math.floor(100000 + Math.random() * 900000)}`;
     setConfirmedOrderId(newId);
     setCheckoutStep('success');
     setCart([]);
@@ -112,282 +141,419 @@ export default function TiendaCliente() {
   const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#F4F6F8] text-[#222E3C] flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-16 md:pb-0">
       
-      {/* 1. HEADER LIMPIO */}
-      <header className="bg-slate-900 text-white sticky top-0 z-40 shadow-sm border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 space-y-2.5">
+      {/* ======================================================== */}
+      {/* 1. TOP HEADER (LOGO FOXDROP + BUSCADOR + MI CUENTA + CARRITO) */}
+      {/* ======================================================== */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           
-          <div className="flex items-center justify-between gap-4">
-            
-            {/* LOGOTIPO */}
-            <div className="flex items-center space-x-2.5 cursor-pointer shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-base shadow">
-                K
-              </div>
-              <div className="leading-tight">
-                <span className="font-black text-base sm:text-lg tracking-tight block">KRONO</span>
-                <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider block -mt-0.5">Tienda Selecta</span>
-              </div>
+          {/* BRAND LOGO FOXDROP */}
+          <div className="flex items-center space-x-2.5 cursor-pointer shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F28C38] flex items-center justify-center text-white font-black text-xl shadow-sm">
+              🦊
             </div>
+            <div>
+              <div className="flex items-baseline space-x-1">
+                <span className="font-extrabold text-xl tracking-tight text-[#1F2D3D]">FOXDROP</span>
+              </div>
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block -mt-1">
+                Tu atajo al mundo
+              </span>
+            </div>
+          </div>
 
-            {/* BUSCADOR */}
-            <div className="flex-1 max-w-xl relative">
+          {/* BUSCADOR ESTILO FOXDROP CON TAGLINE INFERIOR */}
+          <div className="flex-1 max-w-xl hidden md:block">
+            <div className="relative flex">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Buscar en el catálogo..."
-                className="w-full bg-slate-800/90 text-white placeholder-slate-400 pl-4 pr-10 py-2 sm:py-2.5 rounded-xl border border-slate-700/80 focus:outline-none focus:border-blue-500 focus:bg-slate-800 text-xs sm:text-sm transition"
+                placeholder="Busca productos globales..."
+                className="w-full bg-white text-gray-800 placeholder-gray-400 pl-4 pr-12 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:border-[#2D4A58] text-xs sm:text-sm"
               />
-              <button className="absolute right-0 top-0 bottom-0 px-3.5 text-slate-400 hover:text-white flex items-center justify-center">
+              <button className="bg-[#2D4A58] hover:bg-[#203641] text-white px-4 rounded-r-md flex items-center justify-center transition">
                 <Search className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-[11px] text-gray-400 mt-1 pl-1">
+              (Busca sobre: &quot;zapatillas de marca&quot;, &quot;electrónica japonesa&quot;)
+            </p>
+          </div>
 
-            {/* ACCIONES DESKTOP */}
-            <div className="hidden md:flex items-center space-x-5 text-xs font-semibold">
-              <button
-                onClick={() => setShowCustomOrderModal(true)}
-                className="text-slate-300 hover:text-white transition"
-              >
-                Pedido Especial
-              </button>
-
-              {user ? (
-                <div className="flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                  <User className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="text-slate-200">{user.name}</span>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-1.5 rounded-lg border border-slate-700 transition"
-                >
-                  Ingresar
-                </button>
-              )}
-
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="relative bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl transition shadow flex items-center gap-2"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                <span className="hidden lg:inline">Bolsa</span>
+          {/* ACCIONES TOP DERECHA */}
+          <div className="flex items-center space-x-5 text-xs text-[#2D4A58] font-semibold">
+            {/* CARRITO */}
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-1.5 flex items-center gap-1.5 hover:text-[#E65F2B] transition"
+            >
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5" />
                 {cartItemCount > 0 && (
-                  <span className="bg-white text-blue-600 text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-[#E65F2B] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
                     {cartItemCount}
                   </span>
                 )}
+              </div>
+            </button>
+
+            {/* MI CUENTA */}
+            {user ? (
+              <div className="flex items-center space-x-1.5 text-gray-700">
+                <User className="w-4 h-4 text-[#E65F2B]" />
+                <span className="font-bold">{user.name}</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="flex items-center space-x-1.5 hover:text-[#E65F2B] transition"
+              >
+                <User className="w-4 h-4" />
+                <span>Mi Cuenta</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* BUSCADOR MÓVIL */}
+        <div className="px-4 pb-3 md:hidden">
+          <div className="relative flex">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Busca productos globales..."
+              className="w-full bg-white border border-gray-300 rounded-l-md px-3 py-2 text-xs focus:outline-none"
+            />
+            <button className="bg-[#2D4A58] text-white px-3.5 rounded-r-md">
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* ======================================================== */}
+        {/* BARRA DE NAVEGACIÓN AZUL PETRÓLEO / FOXDROP NAV */}
+        {/* ======================================================== */}
+        <nav className="bg-[#2D4A58] text-white text-xs font-bold uppercase tracking-wider">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center overflow-x-auto no-scrollbar">
+            
+            {/* CATEGORÍAS GLOBALES */}
+            <div className="bg-[#233B47] px-4 py-2.5 flex items-center space-x-2 shrink-0 cursor-pointer">
+              <Menu className="w-4 h-4" />
+              <span>CATEGORÍAS Globales</span>
+            </div>
+
+            <div className="flex items-center">
+              <button
+                onClick={() => setSelectedCategory('Todas')}
+                className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${selectedCategory === 'Todas' ? 'bg-[#3E6173]' : ''}`}
+              >
+                LO NUEVO
+              </button>
+              
+              <button
+                onClick={() => setShowCustomOrderModal(true)}
+                className="bg-[#6B574B] px-4 py-2.5 hover:bg-[#5C493D] transition shrink-0 flex items-center gap-1.5"
+              >
+                OFERTAS DE DEALS
+              </button>
+
+              <button
+                onClick={() => setSelectedCategory('Electrónica')}
+                className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0"
+              >
+                MARCAS DESTACADAS
+              </button>
+
+              <button
+                onClick={() => setShowCustomOrderModal(true)}
+                className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ml-auto hidden md:block"
+              >
+                SOPORTE AL CLIENTE
               </button>
             </div>
 
-            {/* CARRITO MÓVIL */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="md:hidden relative p-2 text-white bg-slate-800 rounded-xl"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-                  {cartItemCount}
+          </div>
+        </nav>
+      </header>
+
+      {/* ======================================================== */}
+      {/* 2. HERO SLIDER BANNER ESTILO FOXDROP */}
+      {/* ======================================================== */}
+      <section className="bg-white border-b border-gray-200 py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="relative rounded-xl overflow-hidden bg-[#2D4A58] text-white shadow-md">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center min-h-[260px] sm:min-h-[320px]">
+              
+              {/* IMAGEN 1 */}
+              <div className="relative h-48 sm:h-full bg-slate-900 overflow-hidden flex items-end p-4">
+                <img
+                  src={heroBanners[heroSlide].image}
+                  alt="Feature"
+                  className="absolute inset-0 w-full h-full object-cover opacity-80"
+                />
+                <span className="relative z-10 bg-black/60 backdrop-blur-xs text-white text-xs font-bold px-3 py-1 rounded">
+                  {heroBanners[heroSlide].tag}
                 </span>
-              )}
+              </div>
+
+              {/* CONTENIDO TEXTUAL CENTRAL */}
+              <div className="md:col-span-2 p-6 sm:p-10 space-y-3 bg-gradient-to-r from-[#2D4A58] via-[#2D4A58] to-[#203641] flex flex-col justify-center">
+                <span className="text-[#E65F2B] font-bold text-xs uppercase tracking-widest">
+                  Colección Global Seleccionada
+                </span>
+                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                  {heroBanners[heroSlide].title}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-300 max-w-md leading-relaxed">
+                  {heroBanners[heroSlide].subtitle}
+                </p>
+
+                <div className="pt-2 flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('deals-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold px-6 py-2.5 rounded text-xs transition shadow-sm"
+                  >
+                    Ver Colección Global
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* CONTROLES DE NAVEGACIÓN SLIDER */}
+            <button
+              onClick={() => setHeroSlide(prev => (prev === 0 ? heroBanners.length - 1 : prev - 1))}
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full shadow transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
             </button>
+            <button
+              onClick={() => setHeroSlide(prev => (prev === heroBanners.length - 1 ? 0 : prev + 1))}
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full shadow transition"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 3. SECCIÓN: DEALS DEL MES (PRODUCT CARDS EXACTAS AL MOCKUP) */}
+      {/* ======================================================== */}
+      <section id="deals-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-4">
+        
+        <div>
+          <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">Deals del Mes</h3>
+          <p className="text-xs text-gray-400 font-medium">Trusted Deals & Calidad Internacional</p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+          {filteredProducts.map(product => (
+            <div
+              key={product.id}
+              onClick={() => setSelectedProduct(product)}
+              className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
+            >
+              {/* BADGE DE DESCUENTO NARANJA (-15%) */}
+              <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded">
+                -15%
+              </div>
+
+              {/* IMAGEN DE PRODUCTO */}
+              <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
+                <img
+                  src={product.images[0]}
+                  alt={product.title}
+                  className="max-h-full object-contain group-hover:scale-105 transition duration-300"
+                />
+              </div>
+
+              {/* DETALLES DE PRECIO Y VALORACIÓN ESTILO FOXDROP */}
+              <div className="space-y-1 pt-1 border-t border-gray-100">
+                <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
+                  {product.title}
+                </h4>
+
+                {/* PRECIO TACHADO */}
+                <span className="text-[11px] text-gray-400 line-through block">
+                  ${(product.publicPrice * 1.15).toFixed(0)} MXN
+                </span>
+
+                {/* PRECIO DESTACADO EN NEGRITA */}
+                <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
+                  ${product.publicPrice.toFixed(0)} MXN
+                </span>
+
+                {/* ESTRELLAS Y REVIEWS */}
+                <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
+                  <div className="flex text-amber-400">
+                    {'★'.repeat(5)}
+                  </div>
+                  <span className="text-gray-400 text-[10px]">(5)</span>
+                </div>
+              </div>
+
+              {/* BOTÓN AGREGAR */}
+              <button
+                onClick={(e) => addToCart(product, e)}
+                className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition"
+              >
+                Agregar
+              </button>
+            </div>
+          ))}
+        </div>
+
+      </section>
+
+      {/* ======================================================== */}
+      {/* 4. SECCIÓN: CATEGORÍAS POPULARES (ICONOS EN RECTÁNGULOS AZUL CLARO) */}
+      {/* ======================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+        <div>
+          <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">Categorías Populares</h3>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {popularCategories.map((cat, idx) => {
+            const Icon = cat.icon;
+            return (
+              <div
+                key={idx}
+                onClick={() => setSelectedCategory(cat.name)}
+                className="bg-[#EDF5F7] hover:bg-[#E2EFF2] border border-[#D5E6EA] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group"
+              >
+                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-[#2D4A58] group-hover:scale-110 transition shadow-sm mb-2">
+                  <Icon className="w-7 h-7" />
+                </div>
+                <h4 className="font-extrabold text-sm text-[#2D4A58]">{cat.name}</h4>
+                <span className="text-[11px] text-gray-500 mt-0.5">{cat.count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* 5. FOOTER AZUL PETRÓLEO EXACTO A FOXDROP */}
+      {/* ======================================================== */}
+      <footer className="bg-[#2D4A58] text-white mt-12 pt-10 pb-6 border-t border-slate-700 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            
+            {/* COL 1: SOBRE FOXDROP */}
+            <div className="space-y-2">
+              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Sobre Foxdrop</h4>
+              <ul className="space-y-1.5 text-gray-300 text-xs">
+                <li className="hover:text-white cursor-pointer">Nuestro Modelo</li>
+                <li className="hover:text-white cursor-pointer">FAQ</li>
+                <li className="hover:text-white cursor-pointer">Contacto</li>
+              </ul>
+            </div>
+
+            {/* COL 2: CATEGORÍAS */}
+            <div className="space-y-2">
+              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Categorías</h4>
+              <ul className="space-y-1.5 text-gray-300 text-xs">
+                <li className="hover:text-white cursor-pointer">Asia</li>
+                <li className="hover:text-white cursor-pointer">Europa</li>
+                <li className="hover:text-white cursor-pointer">América</li>
+              </ul>
+            </div>
+
+            {/* COL 3: INFORMACIÓN */}
+            <div className="space-y-2">
+              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Información</h4>
+              <ul className="space-y-1.5 text-gray-300 text-xs">
+                <li className="hover:text-white cursor-pointer">Envíos</li>
+                <li className="hover:text-white cursor-pointer">Aduanas</li>
+                <li className="hover:text-white cursor-pointer">Devoluciones</li>
+                <li className="hover:text-white cursor-pointer">Privacidad</li>
+              </ul>
+            </div>
+
+            {/* COL 4: NEWSLETTER & MÉTODOS DE PAGO */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-xs text-gray-200">
+                Suscríbete para ofertas exclusivas e internacional...
+              </h4>
+              <div className="flex">
+                <input
+                  type="email"
+                  placeholder="Entra para consultar..."
+                  className="bg-white text-gray-800 placeholder-gray-400 px-3 py-2 text-xs rounded-l-md w-full focus:outline-none"
+                />
+                <button className="bg-[#E65F2B] hover:bg-[#D45321] text-white px-3.5 rounded-r-md">
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <span className="text-[10px] text-gray-400 block mb-1">Métodos de pago</span>
+                <div className="flex items-center space-x-2 text-[10px] font-bold">
+                  <span className="bg-white text-[#2D4A58] px-2 py-0.5 rounded font-black">VISA</span>
+                  <span className="bg-white text-[#E65F2B] px-2 py-0.5 rounded font-black">MC</span>
+                  <span className="bg-white text-blue-600 px-2 py-0.5 rounded font-black">PayPal</span>
+                  <span className="bg-white text-emerald-600 px-2 py-0.5 rounded font-black">SPEI</span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* INFORMACIÓN SOBRE ENVÍOS */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5 border-t border-slate-800/80">
-            <div className="flex items-center space-x-1.5">
-              <Truck className="w-3.5 h-3.5 text-blue-400" />
-              <span>Envíos locales en Puebla & paquetería a todo México</span>
+          {/* COPYRIGHT */}
+          <div className="pt-6 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-400 gap-4">
+            <p>© 2026 - Foxdrop international design. Todos los derechos reservados.</p>
+            <div className="flex items-center space-x-4">
+              <Facebook className="w-4 h-4 hover:text-white cursor-pointer" />
+              <Twitter className="w-4 h-4 hover:text-white cursor-pointer" />
+              <Instagram className="w-4 h-4 hover:text-white cursor-pointer" />
+              <Youtube className="w-4 h-4 hover:text-white cursor-pointer" />
             </div>
           </div>
 
         </div>
-      </header>
+      </footer>
 
-      {/* 2. CARRUSEL HORIZONTAL DE CATEGORÍAS */}
-      <div className="bg-white border-b border-slate-200 py-2.5 px-4 sm:px-6 overflow-x-auto no-scrollbar shadow-xs">
-        <div className="max-w-7xl mx-auto flex items-center space-x-2 text-xs">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-1.5 rounded-full font-semibold whitespace-nowrap transition text-xs shrink-0 ${
-                selectedCategory === cat
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 3. CONTENIDO PRINCIPAL: CATÁLOGO */}
-      <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-5 flex-1">
-
-        {/* HERO BANNER SENCILLO */}
-        <div className="bg-slate-900 rounded-2xl text-white p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-          <div className="space-y-1 max-w-lg">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Catálogo en línea</span>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
-              Artículos Selectos con Envío a Domicilio
-            </h2>
-            <p className="text-xs text-slate-300">
-              Cotiza tu envío al momento del checkout y recibe tus productos de forma segura.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowCustomOrderModal(true)}
-            className="self-start sm:self-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition whitespace-nowrap"
-          >
-            Hacer Pedido Especial
-          </button>
-        </div>
-
-        {/* PRODUCTOS */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
-              Productos Disponibles ({filteredProducts.length})
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-            {filteredProducts.map(product => (
-              <div
-                key={product.id}
-                onClick={() => setSelectedProduct(product)}
-                className="bg-white rounded-2xl border border-slate-200/90 product-card-shadow transition duration-200 flex flex-col justify-between overflow-hidden cursor-pointer group relative"
-              >
-                {/* FAVORITO */}
-                <button
-                  onClick={(e) => toggleFav(product.id, e)}
-                  className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white text-slate-400 hover:text-rose-500 shadow-sm transition"
-                >
-                  <Heart className={`w-3.5 h-3.5 ${favorites.includes(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
-                </button>
-
-                {/* IMAGEN */}
-                <div className="aspect-square bg-slate-100/60 p-3 flex items-center justify-center border-b border-slate-100 overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
-                  />
-                </div>
-
-                {/* INFO */}
-                <div className="p-3 space-y-1.5 flex flex-col justify-between flex-1">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                      {product.category}
-                    </span>
-
-                    <div className="flex items-baseline space-x-1 mt-1">
-                      <span className="text-lg sm:text-xl font-black text-slate-900">
-                        ${product.publicPrice.toFixed(2)}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-medium">MXN</span>
-                    </div>
-
-                    <p className="text-xs text-slate-600 line-clamp-2 leading-snug mt-1 group-hover:text-blue-600 transition">
-                      {product.title}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={(e) => addToCart(product, e)}
-                    className="w-full mt-2.5 bg-slate-100 hover:bg-blue-600 text-slate-800 hover:text-white font-bold py-2 rounded-xl text-xs transition"
-                  >
-                    Agregar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </main>
-
-      {/* 4. EXPERIENCIA MÓVIL: BARRA INFERIOR */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 flex items-center justify-around py-2 px-1 text-[10px] font-semibold text-slate-500 shadow-xl">
-        <button
-          onClick={() => { setMobileTab('home'); setSelectedCategory('Todas'); }}
-          className={`flex flex-col items-center space-y-1 ${mobileTab === 'home' ? 'text-blue-600 font-black' : ''}`}
-        >
-          <Home className="w-5 h-5" />
-          <span>Inicio</span>
-        </button>
-
-        <button
-          onClick={() => setMobileTab('categories')}
-          className={`flex flex-col items-center space-y-1 ${mobileTab === 'categories' ? 'text-blue-600 font-black' : ''}`}
-        >
-          <Grid className="w-5 h-5" />
-          <span>Categorías</span>
-        </button>
-
-        <button
-          onClick={() => setShowCustomOrderModal(true)}
-          className="flex flex-col items-center space-y-1 text-indigo-600"
-        >
-          <Sparkles className="w-5 h-5" />
-          <span>Encargo</span>
-        </button>
-
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center space-y-1 relative"
-        >
-          <ShoppingCart className="w-5 h-5" />
-          <span>Bolsa</span>
-          {cartItemCount > 0 && (
-            <span className="absolute -top-1 right-2 bg-blue-600 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => { if (!user) setShowAuthModal(true); else alert(`Usuario: ${user.name}`); }}
-          className="flex flex-col items-center space-y-1"
-        >
-          <User className="w-5 h-5" />
-          <span>{user ? 'Cuenta' : 'Ingresar'}</span>
-        </button>
-      </nav>
-
-      {/* 5. MODAL DE PRODUCTO */}
+      {/* ======================================================== */}
+      {/* 6. MODAL FICHA DE PRODUCTO */}
+      {/* ======================================================== */}
       {selectedProduct && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-7 space-y-4 relative shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-7 space-y-4 relative shadow-2xl">
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-1"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 p-1"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="aspect-square bg-slate-100 rounded-2xl p-4 flex items-center justify-center border border-slate-200">
+              <div className="aspect-square bg-gray-50 rounded-xl p-4 flex items-center justify-center border border-gray-100">
                 <img src={selectedProduct.images[0]} alt={selectedProduct.title} className="max-h-full object-contain" />
               </div>
 
               <div className="space-y-3 flex flex-col justify-between">
                 <div>
-                  <span className="text-[11px] text-blue-600 uppercase font-bold tracking-wider">{selectedProduct.category}</span>
-                  <h3 className="text-lg sm:text-xl font-black text-slate-900 leading-snug">{selectedProduct.title}</h3>
+                  <span className="text-[10px] text-[#E65F2B] uppercase font-bold tracking-wider">{selectedProduct.category}</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-[#1F2D3D] leading-snug">{selectedProduct.title}</h3>
                   
-                  <div className="mt-2 flex items-baseline space-x-1">
-                    <span className="text-2xl font-black text-slate-900">${selectedProduct.publicPrice.toFixed(2)}</span>
-                    <span className="text-xs text-slate-400 font-semibold">MXN</span>
+                  <div className="mt-2 flex items-baseline space-x-2">
+                    <span className="text-2xl font-black text-gray-900">${selectedProduct.publicPrice.toFixed(0)} MXN</span>
+                    <span className="text-xs text-gray-400 line-through">${(selectedProduct.publicPrice * 1.15).toFixed(0)} MXN</span>
                   </div>
 
-                  <p className="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
+                  <p className="text-xs text-gray-600 mt-3 leading-relaxed border-t border-gray-100 pt-3">
                     {selectedProduct.description}
                   </p>
                 </div>
@@ -395,9 +561,9 @@ export default function TiendaCliente() {
                 <div className="space-y-2 pt-4">
                   <button
                     onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm"
+                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3 rounded text-sm transition shadow-sm"
                   >
-                    Agregar a la bolsa
+                    Agregar al carrito
                   </button>
                 </div>
               </div>
@@ -406,16 +572,18 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* 6. DRAWER DEL CARRITO & CHECKOUT */}
+      {/* ======================================================== */}
+      {/* 7. DRAWER DEL CARRITO & CHECKOUT COMPLETO */}
+      {/* ======================================================== */}
       {isCartOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex justify-end">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-end">
           <div className="bg-white w-full max-w-md h-full flex flex-col justify-between p-5 sm:p-6 space-y-4 overflow-y-auto shadow-2xl">
             
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-blue-600" /> Bolsa de compras ({cartItemCount})
+            <div className="flex justify-between items-center border-b border-gray-200 pb-3">
+              <h3 className="text-base font-bold text-[#1F2D3D] flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-[#E65F2B]" /> Carrito de compras ({cartItemCount})
               </h3>
-              <button onClick={() => setIsCartOpen(false)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setIsCartOpen(false)} className="text-gray-400 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -423,28 +591,28 @@ export default function TiendaCliente() {
             {checkoutStep === 'cart' && (
               <div className="flex-1 flex flex-col justify-between space-y-4">
                 {cart.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-gray-400">
                     <ShoppingCart className="w-12 h-12 mb-2 stroke-1" />
-                    <p className="text-sm font-semibold text-slate-600">Tu bolsa está vacía</p>
-                    <p className="text-xs text-slate-400 mt-1">Explora los artículos disponibles.</p>
+                    <p className="text-sm font-semibold text-gray-600">Tu carrito está vacío</p>
+                    <p className="text-xs text-gray-400 mt-1">Explora los productos globales.</p>
                   </div>
                 ) : (
                   <>
                     <div className="space-y-3">
                       {cart.map(item => (
-                        <div key={item.product.id} className="flex gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-xs">
-                          <img src={item.product.images[0]} alt={item.product.title} className="w-14 h-14 object-contain bg-white rounded-xl p-1 border border-slate-100" />
+                        <div key={item.product.id} className="flex gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs">
+                          <img src={item.product.images[0]} alt={item.product.title} className="w-14 h-14 object-contain bg-white rounded p-1 border border-gray-200" />
                           <div className="flex-1 flex flex-col justify-between">
-                            <p className="font-bold text-slate-800 line-clamp-1">{item.product.title}</p>
-                            <p className="font-black text-slate-900 text-sm">${(item.product.publicPrice * item.quantity).toFixed(2)} MXN</p>
+                            <p className="font-bold text-gray-800 line-clamp-1">{item.product.title}</p>
+                            <p className="font-black text-gray-900 text-sm">${(item.product.publicPrice * item.quantity).toFixed(0)} MXN</p>
                             
                             <div className="flex items-center space-x-2 mt-1">
-                              <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100">
-                                <Minus className="w-3 h-3 text-slate-600" />
+                              <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1 rounded bg-white border border-gray-300 hover:bg-gray-100">
+                                <Minus className="w-3 h-3 text-gray-600" />
                               </button>
-                              <span className="font-bold text-slate-800">{item.quantity}</span>
-                              <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100">
-                                <Plus className="w-3 h-3 text-slate-600" />
+                              <span className="font-bold text-gray-800">{item.quantity}</span>
+                              <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 rounded bg-white border border-gray-300 hover:bg-gray-100">
+                                <Plus className="w-3 h-3 text-gray-600" />
                               </button>
                             </div>
                           </div>
@@ -452,17 +620,17 @@ export default function TiendaCliente() {
                       ))}
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 space-y-3">
-                      <div className="flex justify-between text-base font-black text-slate-900">
+                    <div className="pt-4 border-t border-gray-200 space-y-3">
+                      <div className="flex justify-between text-base font-black text-gray-900">
                         <span>Subtotal:</span>
-                        <span>${cartSubtotal.toFixed(2)} MXN</span>
+                        <span>${cartSubtotal.toFixed(0)} MXN</span>
                       </div>
 
                       <button
                         onClick={handleCheckoutInit}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-md"
+                        className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded text-xs flex items-center justify-center gap-2 transition shadow"
                       >
-                        Continuar al envío <ArrowRight className="w-4 h-4" />
+                        Continuar compra <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </>
@@ -470,44 +638,44 @@ export default function TiendaCliente() {
               </div>
             )}
 
-            {/* SELECCIÓN DE ENVÍO SENCILLA Y REALISTA */}
+            {/* SELECCIÓN DE ENVÍO */}
             {checkoutStep === 'shipping' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Selecciona la zona de entrega</h4>
+                <h4 className="font-bold text-sm text-[#1F2D3D] border-b border-gray-200 pb-2">Selecciona forma de entrega</h4>
                 
                 <div className="space-y-2">
                   <label
                     onClick={() => setShippingMethod('puebla_local')}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'puebla_local' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
+                    className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'puebla_local' ? 'bg-[#EDF5F7] border-[#2D4A58] text-gray-900' : 'border-gray-200 text-gray-600'}`}
                   >
                     <div>
-                      <p className="font-bold text-slate-900">Envío Local (Puebla y alrededores)</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Entrega a domicilio por mensajería local</p>
+                      <p className="font-bold text-gray-900">Envío Local (Puebla y alrededores)</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">Entrega por mensajería local</p>
                     </div>
-                    <span className="font-bold text-slate-900">$50.00 MXN</span>
+                    <span className="font-bold text-gray-900">$50.00 MXN</span>
                   </label>
 
                   <label
                     onClick={() => setShippingMethod('national')}
-                    className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'national' ? 'bg-blue-50/50 border-blue-600 text-slate-900' : 'border-slate-200 text-slate-600'}`}
+                    className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'national' ? 'bg-[#EDF5F7] border-[#2D4A58] text-gray-900' : 'border-gray-200 text-gray-600'}`}
                   >
                     <div>
-                      <p className="font-bold text-slate-900">Envío Nacional por Paquetería</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Guía con seguimiento en línea</p>
+                      <p className="font-bold text-gray-900">Envío Nacional por Paquetería</p>
+                      <p className="text-[11px] text-gray-500 mt-0.5">Guía de rastreo nacional</p>
                     </div>
-                    <span className="font-bold text-slate-900">$140.00 MXN</span>
+                    <span className="font-bold text-gray-900">$140.00 MXN</span>
                   </label>
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <label className="font-bold text-slate-700">Dirección de entrega:</label>
+                  <label className="font-bold text-gray-700">Dirección de entrega:</label>
                   <input
                     type="text"
                     required
                     placeholder="Calle, Número y Colonia..."
                     value={shippingAddress.street}
                     onChange={e => setShippingAddress({ ...shippingAddress, street: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-800"
                   />
                   <input
                     type="text"
@@ -515,18 +683,18 @@ export default function TiendaCliente() {
                     placeholder="Código Postal..."
                     value={shippingAddress.zip}
                     onChange={e => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800"
+                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-800"
                   />
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 space-y-2">
+                <div className="pt-4 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between font-bold text-sm">
                     <span>Total con envío:</span>
-                    <span className="text-blue-600">${cartTotal.toFixed(2)} MXN</span>
+                    <span className="text-[#E65F2B]">${cartTotal.toFixed(0)} MXN</span>
                   </div>
                   <button
                     onClick={() => setCheckoutStep('payment')}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs transition"
+                    className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3.5 rounded text-xs transition"
                   >
                     Continuar al pago
                   </button>
@@ -534,55 +702,50 @@ export default function TiendaCliente() {
               </div>
             )}
 
-            {/* SELECCIÓN DE PAGO */}
+            {/* PAGO */}
             {checkoutStep === 'payment' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-2">Método de pago</h4>
+                <h4 className="font-bold text-sm text-[#1F2D3D] border-b border-gray-200 pb-2">Método de pago</h4>
                 
                 <div className="space-y-2">
-                  <label onClick={() => setPaymentMethod('spei')} className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer ${paymentMethod === 'spei' ? 'bg-blue-50/50 border-blue-600' : 'border-slate-200'}`}>
+                  <label onClick={() => setPaymentMethod('spei')} className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer ${paymentMethod === 'spei' ? 'bg-[#EDF5F7] border-[#2D4A58]' : 'border-gray-200'}`}>
                     <div>
-                      <p className="font-bold text-slate-800">Transferencia bancaria SPEI</p>
-                      <p className="text-[11px] text-slate-500">Datos bancarios al confirmar</p>
+                      <p className="font-bold text-gray-800">Transferencia bancaria SPEI</p>
+                      <p className="text-[11px] text-gray-500">Datos bancarios al confirmar</p>
                     </div>
                     <span className="text-[10px] text-emerald-600 font-bold">Sin Comisión</span>
                   </label>
 
-                  <label onClick={() => setPaymentMethod('card')} className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer ${paymentMethod === 'card' ? 'bg-blue-50/50 border-blue-600' : 'border-slate-200'}`}>
+                  <label onClick={() => setPaymentMethod('card')} className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer ${paymentMethod === 'card' ? 'bg-[#EDF5F7] border-[#2D4A58]' : 'border-gray-200'}`}>
                     <div>
-                      <p className="font-bold text-slate-800">Tarjeta Débito / Crédito</p>
-                      <p className="text-[11px] text-slate-500">Pasarela en línea protegida</p>
+                      <p className="font-bold text-gray-800">Tarjeta Débito / Crédito</p>
+                      <p className="text-[11px] text-gray-500">Pasarela protegida</p>
                     </div>
                   </label>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-gray-200">
                   <button
                     onClick={handleFinishOrder}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl text-xs transition shadow"
+                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded text-xs transition shadow"
                   >
-                    Confirmar pedido (${cartTotal.toFixed(2)} MXN)
+                    Confirmar pedido (${cartTotal.toFixed(0)} MXN)
                   </button>
                 </div>
               </div>
             )}
 
-            {/* CONFIRMACIÓN */}
+            {/* ÉXITO */}
             {checkoutStep === 'success' && (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-4 space-y-3">
                 <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h4 className="text-lg font-black text-slate-900">¡Pedido recibido!</h4>
-                <p className="text-xs text-slate-500">Número de orden: <strong className="text-slate-900">{confirmedOrderId}</strong>.</p>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs text-left w-full space-y-1">
-                  <p><strong className="text-slate-700">Cliente:</strong> {user?.name}</p>
-                  <p><strong className="text-slate-700">Envío:</strong> {shippingMethod === 'puebla_local' ? 'Local Puebla' : 'Nacional'}</p>
-                  <p><strong className="text-slate-700">Pago:</strong> {paymentMethod.toUpperCase()}</p>
-                </div>
+                <h4 className="text-lg font-black text-[#1F2D3D]">¡Pedido confirmado!</h4>
+                <p className="text-xs text-gray-500">Número de orden Foxdrop: <strong className="text-gray-900">{confirmedOrderId}</strong>.</p>
                 <button
                   onClick={() => { setIsCartOpen(false); setCheckoutStep('cart'); }}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs"
+                  className="w-full bg-[#2D4A58] text-white font-bold py-3 rounded text-xs"
                 >
                   Seguir comprando
                 </button>
@@ -593,55 +756,57 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* 7. MODAL REGISTRO OTP OBLIGATORIO */}
+      {/* ======================================================== */}
+      {/* 8. MODAL REGISTRO OTP OBLIGATORIO */}
+      {/* ======================================================== */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
-            <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
+            <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
               <X className="w-5 h-5" />
             </button>
 
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-900">Ingresa tus datos para continuar</h3>
-              <p className="text-xs text-slate-500">Te enviaremos un código de seguridad para confirmar tu cuenta.</p>
+              <h3 className="text-base font-bold text-[#1F2D3D]">Ingresa tus datos para continuar</h3>
+              <p className="text-xs text-gray-500">Te enviaremos un código de seguridad para confirmar tu cuenta.</p>
             </div>
 
             {authStep === 'details' && (
               <form onSubmit={handleSendOtp} className="space-y-3 text-xs">
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Nombre completo:</label>
+                  <label className="text-gray-700 font-semibold block mb-1">Nombre completo:</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej. Mario González"
                     value={authName}
                     onChange={e => setAuthName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                    className="w-full bg-gray-50 border border-gray-300 rounded p-2.5 text-gray-900 focus:outline-none focus:border-[#2D4A58]"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Correo electrónico:</label>
+                  <label className="text-gray-700 font-semibold block mb-1">Correo electrónico:</label>
                   <input
                     type="email"
                     required
                     placeholder="tu@correo.com"
                     value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                    className="w-full bg-gray-50 border border-gray-300 rounded p-2.5 text-gray-900 focus:outline-none focus:border-[#2D4A58]"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-700 font-semibold block mb-1">Teléfono WhatsApp:</label>
+                  <label className="text-gray-700 font-semibold block mb-1">Teléfono WhatsApp:</label>
                   <input
                     type="tel"
                     required
                     placeholder="222 123 4567"
                     value={authPhone}
                     onChange={e => setAuthPhone(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+                    className="w-full bg-gray-50 border border-gray-300 rounded p-2.5 text-gray-900 focus:outline-none focus:border-[#2D4A58]"
                   />
                 </div>
-                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow">
+                <button type="submit" className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3 rounded transition shadow">
                   Enviar código de seguridad
                 </button>
               </form>
@@ -649,8 +814,8 @@ export default function TiendaCliente() {
 
             {authStep === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="space-y-3 text-xs">
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl text-center text-blue-900">
-                  <p>Código de verificación de prueba: <strong className="font-bold">123456</strong></p>
+                <div className="bg-orange-50 border border-orange-200 p-3 rounded text-center text-orange-900">
+                  <p>Código de prueba: <strong className="font-bold">123456</strong></p>
                 </div>
                 <input
                   type="text"
@@ -659,9 +824,9 @@ export default function TiendaCliente() {
                   placeholder="123456"
                   value={otpCode}
                   onChange={e => setOtpCode(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-center text-lg font-bold tracking-widest text-slate-900"
+                  className="w-full bg-gray-50 border border-gray-300 rounded p-3 text-center text-lg font-bold tracking-widest text-gray-900"
                 />
-                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition shadow">
+                <button type="submit" className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3 rounded transition shadow">
                   Verificar código
                 </button>
               </form>
@@ -676,25 +841,26 @@ export default function TiendaCliente() {
         </div>
       )}
 
-      {/* 8. MODAL ENCARGO ESPECIAL */}
+      {/* ======================================================== */}
+      {/* 9. MODAL ENCARGO ESPECIAL */}
       {showCustomOrderModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-3 relative shadow-2xl">
-            <button onClick={() => setShowCustomOrderModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 space-y-3 relative shadow-2xl">
+            <button onClick={() => setShowCustomOrderModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="font-bold text-base text-slate-900">Solicitar Pedido Especial</h3>
-            <p className="text-xs text-slate-500">¿Buscas un artículo en particular que no ves en el catálogo? Dinos cuál y te lo conseguimos.</p>
+            <h3 className="font-bold text-base text-[#1F2D3D]">Solicitar Encargo Especial</h3>
+            <p className="text-xs text-gray-500">¿Buscas un artículo internacional que no ves en el catálogo? Dinos cuál y te lo cotizamos.</p>
             <textarea
               rows={4}
               placeholder="Nombre del producto, marca o descripción..."
               value={customItemText}
               onChange={e => setCustomItemText(e.target.value)}
-              className="w-full border border-slate-200 bg-slate-50 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white"
+              className="w-full border border-gray-300 bg-gray-50 rounded p-3 text-xs text-gray-800 focus:outline-none focus:border-[#2D4A58]"
             />
             <button
               onClick={() => { alert('Solicitud enviada con éxito.'); setShowCustomOrderModal(false); }}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs shadow"
+              className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3 rounded text-xs shadow"
             >
               Enviar solicitud
             </button>
