@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import FoxDropLogo from '@/components/FoxDropLogo';
 import { ShoppingBag, LayoutDashboard, ArrowRight, ShieldCheck, Zap, MapPin, Sparkles } from 'lucide-react';
 
 export default function LandingPortal() {
@@ -8,43 +9,44 @@ export default function LandingPortal() {
       <div className="max-w-5xl w-full text-center space-y-8">
         
         {/* LOGO & TITULAR */}
-        <div className="space-y-3">
-          <span className="inline-block bg-slate-200/80 text-slate-800 text-xs font-semibold px-4 py-1.5 rounded-full tracking-wider uppercase">
-            Plataforma de Comercio Electrónico & CRM
+        <div className="space-y-3 flex flex-col items-center">
+          <FoxDropLogo size="lg" variant="light" className="mb-2" />
+          <span className="inline-block bg-[#2D4A58] text-white text-xs font-semibold px-4 py-1.5 rounded-full tracking-wider uppercase">
+            Plataforma de Importación & CRM de Control
           </span>
-          <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-            PANEL DE ACCESO
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            PORTAL DEL SISTEMA
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Hemos preparado 2 propuestas de diseño para la Tienda Cliente y el panel administrativo CRM.
+          <p className="text-slate-600 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+            Tienda en línea cliente con diseño oficial Foxdrop (carrusel panorámico multi-card, OTP y pagos) y panel administrativo para prorrateo de fletes y WhatsApp.
           </p>
         </div>
 
         {/* 3 OPCIONES VISUALES */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
           
-          {/* OPCIÓN 1: TIENDA KRONO (ESTILO MARKETPLACE MODERNO) */}
+          {/* OPCIÓN 1: TIENDA OFICIAL FOXDROP */}
           <Link
             href="/tienda"
-            className="group bg-white border border-slate-200 hover:border-blue-500 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
+            className="group bg-white border-2 border-[#E65F2B] hover:border-[#D45321] rounded-3xl p-6 transition-all duration-300 hover:shadow-xl flex flex-col justify-between"
           >
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#E65F2B] flex items-center justify-center font-bold">
                 <ShoppingBag className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[11px] font-bold text-blue-600 uppercase tracking-widest block">Propuesta A</span>
-                <h2 className="text-xl font-bold text-slate-900 mt-1 group-hover:text-blue-600 transition">
-                  Tienda Dinámica (KRONO)
+                <span className="text-[11px] font-bold text-[#E65F2B] uppercase tracking-widest block">Diseño Oficial</span>
+                <h2 className="text-xl font-black text-[#1F2D3D] mt-1 group-hover:text-[#E65F2B] transition">
+                  Tienda FOXDROP
                 </h2>
                 <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-                  Estilo marketplace moderno: fondo neutro claro, cabecera azul marino con buscador directo, badges de entrega en Puebla y barra de navegación inferior móvil.
+                  Maqueta oficial: carrusel panorámico multi-card (bolso italiano, relojería japonesa y skincare coreano), barra azul petróleo, deals del mes y checkout con OTP.
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
-              <span>Ver Propuesta A</span>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#E65F2B]">
+              <span>Ingresar a la Tienda</span>
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition" />
             </div>
           </Link>

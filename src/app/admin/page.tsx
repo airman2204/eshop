@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import FoxDropLogo from '@/components/FoxDropLogo';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X
@@ -88,14 +89,12 @@ export default function AdminCRM() {
       <header className="border-b border-slate-200 bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
-              ERP
-            </div>
-            <div>
-              <h1 className="font-extrabold text-base text-slate-900 tracking-tight flex items-center gap-2">
-                PANEL DE CONTROL <span className="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border border-slate-200">Admin</span>
+            <FoxDropLogo size="sm" variant="light" showTagline={false} />
+            <div className="border-l border-slate-200 pl-3">
+              <h1 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight flex items-center gap-2">
+                PANEL DE CONTROL <span className="bg-[#E65F2B] text-white text-[9px] px-2 py-0.5 rounded-full font-bold uppercase">CRM Admin</span>
               </h1>
-              <p className="text-[10px] text-slate-500 font-medium">Inventario, Prorrateo de Envíos & Pedidos</p>
+              <p className="text-[10px] text-slate-500 font-medium">Inventario, Prorrateo de Flete & Pedidos</p>
             </div>
           </div>
 

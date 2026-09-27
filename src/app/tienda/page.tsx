@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import FoxDropLogo from '@/components/FoxDropLogo';
 import { 
   Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
@@ -38,27 +40,84 @@ export default function TiendaFoxDrop() {
   const [showCustomOrderModal, setShowCustomOrderModal] = useState(false);
   const [customItemText, setCustomItemText] = useState('');
 
-  // Hero carousel index
-  const [heroSlide, setHeroSlide] = useState(0);
+  // Panoramic Hero Carousel index
+  const [activeSlide, setActiveSlide] = useState(0);
 
-  const heroBanners = [
+  const panoramicSlides = [
     {
-      title: "Descubre Tesoros Globales.",
-      subtitle: "Importación Directa, Calidad Garantizada.",
-      image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&auto=format&fit=crop&q=80",
-      tag: "Premium Leather Bag"
+      id: 'slide-1',
+      leftCard: {
+        tag: "Premium Italian leather Bag",
+        title: "Bolsos de Cuero Italiano",
+        origin: "Florencia, Italia",
+        image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=800&auto=format&fit=crop&q=80",
+        category: "Moda"
+      },
+      centerCard: {
+        tag: "Japanese [Watches]",
+        title: "Relojería Fina Nipona",
+        origin: "Tokio, Japón",
+        image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&auto=format&fit=crop&q=80",
+        category: "Electrónica"
+      },
+      heroCard: {
+        tag: "South Korean Cosmetic",
+        headline: "Descubre Tesoros Globales.",
+        subheadline: "Importación Directa, Calidad Garantizada.",
+        ctaText: "Ver Colección Global",
+        image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1000&auto=format&fit=crop&q=80",
+        category: "Todas"
+      }
     },
     {
-      title: "Precisión & Relojería Fina.",
-      subtitle: "Mecanismos Japoneses de Alta Calidad.",
-      image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&auto=format&fit=crop&q=80",
-      tag: "Japanese Precision"
+      id: 'slide-2',
+      leftCard: {
+        tag: "German Acoustic Audio",
+        title: "Alta Fidelidad & Sonido Puro",
+        origin: "Berlín, Alemania",
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80",
+        category: "Electrónica"
+      },
+      centerCard: {
+        tag: "Nordic Ceramic Living",
+        title: "Diseño Interior Minimalista",
+        origin: "Copenhague, Dinamarca",
+        image: "https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=800&auto=format&fit=crop&q=80",
+        category: "Hogar"
+      },
+      heroCard: {
+        tag: "Swiss Alpine Precision",
+        headline: "Ingeniería Sin Fronteras.",
+        subheadline: "Autenticidad Verificada & Envío Garantizado a México.",
+        ctaText: "Explorar Colección",
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1000&auto=format&fit=crop&q=80",
+        category: "Electrónica"
+      }
     },
     {
-      title: "Cuidado Facial & Skincare.",
-      subtitle: "Fórmulas Asiáticas para una Piel Radiante.",
-      image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&auto=format&fit=crop&q=80",
-      tag: "South Korean Cosmetic"
+      id: 'slide-3',
+      leftCard: {
+        tag: "French Haute Perfumery",
+        title: "Esencias y Aromas de Grasse",
+        origin: "Grasse, Francia",
+        image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop&q=80",
+        category: "Belleza"
+      },
+      centerCard: {
+        tag: "Kyoto Tea Ceremonial",
+        title: "Cerámica y Tradición Nipona",
+        origin: "Kioto, Japón",
+        image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800&auto=format&fit=crop&q=80",
+        category: "Hogar"
+      },
+      heroCard: {
+        tag: "Curaduría Exclusiva",
+        headline: "Tesoros de Edición Limitada.",
+        subheadline: "Piezas Únicas Directo del Fabricante a tu Puerta.",
+        ctaText: "Ver Novedades",
+        image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=1000&auto=format&fit=crop&q=80",
+        category: "Todas"
+      }
     }
   ];
 
@@ -150,19 +209,9 @@ export default function TiendaFoxDrop() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           
           {/* BRAND LOGO FOXDROP */}
-          <div className="flex items-center space-x-2.5 cursor-pointer shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F28C38] flex items-center justify-center text-white font-black text-xl shadow-sm">
-              🦊
-            </div>
-            <div>
-              <div className="flex items-baseline space-x-1">
-                <span className="font-extrabold text-xl tracking-tight text-[#1F2D3D]">FOXDROP</span>
-              </div>
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest block -mt-1">
-                Tu atajo al mundo
-              </span>
-            </div>
-          </div>
+          <Link href="/tienda" className="cursor-pointer shrink-0">
+            <FoxDropLogo size="md" variant="light" />
+          </Link>
 
           {/* BUSCADOR ESTILO FOXDROP CON TAGLINE INFERIOR */}
           <div className="flex-1 max-w-xl hidden md:block">
@@ -281,68 +330,168 @@ export default function TiendaFoxDrop() {
       </header>
 
       {/* ======================================================== */}
-      {/* 2. HERO SLIDER BANNER ESTILO FOXDROP */}
+      {/* 2. HERO SLIDER PANORÁMICO MULTI-CARD EXACTO A LA MAQUETA */}
       {/* ======================================================== */}
       <section className="bg-white border-b border-gray-200 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="relative rounded-xl overflow-hidden bg-[#2D4A58] text-white shadow-md">
+          <div className="relative group">
             
-            <div className="grid grid-cols-1 md:grid-cols-3 items-center min-h-[260px] sm:min-h-[320px]">
+            {/* CONTENEDOR PANORÁMICO DE TARJETAS LADO A LADO */}
+            <div className="flex flex-col md:grid md:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
               
-              {/* IMAGEN 1 */}
-              <div className="relative h-48 sm:h-full bg-slate-900 overflow-hidden flex items-end p-4">
+              {/* TARJETA 1 (IZQUIERDA): ITALIAN LEATHER BAG */}
+              <div 
+                onClick={() => {
+                  setSelectedCategory('Moda');
+                  const el = document.getElementById('deals-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="md:col-span-3 relative h-56 md:h-[340px] rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 group/card1 border border-gray-100 flex flex-col justify-between p-4 bg-slate-900"
+              >
                 <img
-                  src={heroBanners[heroSlide].image}
-                  alt="Feature"
-                  className="absolute inset-0 w-full h-full object-cover opacity-80"
+                  src={panoramicSlides[activeSlide].leftCard.image}
+                  alt={panoramicSlides[activeSlide].leftCard.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover/card1:scale-105 transition-transform duration-700 opacity-90"
                 />
-                <span className="relative z-10 bg-black/60 backdrop-blur-xs text-white text-xs font-bold px-3 py-1 rounded">
-                  {heroBanners[heroSlide].tag}
-                </span>
+                {/* Degradado para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/30 pointer-events-none" />
+
+                {/* Badge Tag superior estilo mockup */}
+                <div className="relative z-10">
+                  <span className="inline-block bg-black/60 backdrop-blur-md text-white font-bold text-[11px] px-3 py-1.5 rounded-md shadow-xs border border-white/10">
+                    {panoramicSlides[activeSlide].leftCard.tag}
+                  </span>
+                </div>
+
+                {/* Info inferior */}
+                <div className="relative z-10 text-white space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">
+                    {panoramicSlides[activeSlide].leftCard.origin}
+                  </span>
+                  <h4 className="font-extrabold text-sm sm:text-base leading-tight">
+                    {panoramicSlides[activeSlide].leftCard.title}
+                  </h4>
+                </div>
               </div>
 
-              {/* CONTENIDO TEXTUAL CENTRAL */}
-              <div className="md:col-span-2 p-6 sm:p-10 space-y-3 bg-gradient-to-r from-[#2D4A58] via-[#2D4A58] to-[#203641] flex flex-col justify-center">
-                <span className="text-[#E65F2B] font-bold text-xs uppercase tracking-widest">
-                  Colección Global Seleccionada
-                </span>
-                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-                  {heroBanners[heroSlide].title}
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-300 max-w-md leading-relaxed">
-                  {heroBanners[heroSlide].subtitle}
-                </p>
+              {/* TARJETA 2 (CENTRO-IZQUIERDA): JAPANESE WATCHES */}
+              <div 
+                onClick={() => {
+                  setSelectedCategory('Electrónica');
+                  const el = document.getElementById('deals-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="md:col-span-3 relative h-56 md:h-[340px] rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all duration-300 group/card2 border border-gray-100 flex flex-col justify-between p-4 bg-slate-900"
+              >
+                <img
+                  src={panoramicSlides[activeSlide].centerCard.image}
+                  alt={panoramicSlides[activeSlide].centerCard.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover/card2:scale-105 transition-transform duration-700 opacity-90"
+                />
+                {/* Degradado para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/30 pointer-events-none" />
 
-                <div className="pt-2 flex items-center gap-3">
+                {/* Badge Tag superior estilo mockup */}
+                <div className="relative z-10">
+                  <span className="inline-block bg-black/60 backdrop-blur-md text-white font-bold text-[11px] px-3 py-1.5 rounded-md shadow-xs border border-white/10">
+                    {panoramicSlides[activeSlide].centerCard.tag}
+                  </span>
+                </div>
+
+                {/* Info inferior */}
+                <div className="relative z-10 text-white space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold text-cyan-300 tracking-wider">
+                    {panoramicSlides[activeSlide].centerCard.origin}
+                  </span>
+                  <h4 className="font-extrabold text-sm sm:text-base leading-tight">
+                    {panoramicSlides[activeSlide].centerCard.title}
+                  </h4>
+                </div>
+              </div>
+
+              {/* TARJETA 3 (HERO PRINCIPAL / DERECHA): SOUTH KOREAN COSMETIC + TITULAR & CTA */}
+              <div className="md:col-span-6 relative min-h-[280px] md:h-[340px] rounded-xl overflow-hidden shadow-md border border-gray-200 bg-[#2D4A58] text-white flex flex-col justify-between p-6 sm:p-8 group/hero">
+                <img
+                  src={panoramicSlides[activeSlide].heroCard.image}
+                  alt={panoramicSlides[activeSlide].heroCard.headline}
+                  className="absolute inset-0 w-full h-full object-cover opacity-35 group-hover/hero:scale-102 transition-transform duration-700"
+                />
+                
+                {/* Gradiente sutil tipo FoxDrop */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#2D4A58] via-[#2D4A58]/90 to-[#203641]/80 pointer-events-none" />
+
+                {/* Tag Superior */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="inline-block bg-black/50 backdrop-blur-md text-white font-bold text-[11px] px-3 py-1 rounded-md border border-white/10">
+                    {panoramicSlides[activeSlide].heroCard.tag}
+                  </span>
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-[#E65F2B] bg-white/10 px-2.5 py-0.5 rounded-full">
+                    <Sparkles className="w-3.5 h-3.5" /> Curaduría FoxDrop
+                  </span>
+                </div>
+
+                {/* Titular Principal & CTA */}
+                <div className="relative z-10 space-y-2.5 my-auto py-2">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight max-w-md">
+                    {panoramicSlides[activeSlide].heroCard.headline}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-200 max-w-sm font-medium leading-relaxed">
+                    {panoramicSlides[activeSlide].heroCard.subheadline}
+                  </p>
+                </div>
+
+                <div className="relative z-10 pt-2 flex items-center gap-3">
                   <button
                     onClick={() => {
                       const el = document.getElementById('deals-section');
                       el?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold px-6 py-2.5 rounded text-xs transition shadow-sm"
+                    className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold px-6 py-2.5 rounded-full text-xs sm:text-sm transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 group-hover/hero:translate-x-0.5"
                   >
-                    Ver Colección Global
+                    <span>{panoramicSlides[activeSlide].heroCard.ctaText}</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
+
               </div>
 
             </div>
 
-            {/* CONTROLES DE NAVEGACIÓN SLIDER */}
+            {/* BOTONES FLOTANTES CIRCULARES DE NAVEGACIÓN (SUPERPUESTOS AL CARRUSEL) */}
             <button
-              onClick={() => setHeroSlide(prev => (prev === 0 ? heroBanners.length - 1 : prev - 1))}
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full shadow transition"
+              onClick={() => setActiveSlide(prev => (prev === 0 ? panoramicSlides.length - 1 : prev - 1))}
+              aria-label="Anterior"
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white text-gray-800 shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-105 active:scale-95 transition"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
             </button>
+
             <button
-              onClick={() => setHeroSlide(prev => (prev === heroBanners.length - 1 ? 0 : prev + 1))}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 rounded-full shadow transition"
+              onClick={() => setActiveSlide(prev => (prev === panoramicSlides.length - 1 ? 0 : prev + 1))}
+              aria-label="Siguiente"
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white text-gray-800 shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-105 active:scale-95 transition"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5 text-gray-700" />
             </button>
 
           </div>
+
+          {/* INDICADORES DE PUNTOS (DOTS) INFERIORES */}
+          <div className="flex items-center justify-center space-x-2 pt-4">
+            {panoramicSlides.map((slide, idx) => (
+              <button
+                key={slide.id}
+                onClick={() => setActiveSlide(idx)}
+                aria-label={`Slide ${idx + 1}`}
+                className={`transition-all duration-300 rounded-full ${
+                  activeSlide === idx
+                    ? 'w-7 h-2 bg-[#E65F2B]'
+                    : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                }`}
+              />
+            ))}
+          </div>
+
         </div>
       </section>
 
@@ -452,12 +601,15 @@ export default function TiendaFoxDrop() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             
             {/* COL 1: SOBRE FOXDROP */}
-            <div className="space-y-2">
-              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Sobre Foxdrop</h4>
-              <ul className="space-y-1.5 text-gray-300 text-xs">
+            <div className="space-y-3">
+              <FoxDropLogo size="md" variant="dark" />
+              <p className="text-gray-300 text-xs leading-relaxed">
+                Tu atajo al mundo. Importación directa y curaduría global con entregas seguras en México.
+              </p>
+              <ul className="space-y-1.5 text-gray-300 text-xs pt-1">
                 <li className="hover:text-white cursor-pointer">Nuestro Modelo</li>
-                <li className="hover:text-white cursor-pointer">FAQ</li>
-                <li className="hover:text-white cursor-pointer">Contacto</li>
+                <li className="hover:text-white cursor-pointer">FAQ & Preguntas</li>
+                <li className="hover:text-white cursor-pointer">Contacto de Soporte</li>
               </ul>
             </div>
 
