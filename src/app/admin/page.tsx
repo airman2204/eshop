@@ -270,10 +270,12 @@ export default function AdminCRM() {
       setAdminSession(updatedSession);
       localStorage.setItem('foxdrop_admin_session', JSON.stringify(updatedSession));
       setResetSuccess(true);
+      setNewPasswordVal('');
+      setConfirmPasswordVal('');
       setTimeout(() => {
         setShowResetModal(false);
         setResetSuccess(false);
-      }, 1200);
+      }, 1000);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al actualizar contraseña.';
       setResetError(errorMsg);

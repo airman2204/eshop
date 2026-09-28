@@ -1,5 +1,3 @@
-import { getSupabaseBrowserClient } from "./supabase/client";
-
 export const AUTHORIZED_ADMIN_EMAILS = [
   "magc2204@gmail.com",
   "nydia.villarce405@gmail.com",
@@ -13,7 +11,9 @@ export interface AdminSession {
 
 /**
  * Valida el acceso de un administrador con correo y contraseña.
- * Aplica lista blanca estricta (solo magc2204@gmail.com y nydia.villarce405@gmail.com).
+ * 1. Revisa localStorage del dispositivo actual.
+ * 2. Si no hay o no coincide, consulta al servidor (/api/admin) que tiene acceso a Supabase con Service Role.
+ * 3. Si no hay contraseña personalizada en BD, permite la temporal 'FoxDrop2026!' y exige cambiarla.
  */
 export async function authenticateAdmin(
   email: string,
@@ -29,7 +29,38 @@ export async function authenticateAdmin(
     };
   }
 
-  // 2. Comprobar si hay una contraseña actualizada en localStorage o Supabase
+  // 2. Comprobar primero en el servidor seguro (/api/admin)
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "verify_password", email: normalizedEmail, password: pass }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.valid === true) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`admin_pass_${normalizedEmail}`, pass);
+        }
+        return {
+          success: true,
+          session: {
+            email: normalizedEmail,
+            mustChangePassword: data.mustChangePassword ?? false,
+            twoFactorVerified: false,
+          },
+        };
+      } else if (data.valid === false) {
+        return { success: false, error: "Contraseña incorrecta." };
+      }
+      // data.valid === null significa que no hay contraseña en BD todavía
+    }
+  } catch (err) {
+    console.warn("Fallo verificando contraseña en servidor:", err);
+  }
+
+  // 3. Fallback en localStorage del dispositivo
   if (typeof window !== "undefined") {
     const savedLocalPass = localStorage.getItem(`admin_pass_${normalizedEmail}`);
     if (savedLocalPass) {
@@ -47,33 +78,7 @@ export async function authenticateAdmin(
     }
   }
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = getSupabaseBrowserClient() as any;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("email", normalizedEmail)
-      .single();
-
-    if (profile && profile.admin_password_hash) {
-      if (profile.admin_password_hash !== pass) {
-        return { success: false, error: "Contraseña incorrecta." };
-      }
-      return {
-        success: true,
-        session: {
-          email: normalizedEmail,
-          mustChangePassword: profile.must_change_password ?? false,
-          twoFactorVerified: false,
-        },
-      };
-    }
-  } catch (err) {
-    console.warn("Verificando credenciales locales de contingencia:", err);
-  }
-
-  // Contraseña inicial genérica para primer acceso
+  // 4. Contraseña inicial genérica para primer acceso
   if (pass === "FoxDrop2026!" || pass === "Foxdrop2026*") {
     return {
       success: true,
@@ -92,7 +97,7 @@ export async function authenticateAdmin(
 }
 
 /**
- * Actualiza la contraseña administrativa del perfil
+ * Actualiza la contraseña administrativa en localStorage y en Supabase vía /api/admin
  */
 export async function updateAdminPassword(email: string, newPass: string) {
   if (newPass.length < 8) {
@@ -101,25 +106,29 @@ export async function updateAdminPassword(email: string, newPass: string) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Guardar siempre en almacenamiento seguro del navegador
+  // Guardar en localStorage inmediatamente
   if (typeof window !== "undefined") {
     localStorage.setItem(`admin_pass_${normalizedEmail}`, newPass);
   }
 
+  // Persistir en Supabase a través del endpoint seguro del servidor
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = getSupabaseBrowserClient() as any;
-    await supabase
-      .from("profiles")
-      .update({
-        role: "admin",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("email", normalizedEmail);
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_password",
+        email: normalizedEmail,
+        password: newPass,
+      }),
+    });
+    if (!res.ok) {
+      const errJson = await res.json();
+      console.warn("Advertencia al sincronizar en backend:", errJson.error);
+    }
   } catch (err) {
-    console.warn("Actualización remota opcional no disponible:", err);
+    console.warn("Error de red al actualizar contraseña remota:", err);
   }
 
   return true;
 }
-
