@@ -59,6 +59,7 @@ export interface Order {
   trackingNumber?: string;
   createdAt: string;
   itemsCount: number;
+  notes?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   order_items?: any[];
 }

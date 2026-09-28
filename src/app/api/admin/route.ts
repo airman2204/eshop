@@ -255,6 +255,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Todos los productos eliminados de la base de datos." });
     }
 
+    if (action === "update_order_status") {
+      const { orderId, status, notes } = body;
+      if (!orderId || !status) {
+        return NextResponse.json({ error: "orderId y status requeridos" }, { status: 400 });
+      }
+
+      const updatePayload: any = { status, updated_at: new Date().toISOString() };
+      if (notes !== undefined) {
+        updatePayload.notes = notes;
+      }
+
+      const { data, error } = await supabase
+        .from("orders")
+        .update(updatePayload)
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`)
+        .select()
+        .single();
+
+      if (error) {
+        // Si no pudo por or, intentar por id
+        const { error: err2 } = await supabase
+          .from("orders")
+          .update(updatePayload)
+          .eq("id", orderId);
+        if (err2) throw err2;
+      }
+
+      return NextResponse.json({ success: true, data });
+    }
+
     // ─── LOTES DE IMPORTACIÓN ─────────────────────────────────────
     if (action === "create_batch") {
       if (!batch || !batch.batchName) {

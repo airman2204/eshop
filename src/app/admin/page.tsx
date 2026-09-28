@@ -110,6 +110,12 @@ export default function AdminCRM() {
   const [slideCtaCategory, setSlideCtaCategory] = useState('Todas');
   const [savingSlide, setSavingSlide] = useState(false);
 
+  // Modal Cancelación de Pedidos
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [cancellingLoading, setCancellingLoading] = useState(false);
+
   // 1. Verificar sesión persistente y cargar tipo de cambio real inmediatamente al montar
   useEffect(() => {
     // Cargar tipo de cambio en tiempo real de inmediato
@@ -165,6 +171,7 @@ export default function AdminCRM() {
           trackingNumber: o.tracking_number,
           createdAt: o.created_at,
           itemsCount: o.order_items?.length || 1,
+          notes: o.notes || undefined,
           order_items: o.order_items || [],
         }));
         setOrders(mappedOrders);
@@ -332,11 +339,25 @@ export default function AdminCRM() {
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalInventoryUnits = products.reduce((acc, p) => acc + p.stock, 0);
-  const totalInvestment = products.reduce((acc, p) => acc + (p.totalCostMxn * p.stock), 0);
-  const totalExpectedRevenue = products.reduce((acc, p) => acc + (p.publicPrice * p.stock), 0);
+  const totalInventoryUnits = products.reduce((acc, p) => acc + (p.stock || 0), 0);
+  const totalInvestment = products.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
+  const totalExpectedRevenue = products.reduce((acc, p) => acc + ((p.publicPrice || 0) * (p.stock || 0)), 0);
   const totalExpectedProfit = totalExpectedRevenue - totalInvestment;
   const avgMargin = totalExpectedRevenue > 0 ? (totalExpectedProfit / totalExpectedRevenue) * 100 : 0;
+
+  // Finanzas Reales de Pedidos Concretados/Entregados
+  const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'processing' || o.status === 'shipped');
+  const realizedRevenue = completedOrders.reduce((acc, o) => acc + (o.total || 0), 0);
+  // Costo real de los artículos vendidos
+  const realizedCost = completedOrders.reduce((acc, o) => {
+    if (o.order_items && o.order_items.length > 0) {
+      const itemsCost = o.order_items.reduce((sum: number, it: any) => sum + (Number(it.cost_at_purchase || 0) * Number(it.quantity || 1)), 0);
+      return acc + itemsCost;
+    }
+    return acc;
+  }, 0);
+  const realizedProfit = realizedRevenue > 0 ? realizedRevenue - realizedCost : 0;
+  const realizedMargin = realizedRevenue > 0 ? (realizedProfit / realizedRevenue) * 100 : 0;
 
   // Abrir Modal para Editar Producto
   const handleOpenEditProduct = (prod: Product) => {
@@ -549,12 +570,12 @@ export default function AdminCRM() {
   };
 
   // Actualizar Estado de Pedido (o Cancelarlo)
-  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status'], notes?: string) => {
     const targetOrder = orders.find(o => o.id === orderId);
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus, ...(notes !== undefined ? { notes } : {}) } : o));
 
     try {
-      await updateOrderStatusInDb(orderId, newStatus);
+      await updateOrderStatusInDb(orderId, newStatus, notes);
       if (targetOrder?.clientPhone) {
         fetch("/api/whatsapp", {
           method: "POST",
@@ -570,6 +591,25 @@ export default function AdminCRM() {
       }
     } catch (err) {
       console.warn("No se pudo actualizar estado en Supabase, manteniéndose en memoria:", err);
+    }
+  };
+
+  // Confirmar Cancelación con Motivo Obligatorio
+  const handleConfirmCancellation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellingOrderId || !cancellationReason.trim()) return;
+
+    setCancellingLoading(true);
+    try {
+      await updateOrderStatus(cancellingOrderId, 'cancelled', cancellationReason.trim());
+      setShowCancelModal(false);
+      setCancellingOrderId(null);
+      setCancellationReason('');
+    } catch (err) {
+      console.error("Error al cancelar orden:", err);
+      alert("No se pudo registrar la cancelación. Intenta de nuevo.");
+    } finally {
+      setCancellingLoading(false);
     }
   };
 
@@ -1343,8 +1383,12 @@ https://foxdrop.com.mx`;
                       </select>
 
                       <button
-                        onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                        title="Cancelar pedido y mover a cancelados"
+                        onClick={() => {
+                          setCancellingOrderId(order.id);
+                          setCancellationReason('');
+                          setShowCancelModal(true);
+                        }}
+                        title="Cancelar pedido y registrar motivo"
                         className="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition text-xs border border-red-200"
                       >
                         <Ban className="w-3.5 h-3.5" /> Cancelar
@@ -1372,7 +1416,7 @@ https://foxdrop.com.mx`;
           <div className="space-y-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Historial de Pedidos Cancelados</h2>
-              <p className="text-xs text-slate-500">Pedidos que fueron dados de baja del panel principal para archivo y control.</p>
+              <p className="text-xs text-slate-500">Pedidos dados de baja con su motivo de cancelación registrado.</p>
             </div>
 
             {cancelledOrders.length === 0 ? (
@@ -1382,8 +1426,8 @@ https://foxdrop.com.mx`;
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {cancelledOrders.map(order => (
-                  <div key={order.id} className="bg-white border border-red-100 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-sm opacity-80 hover:opacity-100 transition">
-                    <div className="space-y-1">
+                  <div key={order.id} className="bg-white border border-red-100 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-sm opacity-90 hover:opacity-100 transition">
+                    <div className="space-y-1.5 max-w-xl">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900 text-sm">{order.id}</span>
                         <span className="px-2.5 py-0.5 rounded-full font-bold text-[10px] bg-red-50 text-red-700 border border-red-200">
@@ -1392,6 +1436,16 @@ https://foxdrop.com.mx`;
                       </div>
                       <p className="text-slate-800 font-medium">{order.clientName} • <span className="text-slate-500">{order.clientPhone}</span></p>
                       <p className="text-slate-400 text-[11px]">Fecha original: {new Date(order.createdAt).toLocaleDateString()}</p>
+                      
+                      {/* Motivo de Cancelación */}
+                      <div className="bg-red-50/70 border border-red-100 rounded-xl p-2.5 text-xs text-red-900 mt-2">
+                        <span className="font-bold text-red-800 block text-[11px] mb-0.5 flex items-center gap-1">
+                          <Ban className="w-3 h-3 text-red-600 inline" /> Motivo de la cancelación:
+                        </span>
+                        <p className="text-red-700 italic">
+                          {order.notes ? order.notes : 'Cancelado por administración sin motivo especificado.'}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
@@ -1570,28 +1624,70 @@ https://foxdrop.com.mx`;
         {/* 7. SECCIÓN FINANZAS */}
         {crmSubTab === 'finance' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
-              <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Inversión Stock</span>
-                <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalInvestment.toFixed(0)} MXN</p>
-                <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Costo base + flete</span>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Balance Financiero & Utilidades Reales</h2>
+              <p className="text-xs text-slate-500">Métricas calculadas directamente de tus pedidos en curso y stock activo (arrancan en 0 si no hay operaciones).</p>
+            </div>
+
+            {/* Bloque 1: Ventas y Utilidades Concretadas */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                💰 Ventas Realizadas (Pedidos En Preparación, Camino y Entregados)
+              </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ingresos Totales</span>
+                  <p className="text-lg sm:text-2xl font-black text-slate-900 mt-1">${realizedRevenue.toFixed(2)} MXN</p>
+                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">{completedOrders.length} pedido(s) activos</span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Costo Mercancía</span>
+                  <p className="text-lg sm:text-2xl font-black text-slate-600 mt-1">${realizedCost.toFixed(2)} MXN</p>
+                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Costo base + importación</span>
+                </div>
+                <div className="bg-white border border-emerald-100 bg-emerald-50/20 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-emerald-700 text-[11px] sm:text-xs font-semibold">Utilidad Neta Real</span>
+                  <p className="text-lg sm:text-2xl font-black text-emerald-600 mt-1">
+                    {realizedProfit >= 0 ? `+$${realizedProfit.toFixed(2)}` : `-$${Math.abs(realizedProfit).toFixed(2)}`} MXN
+                  </p>
+                  <span className="text-[10px] text-emerald-600 font-medium mt-0.5 block truncate">Ganancia efectiva</span>
+                </div>
+                <div className="bg-white border border-orange-100 bg-orange-50/20 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-[#E65F2B] text-[11px] sm:text-xs font-semibold">Margen Real</span>
+                  <p className="text-lg sm:text-2xl font-black text-[#E65F2B] mt-1">{realizedMargin.toFixed(1)}%</p>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block truncate">Retorno sobre venta</span>
+                </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ventas Proyectadas</span>
-                <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalExpectedRevenue.toFixed(0)} MXN</p>
-                <span className="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5 font-bold truncate">
-                  <ArrowUpRight className="w-3 h-3" /> Valor inventario
-                </span>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ganancia Neta</span>
-                <p className="text-lg sm:text-2xl font-black text-emerald-600 mt-1">+${totalExpectedProfit.toFixed(0)} MXN</p>
-                <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Utilidad estimada</span>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Margen Promedio</span>
-                <p className="text-lg sm:text-2xl font-black text-[#E65F2B] mt-1">{avgMargin.toFixed(1)}%</p>
-                <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Rendimiento</span>
+            </div>
+
+            {/* Bloque 2: Proyección de Inventario en Almacén */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                📦 Inventario en Almacén (Proyección del Catálogo Activo)
+              </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Inversión en Stock</span>
+                  <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalInvestment.toFixed(2)} MXN</p>
+                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">{totalInventoryUnits} piezas en bodega</span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ventas Proyectadas</span>
+                  <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalExpectedRevenue.toFixed(2)} MXN</p>
+                  <span className="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5 font-bold truncate">
+                    <ArrowUpRight className="w-3 h-3" /> Al 100% de venta
+                  </span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ganancia Proyectada</span>
+                  <p className="text-lg sm:text-2xl font-black text-emerald-600 mt-1">+${totalExpectedProfit.toFixed(2)} MXN</p>
+                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Utilidad estimada</span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Margen Catálogo</span>
+                  <p className="text-lg sm:text-2xl font-black text-[#E65F2B] mt-1">{avgMargin.toFixed(1)}%</p>
+                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Rendimiento ponderado</span>
+                </div>
               </div>
             </div>
 
@@ -2613,6 +2709,88 @@ https://foxdrop.com.mx`;
                 Cerrar y Nueva Venta
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL CANCELACIÓN DE PEDIDO CON MOTIVO OBLIGATORIO */}
+      {/* ======================================================== */}
+      {showCancelModal && cancellingOrderId && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative border border-slate-200">
+            <button
+              onClick={() => {
+                setShowCancelModal(false);
+                setCancellingOrderId(null);
+                setCancellationReason('');
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Ban className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-base text-slate-900">Cancelar Pedido {cancellingOrderId}</h3>
+                <p className="text-xs text-slate-500">Ingresa el motivo obligatorio para la bitácora administrativa.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmCancellation} className="space-y-4 text-xs">
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">
+                  Motivo de la Cancelación *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={cancellationReason}
+                  onChange={e => setCancellationReason(e.target.value)}
+                  placeholder="Ej: Cliente canceló por WhatsApp, falta de existencias de un componente, duplicidad de orden..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900">
+                ⚠️ Al cancelar, el pedido se trasladará a la pestaña de <strong>Pedidos Cancelados</strong> junto con esta justificación para control y auditoría.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancellingOrderId(null);
+                    setCancellationReason('');
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition"
+                >
+                  Regresar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={!cancellationReason.trim() || cancellingLoading}
+                  className="bg-rose-600 hover:bg-rose-700 disabled:bg-rose-300 text-white font-black px-5 py-2.5 rounded-xl transition shadow-md flex items-center gap-1.5"
+                >
+                  {cancellingLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Cancelando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="w-4 h-4" />
+                      <span>Confirmar Cancelación</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

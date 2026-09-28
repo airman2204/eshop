@@ -234,15 +234,36 @@ export async function getAdminOrders() {
   }
 }
 
-/**
- * Actualizar el estado de un pedido (ej. delivered, shipped, cancelled)
- */
-export async function updateOrderStatusInDb(orderId: string, status: string) {
+export async function updateOrderStatusInDb(orderId: string, status: string, notes?: string) {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_order_status",
+        orderId,
+        status,
+        notes,
+      }),
+    });
+
+    if (res.ok) {
+      return true;
+    }
+  } catch (apiErr) {
+    console.warn("Fallo llamando /api/admin para actualizar orden, intentando cliente directo:", apiErr);
+  }
+
+  // Fallback
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
+  const updatePayload: Record<string, any> = { status, updated_at: new Date().toISOString() };
+  if (notes !== undefined) {
+    updatePayload.notes = notes;
+  }
   const { error } = await supabase
     .from("orders")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq("id", orderId);
 
   if (error) {
