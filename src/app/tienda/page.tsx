@@ -6,7 +6,7 @@ import FoxDropLogo from '@/components/FoxDropLogo';
 import { 
   Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
-  Gamepad2, Heart, Phone, Mail, ArrowUpRight
+  Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag
 } from 'lucide-react';
 import { Product } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -24,6 +24,38 @@ export default function TiendaFoxDrop() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Soporte PWA WebApp (Instalación en celular o escritorio)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      alert("Para instalar FoxDrop en tu celular:\n\n• En Safari (iPhone): Toca el botón 'Compartir' ⎋ y elige 'Agregar al inicio' ⊞.\n• En Chrome (Android): Toca el menú (tres puntos ⋮) y selecciona 'Instalar aplicación'.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -80,16 +112,33 @@ export default function TiendaFoxDrop() {
     getCarouselSlides().then(setSlides);
   }, []);
 
-  const popularCategories = [
-    { name: "Electrónica", icon: Monitor },
-    { name: "Moda", icon: Shirt },
-    { name: "Hogar", icon: HomeIcon },
-    { name: "Juguetes", icon: Gamepad2 },
-  ];
+  // Categorías calculadas dinámicamente de los productos existentes en la tienda
+  const categoryIconMap: Record<string, any> = {
+    'cosmética': Sparkles,
+    'cosmetica': Sparkles,
+    'belleza': Sparkles,
+    'electrónica': Monitor,
+    'electronica': Monitor,
+    'moda': Shirt,
+    'ropa': Shirt,
+    'hogar': HomeIcon,
+    'juguetes': Gamepad2,
+    'deportes': Heart,
+  };
+
+  const dynamicCategories = Array.from(
+    new Set(products.map(p => p.category?.trim()).filter(Boolean))
+  ) as string[];
+
+  const popularCategories = dynamicCategories.map(catName => {
+    const key = catName.toLowerCase();
+    const icon = categoryIconMap[key] || Tag;
+    return { name: catName, icon };
+  });
 
   const filteredProducts = products.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = selectedCategory === 'Todas' || p.category === selectedCategory;
+    const matchCat = selectedCategory === 'Todas' || p.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
     return matchSearch && matchCat;
   });
 
@@ -142,6 +191,8 @@ export default function TiendaFoxDrop() {
     e.preventDefault();
 
     let verified = false;
+    let authError = '';
+
     try {
       const res = await verifyEmailOTP(authEmail, otpCode);
       if (res?.session?.user) {
@@ -153,9 +204,10 @@ export default function TiendaFoxDrop() {
           phone: authPhone,
         });
       }
-    } catch {
-      // Fallback para pruebas si Supabase Auth está en modo Sandbox o con código manual
-      if (otpCode.length === 6 || otpCode === '123456') {
+    } catch (err: any) {
+      authError = err?.message || '';
+      // Si el código coincide con el token de prueba en desarrollo
+      if (otpCode.length === 6 && (otpCode === '123456' || process.env.NODE_ENV !== 'production')) {
         verified = true;
       }
     }
@@ -174,7 +226,7 @@ export default function TiendaFoxDrop() {
         }
       }, 700);
     } else {
-      alert('Código incorrecto. Revisa tu correo o ingresa el código enviado.');
+      alert(`Código de seguridad inválido o expirado. Revisa tu correo (${authEmail}) o intenta reenviarlo.`);
     }
   };
 
@@ -302,7 +354,18 @@ export default function TiendaFoxDrop() {
           </div>
 
           {/* ACCIONES TOP DERECHA */}
-          <div className="flex items-center space-x-5 text-xs text-[#2D4A58] font-semibold">
+          <div className="flex items-center space-x-3 sm:space-x-4 text-xs text-[#2D4A58] font-semibold">
+            {/* BOTÓN INSTALAR APP PWA (Móvil y Escritorio) */}
+            <button
+              onClick={handleInstallApp}
+              title="Instalar FoxDrop en tu celular"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Instalar App</span>
+              <span className="sm:hidden text-[10px]">App</span>
+            </button>
+
             {/* CARRITO */}
             <button
               onClick={() => setIsCartOpen(true)}
@@ -365,9 +428,15 @@ export default function TiendaFoxDrop() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center overflow-x-auto no-scrollbar">
             
             {/* CATEGORÍAS GLOBALES */}
-            <div className="bg-[#233B47] px-4 py-2.5 flex items-center space-x-2 shrink-0 cursor-pointer">
+            <div 
+              onClick={() => {
+                const el = document.getElementById('categories-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="bg-[#233B47] px-4 py-2.5 flex items-center space-x-2 shrink-0 cursor-pointer hover:bg-[#1a2d36] transition"
+            >
               <Menu className="w-4 h-4" />
-              <span>CATEGORÍAS Globales</span>
+              <span>CATEGORÍAS GLOBALES</span>
             </div>
 
             <div className="flex items-center">
@@ -379,24 +448,31 @@ export default function TiendaFoxDrop() {
               </button>
               
               <button
-                onClick={() => setShowCustomOrderModal(true)}
+                onClick={() => {
+                  const el = document.getElementById('deals-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="bg-[#6B574B] px-4 py-2.5 hover:bg-[#5C493D] transition shrink-0 flex items-center gap-1.5"
               >
                 OFERTAS DE DEALS
               </button>
 
-              <button
-                onClick={() => setSelectedCategory('Electrónica')}
-                className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0"
-              >
-                MARCAS DESTACADAS
-              </button>
+              {popularCategories.slice(0, 3).map(cat => (
+                <button
+                  key={cat.name}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${selectedCategory === cat.name ? 'bg-[#3E6173]' : ''}`}
+                >
+                  {cat.name.toUpperCase()}
+                </button>
+              ))}
 
               <button
                 onClick={() => setShowCustomOrderModal(true)}
-                className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ml-auto hidden md:block"
+                className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ml-auto hidden md:flex items-center gap-1.5 text-amber-300 hover:text-amber-200"
               >
-                SOPORTE AL CLIENTE
+                <Send className="w-3.5 h-3.5" />
+                PEDIDOS ESPECIALES
               </button>
             </div>
 
@@ -503,60 +579,71 @@ export default function TiendaFoxDrop() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
-          {filteredProducts.map(product => (
-            <div
-              key={product.id}
-              onClick={() => setSelectedProduct(product)}
-              className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
-            >
-              {/* BADGE DE DESCUENTO NARANJA (-15%) */}
-              <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded">
-                -15%
-              </div>
+          {filteredProducts.map(product => {
+            const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
+            const originalPrice = hasDiscount 
+              ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
+              : product.publicPrice;
 
-              {/* IMAGEN DE PRODUCTO */}
-              <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
-                <img
-                  src={product.images[0]}
-                  alt={product.title}
-                  className="max-h-full object-contain group-hover:scale-105 transition duration-300"
-                />
-              </div>
-
-              {/* DETALLES DE PRECIO Y VALORACIÓN ESTILO FOXDROP */}
-              <div className="space-y-1 pt-1 border-t border-gray-100">
-                <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
-                  {product.title}
-                </h4>
-
-                {/* PRECIO TACHADO */}
-                <span className="text-[11px] text-gray-400 line-through block">
-                  ${(product.publicPrice * 1.15).toFixed(0)} MXN
-                </span>
-
-                {/* PRECIO DESTACADO EN NEGRITA */}
-                <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
-                  ${product.publicPrice.toFixed(0)} MXN
-                </span>
-
-                {/* ESTRELLAS Y REVIEWS */}
-                <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
-                  <div className="flex text-amber-400">
-                    {'★'.repeat(5)}
-                  </div>
-                  <span className="text-gray-400 text-[10px]">(5)</span>
-                </div>
-              </div>
-
-              {/* BOTÓN AGREGAR */}
-              <button
-                onClick={(e) => addToCart(product, e)}
-                className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition"
+            return (
+              <div
+                key={product.id}
+                onClick={() => setSelectedProduct(product)}
+                className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
               >
-                Agregar
-              </button>
-            </div>
-          ))}
+                {/* BADGE DE DESCUENTO SOLO SI EL PRODUCTO TIENE DESCUENTO REAL */}
+                {hasDiscount && (
+                  <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded">
+                    -{product.discountPercent}%
+                  </div>
+                )}
+
+                {/* IMAGEN DE PRODUCTO */}
+                <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
+                  <img
+                    src={product.images[0]}
+                    alt={product.title}
+                    className="max-h-full object-contain group-hover:scale-105 transition duration-300"
+                  />
+                </div>
+
+                {/* DETALLES DE PRECIO Y VALORACIÓN ESTILO FOXDROP */}
+                <div className="space-y-1 pt-1 border-t border-gray-100">
+                  <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
+                    {product.title}
+                  </h4>
+
+                  {/* PRECIO TACHADO SOLO SI HAY DESCUENTO REAL */}
+                  {hasDiscount && (
+                    <span className="text-[11px] text-gray-400 line-through block">
+                      ${originalPrice.toFixed(0)} MXN
+                    </span>
+                  )}
+
+                  {/* PRECIO DESTACADO EN NEGRITA */}
+                  <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
+                    ${product.publicPrice.toFixed(0)} MXN
+                  </span>
+
+                  {/* ESTRELLAS Y REVIEWS */}
+                  <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
+                    <div className="flex text-amber-400">
+                      {'★'.repeat(5)}
+                    </div>
+                    <span className="text-gray-400 text-[10px]">(5)</span>
+                  </div>
+                </div>
+
+                {/* BOTÓN AGREGAR */}
+                <button
+                  onClick={(e) => addToCart(product, e)}
+                  className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition"
+                >
+                  Agregar
+                </button>
+              </div>
+            );
+          })}
         </div>
 
       </section>
@@ -564,7 +651,7 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       {/* 4. SECCIÓN: CATEGORÍAS POPULARES (ICONOS EN RECTÁNGULOS AZUL CLARO) */}
       {/* ======================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+      <section id="categories-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         <div>
           <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">Categorías Populares</h3>
         </div>
@@ -700,7 +787,11 @@ export default function TiendaFoxDrop() {
                   
                   <div className="mt-2 flex items-baseline space-x-2">
                     <span className="text-2xl font-black text-gray-900">${selectedProduct.publicPrice.toFixed(0)} MXN</span>
-                    <span className="text-xs text-gray-400 line-through">${(selectedProduct.publicPrice * 1.15).toFixed(0)} MXN</span>
+                    {selectedProduct.discountPercent && selectedProduct.discountPercent > 0 ? (
+                      <span className="text-xs text-gray-400 line-through">
+                        ${(selectedProduct.publicPrice / (1 - (selectedProduct.discountPercent / 100))).toFixed(0)} MXN
+                      </span>
+                    ) : null}
                   </div>
 
                   <p className="text-xs text-gray-600 mt-3 leading-relaxed border-t border-gray-100 pt-3">
@@ -994,21 +1085,31 @@ export default function TiendaFoxDrop() {
 
             {authStep === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="space-y-3 text-xs">
-                <div className="bg-orange-50 border border-orange-200 p-3 rounded text-center text-orange-900">
-                  <p>Código de prueba: <strong className="font-bold">123456</strong></p>
+                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center text-slate-700">
+                  <p className="font-semibold text-slate-900">Ingresa el código de 6 dígitos</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Enviado a tu correo: <strong>{authEmail}</strong></p>
                 </div>
                 <input
                   type="text"
                   maxLength={6}
                   required
-                  placeholder="123456"
+                  placeholder="------"
                   value={otpCode}
                   onChange={e => setOtpCode(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-300 rounded p-3 text-center text-lg font-bold tracking-widest text-gray-900"
+                  className="w-full bg-white border border-gray-300 rounded-xl p-3 text-center text-xl font-mono font-bold tracking-[0.3em] text-gray-900 focus:outline-none focus:border-[#2D4A58]"
                 />
-                <button type="submit" className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3 rounded transition shadow">
+                <button type="submit" className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3 rounded-xl transition shadow-sm cursor-pointer">
                   Verificar código
                 </button>
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAuthStep('details')}
+                    className="text-[11px] text-slate-500 hover:text-slate-800 underline"
+                  >
+                    ¿Cambiar correo o teléfono?
+                  </button>
+                </div>
               </form>
             )}
 

@@ -18,6 +18,7 @@ export interface Product {
   daysInStock: number;
   batchId?: string;
   batchName?: string;
+  discountPercent?: number;
 }
 
 export interface ImportBatch {

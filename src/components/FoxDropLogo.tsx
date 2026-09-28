@@ -16,9 +16,9 @@ export default function FoxDropLogo({
   // Dimensiones según el tamaño
   const heights = {
     sm: 'h-10 sm:h-12',
-    md: 'h-14 sm:h-16',
-    lg: 'h-18 sm:h-22',
-    xl: 'h-24 sm:h-28',
+    md: 'h-16 sm:h-20',
+    lg: 'h-20 sm:h-26',
+    xl: 'h-28 sm:h-36',
   };
 
   return (

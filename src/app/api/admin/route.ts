@@ -386,18 +386,24 @@ export async function POST(req: NextRequest) {
 
       let categoryId: string | null = null;
       if (product.categoryName) {
-        const { data: catData } = await supabase
+        const catTrimmed = product.categoryName.trim();
+        let { data: catData } = await supabase
           .from("categories")
           .select("id")
-          .ilike("name", product.categoryName.trim())
+          .ilike("name", catTrimmed)
           .maybeSingle();
 
-        if (catData?.id) {
-          categoryId = catData.id;
-        } else {
-          const { data: firstCat } = await supabase.from("categories").select("id").limit(1).maybeSingle();
-          categoryId = firstCat?.id || null;
+        if (!catData?.id) {
+          const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+          const { data: newCat } = await supabase
+            .from("categories")
+            .insert([{ name: catTrimmed, slug }])
+            .select("id")
+            .maybeSingle();
+          catData = newCat;
         }
+
+        categoryId = catData?.id || null;
       }
 
       const sku = product.sku || `FX-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -440,6 +446,29 @@ export async function POST(req: NextRequest) {
       if (product.publicPrice !== undefined) payload.public_price = product.publicPrice;
       if (product.stock !== undefined) payload.stock = product.stock;
       if (product.imageUrl) payload.images = [product.imageUrl];
+
+      if (product.categoryName) {
+        const catTrimmed = product.categoryName.trim();
+        let { data: catData } = await supabase
+          .from("categories")
+          .select("id")
+          .ilike("name", catTrimmed)
+          .maybeSingle();
+
+        if (!catData?.id) {
+          const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+          const { data: newCat } = await supabase
+            .from("categories")
+            .insert([{ name: catTrimmed, slug }])
+            .select("id")
+            .maybeSingle();
+          catData = newCat;
+        }
+
+        if (catData?.id) {
+          payload.category_id = catData.id;
+        }
+      }
 
       const { data, error } = await supabase
         .from("products")

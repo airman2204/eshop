@@ -2249,18 +2249,42 @@ https://foxdrop.com.mx`;
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-slate-700 font-bold block mb-1">Categoría:</label>
-                    <select
-                      value={newCategory}
-                      onChange={e => setNewCategory(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
-                    >
-                      <option>Electrónica</option>
-                      <option>Moda</option>
-                      <option>Hogar</option>
-                      <option>Cosmética</option>
-                      <option>Deportes</option>
-                      <option>Coleccionables</option>
-                    </select>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        list="categories-list"
+                        value={newCategory}
+                        onChange={e => setNewCategory(e.target.value)}
+                        placeholder="Escribe o elige categoría (ej. Cosmética)"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#E65F2B]"
+                      />
+                      <datalist id="categories-list">
+                        <option value="Cosmética" />
+                        <option value="Electrónica" />
+                        <option value="Moda" />
+                        <option value="Hogar" />
+                        <option value="Deportes" />
+                        <option value="Coleccionables" />
+                        <option value="Juguetes" />
+                      </datalist>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {['Cosmética', 'Electrónica', 'Moda', 'Hogar'].map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setNewCategory(cat)}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition ${
+                            newCategory.toLowerCase() === cat.toLowerCase()
+                              ? 'bg-[#2D4A58] text-white border-[#2D4A58]'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className="text-slate-700 font-bold block mb-1">Stock Inicial:</label>
