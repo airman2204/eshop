@@ -62,7 +62,7 @@ export default function AdminCRM() {
   const [newSku, setNewSku] = useState('');
   const [newCategory, setNewCategory] = useState('Electrónica');
   const [newCostUsd, setNewCostUsd] = useState(5.00);
-  const [selectedBatchId, setSelectedBatchId] = useState<string>('batch-01');
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -163,34 +163,30 @@ export default function AdminCRM() {
 
       // Lotes de Importación
       const dbBatches = await getImportBatches();
-      if (dbBatches !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mappedBatches: ImportBatch[] = dbBatches.map((b: any) => ({
-          id: b.id,
-          batchName: b.batch_name,
-          totalShippingCost: Number(b.total_shipping_cost),
-          totalUnits: Number(b.total_units),
-          costPerUnit: Number(b.cost_per_unit || (b.total_shipping_cost / b.total_units)),
-          receivedAt: b.received_at,
-          notes: b.notes,
-        }));
-        setBatches(mappedBatches);
-        if (mappedBatches.length > 0) {
-          setSelectedBatchId(mappedBatches[0].id);
-        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mappedBatches: ImportBatch[] = (dbBatches ?? []).map((b: any) => ({
+        id: b.id,
+        batchName: b.batch_name,
+        totalShippingCost: Number(b.total_shipping_cost),
+        totalUnits: Number(b.total_units),
+        costPerUnit: Number(b.cost_per_unit || (b.total_shipping_cost / b.total_units)),
+        receivedAt: b.received_at,
+        notes: b.notes,
+      }));
+      setBatches(mappedBatches);
+      if (mappedBatches.length > 0) {
+        setSelectedBatchId(mappedBatches[0].id);
+      } else {
+        setSelectedBatchId('');
       }
 
       // Clientes y métricas
       const dbClients = await getClientsWithMetrics();
-      if (dbClients && dbClients.length > 0) {
-        setClients(dbClients);
-      }
+      setClients(dbClients ?? []);
 
       // Encargos especiales
       const specials = await getSpecialOrders();
-      if (specials && specials.length > 0) {
-        setSpecialOrders(specials);
-      }
+      setSpecialOrders(specials ?? []);
     }
     loadData();
   }, [adminSession]);
