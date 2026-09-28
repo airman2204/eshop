@@ -24,6 +24,7 @@ export default function TiendaFoxDrop() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [modalQuantity, setModalQuantity] = useState(1);
 
   // Soporte PWA WebApp (Instalación en celular o escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,12 +148,12 @@ export default function TiendaFoxDrop() {
     setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
   };
 
-  const addToCart = (product: Product, e?: React.MouseEvent) => {
+  const addToCart = (product: Product, e?: React.MouseEvent, quantityToAdd: number = 1) => {
     if (e) e.stopPropagation();
     setCart(prev => {
       const exists = prev.find(i => i.product.id === product.id);
-      if (exists) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product, quantity: 1 }];
+      if (exists) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantityToAdd } : i);
+      return [...prev, { product, quantity: quantityToAdd }];
     });
     setIsCartOpen(true);
   };
@@ -588,7 +589,10 @@ export default function TiendaFoxDrop() {
             return (
               <div
                 key={product.id}
-                onClick={() => setSelectedProduct(product)}
+                onClick={() => {
+                  setModalQuantity(1);
+                  setSelectedProduct(product);
+                }}
                 className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
               >
                 {/* BADGE DE DESCUENTO SOLO SI EL PRODUCTO TIENE DESCUENTO REAL */}
@@ -803,14 +807,72 @@ export default function TiendaFoxDrop() {
                     <Sparkles className="w-4 h-4 text-[#E65F2B] shrink-0" />
                     <span>Con esta compra acumulas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice)} puntos</strong> en tu <strong>Club Foxdrop</strong>.</span>
                   </div>
+                  {/* DISPONIBILIDAD DE STOCK & BADGES */}
+                  <div className="pt-2">
+                    {selectedProduct.stock <= 0 ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                        Agotado temporalmente
+                      </span>
+                    ) : selectedProduct.stock === 1 ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        ¡Último disponible!
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        {selectedProduct.stock} piezas disponibles
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-3 pt-3">
+                  {/* SELECTOR DE CANTIDAD A COMPRAR */}
+                  {selectedProduct.stock > 0 && (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Cantidad:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setModalQuantity(prev => Math.max(1, prev - 1))}
+                          disabled={modalQuantity <= 1}
+                          className="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-8 text-center font-extrabold text-sm text-slate-900 font-mono">
+                          {modalQuantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setModalQuantity(prev => Math.min(selectedProduct.stock, prev + 1))}
+                          disabled={modalQuantity >= selectedProduct.stock}
+                          className="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <button
-                    onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }}
-                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3 rounded text-sm transition shadow-sm"
+                    disabled={selectedProduct.stock <= 0}
+                    onClick={() => {
+                      addToCart(selectedProduct, undefined, modalQuantity);
+                      setSelectedProduct(null);
+                    }}
+                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-gray-400 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
                   >
-                    Agregar al carrito
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>
+                      {selectedProduct.stock <= 0 
+                        ? 'Agotado' 
+                        : modalQuantity > 1 
+                          ? `Agregar ${modalQuantity} al carrito • $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN` 
+                          : 'Agregar al carrito'}
+                    </span>
                   </button>
 
                   {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS */}
@@ -823,7 +885,10 @@ export default function TiendaFoxDrop() {
                         {getCrossSellRecommendations(selectedProduct, products, 2).map((rec) => (
                           <div
                             key={rec.id}
-                            onClick={() => setSelectedProduct(rec)}
+                            onClick={() => {
+                              setModalQuantity(1);
+                              setSelectedProduct(rec);
+                            }}
                             className="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded p-2 cursor-pointer transition flex items-center gap-2"
                           >
                             <img src={rec.images[0]} alt={rec.title} className="w-8 h-8 object-contain rounded" />
