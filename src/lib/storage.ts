@@ -48,3 +48,29 @@ export async function uploadProductImageUrl(imageUrl: string): Promise<string> {
   const data = await res.json();
   return data.url || imageUrl;
 }
+
+/**
+ * Genera una fotografía de estudio profesional para el producto con Inteligencia Artificial.
+ */
+export async function generateProductImageWithAi(title: string, category?: string): Promise<string> {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "generate_ai_image",
+      title,
+      category,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => ({}));
+    throw new Error(errorJson.error || "No se pudo generar la fotografía con IA");
+  }
+
+  const data = await res.json();
+  if (!data.url) {
+    throw new Error("No se recibió la URL de la imagen generada");
+  }
+  return data.url;
+}

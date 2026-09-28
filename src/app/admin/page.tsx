@@ -8,7 +8,7 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon
+  Clipboard, Globe, Image as ImageIcon, Wand2
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -19,7 +19,7 @@ import {
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
-import { uploadProductImage, uploadProductImageUrl } from '@/lib/storage';
+import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
 import { getClubFoxDropTier } from '@/lib/clubFoxdrop';
 
 export default function AdminCRM() {
@@ -69,6 +69,7 @@ export default function AdminCRM() {
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [generatingAiImage, setGeneratingAiImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
   // Escáner de Cámara Móvil (Códigos de barra / QR)
@@ -418,6 +419,27 @@ export default function AdminCRM() {
     const query = newTitle.trim() || newSku.trim() || 'producto';
     const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
     window.open(searchUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Generar Fotografía de Catálogo homogénea con IA
+  const handleGenerateAiImage = async () => {
+    if (!newTitle.trim()) {
+      alert('Por favor escribe primero el nombre o título del producto arriba.');
+      return;
+    }
+
+    setGeneratingAiImage(true);
+    setUploadSuccess(false);
+    try {
+      const generatedUrl = await generateProductImageWithAi(newTitle.trim(), newCategory);
+      setNewImageUrl(generatedUrl);
+      setUploadSuccess(true);
+    } catch (err: any) {
+      console.error('Error al generar imagen con IA:', err);
+      alert('No se pudo generar la imagen con IA en este momento. Puedes usar "Buscar en Google" o pegar una imagen.');
+    } finally {
+      setGeneratingAiImage(false);
+    }
   };
 
   // Cálculo automático según Lote seleccionado
@@ -2071,29 +2093,52 @@ https://foxdrop.com.mx`;
                   </p>
                 </div>
 
-                {/* Subida de Imagen a Supabase Storage con Buscador y Copiar/Pegar */}
+                {/* Subida de Imagen a Supabase Storage con IA, Buscador y Copiar/Pegar */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-slate-700 font-bold block text-xs">Fotografía del Producto:</label>
-                    <button
-                      type="button"
-                      onClick={handleSearchImageOnGoogle}
-                      className="text-[#E65F2B] hover:text-[#d44e1d] font-bold text-[11px] flex items-center gap-1 bg-orange-50 hover:bg-orange-100 px-2.5 py-1 rounded-lg border border-orange-200 transition"
-                      title="Buscar imágenes de este producto en Google Imágenes en una pestaña nueva"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Buscar foto en Google</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={handleSearchImageOnGoogle}
+                        className="text-slate-600 hover:text-slate-900 font-bold text-[11px] flex items-center gap-1 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 transition"
+                        title="Buscar fotos de este producto en Google"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Google Fotos</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div 
                     onPaste={handlePasteImage}
                     className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
                   >
+                    {/* Botón Principal: Generar con IA estilo institucional FoxDrop */}
+                    <button
+                      type="button"
+                      onClick={handleGenerateAiImage}
+                      disabled={generatingAiImage || uploadingImage}
+                      className="w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-[#E65F2B] hover:opacity-95 disabled:opacity-50 text-white font-extrabold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition text-xs"
+                      title="Genera una foto con fondo homogéneo de estudio prémium (Fondo gris neutro, luz de estudio profesional)"
+                    >
+                      {generatingAiImage ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Diseñando fotografía con IA estilo FoxDrop...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 text-amber-300" />
+                          <span>🪄 Crear Foto de Catálogo con IA (Mismo Estilo Prémium)</span>
+                        </>
+                      )}
+                    </button>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {/* Opción 1: Archivo local */}
-                      <label className="cursor-pointer bg-white hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-600 transition">
-                        <Upload className="w-4 h-4 text-[#E65F2B]" />
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-2.5 flex items-center justify-center gap-2 text-slate-700 transition">
+                        <Upload className="w-3.5 h-3.5 text-[#E65F2B]" />
                         <span className="font-semibold text-xs">
                           {uploadingImage ? 'Procesando...' : 'Subir archivo PC/móvil'}
                         </span>
@@ -2101,7 +2146,7 @@ https://foxdrop.com.mx`;
                           type="file"
                           accept="image/*"
                           onChange={handleFileUpload}
-                          disabled={uploadingImage}
+                          disabled={uploadingImage || generatingAiImage}
                           className="hidden"
                         />
                       </label>
@@ -2110,10 +2155,10 @@ https://foxdrop.com.mx`;
                       <button
                         type="button"
                         onClick={() => handlePasteImage()}
-                        disabled={uploadingImage}
-                        className="bg-white hover:bg-slate-100 border border-slate-300 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
+                        disabled={uploadingImage || generatingAiImage}
+                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-2.5 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
                       >
-                        <Clipboard className="w-4 h-4 text-emerald-600" />
+                        <Clipboard className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Pegar foto (Ctrl+V)</span>
                       </button>
                     </div>
@@ -2121,7 +2166,7 @@ https://foxdrop.com.mx`;
                     <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>💡 Haz clic en <strong>Buscar foto en Google</strong>, copia la imagen y presiona <strong>Pegar foto</strong> aquí.</span>
+                        <span>💡 Haz clic en <strong>Crear Foto con IA</strong> para un estilo uniforme en toda la tienda, o pega cualquier foto de Google.</span>
                       </span>
                       {uploadSuccess && (
                         <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">
