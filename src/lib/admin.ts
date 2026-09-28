@@ -104,10 +104,22 @@ export async function deleteProductInDb(id: string) {
 
 
 /**
- * Obtener lotes de importación para prorrateo centralizado
+ * Obtener lotes de importación para prorrateo centralizado (sincronizado vía servidor)
  */
 export async function getImportBatches() {
   try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_batches" }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) return json.data;
+    }
+
+    // Fallback a cliente navegador
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
     const { data, error } = await supabase
@@ -117,12 +129,12 @@ export async function getImportBatches() {
 
     if (error) {
       console.warn("Error al consultar lotes:", error);
-      return null;
+      return [];
     }
     return data || [];
   } catch (err) {
     console.warn("Fallo de red en lotes:", err);
-    return null;
+    return [];
   }
 }
 
@@ -170,77 +182,22 @@ export async function deleteImportBatch(id: string) {
 
 
 /**
- * Obtener listado de clientes con métricas consolidadas (pedidos, gasto total, puntos)
+ * Obtener listado de clientes con métricas consolidadas (sincronizado vía servidor)
  */
 export async function getClientsWithMetrics() {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = getSupabaseBrowserClient() as any;
-    const { data: profiles, error: profErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (profErr) console.warn("Error al consultar profiles:", profErr);
-
-    const { data: orders, error: ordErr } = await supabase
-      .from("orders")
-      .select("id, client_name, client_phone, client_email, total, status, created_at");
-
-    if (ordErr) console.warn("Error al consultar orders:", ordErr);
-
-    // Mapear clientes tanto desde profiles como desde los pedidos únicos realizados
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const clientMap = new Map<string, any>();
-
-    // 1. Añadir perfiles registrados
-    (profiles || []).forEach((p: { phone: string; email: string; id: string; full_name: string; loyalty_points: number; role: string; created_at: string }) => {
-      const key = (p.phone || p.email || p.id).trim().toLowerCase();
-      if (!clientMap.has(key)) {
-        clientMap.set(key, {
-          id: p.id,
-          name: p.full_name || 'Cliente FoxDrop',
-          phone: p.phone || 'Sin teléfono',
-          email: p.email || 'Sin correo',
-          role: p.role || 'client',
-          loyaltyPoints: p.loyalty_points || 0,
-          ordersCount: 0,
-          totalSpent: 0,
-          registeredAt: p.created_at,
-          orders: [],
-        });
-      }
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_clients" }),
     });
 
-    // 2. Acumular pedidos e incorporar clientes que hayan comprado sin cuenta previa
-    (orders || []).forEach((o: { client_phone: string; client_email?: string; client_name: string; total: number; id: string; status: string; created_at: string }) => {
-      const key = (o.client_phone || o.client_email || '').trim().toLowerCase();
-      if (!key) return;
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) return json.data;
+    }
 
-      if (!clientMap.has(key)) {
-        clientMap.set(key, {
-          id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          name: o.client_name || 'Cliente',
-          phone: o.client_phone || 'Sin teléfono',
-          email: o.client_email || 'Sin correo',
-          role: 'client',
-          loyaltyPoints: Math.floor((Number(o.total) || 0) / 10),
-          ordersCount: 0,
-          totalSpent: 0,
-          registeredAt: o.created_at,
-          orders: [],
-        });
-      }
-
-      const client = clientMap.get(key);
-      client.ordersCount += 1;
-      if (o.status !== 'cancelled') {
-        client.totalSpent += Number(o.total) || 0;
-      }
-      client.orders.push(o);
-    });
-
-    return Array.from(clientMap.values());
+    return [];
   } catch (err) {
     console.error("Fallo obteniendo clientes:", err);
     return [];

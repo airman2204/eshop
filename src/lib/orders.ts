@@ -199,10 +199,22 @@ export async function createPhysicalSaleOrder(sale: {
 
 
 /**
- * Obtener todos los pedidos para el panel de administración
+ * Obtener todos los pedidos para el panel de administración (sincronizado vía servidor)
  */
 export async function getAdminOrders() {
   try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_orders" }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) return json.data;
+    }
+
+    // Fallback
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
     const { data, error } = await supabase
@@ -217,7 +229,7 @@ export async function getAdminOrders() {
 
     return data || [];
   } catch (err) {
-    console.error("Fallo de red al consultar pedidos:", err);
+    console.error("Fallo al consultar pedidos:", err);
     return [];
   }
 }
@@ -318,22 +330,22 @@ export async function getClientOrderHistory(clientEmailOrPhone: string) {
 }
 
 /**
- * Obtener encargos especiales registrados para el CRM Admin
+ * Obtener encargos especiales registrados para el CRM Admin (sincronizado vía servidor)
  */
 export async function getSpecialOrders() {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = getSupabaseBrowserClient() as any;
-    const { data, error } = await supabase
-      .from("special_orders")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_special_orders" }),
+    });
 
-    if (error) {
-      console.warn("Error al consultar encargos especiales:", error);
-      return [];
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) return json.data;
     }
-    return data || [];
+
+    return [];
   } catch (err) {
     console.warn("Fallo al consultar encargos especiales:", err);
     return [];

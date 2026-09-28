@@ -54,10 +54,24 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
 }
 
 /**
- * Obtener todos los productos activos desde Supabase
+ * Obtener todos los productos activos desde Supabase de forma sincronizada para todos los usuarios
  */
 export async function getActiveProducts(): Promise<Product[] | null> {
   try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_products" }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data) {
+        return (json.data as DatabaseProduct[]).map(mapDbProductToApp);
+      }
+    }
+
+    // Fallback directo a Supabase browser client si la ruta API no responde
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
     const { data, error } = await supabase
@@ -68,13 +82,13 @@ export async function getActiveProducts(): Promise<Product[] | null> {
 
     if (error) {
       console.error("Error al obtener productos de Supabase:", error);
-      return null;
+      return [];
     }
 
     return (data as DatabaseProduct[]).map(mapDbProductToApp);
   } catch (err) {
-    console.error("Fallo de red al consultar productos:", err);
-    return null;
+    console.error("Fallo al consultar productos:", err);
+    return [];
   }
 }
 

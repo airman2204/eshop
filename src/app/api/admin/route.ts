@@ -65,6 +65,109 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServerClient() as any;
 
+    // ─── CONSULTAS GLOBALES (BYPASS RLS PARA COMPARTIR ENTRE TODOS) ───
+    if (action === "get_products") {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, categories(id, name, slug, icon)")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    if (action === "get_batches") {
+      const { data, error } = await supabase
+        .from("import_batches")
+        .select("*")
+        .order("received_at", { ascending: false });
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    if (action === "get_orders") {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    if (action === "get_clients") {
+      const { data: profiles, error: profErr } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      const { data: orders, error: ordErr } = await supabase
+        .from("orders")
+        .select("id, client_name, client_phone, client_email, total, status, created_at");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientMap = new Map<string, any>();
+
+      (profiles || []).forEach((p: any) => {
+        const key = (p.phone || p.email || p.id).trim().toLowerCase();
+        if (!clientMap.has(key)) {
+          clientMap.set(key, {
+            id: p.id,
+            name: p.full_name || "Cliente FoxDrop",
+            phone: p.phone || "Sin teléfono",
+            email: p.email || "Sin correo",
+            role: p.role || "client",
+            loyaltyPoints: p.loyalty_points || 0,
+            ordersCount: 0,
+            totalSpent: 0,
+            registeredAt: p.created_at,
+            orders: [],
+          });
+        }
+      });
+
+      (orders || []).forEach((o: any) => {
+        const key = (o.client_phone || o.client_email || "").trim().toLowerCase();
+        if (!key) return;
+
+        if (!clientMap.has(key)) {
+          clientMap.set(key, {
+            id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            name: o.client_name || "Cliente",
+            phone: o.client_phone || "Sin teléfono",
+            email: o.client_email || "Sin correo",
+            role: "client",
+            loyaltyPoints: Math.floor((Number(o.total) || 0) / 10),
+            ordersCount: 0,
+            totalSpent: 0,
+            registeredAt: o.created_at,
+            orders: [],
+          });
+        }
+
+        const client = clientMap.get(key);
+        client.ordersCount += 1;
+        if (o.status !== "cancelled") {
+          client.totalSpent += Number(o.total) || 0;
+        }
+        client.orders.push(o);
+      });
+
+      return NextResponse.json({ success: true, data: Array.from(clientMap.values()) });
+    }
+
+    if (action === "get_special_orders") {
+      const { data, error } = await supabase
+        .from("special_orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
     // ─── PRODUCTOS ───────────────────────────────────────────────
     if (action === "create_product") {
       if (!product || !product.title) {
