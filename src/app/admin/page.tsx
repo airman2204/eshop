@@ -13,7 +13,8 @@ import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
-  getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics 
+  getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
+  getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
@@ -40,7 +41,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel'>('inventory');
   
   // Datos principales
   const [products, setProducts] = useState<Product[]>([]);
@@ -98,6 +99,16 @@ export default function AdminCRM() {
   const [batchUnitsInput, setBatchUnitsInput] = useState(25);
   const [batchNotesInput, setBatchNotesInput] = useState('');
   const [savingBatch, setSavingBatch] = useState(false);
+
+  // Estado del Carrusel Hero
+  const [slides, setSlides] = useState<CarouselSlide[]>([]);
+  const [showSlideModal, setShowSlideModal] = useState(false);
+  const [slideTitle, setSlideTitle] = useState('');
+  const [slideSubtitle, setSlideSubtitle] = useState('');
+  const [slideImageUrl, setSlideImageUrl] = useState('');
+  const [slideCtaText, setSlideCtaText] = useState('Ver Colección');
+  const [slideCtaCategory, setSlideCtaCategory] = useState('Todas');
+  const [savingSlide, setSavingSlide] = useState(false);
 
   // 1. Verificar sesión persistente y cargar tipo de cambio real inmediatamente al montar
   useEffect(() => {
@@ -187,6 +198,10 @@ export default function AdminCRM() {
       // Encargos especiales
       const specials = await getSpecialOrders();
       setSpecialOrders(specials ?? []);
+
+      // Slides del carrusel
+      const dbSlides = await getCarouselSlides();
+      setSlides(dbSlides);
     }
     loadData();
   }, [adminSession]);
@@ -462,13 +477,14 @@ export default function AdminCRM() {
 
   // Eliminar Producto
   const handleDeleteProduct = async (id: string, title: string) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar "${title}" del catálogo?`)) return;
+    if (!confirm(`¿Estás seguro de que deseas eliminar "${title}" del catálogo permanentemente?`)) return;
 
-    setProducts(prev => prev.filter(p => p.id !== id));
     try {
       await deleteProductInDb(id);
-    } catch (err) {
-      console.warn("Eliminado en memoria tras fallo en base de datos:", err);
+      setProducts(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      console.error("Fallo al eliminar producto:", err);
+      alert(`Error al eliminar de la base de datos: ${err.message || 'Intente nuevamente'}`);
     }
   };
 
@@ -528,6 +544,42 @@ export default function AdminCRM() {
     }
   };
 
+
+  // Crear Slide del Carrusel
+  const handleCreateSlide = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!slideTitle.trim() || !slideImageUrl.trim()) return;
+    setSavingSlide(true);
+    try {
+      const created = await createCarouselSlide({
+        title: slideTitle,
+        subtitle: slideSubtitle,
+        image_url: slideImageUrl,
+        cta_text: slideCtaText,
+        cta_category: slideCtaCategory,
+        sort_order: slides.length + 1,
+      });
+      setSlides(prev => [...prev, created]);
+      setShowSlideModal(false);
+      setSlideTitle(''); setSlideSubtitle(''); setSlideImageUrl('');
+      setSlideCtaText('Ver Colección'); setSlideCtaCategory('Todas');
+    } catch (err) {
+      console.error('Error al crear slide:', err);
+    } finally {
+      setSavingSlide(false);
+    }
+  };
+
+  // Eliminar Slide del Carrusel
+  const handleDeleteSlide = async (id: string) => {
+    if (!confirm('¿Eliminar este slide del carrusel?')) return;
+    setSlides(prev => prev.filter(s => s.id !== id));
+    try {
+      await deleteCarouselSlide(id);
+    } catch (err) {
+      console.error('Error al eliminar slide:', err);
+    }
+  };
 
   // Actualizar Estado de Pedido (o Cancelarlo)
   const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
@@ -1059,6 +1111,14 @@ https://foxdrop.com.mx`;
           >
             <AlertTriangle className="w-4 h-4 text-amber-300" /> Carritos ({abandonedCarts.length})
           </button>
+          <button
+            onClick={() => setCrmSubTab('carousel')}
+            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+              crmSubTab === 'carousel' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-purple-300" /> Carrusel ({slides.length})
+          </button>
         </div>
       </div>
 
@@ -1091,6 +1151,33 @@ https://foxdrop.com.mx`;
                 >
                   <Plus className="w-4 h-4" /> Dar de Alta Artículo
                 </button>
+                {products.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm("¿Deseas vaciar TODO el inventario actual de la base de datos para comenzar desde cero? Esta acción no se puede deshacer.")) return;
+                      try {
+                        const res = await fetch("/api/admin", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ action: "delete_all_mock_products" }),
+                        });
+                        if (res.ok) {
+                          setProducts([]);
+                          alert("Inventario vaciado por completo con éxito.");
+                        } else {
+                          const err = await res.json();
+                          alert(`Error: ${err.error}`);
+                        }
+                      } catch (err: any) {
+                        alert(`Error: ${err.message}`);
+                      }
+                    }}
+                    className="bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-200"
+                    title="Vaciar inventario y empezar en blanco"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Vaciar Todo
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1588,6 +1675,170 @@ https://foxdrop.com.mx`;
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* 9. SECCIÓN GESTIÓN DEL CARRUSEL HERO */}
+        {crmSubTab === 'carousel' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Carrusel Hero de la Tienda</h2>
+                <p className="text-xs text-slate-500">Imágenes y banners que se muestran en el carrusel de la tienda principal.</p>
+              </div>
+              <button
+                onClick={() => setShowSlideModal(true)}
+                className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" /> Agregar Slide al Carrusel
+              </button>
+            </div>
+
+            {slides.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 space-y-2">
+                <Sparkles className="w-8 h-8 mx-auto text-slate-300" />
+                <p className="font-bold text-slate-600 text-sm">Sin imágenes en el carrusel</p>
+                <p className="text-xs text-slate-400">Si no configuras ningún slide, la tienda ocultará el banner superior automáticamente.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {slides.map((slide, idx) => (
+                  <div key={slide.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col justify-between">
+                    <div className="relative h-44 w-full bg-slate-900">
+                      <img
+                        src={slide.image_url}
+                        alt={slide.title}
+                        className="w-full h-full object-cover opacity-80"
+                      />
+                      <span className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-white/10">
+                        Slide #{idx + 1}
+                      </span>
+                      <span className="absolute bottom-2 left-2 bg-[#E65F2B] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                        {slide.cta_category}
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-black text-slate-900 text-sm line-clamp-1">{slide.title}</h4>
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-1">{slide.subtitle}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-medium text-[11px]">Botón: "{slide.cta_text}"</span>
+                        <button
+                          onClick={() => handleDeleteSlide(slide.id)}
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition"
+                          title="Eliminar del carrusel"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Modal Nuevo Slide */}
+            {showSlideModal && (
+              <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+                  <button
+                    onClick={() => setShowSlideModal(false)}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="border-b border-slate-100 pb-3">
+                    <h3 className="font-black text-base text-slate-900">Nuevo Slide del Carrusel</h3>
+                    <p className="text-xs text-slate-500">Configura la imagen y texto del banner principal</p>
+                  </div>
+
+                  <form onSubmit={handleCreateSlide} className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1">Título del Banner *</label>
+                      <input
+                        type="text"
+                        required
+                        value={slideTitle}
+                        onChange={e => setSlideTitle(e.target.value)}
+                        placeholder="Ej. Colección Exclusiva de Temporada"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1">Subtítulo Descriptivo</label>
+                      <input
+                        type="text"
+                        value={slideSubtitle}
+                        onChange={e => setSlideSubtitle(e.target.value)}
+                        placeholder="Ej. Artículos importados directo a Puebla"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-slate-700 font-bold block mb-1">URL de la Imagen *</label>
+                      <input
+                        type="url"
+                        required
+                        value={slideImageUrl}
+                        onChange={e => setSlideImageUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-slate-700 font-bold block mb-1">Texto del Botón</label>
+                        <input
+                          type="text"
+                          value={slideCtaText}
+                          onChange={e => setSlideCtaText(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-700 font-bold block mb-1">Categoría a Filtrar</label>
+                        <select
+                          value={slideCtaCategory}
+                          onChange={e => setSlideCtaCategory(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                        >
+                          <option value="Todas">Todas</option>
+                          <option value="Electrónica">Electrónica</option>
+                          <option value="Moda">Moda</option>
+                          <option value="Hogar">Hogar</option>
+                          <option value="Juguetes">Juguetes</option>
+                          <option value="Belleza">Belleza</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowSlideModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={savingSlide}
+                        className="flex-1 py-2.5 rounded-xl bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold transition disabled:opacity-50"
+                      >
+                        {savingSlide ? 'Guardando...' : 'Publicar Slide'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

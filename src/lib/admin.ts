@@ -131,22 +131,26 @@ export async function updateProductInDb(id: string, updates: Partial<NewProductI
 }
 
 /**
- * Elimina un producto en Supabase (Soft delete poniendo is_active = false)
+ * Elimina un producto de Supabase de manera definitiva usando la API segura de servidor
  */
 export async function deleteProductInDb(id: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseBrowserClient() as any;
-  const { error } = await supabase
-    .from("products")
-    .update({ is_active: false })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Error al eliminar producto:", error);
-    throw error;
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_product", id }),
+    });
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Error al eliminar producto");
+    }
+    return true;
+  } catch (err) {
+    console.error("Error en deleteProductInDb:", err);
+    throw err;
   }
-  return true;
 }
+
 
 /**
  * Obtener lotes de importación para prorrateo centralizado
@@ -300,3 +304,57 @@ export async function getClientsWithMetrics() {
   }
 }
 
+// ─── CARRUSEL HERO ────────────────────────────────────────────────────────────
+
+export interface CarouselSlide {
+  id: string;
+  title: string;
+  subtitle: string;
+  image_url: string;
+  cta_text: string;
+  cta_category: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export async function getCarouselSlides(): Promise<CarouselSlide[]> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_slides" }),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createCarouselSlide(slide: Omit<CarouselSlide, "id" | "is_active">) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create_slide", slide: { ...slide, is_active: true } }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Error al crear slide");
+  }
+  const json = await res.json();
+  return json.data as CarouselSlide;
+}
+
+export async function deleteCarouselSlide(id: string) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete_slide", id }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Error al eliminar slide");
+  }
+  return true;
+}
