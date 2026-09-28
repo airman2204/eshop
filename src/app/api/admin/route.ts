@@ -287,6 +287,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: data || [] });
     }
 
+    if (action === "get_categories") {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data: data || [] });
+    }
+
+    if (action === "create_category") {
+      const { name } = body;
+      if (!name || !name.trim()) {
+        return NextResponse.json({ error: "Nombre de categoría requerido" }, { status: 400 });
+      }
+      const catTrimmed = name.trim();
+      const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+
+      // Verificar si ya existe
+      const { data: existing } = await supabase
+        .from("categories")
+        .select("*")
+        .ilike("name", catTrimmed)
+        .maybeSingle();
+
+      if (existing) {
+        return NextResponse.json({ success: true, data: existing });
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .insert([{ name: catTrimmed, slug, is_active: true }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
     if (action === "get_batches") {
       const { data, error } = await supabase
         .from("import_batches")

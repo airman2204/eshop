@@ -15,7 +15,8 @@ import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
-  getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide
+  getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
+  fetchAdminCategories, createAdminCategory
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
@@ -62,7 +63,11 @@ export default function AdminCRM() {
   const [isSaving, setIsSaving] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSku, setNewSku] = useState('');
-  const [newCategory, setNewCategory] = useState('Electrónica');
+  const [newCategory, setNewCategory] = useState('Cosmética');
+  const [dbCategories, setDbCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
+  const [customNewCategoryName, setCustomNewCategoryName] = useState('');
+  const [creatingCategoryLoading, setCreatingCategoryLoading] = useState(false);
   const [newCostUsd, setNewCostUsd] = useState(5.00);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
@@ -243,6 +248,16 @@ export default function AdminCRM() {
       // Slides del carrusel
       const dbSlides = await getCarouselSlides();
       setSlides(dbSlides);
+
+      // Categorías del sistema desde Supabase
+      const cats = await fetchAdminCategories();
+      if (cats && cats.length > 0) {
+        setDbCategories(cats);
+        // Si la categoría seleccionada no existe aún, establecer a la primera
+        if (!newCategory && cats[0]) {
+          setNewCategory(cats[0].name);
+        }
+      }
     }
     loadData();
   }, [adminSession]);
@@ -602,6 +617,12 @@ export default function AdminCRM() {
         if (updatedProducts && updatedProducts.length > 0) {
           setProducts(updatedProducts);
         }
+      }
+
+      // Actualizar lista persistente de categorías en vivo
+      const refreshedCats = await fetchAdminCategories();
+      if (refreshedCats && refreshedCats.length > 0) {
+        setDbCategories(refreshedCats);
       }
     } catch (err: any) {
       console.error("Fallo al guardar en base de datos:", err);
@@ -2248,43 +2269,97 @@ https://foxdrop.com.mx`;
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-slate-700 font-bold block mb-1">Categoría:</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        list="categories-list"
-                        value={newCategory}
-                        onChange={e => setNewCategory(e.target.value)}
-                        placeholder="Escribe o elige categoría (ej. Cosmética)"
-                        required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-medium focus:outline-none focus:border-[#E65F2B]"
-                      />
-                      <datalist id="categories-list">
-                        <option value="Cosmética" />
-                        <option value="Electrónica" />
-                        <option value="Moda" />
-                        <option value="Hogar" />
-                        <option value="Deportes" />
-                        <option value="Coleccionables" />
-                        <option value="Juguetes" />
-                      </datalist>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-bold block">Categoría:</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingNewCategory(!isAddingNewCategory)}
+                        className="text-[#E65F2B] hover:text-[#D45321] text-[10px] font-bold hover:underline flex items-center gap-0.5"
+                      >
+                        {isAddingNewCategory ? '✕ Cancelar' : '+ Crear Nueva'}
+                      </button>
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {['Cosmética', 'Electrónica', 'Moda', 'Hogar'].map(cat => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => setNewCategory(cat)}
-                          className={`text-[10px] px-2 py-0.5 rounded-full border transition ${
-                            newCategory.toLowerCase() === cat.toLowerCase()
-                              ? 'bg-[#2D4A58] text-white border-[#2D4A58]'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
+
+                    {isAddingNewCategory ? (
+                      <div className="space-y-1.5 p-2 bg-orange-50/70 border border-orange-200 rounded-xl">
+                        <span className="text-[10px] font-bold text-orange-950 block">Dar de alta nueva categoría fija:</span>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="Ej. Juguetes, Joyería..."
+                            value={customNewCategoryName}
+                            onChange={e => setCustomNewCategoryName(e.target.value)}
+                            className="flex-1 bg-white border border-orange-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-[#E65F2B]"
+                          />
+                          <button
+                            type="button"
+                            disabled={creatingCategoryLoading || !customNewCategoryName.trim()}
+                            onClick={async () => {
+                              if (!customNewCategoryName.trim()) return;
+                              setCreatingCategoryLoading(true);
+                              try {
+                                const created = await createAdminCategory(customNewCategoryName.trim());
+                                setDbCategories(prev => {
+                                  const exists = prev.some(c => c.name.toLowerCase() === created.name.toLowerCase());
+                                  return exists ? prev : [...prev, created].sort((a,b) => a.name.localeCompare(b.name));
+                                });
+                                setNewCategory(created.name);
+                                setCustomNewCategoryName('');
+                                setIsAddingNewCategory(false);
+                              } catch (err: any) {
+                                alert(`Error al registrar categoría: ${err.message || 'Intente de nuevo'}`);
+                              } finally {
+                                setCreatingCategoryLoading(false);
+                              }
+                            }}
+                            className="bg-[#2D4A58] hover:bg-[#203641] disabled:bg-gray-400 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition shrink-0"
+                          >
+                            {creatingCategoryLoading ? '...' : 'Guardar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          value={newCategory}
+                          onChange={e => setNewCategory(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:outline-none focus:border-[#E65F2B]"
                         >
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
+                          {(() => {
+                            const allCategoryNames = Array.from(new Set([
+                              ...dbCategories.map(c => c.name),
+                              ...products.map(p => p.category).filter(Boolean),
+                              'Cosmética', 'Juguetes', 'Electrónica', 'Moda', 'Hogar'
+                            ]));
+                            return allCategoryNames.map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ));
+                          })()}
+                        </select>
+
+                        {/* Chips de selección rápida de categorías guardadas */}
+                        <div className="flex flex-wrap gap-1 mt-1.5 max-h-16 overflow-y-auto">
+                          {Array.from(new Set([
+                            ...dbCategories.map(c => c.name),
+                            ...products.map(p => p.category).filter(Boolean),
+                            'Cosmética'
+                          ])).slice(0, 8).map(cat => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => setNewCategory(cat)}
+                              className={`text-[10px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                                newCategory.toLowerCase() === cat.toLowerCase()
+                                  ? 'bg-[#2D4A58] text-white border-[#2D4A58] font-bold'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div>
                     <label className="text-slate-700 font-bold block mb-1">Stock Inicial:</label>

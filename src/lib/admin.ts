@@ -258,3 +258,32 @@ export async function deleteCarouselSlide(id: string) {
   }
   return true;
 }
+
+export async function fetchAdminCategories(): Promise<{ id: string; name: string; slug: string }[]> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_categories" }),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createAdminCategory(name: string): Promise<{ id: string; name: string; slug: string }> {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create_category", name }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Error al registrar categoría");
+  }
+  const json = await res.json();
+  return json.data;
+}
