@@ -65,6 +65,83 @@ export async function POST(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServerClient() as any;
 
+    // Subida de imagen desde URL remota o Data URL (Copiada y pegada / Búsqueda web)
+    if (action === "upload_image_url") {
+      const { imageUrl } = body;
+      if (!imageUrl || typeof imageUrl !== "string") {
+        return NextResponse.json({ error: "imageUrl requerida" }, { status: 400 });
+      }
+
+      try {
+        let buffer: Buffer;
+        let mimeType = "image/jpeg";
+        let extension = "jpg";
+
+        if (imageUrl.startsWith("data:")) {
+          const matches = imageUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            mimeType = matches[1];
+            extension = mimeType.split("/")[1] || "jpg";
+            buffer = Buffer.from(matches[2], "base64");
+          } else {
+            return NextResponse.json({ success: true, url: imageUrl });
+          }
+        } else {
+          // Descargar la imagen de la URL externa
+          const imgRes = await fetch(imageUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            },
+          });
+          if (!imgRes.ok) {
+            // Si el servidor de la imagen bloquea la descarga, usamos directamente la URL externa
+            return NextResponse.json({ success: true, url: imageUrl });
+          }
+          const arrayBuf = await imgRes.arrayBuffer();
+          buffer = Buffer.from(arrayBuf);
+          const ct = imgRes.headers.get("content-type");
+          if (ct && ct.startsWith("image/")) {
+            mimeType = ct;
+            extension = ct.split("/")[1]?.split(";")[0] || "jpg";
+          }
+        }
+
+        const fileName = `products/${Date.now()}-web-${Math.floor(1000 + Math.random() * 9000)}.${extension}`;
+        
+        try {
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const hasBucket = buckets?.some((b: any) => b.name === "product-images");
+          if (!hasBucket) {
+            await supabase.storage.createBucket("product-images", {
+              public: true,
+              fileSizeLimit: 10485760,
+            });
+          }
+        } catch {}
+
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(fileName, buffer, {
+            contentType: mimeType,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.warn("Storage fallback to direct url/data:", uploadError);
+          return NextResponse.json({ success: true, url: imageUrl });
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(fileName);
+
+        return NextResponse.json({ success: true, url: publicUrlData.publicUrl });
+      } catch (err: any) {
+        console.warn("Error procesando imagen remota, fallback a url original:", err);
+        return NextResponse.json({ success: true, url: imageUrl });
+      }
+    }
+
     // ─── CONSULTAS GLOBALES (BYPASS RLS PARA COMPARTIR ENTRE TODOS) ───
     if (action === "get_products") {
       const { data, error } = await supabase

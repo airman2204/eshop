@@ -7,7 +7,8 @@ import {
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
-  Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera
+  Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
+  Clipboard, Globe, Image as ImageIcon
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -18,7 +19,7 @@ import {
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
-import { uploadProductImage } from '@/lib/storage';
+import { uploadProductImage, uploadProductImageUrl } from '@/lib/storage';
 import { getClubFoxDropTier } from '@/lib/clubFoxdrop';
 
 export default function AdminCRM() {
@@ -291,17 +292,14 @@ export default function AdminCRM() {
     }
   };
 
-  // Handle Subida de Imagen a Supabase Storage
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Procesar archivo de imagen (desde input file o desde evento de pegado)
+  const processImageFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido.');
+      alert('Por favor proporciona un formato de imagen válido.');
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no debe superar los 5MB.');
+    if (file.size > 8 * 1024 * 1024) {
+      alert('La imagen no debe superar los 8MB.');
       return;
     }
 
@@ -313,10 +311,113 @@ export default function AdminCRM() {
       setUploadSuccess(true);
     } catch (err) {
       console.error('Error al subir imagen:', err);
-      alert('No se pudo subir la imagen al almacenamiento. Intenta de nuevo.');
+      // Fallback local en memoria
+      const reader = new FileReader();
+      reader.onload = () => {
+        setNewImageUrl(reader.result as string);
+        setUploadSuccess(true);
+      };
+      reader.readAsDataURL(file);
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  // Handle Subida de Imagen a Supabase Storage (Archivo local)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processImageFile(file);
+  };
+
+  // Pegar imagen directamente desde el portapapeles (Ctrl+V o botón)
+  const handlePasteImage = async (e?: React.ClipboardEvent) => {
+    // Si viene de un evento onPaste nativo
+    if (e && e.clipboardData) {
+      const items = e.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            await processImageFile(file);
+            return;
+          }
+        }
+      }
+
+      // Si pegó una URL de imagen de texto
+      const text = e.clipboardData.getData('text');
+      if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
+        e.preventDefault();
+        setUploadingImage(true);
+        setUploadSuccess(false);
+        try {
+          const uploadedUrl = await uploadProductImageUrl(text.trim());
+          setNewImageUrl(uploadedUrl);
+          setUploadSuccess(true);
+        } catch {
+          setNewImageUrl(text.trim());
+          setUploadSuccess(true);
+        } finally {
+          setUploadingImage(false);
+        }
+        return;
+      }
+    }
+
+    // Si se invoca desde el botón "Pegar Imagen" usando la Clipboard API
+    if (navigator.clipboard && navigator.clipboard.read) {
+      try {
+        setUploadingImage(true);
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+          const imageType = item.types.find(type => type.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const file = new File([blob], `pasted-${Date.now()}.${imageType.split('/')[1] || 'png'}`, { type: imageType });
+            await processImageFile(file);
+            return;
+          }
+        }
+
+        // Si en el portapapeles hay texto (ej. URL copiada de Google)
+        const text = await navigator.clipboard.readText();
+        if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
+          const uploadedUrl = await uploadProductImageUrl(text.trim());
+          setNewImageUrl(uploadedUrl);
+          setUploadSuccess(true);
+          return;
+        }
+
+        alert('No se detectó ninguna imagen ni enlace en el portapapeles. Copia una imagen primero (Clic derecho -> Copiar imagen).');
+      } catch (clipErr) {
+        console.warn('Clipboard read permission denied or unsupported:', clipErr);
+        const promptUrl = prompt('Pega aquí el enlace directo de la imagen (URL):');
+        if (promptUrl && promptUrl.trim()) {
+          setUploadingImage(true);
+          try {
+            const uploaded = await uploadProductImageUrl(promptUrl.trim());
+            setNewImageUrl(uploaded);
+            setUploadSuccess(true);
+          } catch {
+            setNewImageUrl(promptUrl.trim());
+            setUploadSuccess(true);
+          }
+        }
+      } finally {
+        setUploadingImage(false);
+      }
+    } else {
+      alert('Tu navegador no soporta lectura directa del portapapeles. Usa el atajo Ctrl+V o pega el enlace en la caja.');
+    }
+  };
+
+  // Abrir búsqueda de imágenes en Google para el artículo
+  const handleSearchImageOnGoogle = () => {
+    const query = newTitle.trim() || newSku.trim() || 'producto';
+    const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+    window.open(searchUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Cálculo automático según Lote seleccionado
@@ -1970,15 +2071,31 @@ https://foxdrop.com.mx`;
                   </p>
                 </div>
 
-                {/* Subida de Imagen a Supabase Storage */}
+                {/* Subida de Imagen a Supabase Storage con Buscador y Copiar/Pegar */}
                 <div>
-                  <label className="text-slate-700 font-bold block mb-1">Fotografía del Producto:</label>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <label className="flex-1 cursor-pointer bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-600 transition">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-slate-700 font-bold block text-xs">Fotografía del Producto:</label>
+                    <button
+                      type="button"
+                      onClick={handleSearchImageOnGoogle}
+                      className="text-[#E65F2B] hover:text-[#d44e1d] font-bold text-[11px] flex items-center gap-1 bg-orange-50 hover:bg-orange-100 px-2.5 py-1 rounded-lg border border-orange-200 transition"
+                      title="Buscar imágenes de este producto en Google Imágenes en una pestaña nueva"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Buscar foto en Google</span>
+                    </button>
+                  </div>
+
+                  <div 
+                    onPaste={handlePasteImage}
+                    className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* Opción 1: Archivo local */}
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-600 transition">
                         <Upload className="w-4 h-4 text-[#E65F2B]" />
-                        <span className="font-medium text-xs">
-                          {uploadingImage ? 'Subiendo a la nube...' : 'Subir foto desde PC o móvil'}
+                        <span className="font-semibold text-xs">
+                          {uploadingImage ? 'Procesando...' : 'Subir archivo PC/móvil'}
                         </span>
                         <input
                           type="file"
@@ -1988,35 +2105,73 @@ https://foxdrop.com.mx`;
                           className="hidden"
                         />
                       </label>
+
+                      {/* Opción 2: Pegar imagen directamente desde portapapeles */}
+                      <button
+                        type="button"
+                        onClick={() => handlePasteImage()}
+                        disabled={uploadingImage}
+                        className="bg-white hover:bg-slate-100 border border-slate-300 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
+                      >
+                        <Clipboard className="w-4 h-4 text-emerald-600" />
+                        <span>Pegar foto (Ctrl+V)</span>
+                      </button>
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>💡 Haz clic en <strong>Buscar foto en Google</strong>, copia la imagen y presiona <strong>Pegar foto</strong> aquí.</span>
+                      </span>
                       {uploadSuccess && (
-                        <div className="flex items-center gap-1 text-emerald-600 font-bold text-[11px]">
-                          <Check className="w-4 h-4" /> ¡Subida!
-                        </div>
+                        <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">
+                          <Check className="w-4 h-4" /> ¡Lista!
+                        </span>
                       )}
                     </div>
 
                     {newImageUrl && (
-                      <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                        <img src={newImageUrl} alt="Preview" className="w-10 h-10 object-cover rounded border" />
-                        <span className="text-[10px] text-slate-500 truncate flex-1">{newImageUrl}</span>
+                      <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                        <img 
+                          src={newImageUrl} 
+                          alt="Vista previa" 
+                          className="w-12 h-12 object-cover rounded-lg border border-slate-200" 
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[11px] font-bold text-slate-900 block truncate">Foto seleccionada</span>
+                          <span className="text-[10px] text-slate-400 truncate block">{newImageUrl}</span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => { setNewImageUrl(''); setUploadSuccess(false); }}
-                          className="text-xs text-rose-500 font-bold hover:underline"
+                          className="text-xs text-rose-500 font-bold hover:underline px-2 py-1"
                         >
                           Quitar
                         </button>
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[11px] text-slate-400 font-medium">O pega una URL directa:</span>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <span className="text-[10px] text-slate-400 font-medium shrink-0">O URL directa:</span>
                       <input
                         type="url"
-                        placeholder="https://images.unsplash.com/..."
+                        placeholder="https://..."
                         value={newImageUrl.startsWith('data:') ? '' : newImageUrl}
-                        onChange={e => setNewImageUrl(e.target.value)}
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          setNewImageUrl(val);
+                          if (val.startsWith('http://') || val.startsWith('https://')) {
+                            try {
+                              const uploaded = await uploadProductImageUrl(val);
+                              setNewImageUrl(uploaded);
+                              setUploadSuccess(true);
+                            } catch {}
+                          }
+                        }}
+                        className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
                       />
                     </div>
                   </div>

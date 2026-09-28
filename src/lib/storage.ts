@@ -26,3 +26,25 @@ export async function uploadProductImage(file: File): Promise<string> {
 
   return data.url;
 }
+
+/**
+ * Sube o transfiere una imagen desde una URL remota o Data URL pegada directamente.
+ */
+export async function uploadProductImageUrl(imageUrl: string): Promise<string> {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "upload_image_url",
+      imageUrl,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => ({}));
+    throw new Error(errorJson.error || "No se pudo procesar la imagen remota");
+  }
+
+  const data = await res.json();
+  return data.url || imageUrl;
+}
