@@ -426,47 +426,10 @@ export default function AdminCRM() {
           setProducts(updatedProducts);
         }
       }
-    } catch (err) {
-      console.warn("Actualizando estado en memoria tras error de base de datos:", err);
-      if (editingProductId) {
-        setProducts(prev => prev.map(p => p.id === editingProductId ? {
-          ...p,
-          title: newTitle,
-          sku: newSku.trim() || p.sku,
-          category: newCategory,
-          baseCostUsd: newCostUsd,
-          baseCostMxn: costMxn,
-          shippingCostAllocated: shippingPerUnit,
-          totalCostMxn: totalCostUnitMxn,
-          publicPrice: newPublicPrice,
-          profitUnit,
-          marginPercent,
-          stock: newStock,
-          images: newImageUrl ? [newImageUrl] : p.images,
-        } : p));
-      } else {
-        const newProd: Product = {
-          id: Date.now().toString(),
-          sku: newSku.trim() || `FX-${Math.floor(1000 + Math.random() * 9000)}`,
-          title: newTitle,
-          description: 'Artículo selecto del catálogo.',
-          category: newCategory,
-          baseCostUsd: newCostUsd,
-          baseCostMxn: costMxn,
-          shippingCostAllocated: shippingPerUnit,
-          totalCostMxn: totalCostUnitMxn,
-          publicPrice: newPublicPrice,
-          profitUnit: profitUnit,
-          marginPercent: marginPercent,
-          stock: newStock,
-          isSpecialOrder: false,
-          images: [newImageUrl || 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=700&auto=format&fit=crop&q=80'],
-          daysInStock: 0,
-          batchId: currentBatch.id,
-          batchName: currentBatch.batchName,
-        };
-        setProducts([newProd, ...products]);
-      }
+    } catch (err: any) {
+      console.error("Fallo al guardar en base de datos:", err);
+      alert(`Error al guardar en la base de datos: ${err.message || 'Intenta de nuevo'}`);
+      return;
     } finally {
       setIsSaving(false);
       setShowAddModal(false);
@@ -516,17 +479,19 @@ export default function AdminCRM() {
       });
       if (created) {
         newBatchObj.id = created.id;
+        newBatchObj.costPerUnit = Number(created.cost_per_unit || costPerUnitCalc);
       }
-    } catch (err) {
-      console.warn("Guardando lote en memoria local:", err);
+      setBatches([newBatchObj, ...batches]);
+      setSelectedBatchId(newBatchObj.id);
+      setShowBatchModal(false);
+      setBatchNameInput('');
+      setBatchNotesInput('');
+    } catch (err: any) {
+      console.error("Error al crear lote en base de datos:", err);
+      alert(`Error al guardar el lote en la base de datos: ${err.message || 'Intente de nuevo'}`);
+    } finally {
+      setSavingBatch(false);
     }
-
-    setBatches([newBatchObj, ...batches]);
-    setSelectedBatchId(newBatchObj.id);
-    setSavingBatch(false);
-    setShowBatchModal(false);
-    setBatchNameInput('');
-    setBatchNotesInput('');
   };
 
   // Eliminar Lote de Importación

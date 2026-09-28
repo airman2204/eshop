@@ -44,90 +44,41 @@ export interface NewProductInput {
 }
 
 /**
- * Inserta un producto nuevo en Supabase
+ * Inserta un producto nuevo en Supabase usando la ruta segura del servidor
  */
 export async function createProductInDb(input: NewProductInput) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseBrowserClient() as any;
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create_product", product: input }),
+  });
 
-  // 1. Obtener el ID de la categoría por su nombre o crearla
-  let categoryId: string | null = null;
-  const { data: catData } = await supabase
-    .from("categories")
-    .select("id")
-    .ilike("name", input.categoryName.trim())
-    .single();
-
-  if (catData?.id) {
-    categoryId = catData.id;
-  } else {
-    // Si no existe, tomar la primera disponible
-    const { data: firstCat } = await supabase.from("categories").select("id").limit(1).single();
-    categoryId = firstCat?.id || null;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al crear producto en la base de datos");
   }
 
-  const sku = input.sku || `FX-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  const { data, error } = await supabase
-    .from("products")
-    .insert([
-      {
-        sku,
-        title: input.title,
-        description: "Artículo importado verificado por FoxDrop.",
-        category_id: categoryId,
-        base_cost_usd: input.baseCostUsd,
-        base_cost_mxn: input.baseCostMxn,
-        shipping_cost_allocated: input.shippingCostAllocated,
-        public_price: input.publicPrice,
-        stock: input.stock,
-        images: input.imageUrl ? [input.imageUrl] : ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"],
-        is_active: true,
-      },
-    ])
-    .select("*, categories(id, name, slug, icon)")
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  const json = await res.json();
+  return json.data;
 }
 
 /**
- * Actualizar un producto existente en Supabase
+ * Actualizar un producto existente en Supabase usando la ruta segura del servidor
  */
 export async function updateProductInDb(id: string, updates: Partial<NewProductInput>) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseBrowserClient() as any;
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "update_product", id, product: updates }),
+  });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const payload: any = {
-    updated_at: new Date().toISOString(),
-  };
-
-  if (updates.title !== undefined) payload.title = updates.title;
-  if (updates.sku !== undefined) payload.sku = updates.sku;
-  if (updates.baseCostUsd !== undefined) payload.base_cost_usd = updates.baseCostUsd;
-  if (updates.baseCostMxn !== undefined) payload.base_cost_mxn = updates.baseCostMxn;
-  if (updates.shippingCostAllocated !== undefined) payload.shipping_cost_allocated = updates.shippingCostAllocated;
-  if (updates.publicPrice !== undefined) payload.public_price = updates.publicPrice;
-  if (updates.stock !== undefined) payload.stock = updates.stock;
-  if (updates.imageUrl) payload.images = [updates.imageUrl];
-
-  const { data, error } = await supabase
-    .from("products")
-    .update(payload)
-    .eq("id", id)
-    .select("*, categories(id, name, slug, icon)")
-    .single();
-
-  if (error) {
-    console.error("Error al actualizar producto en Supabase:", error);
-    throw error;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al actualizar producto en la base de datos");
   }
-  return data;
+
+  const json = await res.json();
+  return json.data;
 }
 
 /**
@@ -176,7 +127,7 @@ export async function getImportBatches() {
 }
 
 /**
- * Registrar un nuevo lote de importación
+ * Registrar un nuevo lote de importación usando la ruta segura del servidor
  */
 export async function createImportBatch(batch: {
   batchName: string;
@@ -184,45 +135,37 @@ export async function createImportBatch(batch: {
   totalUnits: number;
   notes?: string;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseBrowserClient() as any;
-  const { data, error } = await supabase
-    .from("import_batches")
-    .insert([
-      {
-        batch_name: batch.batchName,
-        total_shipping_cost: batch.totalShippingCost,
-        total_units: batch.totalUnits,
-        notes: batch.notes || null,
-      },
-    ])
-    .select()
-    .single();
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "create_batch", batch }),
+  });
 
-  if (error) throw error;
-  return data;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al crear lote en la base de datos");
+  }
+
+  const json = await res.json();
+  return json.data;
 }
 
 /**
- * Elimina un lote de importación de Supabase
+ * Elimina un lote de importación de Supabase usando la ruta segura del servidor
  */
 export async function deleteImportBatch(id: string) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = getSupabaseBrowserClient() as any;
-    const { error } = await supabase
-      .from("import_batches")
-      .delete()
-      .eq("id", id);
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "delete_batch", id }),
+  });
 
-    if (error) {
-      console.warn("Advertencia al eliminar lote en Supabase:", error);
-    }
-    return true;
-  } catch (err) {
-    console.warn("Fallo de red al eliminar lote:", err);
-    return true;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al eliminar lote");
   }
+
+  return true;
 }
 
 
