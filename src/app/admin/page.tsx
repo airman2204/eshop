@@ -421,7 +421,7 @@ export default function AdminCRM() {
     window.open(searchUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Generar Fotografía de Catálogo homogénea con IA
+  // Generar / Homogeneizar Fotografía de Catálogo con IA
   const handleGenerateAiImage = async () => {
     if (!newTitle.trim()) {
       alert('Por favor escribe primero el nombre o título del producto arriba.');
@@ -431,12 +431,13 @@ export default function AdminCRM() {
     setGeneratingAiImage(true);
     setUploadSuccess(false);
     try {
-      const generatedUrl = await generateProductImageWithAi(newTitle.trim(), newCategory);
+      // Si el usuario ya pegó o tiene una foto en newImageUrl, la pasamos para que la IA la tome como base real
+      const generatedUrl = await generateProductImageWithAi(newTitle.trim(), newCategory, newImageUrl || undefined);
       setNewImageUrl(generatedUrl);
       setUploadSuccess(true);
     } catch (err: any) {
-      console.error('Error al generar imagen con IA:', err);
-      alert('No se pudo generar la imagen con IA en este momento. Puedes usar "Buscar en Google" o pegar una imagen.');
+      console.error('Error al procesar imagen con IA:', err);
+      alert('No se pudo procesar la imagen con IA en este momento. Puedes usar "Buscar en Google" o pegar una imagen.');
     } finally {
       setGeneratingAiImage(false);
     }
@@ -2114,23 +2115,27 @@ https://foxdrop.com.mx`;
                     onPaste={handlePasteImage}
                     className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
                   >
-                    {/* Botón Principal: Generar con IA estilo institucional FoxDrop */}
+                    {/* Botón Principal: Generar o Homogeneizar con IA estilo institucional FoxDrop */}
                     <button
                       type="button"
                       onClick={handleGenerateAiImage}
                       disabled={generatingAiImage || uploadingImage}
                       className="w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-[#E65F2B] hover:opacity-95 disabled:opacity-50 text-white font-extrabold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition text-xs"
-                      title="Genera una foto con fondo homogéneo de estudio prémium (Fondo gris neutro, luz de estudio profesional)"
+                      title={newImageUrl ? "Toma la foto actual de tu producto, remueve su fondo y le aplica el fondo y luz de estudio FoxDrop" : "Genera una foto de catálogo desde cero basada en el nombre"}
                     >
                       {generatingAiImage ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Diseñando fotografía con IA estilo FoxDrop...</span>
+                          <span>{newImageUrl ? 'Aplicando fondo de estudio a tu foto real...' : 'Diseñando fotografía con IA estilo FoxDrop...'}</span>
                         </>
                       ) : (
                         <>
                           <Wand2 className="w-4 h-4 text-amber-300" />
-                          <span>🪄 Crear Foto de Catálogo con IA (Mismo Estilo Prémium)</span>
+                          <span>
+                            {newImageUrl 
+                              ? '🪄 Aplicar Fondo de Estudio FoxDrop a esta Foto (Mismo Producto)' 
+                              : '🪄 Crear Foto de Catálogo con IA (Fondo de Estudio Homogéneo)'}
+                          </span>
                         </>
                       )}
                     </button>

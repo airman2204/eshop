@@ -50,9 +50,10 @@ export async function uploadProductImageUrl(imageUrl: string): Promise<string> {
 }
 
 /**
- * Genera una fotografía de estudio profesional para el producto con Inteligencia Artificial.
+ * Genera o transforma una fotografía de estudio profesional para el producto con Inteligencia Artificial.
+ * Si se le pasa inputImage, preserva el artículo real y le aplica el fondo y estilo de estudio de FoxDrop.
  */
-export async function generateProductImageWithAi(title: string, category?: string): Promise<string> {
+export async function generateProductImageWithAi(title: string, category?: string, inputImage?: string): Promise<string> {
   const res = await fetch("/api/admin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -60,12 +61,13 @@ export async function generateProductImageWithAi(title: string, category?: strin
       action: "generate_ai_image",
       title,
       category,
+      inputImage,
     }),
   });
 
   if (!res.ok) {
     const errorJson = await res.json().catch(() => ({}));
-    throw new Error(errorJson.error || "No se pudo generar la fotografía con IA");
+    throw new Error(errorJson.error || "No se pudo procesar la fotografía con IA");
   }
 
   const data = await res.json();

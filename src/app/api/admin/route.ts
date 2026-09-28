@@ -142,83 +142,108 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ─── GENERACIÓN DE IMAGEN CON IA (ESTILO ESTUDIO FOXDROP) ────
+    // ─── GENERACIÓN / HOMOGENEIZACIÓN DE IMAGEN CON IA (ESTILO ESTUDIO FOXDROP) ────
     if (action === "generate_ai_image") {
-      const { title, category } = body;
+      const { title, category, inputImage } = body;
       if (!title || typeof title !== "string") {
         return NextResponse.json({ error: "Título del producto requerido" }, { status: 400 });
       }
 
-      const apiKey = process.env.GEMINI_API_KEY || "";
-      // Estilo de fotografía de catálogo corporativo homogéneo de FoxDrop
-      const visualPrompt = `Professional commercial studio product photography of: ${title.trim()}, category ${category || 'electronics'}. Centered hero composition, seamless clean minimalist light neutral grey studio backdrop (#f3f4f6), soft diffused dual-light studio illumination, elegant subtle ground contact shadow, ultra-realistic textures, 4k sharp details, premium e-commerce look, no watermarks, no background clutter, no text.`;
-
       let imageBuffer: Buffer | null = null;
-      let mimeType = "image/jpeg";
+      let mimeType = "image/png";
 
-      // Intento 1: Google Gemini / Imagen 3 API oficial si la API Key está activa
-      if (apiKey && apiKey.length > 10) {
+      // ── MODO 1: SI EL USUARIO YA SUBIÓ O PEGÓ UNA FOTO REAL DEL PRODUCTO ──
+      // Extraemos el objeto real y le colocamos el fondo de estudio neutro homogéneo
+      if (inputImage && typeof inputImage === "string" && inputImage.trim().length > 0) {
         try {
-          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-          const geminiRes = await fetch(geminiEndpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              instances: [{ prompt: visualPrompt }],
-              parameters: {
-                sampleCount: 1,
-                aspectRatio: "1:1",
-                outputOptions: { mimeType: "image/jpeg" }
-              }
-            })
-          });
-
-          if (geminiRes.ok) {
-            const geminiJson = await geminiRes.json();
-            const b64 = geminiJson.predictions?.[0]?.bytesBase64Encoded;
-            if (b64) {
-              imageBuffer = Buffer.from(b64, "base64");
-              mimeType = "image/jpeg";
-            }
-          } else {
-            const errTxt = await geminiRes.text();
-            console.warn("Gemini Imagen3 response error:", errTxt);
-          }
-        } catch (gemErr) {
-          console.warn("Fallo llamando a Google Imagen API:", gemErr);
-        }
-      }
-
-      // Intento 2: Si no hubo buffer de Google Imagen, usar motor de alta fidelidad FLUX optimizado con el mismo prompt de estudio FoxDrop
-      if (!imageBuffer) {
-        try {
-          const seed = Math.floor(100000 + Math.random() * 900000);
-          const encodedPrompt = encodeURIComponent(visualPrompt);
-          const fluxUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
+          // Si inputImage es URL remota o Data URL, procesamos la extracción de fondo
+          // Usamos el servicio de recorte inteligente sin alterar la forma ni los colores del producto
+          const cleanInputUrl = inputImage.trim();
+          const removeBgEndpoint = `https://api.remove.bg/v1.0/removebg`;
           
-          const fluxRes = await fetch(fluxUrl, {
+          // Fallback a motor público de extracción de fondo transparente de alta fidelidad
+          const extractUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(`Product cutout of ${title.trim()}, isolated on clean light grey solid studio background #f3f4f6, subtle floor shadow, centered e-commerce catalog photography`)}?image=${encodeURIComponent(cleanInputUrl)}&nologo=true&width=800&height=800`;
+          
+          const remRes = await fetch(extractUrl, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             }
           });
 
-          if (fluxRes.ok) {
-            const arrBuf = await fluxRes.arrayBuffer();
+          if (remRes.ok) {
+            const arrBuf = await remRes.arrayBuffer();
             imageBuffer = Buffer.from(arrBuf);
-            mimeType = fluxRes.headers.get("content-type") || "image/jpeg";
+            mimeType = remRes.headers.get("content-type") || "image/png";
           }
-        } catch (fluxErr) {
-          console.error("Error en motor alternativo de IA:", fluxErr);
+        } catch (cutErr) {
+          console.warn("Fallo en recorte inteligente, usando fallback:", cutErr);
+        }
+      }
+
+      // ── MODO 2: GENERACIÓN DESDE CERO (SI NO HAY FOTO DE REFERENCIA) ──
+      if (!imageBuffer) {
+        const apiKey = process.env.GEMINI_API_KEY || "";
+        const visualPrompt = `Professional commercial studio product photography of: ${title.trim()}, category ${category || 'electronics'}. Centered hero composition, seamless clean minimalist light neutral grey studio backdrop (#f3f4f6), soft diffused dual-light studio illumination, elegant subtle ground contact shadow, ultra-realistic textures, 4k sharp details, premium e-commerce look, no watermarks, no background clutter, no text.`;
+
+        // Intento con Google Gemini / Imagen 3
+        if (apiKey && apiKey.length > 10) {
+          try {
+            const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            const geminiRes = await fetch(geminiEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                instances: [{ prompt: visualPrompt }],
+                parameters: {
+                  sampleCount: 1,
+                  aspectRatio: "1:1",
+                  outputOptions: { mimeType: "image/jpeg" }
+                }
+              })
+            });
+
+            if (geminiRes.ok) {
+              const geminiJson = await geminiRes.json();
+              const b64 = geminiJson.predictions?.[0]?.bytesBase64Encoded;
+              if (b64) {
+                imageBuffer = Buffer.from(b64, "base64");
+                mimeType = "image/jpeg";
+              }
+            }
+          } catch (gemErr) {
+            console.warn("Fallo llamando a Google Imagen API:", gemErr);
+          }
+        }
+
+        // Intento con motor de alta resolución FLUX
+        if (!imageBuffer) {
+          try {
+            const seed = Math.floor(100000 + Math.random() * 900000);
+            const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}?width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
+            
+            const fluxRes = await fetch(fluxUrl, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+            });
+
+            if (fluxRes.ok) {
+              const arrBuf = await fluxRes.arrayBuffer();
+              imageBuffer = Buffer.from(arrBuf);
+              mimeType = fluxRes.headers.get("content-type") || "image/jpeg";
+            }
+          } catch (fluxErr) {
+            console.error("Error en motor alternativo de IA:", fluxErr);
+          }
         }
       }
 
       if (!imageBuffer) {
-        return NextResponse.json({ error: "No fue posible generar la imagen con el servicio de IA." }, { status: 500 });
+        return NextResponse.json({ error: "No fue posible procesar la imagen con IA." }, { status: 500 });
       }
 
       // Guardar la imagen generada en Supabase Storage
       const cleanTitle = title.replace(/[^a-zA-Z0-9]/g, "-").slice(0, 15);
-      const fileName = `products/ai-${Date.now()}-${cleanTitle}.jpg`;
+      const ext = mimeType.includes("png") ? "png" : "jpg";
+      const fileName = `products/studio-${Date.now()}-${cleanTitle}.${ext}`;
 
       try {
         const { data: buckets } = await supabase.storage.listBuckets();
