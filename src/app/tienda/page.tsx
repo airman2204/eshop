@@ -25,6 +25,8 @@ export default function TiendaFoxDrop() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalQuantity, setModalQuantity] = useState(1);
+  const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
 
   // Soporte PWA WebApp (Instalación en celular o escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -137,11 +139,32 @@ export default function TiendaFoxDrop() {
     return { name: catName, icon };
   });
 
-  const filteredProducts = products.filter(p => {
+  // Productos que realmente tienen descuento
+  const dealsProducts = products.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
+
+  // Filtrado por búsqueda y categoría
+  const baseFilteredProducts = products.filter(p => {
     const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCat = selectedCategory === 'Todas' || p.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
     return matchSearch && matchCat;
   });
+
+  // Productos mostrados según la pestaña activa:
+  // - 'new': Los últimos productos dados de alta (hasta 8 más recientes)
+  // - 'deals': Artículos con descuento real
+  // - 'all': Todo el catálogo completo
+  const displayedProducts = (() => {
+    if (activeTab === 'deals') {
+      return baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
+    }
+    if (activeTab === 'new') {
+      // Si seleccionó una categoría específica, mostramos los últimos de esa categoría (máx 6)
+      return baseFilteredProducts.slice(0, 8);
+    }
+    return baseFilteredProducts;
+  })();
+
+  const filteredProducts = displayedProducts;
 
   const toggleFav = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -428,46 +451,58 @@ export default function TiendaFoxDrop() {
         <nav className="bg-[#2D4A58] text-white text-xs font-bold uppercase tracking-wider">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center overflow-x-auto no-scrollbar">
             
-            {/* CATEGORÍAS GLOBALES */}
-            <div 
-              onClick={() => {
-                const el = document.getElementById('categories-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+            {/* BOTÓN CATEGORÍAS (Abre menú lateral / drawer) */}
+            <button 
+              onClick={() => setIsCategoryDrawerOpen(true)}
               className="bg-[#233B47] px-4 py-2.5 flex items-center space-x-2 shrink-0 cursor-pointer hover:bg-[#1a2d36] transition"
             >
               <Menu className="w-4 h-4" />
-              <span>CATEGORÍAS GLOBALES</span>
-            </div>
+              <span>CATEGORÍAS</span>
+            </button>
 
             <div className="flex items-center">
+              {/* PESTAÑA: LO NUEVO */}
               <button
-                onClick={() => setSelectedCategory('Todas')}
-                className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${selectedCategory === 'Todas' ? 'bg-[#3E6173]' : ''}`}
+                onClick={() => {
+                  setActiveTab('new');
+                  setSelectedCategory('Todas');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${activeTab === 'new' ? 'bg-[#3E6173]' : ''}`}
               >
                 LO NUEVO
               </button>
-              
+
+              {/* PESTAÑA / BOTÓN: OFERTAS (Solo si hay productos con descuento real) */}
+              {dealsProducts.length > 0 && (
+                <button
+                  onClick={() => {
+                    setActiveTab('deals');
+                    const el = document.getElementById('deals-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`bg-[#E65F2B]/90 hover:bg-[#E65F2B] px-4 py-2.5 transition shrink-0 flex items-center gap-1.5 ${activeTab === 'deals' ? 'ring-2 ring-white/50' : ''}`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  OFERTAS
+                </button>
+              )}
+
+              {/* BOTÓN: VER TODO EL CATÁLOGO */}
               <button
                 onClick={() => {
-                  const el = document.getElementById('deals-section');
+                  setActiveTab('all');
+                  setSelectedCategory('Todas');
+                  const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-[#6B574B] px-4 py-2.5 hover:bg-[#5C493D] transition shrink-0 flex items-center gap-1.5"
+                className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${activeTab === 'all' ? 'bg-[#3E6173]' : ''}`}
               >
-                OFERTAS DE DEALS
+                VER TODO
               </button>
 
-              {popularCategories.slice(0, 3).map(cat => (
-                <button
-                  key={cat.name}
-                  onClick={() => setSelectedCategory(cat.name)}
-                  className={`px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ${selectedCategory === cat.name ? 'bg-[#3E6173]' : ''}`}
-                >
-                  {cat.name.toUpperCase()}
-                </button>
-              ))}
-
+              {/* PEDIDOS ESPECIALES */}
               <button
                 onClick={() => setShowCustomOrderModal(true)}
                 className="px-4 py-2.5 hover:bg-[#243D49] transition shrink-0 ml-auto hidden md:flex items-center gap-1.5 text-amber-300 hover:text-amber-200"
@@ -570,115 +605,219 @@ export default function TiendaFoxDrop() {
       </section>
 
       {/* ======================================================== */}
-      {/* 3. SECCIÓN: DEALS DEL MES (PRODUCT CARDS EXACTAS AL MOCKUP) */}
+      {/* 3. SECCIÓN: OFERTAS DEL MES (SOLO SI HAY PRODUCTOS CON DESCUENTO) */}
       {/* ======================================================== */}
-      <section id="deals-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-4">
-        
-        <div>
-          <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">Deals del Mes</h3>
-          <p className="text-xs text-gray-400 font-medium">Trusted Deals & Calidad Internacional</p>
-        </div>
+      {dealsProducts.length > 0 && (
+        <section id="deals-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+            <div>
+              <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#E65F2B]" /> Ofertas del mes
+              </h3>
+            </div>
+            <span className="text-xs font-bold text-[#E65F2B] bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200">
+              {dealsProducts.length} {dealsProducts.length === 1 ? 'oferta disponible' : 'ofertas disponibles'}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
-          {filteredProducts.map(product => {
-            const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
-            const originalPrice = hasDiscount 
-              ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
-              : product.publicPrice;
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            {dealsProducts.map(product => {
+              const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
+              const originalPrice = hasDiscount 
+                ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
+                : product.publicPrice;
 
-            return (
-              <div
-                key={product.id}
-                onClick={() => {
-                  setModalQuantity(1);
-                  setSelectedProduct(product);
-                }}
-                className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
-              >
-                {/* BADGE DE DESCUENTO SOLO SI EL PRODUCTO TIENE DESCUENTO REAL */}
-                {hasDiscount && (
-                  <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded">
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => {
+                    setModalQuantity(1);
+                    setSelectedProduct(product);
+                  }}
+                  className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
+                >
+                  {/* BADGE DE DESCUENTO */}
+                  <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded shadow-xs">
                     -{product.discountPercent}%
                   </div>
-                )}
 
-                {/* IMAGEN DE PRODUCTO */}
-                <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="max-h-full object-contain group-hover:scale-105 transition duration-300"
-                  />
-                </div>
+                  {/* IMAGEN DE PRODUCTO */}
+                  <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
+                    <img
+                      src={product.images[0]}
+                      alt={product.title}
+                      className="max-h-full object-contain group-hover:scale-105 transition duration-300"
+                    />
+                  </div>
 
-                {/* DETALLES DE PRECIO Y VALORACIÓN ESTILO FOXDROP */}
-                <div className="space-y-1 pt-1 border-t border-gray-100">
-                  <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
-                    {product.title}
-                  </h4>
+                  {/* DETALLES DE PRECIO */}
+                  <div className="space-y-1 pt-1 border-t border-gray-100">
+                    <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
+                      {product.title}
+                    </h4>
 
-                  {/* PRECIO TACHADO SOLO SI HAY DESCUENTO REAL */}
-                  {hasDiscount && (
                     <span className="text-[11px] text-gray-400 line-through block">
                       ${originalPrice.toFixed(0)} MXN
                     </span>
+
+                    <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
+                      ${product.publicPrice.toFixed(0)} MXN
+                    </span>
+
+                    <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
+                      <div className="flex text-amber-400">
+                        {'★'.repeat(5)}
+                      </div>
+                      <span className="text-gray-400 text-[10px]">(5)</span>
+                    </div>
+                  </div>
+
+                  {/* BOTÓN AGREGAR */}
+                  <button
+                    onClick={(e) => addToCart(product, e)}
+                    className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition cursor-pointer"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
+      {/* ======================================================== */}
+      <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
+          <div>
+            <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">
+              {activeTab === 'new' 
+                ? (selectedCategory === 'Todas' ? 'Lo Más Nuevo' : `Lo Nuevo en ${selectedCategory}`)
+                : activeTab === 'deals'
+                ? 'Ofertas Activas'
+                : (selectedCategory === 'Todas' ? 'Catálogo Completo' : `Catálogo: ${selectedCategory}`)
+              }
+            </h3>
+            <p className="text-xs text-gray-400 font-medium">
+              {activeTab === 'new' 
+                ? 'Últimos productos dados de alta en plataforma' 
+                : `${filteredProducts.length} productos disponibles`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {activeTab === 'new' && (
+              <button
+                onClick={() => {
+                  setActiveTab('all');
+                  setSelectedCategory('Todas');
+                }}
+                className="bg-gray-100 hover:bg-gray-200 text-[#2D4A58] text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Ver todo el catálogo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {selectedCategory !== 'Todas' && (
+              <button
+                onClick={() => setSelectedCategory('Todas')}
+                className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] text-xs font-bold px-3 py-1.5 rounded-lg transition border border-orange-200 flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Quitar filtro ({selectedCategory})</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center space-y-3">
+            <p className="text-gray-500 font-medium text-sm">No se encontraron productos en esta categoría o selección.</p>
+            <button
+              onClick={() => {
+                setActiveTab('all');
+                setSelectedCategory('Todas');
+                setSearchTerm('');
+              }}
+              className="bg-[#2D4A58] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#1a2d36] transition cursor-pointer"
+            >
+              Ver todo el catálogo
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            {filteredProducts.map(product => {
+              const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
+              const originalPrice = hasDiscount 
+                ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
+                : product.publicPrice;
+
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => {
+                    setModalQuantity(1);
+                    setSelectedProduct(product);
+                  }}
+                  className="bg-white rounded-lg border border-gray-200 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
+                >
+                  {/* BADGE DE DESCUENTO SOLO SI EL PRODUCTO TIENE DESCUENTO REAL */}
+                  {hasDiscount && (
+                    <div className="absolute top-2 left-2 z-10 bg-[#E65F2B] text-white font-extrabold text-[10px] px-2 py-0.5 rounded shadow-xs">
+                      -{product.discountPercent}%
+                    </div>
                   )}
 
-                  {/* PRECIO DESTACADO EN NEGRITA */}
-                  <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
-                    ${product.publicPrice.toFixed(0)} MXN
-                  </span>
-
-                  {/* ESTRELLAS Y REVIEWS */}
-                  <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
-                    <div className="flex text-amber-400">
-                      {'★'.repeat(5)}
-                    </div>
-                    <span className="text-gray-400 text-[10px]">(5)</span>
+                  {/* IMAGEN DE PRODUCTO */}
+                  <div className="aspect-square bg-white flex items-center justify-center p-2 mb-2">
+                    <img
+                      src={product.images[0]}
+                      alt={product.title}
+                      className="max-h-full object-contain group-hover:scale-105 transition duration-300"
+                    />
                   </div>
+
+                  {/* DETALLES DE PRECIO Y VALORACIÓN */}
+                  <div className="space-y-1 pt-1 border-t border-gray-100">
+                    <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+                      {product.category || 'General'}
+                    </div>
+                    <h4 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#E65F2B] transition">
+                      {product.title}
+                    </h4>
+
+                    {hasDiscount && (
+                      <span className="text-[11px] text-gray-400 line-through block">
+                        ${originalPrice.toFixed(0)} MXN
+                      </span>
+                    )}
+
+                    <span className="text-sm sm:text-base font-extrabold text-gray-900 block">
+                      ${product.publicPrice.toFixed(0)} MXN
+                    </span>
+
+                    <div className="flex items-center space-x-1 text-[11px] text-amber-500 pt-0.5">
+                      <div className="flex text-amber-400">
+                        {'★'.repeat(5)}
+                      </div>
+                      <span className="text-gray-400 text-[10px]">(5)</span>
+                    </div>
+                  </div>
+
+                  {/* BOTÓN AGREGAR */}
+                  <button
+                    onClick={(e) => addToCart(product, e)}
+                    className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition cursor-pointer"
+                  >
+                    Agregar
+                  </button>
                 </div>
-
-                {/* BOTÓN AGREGAR */}
-                <button
-                  onClick={(e) => addToCart(product, e)}
-                  className="w-full mt-3 bg-[#2D4A58] hover:bg-[#E65F2B] text-white font-bold py-1.5 rounded text-xs transition"
-                >
-                  Agregar
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-      </section>
-
-      {/* ======================================================== */}
-      {/* 4. SECCIÓN: CATEGORÍAS POPULARES (ICONOS EN RECTÁNGULOS AZUL CLARO) */}
-      {/* ======================================================== */}
-      <section id="categories-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
-        <div>
-          <h3 className="text-xl font-black text-[#1F2D3D] tracking-tight">Categorías Populares</h3>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {popularCategories.map((cat, idx) => {
-            const Icon = cat.icon;
-            const count = products.filter(p => p.category === cat.name).length;
-            return (
-              <div
-                key={idx}
-                onClick={() => setSelectedCategory(cat.name)}
-                className="bg-[#EDF5F7] hover:bg-[#E2EFF2] border border-[#D5E6EA] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition group"
-              >
-                <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-[#2D4A58] group-hover:scale-110 transition shadow-sm mb-2">
-                  <Icon className="w-7 h-7" />
-                </div>
-                <h4 className="font-extrabold text-sm text-[#2D4A58]">{cat.name}</h4>
-                <span className="text-[11px] text-gray-500 mt-0.5">{count} {count === 1 ? 'producto' : 'productos'}</span>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* ======================================================== */}
@@ -1350,6 +1489,112 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* DRAWER LATERAL DE CATEGORÍAS (SLIDE-OVER MENU) */}
+      {/* ======================================================== */}
+      {isCategoryDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex">
+          {/* Backdrop con desenfoque suave */}
+          <div 
+            onClick={() => setIsCategoryDrawerOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in"
+          />
+
+          {/* Panel lateral */}
+          <div className="relative w-full max-w-xs bg-white text-gray-900 shadow-2xl z-10 flex flex-col justify-between animate-in slide-in-from-left duration-200">
+            <div>
+              {/* Header del drawer */}
+              <div className="bg-[#2D4A58] text-white p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Menu className="w-5 h-5 text-[#E65F2B]" />
+                  <span className="font-extrabold text-sm tracking-wide">CATEGORÍAS</span>
+                </div>
+                <button 
+                  onClick={() => setIsCategoryDrawerOpen(false)}
+                  className="text-gray-300 hover:text-white p-1 rounded-md transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Lista de categorías */}
+              <div className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+                {/* Opción todas */}
+                <button
+                  onClick={() => {
+                    setSelectedCategory('Todas');
+                    setActiveTab('all');
+                    setIsCategoryDrawerOpen(false);
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-left font-bold text-xs transition ${
+                    selectedCategory === 'Todas' ? 'bg-[#EDF5F7] text-[#2D4A58] border border-[#D5E6EA]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 text-[#E65F2B] flex items-center justify-center">
+                      <Sparkle className="w-4 h-4" />
+                    </div>
+                    <span>Todas las categorías</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {products.length}
+                  </span>
+                </button>
+
+                {popularCategories.map((cat, idx) => {
+                  const Icon = cat.icon;
+                  const count = products.filter(p => p.category?.trim().toLowerCase() === cat.name.trim().toLowerCase()).length;
+                  const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setSelectedCategory(cat.name);
+                        setActiveTab('all');
+                        setIsCategoryDrawerOpen(false);
+                        const el = document.getElementById('catalog-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left font-bold text-xs transition ${
+                        isSelected ? 'bg-[#EDF5F7] text-[#2D4A58] border border-[#D5E6EA]' : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#EDF5F7] text-[#2D4A58] flex items-center justify-center">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span>{cat.name}</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer del drawer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-2">
+              <button
+                onClick={() => {
+                  setIsCategoryDrawerOpen(false);
+                  setShowCustomOrderModal(true);
+                }}
+                className="w-full bg-[#2D4A58] hover:bg-[#1a2d36] text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5 text-amber-300" />
+                <span>¿No encuentras algo? Haz un encargo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ======================================================== */}
       {/* 11. BOTTOM NAVIGATION BAR MÓVIL (PWA WEBAPP) */}
