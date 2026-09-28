@@ -8,7 +8,7 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon, Wand2
+  Clipboard, Globe, Image as ImageIcon, Wand2, Download
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -118,7 +118,39 @@ export default function AdminCRM() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellingLoading, setCancellingLoading] = useState(false);
 
+  // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
   // 1. Verificar sesión persistente y cargar tipo de cambio real inmediatamente al montar
+  useEffect(() => {
+    // Listener para instalación PWA (Web App)
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      alert("Para instalar FoxDrop en tu celular:\n\n• En Safari / iPhone: Toca el botón 'Compartir' y elige 'Agregar a pantalla de inicio'.\n• En Android / Chrome: Toca el menú (3 puntos) y elige 'Instalar aplicación'.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
   useEffect(() => {
     // Cargar tipo de cambio en tiempo real de inmediato
     getLiveExchangeRate().then(rate => {
@@ -1129,30 +1161,40 @@ https://foxdrop.com.mx`;
       {/* HEADER DEL CRM FOXDROP */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <FoxDropLogo size="sm" />
-            <div className="border-l border-gray-200 pl-3">
-              <h1 className="font-extrabold text-sm sm:text-base text-[#1F2D3D] tracking-tight flex items-center gap-2">
-                PANEL DE CONTROL <span className="bg-[#E65F2B] text-white text-[9px] px-2 py-0.5 rounded-full font-bold uppercase">CRM Admin</span>
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <FoxDropLogo size="md" />
+            <div className="border-l border-gray-200 pl-3 sm:pl-4">
+              <h1 className="font-black text-base sm:text-lg text-[#1F2D3D] tracking-tight flex items-center gap-2">
+                PANEL DE CONTROL <span className="bg-[#E65F2B] text-white text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase">CRM Admin</span>
               </h1>
-              <p className="text-[10px] text-gray-500 font-medium">
+              <p className="text-[11px] text-gray-500 font-medium">
                 {adminSession?.email} • Puebla
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              onClick={handleInstallApp}
+              title="Instalar FoxDrop en Celular o Escritorio"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Instalar App</span>
+              <span className="sm:hidden text-[10px]">App</span>
+            </button>
+
             <button
               onClick={async () => {
                 const r = await getLiveExchangeRate();
                 setUsdRate(r);
               }}
               title="Click para actualizar tipo de cambio oficial en tiempo real"
-              className="flex items-center space-x-2 bg-orange-50/80 hover:bg-orange-100 border border-orange-200 rounded-lg px-3 py-1.5 text-xs text-orange-950 font-medium transition cursor-pointer"
+              className="hidden sm:flex items-center space-x-2 bg-orange-50/80 hover:bg-orange-100 border border-orange-200 rounded-lg px-3 py-1.5 text-xs text-orange-950 font-medium transition cursor-pointer"
             >
               <span className="text-orange-700 text-[10px] font-bold flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                USD/MXN Real:
+                USD/MXN:
               </span>
               <span className="font-extrabold text-[#E65F2B]">${usdRate.toFixed(2)}</span>
               <RefreshCw className="w-3 h-3 text-orange-600 hover:rotate-180 transition-transform duration-300" />
@@ -1160,9 +1202,11 @@ https://foxdrop.com.mx`;
             <a
               href="/tienda"
               target="_blank"
-              className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-3.5 py-2 rounded-md transition flex items-center gap-1.5 shadow-sm"
+              className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md transition flex items-center gap-1 shadow-sm"
             >
-              Ver Tienda <ArrowUpRight className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Ver Tienda</span>
+              <span className="sm:hidden text-[11px]">Tienda</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
             <button
               onClick={handleLogout}
