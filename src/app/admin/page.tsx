@@ -9,7 +9,6 @@ import {
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera
 } from 'lucide-react';
-import { INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_ABANDONED_CARTS } from '@/data/mockData';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { 
@@ -44,30 +43,11 @@ export default function AdminCRM() {
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts'>('inventory');
   
   // Datos principales
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [specialOrders, setSpecialOrders] = useState<SpecialOrder[]>([]);
-  const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>(INITIAL_ABANDONED_CARTS);
-  const [batches, setBatches] = useState<ImportBatch[]>([
-    {
-      id: 'batch-01',
-      batchName: 'Lote 1 - Noviembre Electrónica & Audio',
-      totalShippingCost: 600.0,
-      totalUnits: 30,
-      costPerUnit: 20.0,
-      receivedAt: '2026-11-10',
-      notes: 'Flete aéreo consolidado'
-    },
-    {
-      id: 'batch-02',
-      batchName: 'Lote 2 - Relojería & Moda Tokio',
-      totalShippingCost: 1200.0,
-      totalUnits: 25,
-      costPerUnit: 48.0,
-      receivedAt: '2026-12-01',
-      notes: 'Flete express aduana'
-    }
-  ]);
+  const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
+  const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [selectedClientForModal, setSelectedClientForModal] = useState<ClientProfile | null>(null);
 
@@ -154,9 +134,7 @@ export default function AdminCRM() {
 
       // Productos
       const dbProducts = await getActiveProducts();
-      if (dbProducts !== null) {
-        setProducts(dbProducts);
-      }
+      setProducts(dbProducts ?? []);
 
       // Pedidos
       const dbOrders = await getAdminOrders();
@@ -179,6 +157,8 @@ export default function AdminCRM() {
           order_items: o.order_items || [],
         }));
         setOrders(mappedOrders);
+      } else {
+        setOrders([]);
       }
 
       // Lotes de Importación

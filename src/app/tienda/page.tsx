@@ -8,7 +8,6 @@ import {
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight
 } from 'lucide-react';
-import { INITIAL_PRODUCTS } from '@/data/mockData';
 import { Product } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { sendEmailOTP, verifyEmailOTP, upsertUserProfile } from '@/lib/auth';
@@ -18,7 +17,7 @@ import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier 
 export default function TiendaFoxDrop() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
@@ -29,9 +28,7 @@ export default function TiendaFoxDrop() {
     async function loadData() {
       try {
         const remoteProducts = await getActiveProducts();
-        if (remoteProducts !== null) {
-          setProducts(remoteProducts);
-        }
+        setProducts(remoteProducts ?? []);
       } catch (err) {
         console.error("Error loading products from Supabase:", err);
       } finally {
