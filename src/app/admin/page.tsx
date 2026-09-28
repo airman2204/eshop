@@ -2115,35 +2115,10 @@ https://foxdrop.com.mx`;
                     onPaste={handlePasteImage}
                     className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
                   >
-                    {/* Botón Principal: Generar o Homogeneizar con IA estilo institucional FoxDrop */}
-                    <button
-                      type="button"
-                      onClick={handleGenerateAiImage}
-                      disabled={generatingAiImage || uploadingImage}
-                      className="w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-[#E65F2B] hover:opacity-95 disabled:opacity-50 text-white font-extrabold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition text-xs"
-                      title={newImageUrl ? "Toma la foto actual de tu producto, remueve su fondo y le aplica el fondo y luz de estudio FoxDrop" : "Genera una foto de catálogo desde cero basada en el nombre"}
-                    >
-                      {generatingAiImage ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>{newImageUrl ? 'Aplicando fondo de estudio a tu foto real...' : 'Diseñando fotografía con IA estilo FoxDrop...'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 text-amber-300" />
-                          <span>
-                            {newImageUrl 
-                              ? '🪄 Aplicar Fondo de Estudio FoxDrop a esta Foto (Mismo Producto)' 
-                              : '🪄 Crear Foto de Catálogo con IA (Fondo de Estudio Homogéneo)'}
-                          </span>
-                        </>
-                      )}
-                    </button>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {/* Opción 1: Archivo local */}
-                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-2.5 flex items-center justify-center gap-2 text-slate-700 transition">
-                        <Upload className="w-3.5 h-3.5 text-[#E65F2B]" />
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition">
+                        <Upload className="w-4 h-4 text-[#E65F2B]" />
                         <span className="font-semibold text-xs">
                           {uploadingImage ? 'Procesando...' : 'Subir archivo PC/móvil'}
                         </span>
@@ -2151,7 +2126,7 @@ https://foxdrop.com.mx`;
                           type="file"
                           accept="image/*"
                           onChange={handleFileUpload}
-                          disabled={uploadingImage || generatingAiImage}
+                          disabled={uploadingImage}
                           className="hidden"
                         />
                       </label>
@@ -2160,10 +2135,10 @@ https://foxdrop.com.mx`;
                       <button
                         type="button"
                         onClick={() => handlePasteImage()}
-                        disabled={uploadingImage || generatingAiImage}
-                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-2.5 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
+                        disabled={uploadingImage}
+                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
                       >
-                        <Clipboard className="w-3.5 h-3.5 text-emerald-600" />
+                        <Clipboard className="w-4 h-4 text-emerald-600" />
                         <span>Pegar foto (Ctrl+V)</span>
                       </button>
                     </div>
@@ -2171,7 +2146,7 @@ https://foxdrop.com.mx`;
                     <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>💡 Haz clic en <strong>Crear Foto con IA</strong> para un estilo uniforme en toda la tienda, o pega cualquier foto de Google.</span>
+                        <span>💡 Haz clic en <strong>Google Fotos</strong>, copia la foto del artículo y presiona <strong>Pegar foto (Ctrl+V)</strong>.</span>
                       </span>
                       {uploadSuccess && (
                         <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">
