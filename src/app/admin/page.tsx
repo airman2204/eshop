@@ -1938,8 +1938,26 @@ https://foxdrop.com.mx`;
                       <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
                         <img src={newImageUrl} alt="Preview" className="w-10 h-10 object-cover rounded border" />
                         <span className="text-[10px] text-slate-500 truncate flex-1">{newImageUrl}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setNewImageUrl(''); setUploadSuccess(false); }}
+                          className="text-xs text-rose-500 font-bold hover:underline"
+                        >
+                          Quitar
+                        </button>
                       </div>
                     )}
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[11px] text-slate-400 font-medium">O pega una URL directa:</span>
+                      <input
+                        type="url"
+                        placeholder="https://images.unsplash.com/..."
+                        value={newImageUrl.startsWith('data:') ? '' : newImageUrl}
+                        onChange={e => setNewImageUrl(e.target.value)}
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
+                      />
+                    </div>
                   </div>
                 </div>
 

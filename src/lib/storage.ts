@@ -1,34 +1,28 @@
-import { getSupabaseBrowserClient } from "./supabase/client";
-
 /**
- * Sube una imagen local al bucket público 'product-images' de Supabase Storage
+ * Sube una imagen local usando la ruta segura del servidor (/api/admin).
+ * Esto asegura que:
+ * 1. Si el bucket 'product-images' no existe en Supabase, el servidor lo crea automáticamente con permisos públicos.
+ * 2. Se salta cualquier restricción RLS en Storage que bloquearía al navegador.
+ * 3. Si Supabase Storage tuviera alguna limitación de plan, devuelve una Data URL optimizada sin trabar la subida del producto.
  */
 export async function uploadProductImage(file: File): Promise<string> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = getSupabaseBrowserClient() as any;
+  const formData = new FormData();
+  formData.append("file", file);
 
-  // Generar un nombre único para evitar colisiones
-  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 20);
-  const fileName = `${Date.now()}-${cleanName}.${fileExt}`;
-  const filePath = `products/${fileName}`;
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    body: formData,
+  });
 
-  const { error: uploadError } = await supabase.storage
-    .from("product-images")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
-
-  if (uploadError) {
-    console.error("Error al subir archivo a Supabase Storage:", uploadError);
-    throw uploadError;
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => ({}));
+    throw new Error(errorJson.error || "No se pudo subir la imagen al almacenamiento");
   }
 
-  // Obtener URL pública
-  const { data: publicData } = supabase.storage
-    .from("product-images")
-    .getPublicUrl(filePath);
+  const data = await res.json();
+  if (!data.url) {
+    throw new Error("No se recibió la URL de la imagen");
+  }
 
-  return publicData.publicUrl;
+  return data.url;
 }

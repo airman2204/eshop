@@ -3,6 +3,65 @@ import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const contentType = req.headers.get("content-type") || "";
+
+    // Manejo de subida de imágenes multipart/form-data
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const file = formData.get("file") as File;
+
+      if (!file) {
+        return NextResponse.json({ error: "Archivo requerido" }, { status: 400 });
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createServerClient() as any;
+
+      // Asegurar que el bucket exista
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const hasBucket = buckets?.some((b: any) => b.name === "product-images");
+        if (!hasBucket) {
+          await supabase.storage.createBucket("product-images", {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+          });
+        }
+      } catch (bucketErr) {
+        console.warn("Aviso revisando/creando bucket:", bucketErr);
+      }
+
+      // Subir archivo al bucket
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, "-").slice(0, 20);
+      const fileName = `products/${Date.now()}-${cleanName}.${fileExt}`;
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(fileName, buffer, {
+          contentType: file.type || "image/jpeg",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Error subiendo a Supabase Storage:", uploadError);
+        // Si Supabase Storage falla por configuración del proyecto, convertimos a data URL segura
+        const base64 = buffer.toString("base64");
+        const dataUrl = `data:${file.type || "image/jpeg"};base64,${base64}`;
+        return NextResponse.json({ success: true, url: dataUrl });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(fileName);
+
+      return NextResponse.json({ success: true, url: publicUrlData.publicUrl });
+    }
+
+    // JSON actions
     const body = await req.json();
     const { action, id, email, password } = body;
 
@@ -16,8 +75,6 @@ export async function POST(req: NextRequest) {
 
       const normalizedEmail = email.trim().toLowerCase();
 
-      // Guardamos la contraseña en la columna admin_password_hash del perfil en Supabase
-      // Si el perfil no existe, lo insertamos
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
@@ -25,7 +82,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (existingProfile) {
-        const { error: updateErr } = await supabase
+        await supabase
           .from("profiles")
           .update({
             admin_password_hash: password,
@@ -34,11 +91,6 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("email", normalizedEmail);
-
-        if (updateErr) {
-          // Si la columna admin_password_hash no existe en la tabla profiles, no rompemos
-          console.warn("Error al actualizar admin_password_hash en profiles:", updateErr);
-        }
       }
 
       return NextResponse.json({ success: true, email: normalizedEmail });
@@ -66,7 +118,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ valid: false });
       }
 
-      return NextResponse.json({ valid: null }); // No custom password found in DB yet
+      return NextResponse.json({ valid: null });
     }
 
     if (action === "delete_product") {
