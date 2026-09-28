@@ -1,11 +1,11 @@
 {
   "name": "FoxDrop CRM — Control & Admin",
   "short_name": "FoxDrop Admin",
-  "description": "Panel de administración, inventario, fletes y pedidos de FoxDrop.",
+  "description": "Panel de administración, inventario, fletes y pedidos de FoxDrop Puebla.",
   "start_url": "/admin",
   "scope": "/admin",
   "display": "standalone",
-  "background_color": "#F4F6F8",
+  "background_color": "#1F2D3D",
   "theme_color": "#2D4A58",
   "orientation": "portrait-primary",
   "icons": [
@@ -20,6 +20,11 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }

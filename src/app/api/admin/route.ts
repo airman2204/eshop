@@ -593,32 +593,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, deletedId: id });
     }
 
-    // ─── AUTH ADMIN ──────────────────────────────────────────────
+    // ─── AUTH ADMIN CON PERSISTENCIA MULTIDISPOSITIVO ────────────
     if (action === "update_password") {
       if (!email || !password) {
         return NextResponse.json({ error: "Email y contraseña requeridos" }, { status: 400 });
       }
 
       const normalizedEmail = email.trim().toLowerCase();
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", normalizedEmail)
-        .maybeSingle();
-
-      if (existingProfile) {
-        await supabase
-          .from("profiles")
-          .update({
-            admin_password_hash: password,
-            role: "admin",
-            must_change_password: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("email", normalizedEmail);
+      
+      // 1. Cargar diccionario de credenciales actual desde Supabase Storage
+      let credsDict: Record<string, { password: string; mustChangePassword: boolean; updatedAt: string }> = {};
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/admin_passwords.json");
+        if (fileData) {
+          const rawText = await fileData.text();
+          credsDict = JSON.parse(rawText || "{}");
+        }
+      } catch (readErr) {
+        console.warn("Inicializando nuevo almacén de credenciales admin:", readErr);
       }
 
-      return NextResponse.json({ success: true, email: normalizedEmail });
+      // 2. Actualizar contraseña y quitar flag de cambio obligatorio
+      credsDict[normalizedEmail] = {
+        password: password.trim(),
+        mustChangePassword: false,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 3. Guardar de forma persistente en Supabase
+      const { error: saveError } = await supabase.storage
+        .from("product-images")
+        .upload("_system/admin_passwords.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      if (saveError) {
+        console.error("Error guardando credenciales en Supabase:", saveError);
+        throw saveError;
+      }
+
+      return NextResponse.json({ success: true, email: normalizedEmail, mustChangePassword: false });
     }
 
     if (action === "verify_password") {
@@ -627,20 +644,30 @@ export async function POST(req: NextRequest) {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("admin_password_hash, must_change_password")
-        .eq("email", normalizedEmail)
-        .maybeSingle();
+      
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/admin_passwords.json");
 
-      if (profile && profile.admin_password_hash) {
-        if (profile.admin_password_hash === password) {
-          return NextResponse.json({
-            valid: true,
-            mustChangePassword: profile.must_change_password ?? false,
-          });
+        if (fileData) {
+          const rawText = await fileData.text();
+          const credsDict = JSON.parse(rawText || "{}");
+          const userCred = credsDict[normalizedEmail];
+
+          if (userCred && userCred.password) {
+            if (userCred.password === password.trim()) {
+              return NextResponse.json({
+                valid: true,
+                mustChangePassword: Boolean(userCred.mustChangePassword),
+              });
+            } else {
+              return NextResponse.json({ valid: false });
+            }
+          }
         }
-        return NextResponse.json({ valid: false });
+      } catch (err) {
+        console.warn("No se pudo leer almacén de credenciales:", err);
       }
 
       return NextResponse.json({ valid: null });
