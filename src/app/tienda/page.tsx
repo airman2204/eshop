@@ -136,6 +136,7 @@ export default function TiendaFoxDrop() {
   const [editPhone, setEditPhone] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const [infoModal, setInfoModal] = useState<'envios' | 'devoluciones' | 'privacidad' | null>(null);
 
   // Detectar ?tab=cuenta o ?view=cuenta en URL
   useEffect(() => {
@@ -714,7 +715,7 @@ export default function TiendaFoxDrop() {
               title="Ver Carrito"
             >
               <ShoppingCart className="w-5 h-5 text-[#FAF6F0]" />
-              <span className="hidden sm:inline text-xs font-medium text-white/90">Basket</span>
+              <span className="hidden sm:inline text-xs font-medium text-white/90">Carrito</span>
               {cartItemCount > 0 && (
                 <span className="bg-[#DF7F2D] text-white text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
                   {cartItemCount}
@@ -790,7 +791,9 @@ export default function TiendaFoxDrop() {
                 TU ATAJO AL MUNDO
               </span>
               <h2 className="text-sm font-black text-white leading-tight">
-                ¡Hola! Descubre Tesoros Mundiales, Calidad Amistosa y Garantizada.
+                {user?.name 
+                  ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
+                  : '¡Hola! Descubre tesoros, calidad garantizada.'}
               </h2>
             </div>
 
@@ -848,7 +851,9 @@ export default function TiendaFoxDrop() {
                 TU ATAJO AL MUNDO
               </span>
               <h2 className="text-2xl lg:text-4xl font-black text-white leading-tight max-w-xl">
-                ¡Hola! Descubre Tesoros Mundiales, Calidad Amistosa y Garantizada.
+                {user?.name 
+                  ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
+                  : '¡Hola! Descubre tesoros, calidad garantizada.'}
               </h2>
             </div>
 
@@ -931,8 +936,10 @@ export default function TiendaFoxDrop() {
               'moda': '👗',
               'hogar': '🏠',
               'juguetes': '🧸',
-              'cosmética': '✨',
-              'cosmetica': '✨',
+              'cosmética': '💄',
+              'cosmetica': '💄',
+              'belleza': '💄',
+              'cuidado personal': '🧴',
             };
             const emoji = emojiMap[cat.name.toLowerCase()] || '📦';
             return (
@@ -954,13 +961,14 @@ export default function TiendaFoxDrop() {
             );
           })}
 
-          {/* BOTÓN RASTREAR PEDIDOS / ENCARGOS */}
+          {/* BOTÓN PEDIDOS ESPECIALES */}
           <button
             onClick={() => setShowCustomOrderModal(true)}
             className="px-4 py-2 rounded-2xl text-xs font-bold bg-[#E1EBE8] hover:bg-[#D5E3DF] text-[#0F3E36] border border-[#CCDCD7] transition shrink-0 flex items-center gap-2 cursor-pointer shadow-xs"
+            title="¿Buscas un producto que no ves en el catálogo? Solicítalo aquí"
           >
-            <span className="text-base">🧸</span>
-            <span>Track Orders y Garantizada</span>
+            <span className="text-base">✨</span>
+            <span>Pedidos Especiales</span>
           </button>
         </div>
       </section>
@@ -1983,89 +1991,204 @@ export default function TiendaFoxDrop() {
       )}
 
       {/* ======================================================== */}
-      {/* 5. FOOTER AZUL PETRÓLEO EXACTO A FOXDROP */}
+      {/* 5. FOOTER UNIFICADO EN COLOR VERDE BOSQUE (#0F3E36) */}
       {/* ======================================================== */}
-      <footer className="bg-[#2D4A58] text-white mt-12 pt-10 pb-6 border-t border-slate-700 text-xs">
+      <footer className="bg-[#0F3E36] text-white mt-12 pt-10 pb-6 border-t border-[#175248] text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             {/* COL 1: SOBRE FOXDROP */}
             <div className="space-y-3">
               <FoxDropLogo size="md" variant="dark" />
-              <p className="text-gray-300 text-xs leading-relaxed">
-                Tu atajo al mundo. Importación directa y curaduría global con entregas seguras en México.
+              <p className="text-[#D3E0DC] text-xs leading-relaxed max-w-sm">
+                Curaduría global y productos de importación con entregas seguras en Puebla y envíos a todo México.
               </p>
-              <ul className="space-y-1.5 text-gray-300 text-xs pt-1">
-                <li className="hover:text-white cursor-pointer">Nuestro Modelo</li>
-                <li className="hover:text-white cursor-pointer">FAQ & Preguntas</li>
-                <li className="hover:text-white cursor-pointer">Contacto de Soporte</li>
-              </ul>
-            </div>
-
-            {/* COL 2: CATEGORÍAS */}
-            <div className="space-y-2">
-              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Categorías</h4>
-              <ul className="space-y-1.5 text-gray-300 text-xs">
-                <li className="hover:text-white cursor-pointer">Asia</li>
-                <li className="hover:text-white cursor-pointer">Europa</li>
-                <li className="hover:text-white cursor-pointer">América</li>
-              </ul>
-            </div>
-
-            {/* COL 3: INFORMACIÓN */}
-            <div className="space-y-2">
-              <h4 className="font-black text-sm uppercase tracking-wider text-gray-200">Información</h4>
-              <ul className="space-y-1.5 text-gray-300 text-xs">
-                <li className="hover:text-white cursor-pointer">Envíos</li>
-                <li className="hover:text-white cursor-pointer">Aduanas</li>
-                <li className="hover:text-white cursor-pointer">Devoluciones</li>
-                <li className="hover:text-white cursor-pointer">Privacidad</li>
-              </ul>
-            </div>
-
-            {/* COL 4: NEWSLETTER & MÉTODOS DE PAGO */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-xs text-gray-200">
-                Suscríbete para ofertas exclusivas e internacional...
-              </h4>
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="Entra para consultar..."
-                  className="bg-white text-gray-800 placeholder-gray-400 px-3 py-2 text-xs rounded-l-md w-full focus:outline-none"
-                />
-                <button className="bg-[#E65F2B] hover:bg-[#D45321] text-white px-3.5 rounded-r-md">
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              <div className="pt-1">
+                <a
+                  href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '522221234567'}?text=${encodeURIComponent('Hola FoxDrop, tengo una duda sobre un producto.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#E3B888] hover:text-white font-bold transition"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Atención directa por WhatsApp</span>
+                </a>
               </div>
+            </div>
 
-              <div className="pt-2">
-                <span className="text-[10px] text-gray-400 block mb-1">Métodos de pago</span>
-                <div className="flex items-center space-x-2 text-[10px] font-bold">
-                  <span className="bg-white text-[#2D4A58] px-2 py-0.5 rounded font-black">VISA</span>
-                  <span className="bg-white text-[#E65F2B] px-2 py-0.5 rounded font-black">MC</span>
-                  <span className="bg-white text-blue-600 px-2 py-0.5 rounded font-black">PayPal</span>
-                  <span className="bg-white text-emerald-600 px-2 py-0.5 rounded font-black">SPEI</span>
+            {/* COL 2: INFORMACIÓN */}
+            <div className="space-y-2">
+              <h4 className="font-black text-sm uppercase tracking-wider text-[#E3B888]">Información</h4>
+              <ul className="space-y-2 text-[#D3E0DC] text-xs">
+                <li>
+                  <button 
+                    onClick={() => setInfoModal('envios')}
+                    className="hover:text-white transition text-left cursor-pointer flex items-center gap-2"
+                  >
+                    <span className="text-[#DF7F2D] font-bold">•</span>
+                    <span className="hover:underline">Envíos</span>
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setInfoModal('devoluciones')}
+                    className="hover:text-white transition text-left cursor-pointer flex items-center gap-2"
+                  >
+                    <span className="text-[#DF7F2D] font-bold">•</span>
+                    <span className="hover:underline">Devoluciones</span>
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setInfoModal('privacidad')}
+                    className="hover:text-white transition text-left cursor-pointer flex items-center gap-2"
+                  >
+                    <span className="text-[#DF7F2D] font-bold">•</span>
+                    <span className="hover:underline">Privacidad</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* COL 3: MÉTODOS DE PAGO */}
+            <div className="space-y-3">
+              <h4 className="font-black text-sm uppercase tracking-wider text-[#E3B888]">Métodos de Pago</h4>
+              <p className="text-[#D3E0DC] text-xs">
+                De momento recibimos tus compras de forma directa y sin comisiones:
+              </p>
+              <div className="flex flex-col gap-2 pt-1">
+                <div className="flex items-center gap-3 bg-white/10 border border-white/15 px-3 py-2 rounded-xl">
+                  <span className="text-lg">💵</span>
+                  <div>
+                    <span className="font-black text-white block text-xs">Efectivo</span>
+                    <span className="text-[10px] text-white/70">Pago contra entrega en Puebla</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 border border-white/15 px-3 py-2 rounded-xl">
+                  <span className="text-lg">🏦</span>
+                  <div>
+                    <span className="font-black text-white block text-xs">Transferencia SPEI</span>
+                    <span className="text-[10px] text-white/70">Directo desde cualquier banco de México</span>
+                  </div>
                 </div>
               </div>
             </div>
 
           </div>
 
-          {/* COPYRIGHT & REDES */}
-          <div className="pt-6 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-400 gap-4">
-            <p>© 2026 - Foxdrop international design. Todos los derechos reservados.</p>
-            <div className="flex items-center space-x-3 text-gray-300">
-              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">f</span>
-              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">𝕏</span>
-              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">in</span>
-              <span className="w-6 h-6 rounded-full bg-[#203641] flex items-center justify-center font-bold text-[10px] hover:text-white cursor-pointer">▶</span>
+          {/* COPYRIGHT */}
+          <div className="pt-6 border-t border-white/15 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/75 gap-3">
+            <p>© 2026 FoxDrop. Todos los derechos reservados.</p>
+            <div className="flex items-center gap-1.5 text-emerald-300 text-[11px] font-semibold">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Compra 100% segura y garantizada</span>
             </div>
           </div>
 
         </div>
       </footer>
+
+      {/* MODAL INFORMATIVO (ENVÍOS / DEVOLUCIONES / PRIVACIDAD) */}
+      {infoModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200">
+            <button
+              onClick={() => setInfoModal(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {infoModal === 'envios' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#0F3E36] flex items-center justify-center font-bold">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Política de Envíos</h3>
+                    <p className="text-xs text-gray-400 font-medium">Entregas locales y cobertura nacional</p>
+                  </div>
+                </div>
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">📍 Entregas Locales en Puebla:</strong>
+                    Coordinamos entregas directas y seguras en puntos céntricos o a domicilio. Puedes pagar en efectivo contra entrega o vía SPEI.
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">📦 Envíos Nacionales:</strong>
+                    Enviamos a cualquier código postal de la República Mexicana mediante paqueterías certificadas con número de rastreo.
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">⏱️ Tiempos de Preparación:</strong>
+                    Los pedidos se preparan e inspeccionan en un plazo de 24 a 48 horas hábiles.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {infoModal === 'devoluciones' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100 text-[#DF7F2D] flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Garantía y Devoluciones</h3>
+                    <p className="text-xs text-gray-400 font-medium">Calidad asegurada en cada compra</p>
+                  </div>
+                </div>
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">🛡️ Garantía de Calidad FoxDrop:</strong>
+                    Cada producto es revisado minuciosamente antes de su entrega para asegurar su perfecto estado y autenticidad.
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">🔄 Plazo de Reporte:</strong>
+                    Si tu artículo presenta algún defecto de fábrica o daño de traslado, cuentas con 7 días naturales tras recibirlo para solicitar tu reemplazo o reembolso.
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">💬 Atención Sin Complicaciones:</strong>
+                    Solo escríbenos directamente por WhatsApp con fotos o video de tu paquete para una solución inmediata.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {infoModal === 'privacidad' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Aviso de Privacidad</h3>
+                    <p className="text-xs text-gray-400 font-medium">Protección estricta de tu información</p>
+                  </div>
+                </div>
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">🔒 Uso Exclusivo:</strong>
+                    Tus datos (nombre, teléfono y correo electrónico) son utilizados únicamente para la confirmación y entrega de tus pedidos y la asignación de tus puntos FoxDrop.
+                  </p>
+                  <p>
+                    <strong className="text-gray-900 block font-bold mb-0.5">🚫 Cero Spam o Venta de Datos:</strong>
+                    Nunca venderemos, rentaremos ni compartiremos tus datos con agencias de publicidad externas ni terceros.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setInfoModal(null)}
+              className="w-full bg-[#0F3E36] hover:bg-[#185348] text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* 6. FICHA DE PRODUCTO: BOTTOM SHEET TÁCTIL (MÓVIL) Y MODAL (PC) */}
@@ -2909,7 +3032,7 @@ export default function TiendaFoxDrop() {
               {cartItemCount}
             </span>
           )}
-          <span className="text-[10px] font-medium">Basket</span>
+          <span className="text-[10px] font-medium">Carrito</span>
         </button>
 
         {user ? (
