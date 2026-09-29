@@ -21,6 +21,54 @@ import { createOrderInDb, submitSpecialOrder, getClientOrderHistory } from '@/li
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier } from '@/lib/clubFoxdrop';
 import { getCarouselSlides, CarouselSlide } from '@/lib/admin';
 
+// Normaliza texto eliminando acentos, caracteres especiales y mayúsculas
+function normalizeSearchText(text: string): string {
+  if (!text) return '';
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Búsqueda dinámica y flexible por palabras clave sin importar orden ni acentos
+function matchesProductSearch(product: Product, query: string): boolean {
+  const cleanQuery = normalizeSearchText(query);
+  if (!cleanQuery) return true;
+
+  const queryTokens = cleanQuery.split(' ').filter(token => token.length > 0);
+  if (queryTokens.length === 0) return true;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawTags = (product as any).tags;
+  const tagsStr = Array.isArray(rawTags) ? rawTags.join(' ') : (typeof rawTags === 'string' ? rawTags : '');
+  
+  const searchableText = normalizeSearchText(`
+    ${product.title || ''} 
+    ${product.description || ''} 
+    ${product.category || ''} 
+    ${tagsStr}
+    ${(product as any).sku || ''}
+  `);
+
+  return queryTokens.every(token => {
+    if (searchableText.includes(token)) return true;
+
+    // Reconocimiento de plurales/singulares comunes en español
+    if (token.length > 3 && token.endsWith('es')) {
+      const stem = token.slice(0, -2);
+      if (searchableText.includes(stem)) return true;
+    } else if (token.length > 3 && token.endsWith('s')) {
+      const stem = token.slice(0, -1);
+      if (searchableText.includes(stem)) return true;
+    }
+
+    return false;
+  });
+}
+
 export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,13 +152,16 @@ export default function TiendaFoxDrop() {
   // Autenticación OTP inteligente al hacer checkout o Mi Cuenta
   const [user, setUser] = useState<{ id?: string; name: string; email: string; phone: string; points?: number } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authStep, setAuthStep] = useState<'email' | 'new_details' | 'otp' | 'success'>('email');
+  const [authStep, setAuthStep] = useState<'email' | 'otp' | 'new_details' | 'success'>('email');
   const [authEmail, setAuthEmail] = useState('');
+  const [authFirstName, setAuthFirstName] = useState('');
+  const [authLastName, setAuthLastName] = useState('');
   const [authPhone, setAuthPhone] = useState('');
   const [authName, setAuthName] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [recognizedUser, setRecognizedUser] = useState<string | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(false);
+  const [authenticatedUserId, setAuthenticatedUserId] = useState<string | null>(null);
 
   // VISTA INTEGRADA: Tienda ('store') o Mi Cuenta ('account')
   const [currentView, setCurrentView] = useState<'store' | 'account'>('store');
@@ -220,10 +271,10 @@ export default function TiendaFoxDrop() {
     }));
   })();
 
-  // Filtrado por búsqueda y categoría
+  // Filtrado dinámico por búsqueda de palabras clave (sin acentos, flexible) y categoría
   const baseFilteredProducts = products.filter(p => {
-    const matchSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = selectedCategory === 'Todas' || p.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+    const matchSearch = matchesProductSearch(p, searchTerm);
+    const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
     return matchSearch && matchCat;
   });
 
@@ -269,9 +320,17 @@ export default function TiendaFoxDrop() {
     }).filter(Boolean) as { product: Product; quantity: number }[]);
   };
 
+  const openAuthModal = () => {
+    setAuthStep('email');
+    setOtpCode('');
+    setAuthFirstName('');
+    setAuthLastName('');
+    setShowAuthModal(true);
+  };
+
   const handleCheckoutInit = () => {
     if (!user) {
-      setShowAuthModal(true);
+      openAuthModal();
       return;
     }
     setCheckoutStep('shipping');
@@ -280,49 +339,38 @@ export default function TiendaFoxDrop() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
-  // Paso 1: Comprobar si el correo ya existe
+  // Paso 1: Enviar OTP directamente al correo ingresado
   const handleEmailCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!authEmail.trim() || !authEmail.includes('@')) return;
+    const cleanEmail = authEmail.trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) return;
 
     setIsCheckingUser(true);
+    setIsSendingOtp(true);
     try {
-      const lookup = await lookupUserByEmail(authEmail.trim());
-      if (lookup.exists) {
-        // Usuario existente: reconocemos su nombre y teléfono guardados
-        setRecognizedUser(lookup.fullName || 'Cliente');
-        setAuthName(lookup.fullName || '');
+      const lookup = await lookupUserByEmail(cleanEmail);
+      if (lookup.exists && lookup.fullName) {
+        setRecognizedUser(lookup.fullName);
+        setAuthName(lookup.fullName);
         setAuthPhone(lookup.phone || '');
-        setIsSendingOtp(true);
-        await sendEmailOTP(authEmail.trim());
-        setAuthStep('otp');
+        const parts = lookup.fullName.split(' ');
+        setAuthFirstName(parts[0] || '');
+        setAuthLastName(parts.slice(1).join(' ') || '');
       } else {
-        // Usuario nuevo: pedimos nombre y WhatsApp una sola vez
         setRecognizedUser(null);
-        setAuthStep('new_details');
+        setAuthName('');
+        setAuthPhone('');
+        setAuthFirstName('');
+        setAuthLastName('');
       }
+
+      await sendEmailOTP(cleanEmail);
+      setAuthStep('otp');
     } catch (err: any) {
-      console.error("Error verificando usuario:", err);
+      console.error("Error al procesar correo:", err);
       alert(`No pudimos procesar tu correo: ${err?.message || 'Intenta de nuevo'}`);
     } finally {
       setIsCheckingUser(false);
-      setIsSendingOtp(false);
-    }
-  };
-
-  // Paso 1.5: Para usuarios nuevos, enviar OTP tras capturar sus datos
-  const handleNewDetailsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!authName.trim() || !authPhone.trim()) return;
-
-    setIsSendingOtp(true);
-    try {
-      await sendEmailOTP(authEmail.trim());
-      setAuthStep('otp');
-    } catch (err: any) {
-      console.error("Error enviando OTP:", err);
-      alert(`No pudimos enviar el código a ${authEmail}.\nDetalle: ${err?.message || 'Verifica el correo ingresado.'}`);
-    } finally {
       setIsSendingOtp(false);
     }
   };
@@ -341,6 +389,7 @@ export default function TiendaFoxDrop() {
     }
   };
 
+  // Paso 2: Verificar el código OTP de 6 dígitos
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifyingOtp(true);
@@ -350,16 +399,11 @@ export default function TiendaFoxDrop() {
     let loggedUserId = '';
 
     try {
-      const res = await verifyEmailOTP(authEmail, otpCode.trim());
+      const res = await verifyEmailOTP(authEmail.trim(), otpCode.trim());
       if (res?.session?.user) {
         verified = true;
         loggedUserId = res.session.user.id;
-        await upsertUserProfile({
-          id: res.session.user.id,
-          email: authEmail,
-          full_name: authName,
-          phone: authPhone,
-        });
+        setAuthenticatedUserId(loggedUserId);
       }
     } catch (err: any) {
       authError = err?.message || 'Código inválido o expirado';
@@ -368,24 +412,37 @@ export default function TiendaFoxDrop() {
       setIsVerifyingOtp(false);
     }
 
-    if (verified) {
-      // Obtener el perfil real actualizado para tomar sus puntos reales de BD (0 si no tiene compras)
-      let initialPoints = 0;
+    if (verified && loggedUserId) {
+      // Verificar si ya tiene datos guardados en su perfil
+      let existingFullName = authName || recognizedUser || '';
+      let existingPhone = authPhone || '';
+      let points = 0;
+
       try {
-        const freshProfile = await getCurrentUserProfile();
-        if (freshProfile) {
-          initialPoints = freshProfile.loyaltyPoints ?? 0;
+        const freshProfile = await getUserFullProfile();
+        if (freshProfile?.fullName) {
+          existingFullName = freshProfile.fullName;
+          existingPhone = freshProfile.phone || existingPhone;
+          points = freshProfile.loyaltyPoints ?? 0;
         }
       } catch (e) {
-        console.warn("Error leyendo puntos iniciales:", e);
+        console.warn("Error leyendo perfil en verificación:", e);
       }
 
+      // SI ES USUARIO NUEVO (o no tiene nombre completo guardado):
+      // Le pedimos Nombre(s), Apellido(s) y Teléfono en el siguiente paso
+      if (!existingFullName || !existingFullName.trim()) {
+        setAuthStep('new_details');
+        return;
+      }
+
+      // SI YA ES USUARIO EXISTENTE:
       const activeUser = { 
         id: loggedUserId,
-        name: authName || 'Cliente FoxDrop', 
-        email: authEmail, 
-        phone: authPhone, 
-        points: initialPoints 
+        name: existingFullName, 
+        email: authEmail.trim(), 
+        phone: existingPhone, 
+        points 
       };
       setUser(activeUser);
       setAuthStep('success');
@@ -401,6 +458,58 @@ export default function TiendaFoxDrop() {
       }, 700);
     } else {
       alert(`Error al verificar código: ${authError || 'El código ingresado no es válido o ya expiró'}.\n\nRevisa tu bandeja de entrada o spam en ${authEmail}.`);
+    }
+  };
+
+  // Paso 3 (SOLO PARA USUARIOS NUEVOS TRAS METER EL CÓDIGO):
+  // Capturar Nombre(s), Apellido(s) y Teléfono WhatsApp
+  const handleNewDetailsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authFirstName.trim() || !authLastName.trim() || !authPhone.trim()) {
+      alert("Por favor completa tu nombre, apellido y teléfono.");
+      return;
+    }
+
+    const fullName = `${authFirstName.trim()} ${authLastName.trim()}`;
+    const cleanPhone = authPhone.trim();
+    setIsSavingProfile(true);
+
+    try {
+      const uid = authenticatedUserId;
+      if (uid) {
+        await upsertUserProfile({
+          id: uid,
+          email: authEmail.trim(),
+          full_name: fullName,
+          phone: cleanPhone,
+        });
+      }
+
+      const activeUser = {
+        id: uid || undefined,
+        name: fullName,
+        email: authEmail.trim(),
+        phone: cleanPhone,
+        points: 0,
+      };
+
+      setUser(activeUser);
+      setAuthStep('success');
+      loadUserAccount(cleanPhone, authEmail.trim());
+      setTimeout(() => {
+        setShowAuthModal(false);
+        if (cart.length > 0) {
+          setCheckoutStep('shipping');
+        } else {
+          loadFullProfileData();
+          setCurrentView('account');
+        }
+      }, 700);
+    } catch (err: any) {
+      console.error("Error guardando datos del nuevo usuario:", err);
+      alert(`No pudimos guardar tus datos: ${err?.message || 'Intenta de nuevo'}`);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -673,7 +782,11 @@ export default function TiendaFoxDrop() {
               type="text"
               value={searchTerm}
               onChange={e => {
-                setSearchTerm(e.target.value);
+                const val = e.target.value;
+                setSearchTerm(val);
+                if (val.trim() && selectedCategory !== 'Todas') {
+                  setSelectedCategory('Todas');
+                }
                 if (currentView === 'account') setCurrentView('store');
               }}
               placeholder="Buscar productos, marcas o categorías..."
@@ -748,10 +861,7 @@ export default function TiendaFoxDrop() {
               </button>
             ) : (
               <button
-                onClick={() => {
-                  setAuthStep('email');
-                  setShowAuthModal(true);
-                }}
+                onClick={openAuthModal}
                 className="hidden sm:flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full transition border border-white/15 text-xs font-medium cursor-pointer"
               >
                 <User className="w-3.5 h-3.5" />
@@ -2592,66 +2702,15 @@ export default function TiendaFoxDrop() {
               </form>
             )}
 
-            {/* PASO 1.5: SI ES USUARIO NUEVO, PEDIR DATOS UNA SOLA VEZ */}
-            {authStep === 'new_details' && (
-              <form onSubmit={handleNewDetailsSubmit} className="space-y-3 text-xs animate-in fade-in duration-200">
-                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-emerald-800 text-[11px]">
-                  <strong>¡Bienvenido a FoxDrop!</strong> Dinos tu nombre y WhatsApp para dar seguimiento a tus paquetes.
-                </div>
-
-                <div>
-                  <label className="text-gray-700 font-bold block mb-1">Nombre completo:</label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    placeholder="Tu nombre y apellido"
-                    value={authName}
-                    onChange={e => setAuthName(e.target.value)}
-                    className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-gray-700 font-bold block mb-1">Teléfono WhatsApp:</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="10 dígitos (ej. 2221234567)"
-                    value={authPhone}
-                    onChange={e => setAuthPhone(e.target.value)}
-                    className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setAuthStep('email')}
-                    className="px-3 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-50"
-                  >
-                    Atrás
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isSendingOtp}
-                    className="flex-1 bg-[#0F3E36] hover:bg-[#1A5248] disabled:bg-gray-300 text-white font-black py-2.5 rounded-xl transition shadow text-xs"
-                  >
-                    {isSendingOtp ? 'Enviando código...' : 'Crear y recibir código'}
-                  </button>
-                </div>
-              </form>
-            )}
-
             {/* PASO 2: CÓDIGO OTP DE 6 DÍGITOS */}
             {authStep === 'otp' && (
-              <form onSubmit={handleVerifyOtp} className="space-y-3 text-xs animate-in fade-in duration-200">
-                <div className="bg-[#EDF5F7] border border-[#D5E6EA] p-3 rounded-xl text-center text-[#0F3E36]">
+              <form onSubmit={handleVerifyOtp} className="space-y-3.5 text-xs animate-in fade-in duration-200">
+                <div className="bg-[#EDF5F7] border border-[#D5E6EA] p-3 rounded-2xl text-center text-[#0F3E36]">
                   {recognizedUser ? (
                     <p className="font-extrabold text-sm mb-0.5">¡Hola de nuevo, {recognizedUser}! 👋</p>
                   ) : null}
                   <p className="font-semibold text-gray-800">Ingresa el código numérico de 6 dígitos</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Enviado por correo a: <strong>{authEmail}</strong></p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Enviado a: <strong>{authEmail}</strong></p>
                 </div>
 
                 <input
@@ -2685,7 +2744,7 @@ export default function TiendaFoxDrop() {
                     type="button"
                     onClick={handleResendOtp}
                     disabled={isSendingOtp}
-                    className="text-[#DF7F2D] hover:underline font-semibold disabled:text-gray-400"
+                    className="text-[#DF7F2D] hover:underline font-semibold disabled:text-gray-400 cursor-pointer"
                   >
                     {isSendingOtp ? 'Reenviando...' : 'Reenviar código'}
                   </button>
@@ -2695,7 +2754,7 @@ export default function TiendaFoxDrop() {
                       setAuthStep('email');
                       setOtpCode('');
                     }}
-                    className="text-slate-500 hover:text-slate-800 underline"
+                    className="text-slate-500 hover:text-slate-800 underline cursor-pointer"
                   >
                     Cambiar correo
                   </button>
@@ -2703,9 +2762,81 @@ export default function TiendaFoxDrop() {
               </form>
             )}
 
+            {/* PASO 3: SI ES USUARIO NUEVO TRAS VALIDAR CÓDIGO, PEDIR NOMBRE(S), APELLIDO(S) Y TELÉFONO */}
+            {authStep === 'new_details' && (
+              <form onSubmit={handleNewDetailsSubmit} className="space-y-3.5 text-xs animate-in fade-in duration-200">
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-emerald-900 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold mb-1 text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>¡Código verificado con éxito!</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 leading-tight">
+                    Por favor completa tus datos personales para coordinar tus entregas y pedidos.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-gray-700 font-bold block mb-1">Nombre(s):</label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      placeholder="Ej. Mario"
+                      value={authFirstName}
+                      onChange={e => setAuthFirstName(e.target.value)}
+                      className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-700 font-bold block mb-1">Apellido(s):</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. Gómez"
+                      value={authLastName}
+                      onChange={e => setAuthLastName(e.target.value)}
+                      className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-gray-700 font-bold block mb-1">Teléfono WhatsApp:</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="10 dígitos (ej. 2221234567)"
+                    value={authPhone}
+                    onChange={e => setAuthPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Lo usamos para la entrega y para enviarte tu número de guía.
+                  </p>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSavingProfile || !authFirstName.trim() || !authLastName.trim() || !authPhone.trim()}
+                  className="w-full bg-[#0F3E36] hover:bg-[#1A5248] disabled:bg-gray-300 text-white font-black py-3 rounded-xl transition shadow cursor-pointer text-xs flex items-center justify-center gap-2 mt-2"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Guardando datos...</span>
+                    </>
+                  ) : (
+                    <span>Guardar y Entrar a FoxDrop</span>
+                  )}
+                </button>
+              </form>
+            )}
+
             {authStep === 'success' && (
-              <div className="text-center py-4 text-xs font-bold text-emerald-600">
-                ¡Cuenta confirmada con éxito!
+              <div className="text-center py-4 text-xs font-bold text-emerald-600 flex flex-col items-center gap-2">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 animate-bounce" />
+                <span>¡Bienvenido a FoxDrop! Accediendo a tu cuenta...</span>
               </div>
             )}
           </div>
@@ -3054,11 +3185,8 @@ export default function TiendaFoxDrop() {
           </button>
         ) : (
           <button
-            onClick={() => {
-              setAuthStep('email');
-              setShowAuthModal(true);
-            }}
-            className="flex flex-col items-center gap-1 text-gray-300 hover:text-white"
+            onClick={openAuthModal}
+            className="flex flex-col items-center gap-1 text-gray-300 hover:text-white cursor-pointer"
           >
             <User className="w-5 h-5" />
             <span className="text-[10px] font-medium">Entrar</span>
