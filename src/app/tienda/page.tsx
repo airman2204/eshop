@@ -20,6 +20,7 @@ import {
 import { createOrderInDb, submitSpecialOrder, getClientOrderHistory } from '@/lib/orders';
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier } from '@/lib/clubFoxdrop';
 import { getCarouselSlides, CarouselSlide } from '@/lib/admin';
+import { trackEcommerceEvent } from '@/components/Analytics';
 
 // Normaliza texto eliminando acentos, caracteres especiales y mayúsculas
 function normalizeSearchText(text: string): string {
@@ -306,6 +307,13 @@ export default function TiendaFoxDrop() {
       const exists = prev.find(i => i.product.id === product.id);
       if (exists) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantityToAdd } : i);
       return [...prev, { product, quantity: quantityToAdd }];
+    });
+    trackEcommerceEvent('add_to_cart', {
+      item_id: product.id,
+      item_name: product.title,
+      price: product.publicPrice,
+      quantity: quantityToAdd,
+      currency: 'MXN',
     });
     setIsCartOpen(true);
   };
@@ -741,6 +749,18 @@ export default function TiendaFoxDrop() {
           }),
         }).catch(err => console.warn("WhatsApp notification error:", err));
       }
+
+      trackEcommerceEvent('purchase', {
+        transaction_id: created.orderNumber,
+        value: cartTotal,
+        currency: 'MXN',
+        items: cart.map(i => ({
+          item_id: i.product.id,
+          item_name: i.product.title,
+          price: i.product.publicPrice,
+          quantity: i.quantity,
+        })),
+      });
     } catch (err) {
       console.warn("Fallo guardando pedido en BD, usando id de contingencia:", err);
       const fallbackId = `FX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2235,6 +2255,16 @@ export default function TiendaFoxDrop() {
                     Los pedidos se preparan e inspeccionan en un plazo de 24 a 48 horas hábiles.
                   </p>
                 </div>
+                <div className="pt-1">
+                  <Link
+                    href="/terminos"
+                    onClick={() => setInfoModal(null)}
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
+                  >
+                    <span>Ver Términos y Condiciones completos</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -2263,6 +2293,16 @@ export default function TiendaFoxDrop() {
                     Solo escríbenos directamente por WhatsApp con fotos o video de tu paquete para una solución inmediata.
                   </p>
                 </div>
+                <div className="pt-1">
+                  <Link
+                    href="/terminos"
+                    onClick={() => setInfoModal(null)}
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
+                  >
+                    <span>Ver Políticas de Devolución completas</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -2286,6 +2326,16 @@ export default function TiendaFoxDrop() {
                     <strong className="text-gray-900 block font-bold mb-0.5">🚫 Cero Spam o Venta de Datos:</strong>
                     Nunca venderemos, rentaremos ni compartiremos tus datos con agencias de publicidad externas ni terceros.
                   </p>
+                </div>
+                <div className="pt-1">
+                  <Link
+                    href="/privacidad"
+                    onClick={() => setInfoModal(null)}
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
+                  >
+                    <span>Ver Aviso de Privacidad Integral completo</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             )}

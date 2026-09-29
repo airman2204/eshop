@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import CookieBanner from "@/components/CookieBanner";
+import Analytics from "@/components/Analytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,31 +15,33 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#E65F2B",
+  themeColor: "#0F3E36",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://foxdrop.mx"),
   title: {
-    default: "FoxDrop — Tu Atajo al Mundo",
-    template: "%s | FoxDrop",
+    default: "FoxDrop México — Calidad Amistosa y Garantizada",
+    template: "%s | FoxDrop México",
   },
   description:
-    "Productos de importación internacional en Puebla, México. Electrónica, moda, cosmética y más con entrega local y puntos de encuentro en toda la ciudad.",
+    "Descubre tesoros mundiales y productos exclusivos en FoxDrop México. Entregas locales seguras en Puebla y envíos a toda la República Mexicana con garantía de satisfacción.",
   keywords: [
-    "importación",
-    "productos americanos",
-    "electrónica",
-    "Puebla",
-    "México",
-    "Apple Watch",
-    "Sony",
-    "Samsung",
     "FoxDrop",
+    "FoxDrop México",
+    "tienda online Puebla",
+    "importación directa México",
+    "gadgets exclusivos",
+    "electrónica original",
+    "cosmética importada",
+    "compras seguras México",
+    "envíos express Puebla",
+    "pedidos especiales",
   ],
-  authors: [{ name: "FoxDrop" }],
+  authors: [{ name: "FoxDrop México" }],
   creator: "FoxDrop",
   publisher: "FoxDrop",
   robots: {
@@ -46,20 +50,34 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   openGraph: {
     type: "website",
     locale: "es_MX",
-    siteName: "FoxDrop",
-    title: "FoxDrop — Tu Atajo al Mundo",
+    url: "https://foxdrop.mx",
+    siteName: "FoxDrop México",
+    title: "FoxDrop México — Calidad Amistosa y Garantizada",
     description:
-      "Productos de importación internacional en Puebla, México. Entrega local y puntos de encuentro.",
+      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras en Puebla y envíos a todo México.",
+    images: [
+      {
+        url: "/fox-hero-desktop-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "FoxDrop México — Tu Tienda de Tesoros Mundiales",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "FoxDrop — Tu Atajo al Mundo",
-    description: "Productos de importación internacional en Puebla, México.",
+    title: "FoxDrop México — Calidad Amistosa y Garantizada",
+    description:
+      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras en Puebla y envíos a todo México.",
+    images: ["/fox-hero-desktop-banner.png"],
   },
   manifest: "/manifest.webmanifest",
   icons: {
@@ -80,14 +98,60 @@ export const metadata: Metadata = {
   applicationName: "FoxDrop",
 };
 
+// Datos estructurados JSON-LD Schema.org para Google Rich Snippets y SEO
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://foxdrop.mx/#organization",
+      "name": "FoxDrop México",
+      "url": "https://foxdrop.mx",
+      "logo": "https://foxdrop.mx/foxdrop-header-logo-exact.png",
+      "description": "Tienda en línea de productos de importación, tecnología, hogar y cosmética con entrega segura en Puebla y envíos a todo México.",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Support",
+        "areaServed": "MX",
+        "availableLanguage": "Spanish"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://foxdrop.mx/#website",
+      "url": "https://foxdrop.mx",
+      "name": "FoxDrop México",
+      "publisher": {
+        "@id": "https://foxdrop.mx/#organization"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://foxdrop.mx/tienda?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
+        <Analytics />
         {children}
+        <CookieBanner />
         <script
           dangerouslySetInnerHTML={{
             __html: `
