@@ -5,7 +5,7 @@
 
 export const APP_NAME = "FoxDrop";
 export const APP_TAGLINE = "Tu Atajo al Mundo";
-export const APP_PHONE = "2221234567"; // Número de WhatsApp del negocio
+export const APP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || ""; // Número oficial de WhatsApp del negocio
 export const APP_EMAIL = "hola@foxdrop.mx";
 export const APP_CITY = "Puebla, México";
 

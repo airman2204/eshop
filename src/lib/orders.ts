@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from "./supabase/client";
 import { Product } from "@/types";
 
 export interface CreateOrderInput {
+  userId?: string;
   clientName: string;
   clientPhone: string;
   clientEmail?: string;
@@ -39,6 +40,7 @@ export async function createOrderInDb(input: CreateOrderInput) {
     .insert([
       {
         order_number: orderNumber,
+        user_id: input.userId || null,
         client_name: input.clientName,
         client_phone: input.clientPhone,
         client_email: input.clientEmail || null,
@@ -330,18 +332,45 @@ export async function submitSpecialOrder(data: {
 }
 
 /**
- * Obtener historial de pedidos de un cliente específico
+ * Obtener historial de pedidos de un cliente específico (con rastreo y detalle completo)
  */
-export async function getClientOrderHistory(clientEmailOrPhone: string) {
+export async function getClientOrderHistory(identifier: string, options?: { email?: string; userId?: string }) {
+  try {
+    // 1. Intentar primero a través de la API protegida del servidor
+    const res = await fetch("/api/user/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "get_orders",
+        userId: options?.userId,
+        email: options?.email || (identifier.includes("@") ? identifier : undefined),
+        phone: !identifier.includes("@") ? identifier : undefined,
+      }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.orders)) return json.orders;
+    }
+  } catch (apiErr) {
+    console.warn("Fallo llamando /api/user/profile para órdenes, recurriendo a cliente directo:", apiErr);
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
       .select("*, order_items(*)")
-      .or(`client_email.eq.${clientEmailOrPhone},client_phone.eq.${clientEmailOrPhone}`)
       .order("created_at", { ascending: false });
 
+    if (options?.userId) {
+      query = query.or(`user_id.eq.${options.userId},client_email.eq.${identifier},client_phone.eq.${identifier}`);
+    } else {
+      query = query.or(`client_email.eq.${identifier},client_phone.eq.${identifier}`);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data || [];
   } catch (err) {

@@ -31,6 +31,29 @@ export interface ImportBatch {
   notes?: string;
 }
 
+export interface UserAddress {
+  id: string;
+  name: string;
+  street: string;
+  colonia: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  references?: string;
+  isDefault?: boolean;
+}
+
+export interface UserCard {
+  id: string;
+  brand: 'visa' | 'mastercard' | 'amex' | 'other';
+  last4: string;
+  holderName: string;
+  expMonth: string;
+  expYear: string;
+  isDefault?: boolean;
+}
+
 export interface ClientProfile {
   id: string;
   name: string;
@@ -44,6 +67,8 @@ export interface ClientProfile {
   registeredAt?: string;
   ordersCount: number;
   totalSpent: number;
+  addresses?: UserAddress[];
+  cards?: UserCard[];
 }
 
 export interface Order {
