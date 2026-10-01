@@ -166,8 +166,9 @@ export default function TiendaFoxDrop() {
   const [authenticatedUserId, setAuthenticatedUserId] = useState<string | null>(null);
 
   // Persistencia y Sincronización Automática de Carritos (Admin & Carritos Abandonados)
-  const cartLoadedRef = useRef(false);
+  const [isCartHydrated, setIsCartHydrated] = useState(false);
 
+  // 1. Cargar el carrito guardado en localStorage únicamente una vez en el cliente
   useEffect(() => {
     try {
       const saved = localStorage.getItem('foxdrop_cart_items_v1');
@@ -180,12 +181,13 @@ export default function TiendaFoxDrop() {
     } catch (e) {
       console.warn('Error al leer carrito persistido:', e);
     } finally {
-      cartLoadedRef.current = true;
+      setIsCartHydrated(true);
     }
   }, []);
 
+  // 2. Sincronizar hacia localStorage y servidor SOLO después de que el carrito fue hidratado
   useEffect(() => {
-    if (!cartLoadedRef.current) return;
+    if (!isCartHydrated) return;
 
     try {
       localStorage.setItem('foxdrop_cart_items_v1', JSON.stringify(cart));
@@ -233,7 +235,7 @@ export default function TiendaFoxDrop() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [cart, user]);
+  }, [cart, user, isCartHydrated]);
 
   // VISTA INTEGRADA: Tienda ('store') o Mi Cuenta ('account')
   const [currentView, setCurrentView] = useState<'store' | 'account'>('store');
@@ -270,6 +272,73 @@ export default function TiendaFoxDrop() {
       }
     }
   }, []);
+
+  // Restaurar y mantener categoría, pestaña activa, vista y posición exacta de scroll al recargar
+  useEffect(() => {
+    try {
+      const savedCat = sessionStorage.getItem('foxdrop_selected_category');
+      if (savedCat) setSelectedCategory(savedCat);
+
+      const savedTab = sessionStorage.getItem('foxdrop_active_tab') as 'new' | 'deals' | 'all';
+      if (savedTab && ['new', 'deals', 'all'].includes(savedTab)) setActiveTab(savedTab);
+
+      const savedView = sessionStorage.getItem('foxdrop_current_view') as 'store' | 'account';
+      if (savedView && ['store', 'account'].includes(savedView)) setCurrentView(savedView);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_selected_category', selectedCategory);
+    } catch {}
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_active_tab', activeTab);
+    } catch {}
+  }, [activeTab]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_current_view', currentView);
+    } catch {}
+  }, [currentView]);
+
+  // Guardar posición de scroll al desplazarse
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        sessionStorage.setItem('foxdrop_scroll_y', window.scrollY.toString());
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
+
+  // Restaurar scroll una vez que los productos y layout estén listos
+  useEffect(() => {
+    if (!loadingProducts) {
+      const savedY = sessionStorage.getItem('foxdrop_scroll_y');
+      if (savedY) {
+        const top = parseInt(savedY, 10);
+        if (!isNaN(top) && top > 0) {
+          setTimeout(() => {
+            window.scrollTo({ top, behavior: 'instant' });
+          }, 80);
+          setTimeout(() => {
+            window.scrollTo({ top, behavior: 'instant' });
+          }, 250);
+        }
+      }
+    }
+  }, [loadingProducts]);
 
   // Mi Cuenta y Club Foxdrop
   const [showAccountModal, setShowAccountModal] = useState(false);
