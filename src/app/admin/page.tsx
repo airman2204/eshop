@@ -3318,61 +3318,7 @@ https://foxdrop.com.mx`;
               </div>
             </div>
 
-            {/* 3. RECOMENDACIÓN DE API DE ENVÍOS A OTROS ESTADOS */}
-            <div className="bg-gradient-to-br from-slate-900 to-[#18252E] text-white rounded-3xl p-6 shadow-md space-y-4 border border-slate-800">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="inline-block bg-[#E65F2B] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full mb-2 tracking-wider">
-                    Recomendación de Paquetería
-                  </span>
-                  <h3 className="font-black text-lg text-white flex items-center gap-2">
-                    <span>🚀</span> API de Envíos Automatizados en México: Skydropx
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    Para calcular envíos a otros estados de la República en tiempo real de forma económica y sin costos fijos, la solución recomendada es <strong>Skydropx</strong> (o <strong>Envia.com</strong>):
-                  </p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
-                  <span className="text-emerald-400 font-black text-sm block">1. Sin Mensualidad</span>
-                  <p className="text-slate-300 text-[11px]">Pagas exclusivamente la guía que generes cuando un cliente compra.</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
-                  <span className="text-orange-400 font-black text-sm block">2. Hasta 70% Descuento</span>
-                  <p className="text-slate-300 text-[11px]">Tarifas preferenciales de mayoreo en FedEx, Estafeta, DHL, Redpack y Paquetexpress.</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
-                  <span className="text-blue-400 font-black text-sm block">3. Cotización Dinámica</span>
-                  <p className="text-slate-300 text-[11px]">Cotiza por Código Postal de origen (Puebla) al C.P. del cliente en milisegundos.</p>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="w-full sm:w-auto flex-1">
-                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
-                    API Key de Skydropx (Opcional - Ingresa tu clave para habilitar la cotización automática):
-                  </label>
-                  <input
-                    type="password"
-                    value={checkoutSettings.skydropxApiKey || ''}
-                    onChange={e => setCheckoutSettings({ ...checkoutSettings, skydropxApiKey: e.target.value })}
-                    placeholder="sk_live_..."
-                    className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-[#E65F2B]"
-                  />
-                </div>
-                <a
-                  href="https://www.skydropx.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition self-end sm:self-auto shrink-0"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Crear cuenta Skydropx
-                </a>
-              </div>
-            </div>
 
             {/* Botón flotante/inferior de guardar */}
             <div className="pt-2 flex justify-end">
