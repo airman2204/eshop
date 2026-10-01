@@ -20,7 +20,7 @@ import {
   lookupUserByEmail, FullUserProfile, getUserFullProfile, saveUserAddress, deleteUserAddress, 
   saveUserCard, deleteUserCard, updateUserProfileData 
 } from '@/lib/auth';
-import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart } from '@/lib/orders';
+import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart, cancelOrderAsClient } from '@/lib/orders';
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCarouselSlides, CarouselSlide, getClubSettings } from '@/lib/admin';
 import { ClubFoxDropSettings } from '@/types';
@@ -248,6 +248,14 @@ export default function TiendaFoxDrop() {
   const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'cancelled'>('all');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
+
+  // Modal de Cancelación de Pedido estilo Amazon / Mercado Libre
+  const [showClientCancelModal, setShowClientCancelModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [cancellingClientOrder, setCancellingClientOrder] = useState<any | null>(null);
+  const [clientCancelReason, setClientCancelReason] = useState('Encontré un mejor precio / Ya no lo necesito');
+  const [clientCancelNotes, setClientCancelNotes] = useState('');
+  const [clientCancellingLoading, setClientCancellingLoading] = useState(false);
 
   // Modales de dirección y tarjeta dentro de la tienda
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -755,6 +763,54 @@ export default function TiendaFoxDrop() {
       console.warn("Error cargando historial de pedidos:", err);
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  // Manejador de cancelación al estilo Amazon / Mercado Libre
+  const handleExecuteClientCancellation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellingClientOrder) return;
+
+    setClientCancellingLoading(true);
+    const targetOrderId = cancellingClientOrder.order_number || cancellingClientOrder.id;
+    const finalReason = clientCancelNotes.trim()
+      ? `${clientCancelReason} - ${clientCancelNotes.trim()}`
+      : clientCancelReason;
+
+    try {
+      await cancelOrderAsClient(targetOrderId, finalReason);
+
+      // Actualizar estado local inmediatamente
+      setUserOrders(prev => prev.map(o => {
+        const matches = o.id === targetOrderId || o.order_number === targetOrderId;
+        if (matches) {
+          return {
+            ...o,
+            status: 'cancelled',
+            notes: `Cancelado por el cliente: ${finalReason}`
+          };
+        }
+        return o;
+      }));
+
+      // Si el detalle del pedido estaba abierto, actualizarlo también
+      if (selectedOrderForDetail && (selectedOrderForDetail.id === targetOrderId || selectedOrderForDetail.order_number === targetOrderId)) {
+        setSelectedOrderForDetail((prev: any) => ({
+          ...prev,
+          status: 'cancelled',
+          notes: `Cancelado por el cliente: ${finalReason}`
+        }));
+      }
+
+      setShowClientCancelModal(false);
+      setCancellingClientOrder(null);
+      setClientCancelNotes('');
+      alert("✅ Tu pedido ha sido cancelado con éxito.");
+    } catch (err: any) {
+      console.error("Error al cancelar pedido:", err);
+      alert(`No pudimos cancelar el pedido: ${err.message || 'Por favor contacta a soporte'}`);
+    } finally {
+      setClientCancellingLoading(false);
     }
   };
 
@@ -1933,14 +1989,31 @@ export default function TiendaFoxDrop() {
                                 <span className="text-[11px] text-gray-500 font-medium">
                                   {order.order_items?.length || 0} producto(s) en este pedido
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedOrderForDetail(order)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
-                                >
-                                  <span>Ver Detalle & Seguimiento</span>
-                                  <ArrowRight className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  {(order.status === 'pending' || order.status === 'processing') && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCancellingClientOrder(order);
+                                        setClientCancelReason('Encontré un mejor precio / Ya no lo necesito');
+                                        setClientCancelNotes('');
+                                        setShowClientCancelModal(true);
+                                      }}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition cursor-pointer"
+                                    >
+                                      <Ban className="w-3.5 h-3.5 text-red-600" />
+                                      <span>Cancelar Pedido</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedOrderForDetail(order)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                                  >
+                                    <span>Ver Detalle & Seguimiento</span>
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -4018,8 +4091,24 @@ export default function TiendaFoxDrop() {
                 </div>
               </div>
 
-              {/* Botón WhatsApp de Atención Inmediata */}
+              {/* Botón de Cancelación y WhatsApp de Atención Inmediata */}
               <div className="space-y-2 pt-1">
+                {(order.status === 'pending' || order.status === 'processing') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCancellingClientOrder(order);
+                      setClientCancelReason('Encontré un mejor precio / Ya no lo necesito');
+                      setClientCancelNotes('');
+                      setShowClientCancelModal(true);
+                    }}
+                    className="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <Ban className="w-4 h-4 text-red-600" />
+                    <span>Cancelar este Pedido</span>
+                  </button>
+                )}
+
                 <a
                   href={waLink}
                   target="_blank"
@@ -4122,6 +4211,139 @@ export default function TiendaFoxDrop() {
           </button>
         )}
       </nav>
+
+      {/* ======================================================== */}
+      {/* 12. MODAL DE CANCELACIÓN DE PEDIDO ESTILO MERCADO LIBRE / AMAZON */}
+      {/* ======================================================== */}
+      {showClientCancelModal && cancellingClientOrder && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 space-y-5 shadow-2xl relative border border-gray-100 animate-in zoom-in-95 duration-150">
+            <button
+              onClick={() => {
+                setShowClientCancelModal(false);
+                setCancellingClientOrder(null);
+                setClientCancelNotes('');
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Cabecera */}
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3 pr-6">
+              <div className="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <Ban className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-base text-gray-900">¿Deseas cancelar este pedido?</h3>
+                <p className="text-xs text-gray-500 font-mono">
+                  {cancellingClientOrder.order_number || cancellingClientOrder.id}
+                </p>
+              </div>
+            </div>
+
+            {/* Resumen del Pedido a Cancelar */}
+            <div className="bg-[#FAF6F0] p-3.5 rounded-2xl border border-gray-200 text-xs flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-gray-500 block uppercase font-bold">Total a reembolsar / liberar</span>
+                <span className="font-extrabold text-[#DF7F2D] text-sm">
+                  ${Number(cancellingClientOrder.total).toFixed(2)} MXN
+                </span>
+              </div>
+              <span className="text-gray-600 text-xs">
+                {cancellingClientOrder.order_items?.length || 1} producto(s)
+              </span>
+            </div>
+
+            {/* Formulario con motivos estándar de Amazon / Mercado Libre */}
+            <form onSubmit={handleExecuteClientCancellation} className="space-y-4 text-xs">
+              <div>
+                <label className="text-gray-800 font-bold block mb-1.5">
+                  ¿Cuál es el motivo de la cancelación? *
+                </label>
+                <div className="space-y-2">
+                  {[
+                    'Encontré un mejor precio / Ya no lo necesito',
+                    'El tiempo de entrega es muy largo',
+                    'Me equivoqué de dirección o método de entrega',
+                    'Compré por error / Duplicado',
+                    'Prefiero cambiar de producto o modelo',
+                    'Otro motivo personal',
+                  ].map(option => (
+                    <label
+                      key={option}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition text-xs ${
+                        clientCancelReason === option
+                          ? 'border-[#0F3E36] bg-[#0F3E36]/5 text-[#0F3E36] font-bold'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="clientCancelReason"
+                        value={option}
+                        checked={clientCancelReason === option}
+                        onChange={() => setClientCancelReason(option)}
+                        className="text-[#0F3E36] focus:ring-[#0F3E36]"
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-gray-700 font-bold block mb-1">
+                  Detalles adicionales (opcional):
+                </label>
+                <textarea
+                  rows={2}
+                  value={clientCancelNotes}
+                  onChange={e => setClientCancelNotes(e.target.value)}
+                  placeholder="Cuéntanos más si lo deseas para ayudarnos a mejorar..."
+                  className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs resize-none"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 leading-relaxed">
+                ℹ️ Si ya realizaste transferencia por SPEI, el equipo administrativo de FoxDrop te contactará por WhatsApp para coordinar tu reembolso de inmediato.
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowClientCancelModal(false);
+                    setCancellingClientOrder(null);
+                    setClientCancelNotes('');
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 font-bold transition cursor-pointer"
+                >
+                  Conservar Pedido
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={clientCancellingLoading}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-black px-5 py-2.5 rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  {clientCancellingLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Cancelando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="w-4 h-4" />
+                      <span>Confirmar Cancelación</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

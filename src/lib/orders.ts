@@ -274,6 +274,30 @@ export async function updateOrderStatusInDb(orderId: string, status: string, not
   return true;
 }
 
+export async function cancelOrderAsClient(orderId: string, reason: string) {
+  try {
+    const res = await fetch("/api/user/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "cancel_order",
+        orderId,
+        reason,
+      }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.error || "No se pudo cancelar el pedido");
+    }
+    return json;
+  } catch (apiErr: any) {
+    console.warn("Fallo llamando /api/user/profile para cancelar, intentando /api/admin:", apiErr);
+    // Fallback vía /api/admin
+    return await updateOrderStatusInDb(orderId, "cancelled", `Cancelado por el cliente: ${reason}`);
+  }
+}
+
 export async function deleteOrderInDb(orderId: string) {
   try {
     const res = await fetch("/api/admin", {

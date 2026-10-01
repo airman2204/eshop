@@ -267,6 +267,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ orders: orders || [] });
     }
 
+    // 8. CANCELAR PEDIDO POR PARTE DEL CLIENTE (FLUJO AMAZON / MERCADO LIBRE)
+    if (action === "cancel_order") {
+      const { orderId, reason } = body;
+      if (!orderId) {
+        return NextResponse.json({ error: "orderId requerido" }, { status: 400 });
+      }
+
+      const cancelReason = reason && typeof reason === "string" && reason.trim().length > 0 
+        ? reason.trim() 
+        : "Cancelado por el cliente";
+
+      // 1. Verificar el estado actual de la orden para garantizar que no esté ya enviada o entregada
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+      let fetchQuery = supabase.from("orders").select("id, order_number, status, total, client_phone, client_name");
+      if (isUuid) {
+        fetchQuery = fetchQuery.eq("id", orderId);
+      } else {
+        fetchQuery = fetchQuery.eq("order_number", orderId);
+      }
+
+      const { data: orderData, error: fetchErr } = await fetchQuery.maybeSingle();
+
+      if (fetchErr || !orderData) {
+        return NextResponse.json({ error: "No se encontró el pedido solicitado" }, { status: 404 });
+      }
+
+      if (orderData.status === "shipped" || orderData.status === "delivered") {
+        return NextResponse.json({ 
+          error: "El pedido ya está en camino o fue entregado. Para devoluciones, por favor contacta a soporte por WhatsApp." 
+        }, { status: 400 });
+      }
+
+      if (orderData.status === "cancelled") {
+        return NextResponse.json({ success: true, message: "El pedido ya se encontraba cancelado." });
+      }
+
+      // 2. Proceder con la cancelación
+      const updatePayload = {
+        status: "cancelled",
+        notes: `Cancelado por el cliente: ${cancelReason}`,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: updated, error: updateErr } = await supabase
+        .from("orders")
+        .update(updatePayload)
+        .eq("id", orderData.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        console.error("Error al cancelar orden:", updateErr);
+        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Pedido cancelado con éxito", 
+        order: updated 
+      });
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (err: any) {
     console.error("Error en /api/user/profile:", err);

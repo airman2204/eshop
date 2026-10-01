@@ -4339,21 +4339,52 @@ https://foxdrop.com.mx`;
 
             <form onSubmit={handleConfirmCancellation} className="space-y-4 text-xs">
               <div>
+                <label className="text-slate-700 font-bold block mb-1.5">
+                  Selecciona el Motivo de Cancelación: *
+                </label>
+                <div className="space-y-1.5 mb-2.5">
+                  {[
+                    'Cliente solicitó cancelación (No lo requiere / Cambió de opinión)',
+                    'Comprobante o pago no acreditado / Tiempo expirado',
+                    'Falta de stock / Inventario agotado',
+                    'Dirección o datos de entrega inaccesibles / No localizable',
+                    'Pedido de prueba o duplicado',
+                    'Otro motivo administrativo'
+                  ].map(reasonOption => (
+                    <label
+                      key={reasonOption}
+                      className={`flex items-center gap-2 p-2 rounded-xl border cursor-pointer transition text-[11px] ${
+                        cancellationReason.startsWith(reasonOption)
+                          ? 'border-rose-400 bg-rose-50/60 text-rose-900 font-bold'
+                          : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="adminCancelReason"
+                        checked={cancellationReason.startsWith(reasonOption)}
+                        onChange={() => setCancellationReason(reasonOption)}
+                        className="text-rose-600 focus:ring-rose-500"
+                      />
+                      <span>{reasonOption}</span>
+                    </label>
+                  ))}
+                </div>
+
                 <label className="text-slate-700 font-bold block mb-1">
-                  Motivo de la Cancelación *
+                  Detalles o Justificación Adicional (Visible para el cliente):
                 </label>
                 <textarea
-                  required
-                  rows={3}
+                  rows={2}
                   value={cancellationReason}
                   onChange={e => setCancellationReason(e.target.value)}
-                  placeholder="Ej: Cliente canceló por WhatsApp, falta de existencias de un componente, duplicidad de orden..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                  placeholder="Detalles que el cliente verá en su seguimiento (ej. Transferencia no reflejada en 24h)..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none text-xs"
                 />
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900">
-                ⚠️ Al cancelar, el pedido se trasladará a la pestaña de <strong>Pedidos Cancelados</strong> junto con esta justificación para control y auditoría.
+                ⚠️ Al cancelar, el pedido se trasladará automáticamente a <strong>Pedidos Cancelados</strong> y el cliente verá el estado actualizado en tiempo real.
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">

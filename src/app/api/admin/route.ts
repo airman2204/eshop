@@ -537,19 +537,34 @@ export async function POST(req: NextRequest) {
       const { orderId } = body;
       if (!orderId) return NextResponse.json({ error: "orderId requerido" }, { status: 400 });
 
-      // Primero borrar items asociados por si la constraint no tuviese cascade
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+
+      // Buscar el id real de la orden si es order_number
+      let realOrderId = orderId;
+      if (!isUuid) {
+        const { data: foundOrder } = await supabase
+          .from("orders")
+          .select("id")
+          .eq("order_number", orderId)
+          .maybeSingle();
+        if (foundOrder?.id) {
+          realOrderId = foundOrder.id;
+        }
+      }
+
+      // Borrar items asociados primero
       await supabase
         .from("order_items")
         .delete()
-        .or(`order_id.eq.${orderId}`);
+        .eq("order_id", realOrderId);
 
+      // Borrar la orden
       const { error } = await supabase
         .from("orders")
         .delete()
-        .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+        .eq("id", realOrderId);
 
-      if (error) {
-        // Intentar directo por order_number
+      if (error && !isUuid) {
         await supabase.from("orders").delete().eq("order_number", orderId);
       }
 
@@ -567,20 +582,29 @@ export async function POST(req: NextRequest) {
         updatePayload.notes = notes;
       }
 
-      const { data, error } = await supabase
-        .from("orders")
-        .update(updatePayload)
-        .or(`id.eq.${orderId},order_number.eq.${orderId}`)
-        .select()
-        .single();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
 
-      if (error) {
-        // Si no pudo por or, intentar por id
-        const { error: err2 } = await supabase
-          .from("orders")
-          .update(updatePayload)
-          .eq("id", orderId);
-        if (err2) throw err2;
+      let updateQuery;
+      if (isUuid) {
+        updateQuery = supabase.from("orders").update(updatePayload).eq("id", orderId);
+      } else {
+        updateQuery = supabase.from("orders").update(updatePayload).eq("order_number", orderId);
+      }
+
+      const { data, error } = await updateQuery.select().maybeSingle();
+
+      if (error || !data) {
+        // Fallback: intentar por el otro campo por si acaso
+        const fallbackQuery = isUuid
+          ? supabase.from("orders").update(updatePayload).eq("order_number", orderId)
+          : supabase.from("orders").update(updatePayload).eq("id", orderId);
+        const { data: fallbackData, error: fallbackError } = await fallbackQuery.select().maybeSingle();
+
+        if (fallbackError) {
+          console.error("Error al actualizar estado en Supabase:", fallbackError);
+          return NextResponse.json({ error: fallbackError.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, data: fallbackData });
       }
 
       return NextResponse.json({ success: true, data });
