@@ -95,17 +95,12 @@ export default function GoogleAddressInput({
         </div>
       )}
 
-      {/* Código Postal (Primero para autocompletar automáticamente el resto) */}
+      {/* Código Postal */}
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
-            <MapPin className="w-3.5 h-3.5 text-[#E65F2B]" />
-            Código Postal (5 dígitos) <span className="text-rose-500">*</span>
-          </label>
-          <span className="text-[9px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-            <Sparkles className="w-2.5 h-2.5 text-emerald-600" /> Autocompletado Postal SEPOMEX
-          </span>
-        </div>
+        <label className="text-[11px] font-bold text-gray-700 flex items-center gap-1 mb-1">
+          <MapPin className="w-3.5 h-3.5 text-[#E65F2B]" />
+          Código Postal (5 dígitos) <span className="text-rose-500">*</span>
+        </label>
         <div className="relative">
           <input
             type="text"
@@ -123,9 +118,6 @@ export default function GoogleAddressInput({
             </div>
           )}
         </div>
-        <p className="text-[10px] text-gray-500 mt-1">
-          Escribe tu código postal y autocompletaremos colonia, ciudad y estado de forma instantánea.
-        </p>
       </div>
 
       {/* Calle y Número */}
