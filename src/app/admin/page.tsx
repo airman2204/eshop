@@ -21,7 +21,7 @@ import {
   getClubSettings, saveClubSettings, getLoyaltyMetrics
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
-import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
+import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
@@ -927,6 +927,19 @@ export default function AdminCRM() {
       alert("No se pudo registrar la cancelación. Intenta de nuevo.");
     } finally {
       setCancellingLoading(false);
+    }
+  };
+
+  // Eliminar Pedido Definitivamente de la Base de Datos
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm(`¿Eliminar definitivamente el pedido ${orderId}? Esta acción borrará el pedido de la base de datos de inmediato.`)) return;
+
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    try {
+      await deleteOrderInDb(orderId);
+    } catch (err) {
+      console.error("Error al eliminar pedido:", err);
+      alert("No se pudo eliminar el pedido en la base de datos.");
     }
   };
 
@@ -2018,6 +2031,14 @@ https://foxdrop.com.mx`;
                       </button>
 
                       <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        title="Eliminar pedido permanentemente de la base de datos"
+                        className="bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-700 font-bold p-1.5 rounded-lg flex items-center transition text-xs border border-slate-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
                         onClick={() => sendWhatsAppNotification(
                           order.clientPhone, 
                           `Hola ${order.clientName}, te informamos que tu pedido ${order.id} se encuentra: ${order.status.toUpperCase()}. Si deseas acordar los detalles de entrega, estamos a tu disposición.`
@@ -2082,6 +2103,14 @@ https://foxdrop.com.mx`;
                         className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition text-xs"
                       >
                         <RefreshCw className="w-3.5 h-3.5" /> Restaurar Pedido
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        title="Eliminar pedido permanentemente de la base de datos"
+                        className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 font-bold p-1.5 rounded-lg flex items-center transition text-xs border border-red-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

@@ -533,6 +533,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Todos los productos eliminados de la base de datos." });
     }
 
+    if (action === "delete_order") {
+      const { orderId } = body;
+      if (!orderId) return NextResponse.json({ error: "orderId requerido" }, { status: 400 });
+
+      // Primero borrar items asociados por si la constraint no tuviese cascade
+      await supabase
+        .from("order_items")
+        .delete()
+        .or(`order_id.eq.${orderId}`);
+
+      const { error } = await supabase
+        .from("orders")
+        .delete()
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+      if (error) {
+        // Intentar directo por order_number
+        await supabase.from("orders").delete().eq("order_number", orderId);
+      }
+
+      return NextResponse.json({ success: true, deletedOrderId: orderId });
+    }
+
     if (action === "update_order_status") {
       const { orderId, status, notes } = body;
       if (!orderId || !status) {

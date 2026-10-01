@@ -266,12 +266,37 @@ export async function updateOrderStatusInDb(orderId: string, status: string, not
   const { error } = await supabase
     .from("orders")
     .update(updatePayload)
-    .eq("id", orderId);
+    .or(`id.eq.${orderId},order_number.eq.${orderId}`);
 
   if (error) {
-    console.error("Error updating order status:", error);
-    throw error;
+    await supabase.from("orders").update(updatePayload).eq("order_number", orderId);
   }
+  return true;
+}
+
+export async function deleteOrderInDb(orderId: string) {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "delete_order",
+        orderId,
+      }),
+    });
+
+    if (res.ok) {
+      return true;
+    }
+  } catch (apiErr) {
+    console.warn("Fallo llamando /api/admin para eliminar orden, intentando directo:", apiErr);
+  }
+
+  // Fallback
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseBrowserClient() as any;
+  await supabase.from("order_items").delete().or(`order_id.eq.${orderId}`);
+  await supabase.from("orders").delete().or(`id.eq.${orderId},order_number.eq.${orderId}`);
   return true;
 }
 

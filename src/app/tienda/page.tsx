@@ -8,7 +8,8 @@ import {
   Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
-  Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy
+  Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy,
+  Clock, AlertTriangle, Ban
 } from 'lucide-react';
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
@@ -244,7 +245,7 @@ export default function TiendaFoxDrop() {
   const [accountTab, setAccountTab] = useState<'orders' | 'addresses' | 'cards' | 'club' | 'settings'>('orders');
   const [fullProfile, setFullProfile] = useState<FullUserProfile | null>(null);
   const [loadingFullProfile, setLoadingFullProfile] = useState(false);
-  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered'>('all');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'cancelled'>('all');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
 
@@ -1736,8 +1737,9 @@ export default function TiendaFoxDrop() {
                   <div className="flex items-center space-x-2">
                     {[
                       { id: 'all', label: `Todos (${userOrders.length})` },
-                      { id: 'active', label: 'En Camino / Activos' },
+                      { id: 'active', label: 'En Proceso' },
                       { id: 'delivered', label: 'Entregados' },
+                      { id: 'cancelled', label: 'Cancelados' },
                     ].map(f => (
                       <button
                         key={f.id}
@@ -1791,9 +1793,11 @@ export default function TiendaFoxDrop() {
                       .filter(ord => {
                         if (orderFilter === 'active') return ord.status === 'pending' || ord.status === 'processing' || ord.status === 'shipped';
                         if (orderFilter === 'delivered') return ord.status === 'delivered';
+                        if (orderFilter === 'cancelled') return ord.status === 'cancelled';
                         return true;
                       })
                       .map(order => {
+                        const isCancelled = order.status === 'cancelled';
                         const statusStep = (() => {
                           switch (order.status) {
                             case 'pending': return 1;
@@ -1807,10 +1811,12 @@ export default function TiendaFoxDrop() {
                         const statusBadge = (() => {
                           switch (order.status) {
                             case 'shipped': return { label: 'En Camino', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
-                            case 'processing': return { label: 'En Preparación', bg: 'bg-blue-100 text-blue-800 border-blue-300' };
-                            case 'delivered': return { label: 'Entregado', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+                            case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+                            case 'delivered': return { label: 'Entregado', bg: 'bg-teal-100 text-teal-800 border-teal-300' };
                             case 'cancelled': return { label: 'Cancelado', bg: 'bg-red-100 text-red-800 border-red-300' };
-                            default: return { label: 'Confirmado', bg: 'bg-gray-100 text-gray-800 border-gray-300' };
+                            case 'pending':
+                            default:
+                              return { label: 'Pendiente de Confirmación', bg: 'bg-amber-50 text-amber-800 border-amber-300' };
                           }
                         })();
 
@@ -1841,49 +1847,66 @@ export default function TiendaFoxDrop() {
                               </div>
                             </div>
 
-                            {/* Tracker de 4 pasos */}
-                            <div className="p-4 sm:p-6 space-y-4">
-                              <div className="bg-[#FAF6F0]/70 rounded-2xl p-4 border border-gray-100">
-                                <div className="relative flex items-center justify-between">
-                                  <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
-                                    <div 
-                                      className="h-full bg-[#0F3E36] transition-all duration-500"
-                                      style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
-                                    />
+                            {/* Alerta de Cancelación si la orden fue dada de baja */}
+                            {isCancelled ? (
+                              <div className="p-4 sm:p-6">
+                                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs space-y-1.5 text-red-900">
+                                  <div className="flex items-center gap-2 font-black text-red-800">
+                                    <Ban className="w-4 h-4 text-red-600" />
+                                    <span>Este pedido fue cancelado por la administración</span>
                                   </div>
-
-                                  {[
-                                    { step: 1, title: 'Confirmado', icon: CheckCircle2 },
-                                    { step: 2, title: 'Empaque', icon: Package },
-                                    { step: 3, title: 'En Camino', icon: Truck },
-                                    { step: 4, title: 'Entregado', icon: Check },
-                                  ].map(s => {
-                                    const Icon = s.icon;
-                                    const isPassed = statusStep >= s.step;
-                                    const isCurrent = statusStep === s.step;
-
-                                    return (
-                                      <div key={s.step} className="relative z-10 flex flex-col items-center">
-                                        <div 
-                                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
-                                            isPassed 
-                                              ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
-                                              : 'bg-white border-2 border-gray-300 text-gray-400'
-                                          } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
-                                        >
-                                          <Icon className="w-3.5 h-3.5" />
-                                        </div>
-                                        <span className={`text-[10px] mt-1 font-bold ${
-                                          isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
-                                        }`}>
-                                          {s.title}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
+                                  <p className="text-red-700">
+                                    <strong>Motivo / Nota de la tienda:</strong> {order.notes || 'Cancelado por administración sin motivo especificado.'}
+                                  </p>
                                 </div>
                               </div>
+                            ) : (
+                              /* Tracker de 4 pasos para pedidos activos o entregados */
+                              <div className="p-4 sm:p-6 pb-0">
+                                <div className="bg-[#FAF6F0]/70 rounded-2xl p-4 border border-gray-100">
+                                  <div className="relative flex items-center justify-between">
+                                    <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
+                                      <div 
+                                        className="h-full bg-[#0F3E36] transition-all duration-500"
+                                        style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
+                                      />
+                                    </div>
 
+                                    {[
+                                      { step: 1, title: 'Por Confirmar', icon: Clock },
+                                      { step: 2, title: 'Confirmado', icon: CheckCircle2 },
+                                      { step: 3, title: 'En Camino', icon: Truck },
+                                      { step: 4, title: 'Entregado', icon: Check },
+                                    ].map(s => {
+                                      const Icon = s.icon;
+                                      const isPassed = statusStep >= s.step;
+                                      const isCurrent = statusStep === s.step;
+
+                                      return (
+                                        <div key={s.step} className="relative z-10 flex flex-col items-center">
+                                          <div 
+                                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
+                                              isPassed 
+                                                ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
+                                                : 'bg-white border-2 border-gray-300 text-gray-400'
+                                            } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
+                                          >
+                                            <Icon className="w-3.5 h-3.5" />
+                                          </div>
+                                          <span className={`text-[10px] mt-1 font-bold ${
+                                            isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
+                                          }`}>
+                                            {s.title}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="p-4 sm:p-6 pt-3 space-y-4">
                               {/* Artículos */}
                               {order.order_items && order.order_items.length > 0 && (
                                 <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs">
@@ -3839,6 +3862,7 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       {selectedOrderForDetail && (() => {
         const order = selectedOrderForDetail;
+        const isCancelled = order.status === 'cancelled';
         const statusStep = (() => {
           switch (order.status) {
             case 'pending': return 1;
@@ -3852,10 +3876,12 @@ export default function TiendaFoxDrop() {
         const statusBadge = (() => {
           switch (order.status) {
             case 'shipped': return { label: 'En Camino', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
-            case 'processing': return { label: 'En Preparación', bg: 'bg-blue-100 text-blue-800 border-blue-300' };
-            case 'delivered': return { label: 'Entregado', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+            case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+            case 'delivered': return { label: 'Entregado', bg: 'bg-teal-100 text-teal-800 border-teal-300' };
             case 'cancelled': return { label: 'Cancelado', bg: 'bg-red-100 text-red-800 border-red-300' };
-            default: return { label: 'Confirmado', bg: 'bg-gray-100 text-gray-800 border-gray-300' };
+            case 'pending':
+            default:
+              return { label: 'Pendiente de Confirmación', bg: 'bg-amber-50 text-amber-800 border-amber-300' };
           }
         })();
 
@@ -3889,54 +3915,71 @@ export default function TiendaFoxDrop() {
                 </p>
               </div>
 
-              {/* Estatus Actual y Tracker de 4 Pasos */}
-              <div className="bg-[#FAF6F0] rounded-2xl p-4 border border-gray-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-700">Estado de preparación:</span>
-                  <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border ${statusBadge.bg}`}>
-                    {statusBadge.label}
-                  </span>
+              {/* Estatus Actual y Tracker de 4 Pasos (o aviso de cancelación) */}
+              {isCancelled ? (
+                <div className="bg-red-50 rounded-2xl p-4 border border-red-200 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-red-900 flex items-center gap-1.5">
+                      <Ban className="w-4 h-4 text-red-600" /> Estado de la Orden:
+                    </span>
+                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full border bg-red-100 text-red-800 border-red-300">
+                      Cancelado
+                    </span>
+                  </div>
+                  <div className="bg-white/80 p-3 rounded-xl border border-red-100 text-red-800 space-y-1">
+                    <span className="font-bold block text-[11px]">Motivo registrado por la tienda:</span>
+                    <p className="italic">{order.notes || 'Cancelado por administración sin motivo especificado.'}</p>
+                  </div>
                 </div>
-
-                <div className="relative flex items-center justify-between pt-2">
-                  <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
-                    <div 
-                      className="h-full bg-[#0F3E36] transition-all duration-500"
-                      style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
-                    />
+              ) : (
+                <div className="bg-[#FAF6F0] rounded-2xl p-4 border border-gray-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-700">Estado de preparación:</span>
+                    <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border ${statusBadge.bg}`}>
+                      {statusBadge.label}
+                    </span>
                   </div>
 
-                  {[
-                    { step: 1, title: 'Confirmado', icon: CheckCircle2 },
-                    { step: 2, title: 'Empaque', icon: Package },
-                    { step: 3, title: 'En Camino', icon: Truck },
-                    { step: 4, title: 'Entregado', icon: Check },
-                  ].map(s => {
-                    const Icon = s.icon;
-                    const isPassed = statusStep >= s.step;
-                    const isCurrent = statusStep === s.step;
+                  <div className="relative flex items-center justify-between pt-2">
+                    <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
+                      <div 
+                        className="h-full bg-[#0F3E36] transition-all duration-500"
+                        style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
+                      />
+                    </div>
 
-                    return (
-                      <div key={s.step} className="relative z-10 flex flex-col items-center">
-                        <div 
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
-                            isPassed 
-                              ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
-                              : 'bg-white border-2 border-gray-300 text-gray-400'
-                          } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
+                    {[
+                      { step: 1, title: 'Por Confirmar', icon: Clock },
+                      { step: 2, title: 'Confirmado', icon: CheckCircle2 },
+                      { step: 3, title: 'En Camino', icon: Truck },
+                      { step: 4, title: 'Entregado', icon: Check },
+                    ].map(s => {
+                      const Icon = s.icon;
+                      const isPassed = statusStep >= s.step;
+                      const isCurrent = statusStep === s.step;
+
+                      return (
+                        <div key={s.step} className="relative z-10 flex flex-col items-center">
+                          <div 
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
+                              isPassed 
+                                ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
+                                : 'bg-white border-2 border-gray-300 text-gray-400'
+                            } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className={`text-[10px] mt-1 font-bold ${
+                            isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
+                          }`}>
+                            {s.title}
+                          </span>
                         </div>
-                        <span className={`text-[10px] mt-1 font-bold ${
-                          isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
-                        }`}>
-                          {s.title}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Productos en el Pedido */}
               <div className="space-y-2">
