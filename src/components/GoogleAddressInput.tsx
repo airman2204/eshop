@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Check, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { MapPin, Check, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 
 interface ParsedAddress {
   street: string;
@@ -33,16 +33,14 @@ export default function GoogleAddressInput({
 }: GoogleAddressInputProps) {
   const [street, setStreet] = useState(initialStreet);
   const [colonia, setColonia] = useState(initialColonia);
+  const [coloniasOptions, setColoniasOptions] = useState<string[]>([]);
   const [zip, setZip] = useState(initialZip);
   const [city, setCity] = useState(initialCity);
   const [state, setState] = useState(initialState);
-  const [googleLoaded, setGoogleLoaded] = useState(false);
+  const [loadingZip, setLoadingZip] = useState(false);
   const [autocompleteNotice, setAutocompleteNotice] = useState<string | null>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  // Notificar al padre cada vez que cambien los campos
+  // Notificar al componente padre de cualquier cambio en la dirección
   useEffect(() => {
     onAddressChange({
       street,
@@ -54,100 +52,88 @@ export default function GoogleAddressInput({
     });
   }, [street, colonia, zip, city, state]);
 
-  // Cargar Google Places Autocomplete si hay API Key disponible
-  useEffect(() => {
-    if (!apiKey) return;
+  // Consulta automática de SEPOMEX cuando el usuario escribe los 5 dígitos del CP
+  const handleZipChange = async (newZip: string) => {
+    const cleanZip = newZip.replace(/[^0-9]/g, '').slice(0, 5);
+    setZip(cleanZip);
 
-    if (typeof window !== 'undefined' && (window as any).google?.maps?.places) {
-      setGoogleLoaded(true);
-      return;
-    }
-
-    const scriptId = 'google-maps-places-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=es&region=MX`;
-      script.async = true;
-      script.onload = () => setGoogleLoaded(true);
-      document.head.appendChild(script);
-    }
-  }, [apiKey]);
-
-  // Inicializar Autocomplete cuando Google Maps esté listo y haya input
-  useEffect(() => {
-    if (!googleLoaded || !inputRef.current) return;
-
-    try {
-      const google = (window as any).google;
-      if (!google?.maps?.places?.Autocomplete) return;
-
-      const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: 'mx' },
-        fields: ['address_components', 'formatted_address', 'geometry'],
-        types: ['address'],
-      });
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (!place || !place.address_components) return;
-
-        let streetName = '';
-        let streetNumber = '';
-        let neighborhood = '';
-        let postalCode = '';
-        let locality = '';
-        let adminArea = '';
-
-        for (const comp of place.address_components) {
-          const types = comp.types;
-          if (types.includes('route')) streetName = comp.long_name;
-          if (types.includes('street_number')) streetNumber = comp.long_name;
-          if (types.includes('sublocality_level_1') || types.includes('neighborhood')) neighborhood = comp.long_name;
-          if (types.includes('postal_code')) postalCode = comp.long_name;
-          if (types.includes('locality')) locality = comp.long_name;
-          if (types.includes('administrative_area_level_1')) adminArea = comp.long_name;
+    if (cleanZip.length === 5) {
+      setLoadingZip(true);
+      try {
+        const res = await fetch(`/api/postal?cp=${cleanZip}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.found) {
+            if (data.state) setState(data.state);
+            if (data.city) setCity(data.city);
+            if (data.colonias && data.colonias.length > 0) {
+              setColoniasOptions(data.colonias);
+              setColonia(data.colonias[0]);
+            }
+            setAutocompleteNotice(`¡C.P. ${cleanZip} validado! Localizado en ${data.state}`);
+            setTimeout(() => setAutocompleteNotice(null), 4000);
+          }
+        } else {
+          setColoniasOptions([]);
         }
-
-        const fullStreet = `${streetName} ${streetNumber}`.trim() || place.formatted_address || '';
-        if (fullStreet) setStreet(fullStreet);
-        if (neighborhood) setColonia(neighborhood);
-        if (postalCode) setZip(postalCode);
-        if (locality) setCity(locality);
-        if (adminArea) setState(adminArea);
-
-        setAutocompleteNotice('¡Dirección validada y localizada con Google Maps!');
-        setTimeout(() => setAutocompleteNotice(null), 4000);
-      });
-    } catch (err) {
-      console.warn('Error al iniciar Google Places Autocomplete:', err);
+      } catch (err) {
+        console.warn('Error al consultar código postal:', err);
+      } finally {
+        setLoadingZip(false);
+      }
+    } else {
+      setColoniasOptions([]);
     }
-  }, [googleLoaded]);
+  };
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {autocompleteNotice && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2 rounded-lg flex items-center gap-1.5 animate-in fade-in duration-200">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] p-2 rounded-lg flex items-center gap-1.5 animate-in fade-in duration-200 font-medium">
           <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span>{autocompleteNotice}</span>
         </div>
       )}
 
-      {/* Campo principal con autocompletado */}
+      {/* Código Postal (Primero para autocompletar automáticamente el resto) */}
       <div>
-        <label className="text-[11px] font-bold text-gray-700 flex items-center justify-between mb-1">
-          <span className="flex items-center gap-1">
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-[11px] font-bold text-gray-700 flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-[#E65F2B]" />
-            Calle y Número exterior / interior <span className="text-rose-500">*</span>
+            Código Postal (5 dígitos) <span className="text-rose-500">*</span>
+          </label>
+          <span className="text-[9px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <Sparkles className="w-2.5 h-2.5 text-emerald-600" /> Autocompletado Postal SEPOMEX
           </span>
-          {apiKey ? (
-            <span className="text-[9px] font-medium text-blue-600 flex items-center gap-0.5">
-              <Sparkles className="w-2.5 h-2.5" /> Autocompletado Google Activo
-            </span>
-          ) : null}
+        </div>
+        <div className="relative">
+          <input
+            type="text"
+            required
+            maxLength={5}
+            placeholder="Ej. 72160 o 01000"
+            value={zip}
+            onChange={(e) => handleZipChange(e.target.value)}
+            className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs placeholder:text-gray-400"
+          />
+          {loadingZip && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px] text-gray-500">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E65F2B]" />
+              <span>Buscando...</span>
+            </div>
+          )}
+        </div>
+        <p className="text-[10px] text-gray-500 mt-1">
+          Escribe tu código postal y autocompletaremos colonia, ciudad y estado de forma instantánea.
+        </p>
+      </div>
+
+      {/* Calle y Número */}
+      <div>
+        <label className="text-[11px] font-bold text-gray-700 block mb-1">
+          Calle y Número exterior / interior <span className="text-rose-500">*</span>
         </label>
         <input
-          ref={inputRef}
           type="text"
           required
           placeholder="Ej. Av. Juárez 1502, Depto 4..."
@@ -157,12 +143,29 @@ export default function GoogleAddressInput({
         />
       </div>
 
-      {/* Colonia y Código Postal */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div>
-          <label className="text-[11px] font-bold text-gray-700 block mb-1">
-            Colonia / Fraccionamiento <span className="text-rose-500">*</span>
-          </label>
+      {/* Colonia / Fraccionamiento */}
+      <div>
+        <label className="text-[11px] font-bold text-gray-700 block mb-1">
+          Colonia / Fraccionamiento <span className="text-rose-500">*</span>
+        </label>
+        {coloniasOptions.length > 1 ? (
+          <div className="space-y-1">
+            <select
+              value={colonia}
+              onChange={(e) => setColonia(e.target.value)}
+              className="w-full bg-white border border-emerald-300 rounded-xl p-2.5 text-xs text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs"
+            >
+              {coloniasOptions.map((col, idx) => (
+                <option key={idx} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+            <span className="text-[10px] text-emerald-600 block">
+              ✓ Colonias encontradas para este C.P. Selecciona la tuya o escribe una si no aparece.
+            </span>
+          </div>
+        ) : (
           <input
             type="text"
             required
@@ -171,21 +174,7 @@ export default function GoogleAddressInput({
             onChange={(e) => setColonia(e.target.value)}
             className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs placeholder:text-gray-400"
           />
-        </div>
-        <div>
-          <label className="text-[11px] font-bold text-gray-700 block mb-1">
-            Código Postal (5 dígitos) <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            maxLength={5}
-            placeholder="Ej. 72160"
-            value={zip}
-            onChange={(e) => setZip(e.target.value.replace(/[^0-9]/g, '').slice(0, 5))}
-            className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs placeholder:text-gray-400"
-          />
-        </div>
+        )}
       </div>
 
       {/* Ciudad y Estado */}
