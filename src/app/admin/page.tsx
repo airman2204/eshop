@@ -1280,15 +1280,22 @@ https://foxdrop.com.mx`;
         {/* Cabecera del Menú Lateral */}
         <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <FoxDropLogo size="sm" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#E65F2B] to-[#B84012] flex items-center justify-center text-white text-xl shadow-md border border-orange-400/30 shrink-0">
+              🦊
+            </div>
             <div>
-              <span className="font-black text-white text-sm tracking-tight block">FOXDROP</span>
-              <span className="text-[10px] text-[#E65F2B] font-black uppercase tracking-wider block">Panel Admin</span>
+              <span className="font-black text-white text-base tracking-tight leading-none block">
+                FOXDROP
+              </span>
+              <span className="inline-block bg-[#E65F2B]/20 text-[#E65F2B] text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md mt-1 border border-[#E65F2B]/30">
+                PANEL ADMIN
+              </span>
             </div>
           </div>
           <button
             onClick={() => setMobileSidebarOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg transition"
+            title="Cerrar menú"
           >
             <X className="w-5 h-5" />
           </button>

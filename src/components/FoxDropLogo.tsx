@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 interface FoxDropLogoProps {
@@ -60,6 +62,9 @@ export default function FoxDropLogo({
       <img
         src="/fox-logo-head-3d.png"
         alt="FoxDrop 3D Logo"
+        onError={(e) => {
+          (e.currentTarget as HTMLElement).style.display = 'none';
+        }}
         className={`${foxSizes[size]} object-contain shrink-0 transition-transform duration-300 group-hover:scale-110 drop-shadow-md`}
       />
     </div>
