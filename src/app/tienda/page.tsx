@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import FoxDropLogo from '@/components/FoxDropLogo';
@@ -164,6 +164,76 @@ export default function TiendaFoxDrop() {
   const [recognizedUser, setRecognizedUser] = useState<string | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(false);
   const [authenticatedUserId, setAuthenticatedUserId] = useState<string | null>(null);
+
+  // Persistencia y Sincronización Automática de Carritos (Admin & Carritos Abandonados)
+  const cartLoadedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('foxdrop_cart_items_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCart(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn('Error al leer carrito persistido:', e);
+    } finally {
+      cartLoadedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartLoadedRef.current) return;
+
+    try {
+      localStorage.setItem('foxdrop_cart_items_v1', JSON.stringify(cart));
+    } catch {}
+
+    const timer = setTimeout(async () => {
+      try {
+        const savedCartId = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_cart_id') : null;
+        const syncItems = cart.map(i => ({
+          id: i.product.id,
+          title: i.product.title,
+          quantity: i.quantity,
+          price: i.product.publicPrice,
+          image: i.product.images?.[0] || '',
+        }));
+
+        const total = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
+
+        const res = await fetch('/api/cart/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartId: savedCartId,
+            userId: user?.id || null,
+            clientName: user?.name || 'Cliente en Tienda Web',
+            clientPhone: user?.phone || '',
+            clientEmail: user?.email || '',
+            items: syncItems,
+            total,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.cartId) {
+            localStorage.setItem('foxdrop_cart_id', data.cartId);
+          } else if (cart.length === 0) {
+            localStorage.removeItem('foxdrop_cart_id');
+            localStorage.removeItem('foxdrop_cart_items_v1');
+          }
+        }
+      } catch (err) {
+        console.warn('Error sincronizando carrito con backend:', err);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [cart, user]);
 
   // VISTA INTEGRADA: Tienda ('store') o Mi Cuenta ('account')
   const [currentView, setCurrentView] = useState<'store' | 'account'>('store');
@@ -802,6 +872,18 @@ export default function TiendaFoxDrop() {
     }
     setCheckoutStep('success');
     resolveAbandonedCart(user?.phone, user?.email);
+    try {
+      const currentCartId = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_cart_id') : null;
+      if (currentCartId) {
+        fetch('/api/cart/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cartId: currentCartId, items: [] }),
+        });
+      }
+      localStorage.removeItem('foxdrop_cart_id');
+      localStorage.removeItem('foxdrop_cart_items_v1');
+    } catch {}
     setCart([]);
   };
 

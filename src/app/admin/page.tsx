@@ -17,7 +17,7 @@ import {
   getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
   fetchAdminCategories, createAdminCategory,
-  getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart, createTestAbandonedCart,
+  getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
@@ -292,6 +292,12 @@ export default function AdminCRM() {
     loadData();
   }, [adminSession]);
 
+  useEffect(() => {
+    if (crmSubTab === 'carts') {
+      getAdminAbandonedCarts().then(dbCarts => setAbandonedCarts(dbCarts ?? []));
+    }
+  }, [crmSubTab]);
+
   // Handle Login de Administrador
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,14 +387,6 @@ export default function AdminCRM() {
     if (!confirm('¿Deseas eliminar este carrito abandonado?')) return;
     setAbandonedCarts(prev => prev.filter(c => c.id !== cartId));
     await deleteAdminAbandonedCart(cartId);
-  };
-
-  const handleCreateTestCart = async () => {
-    setLoadingCarts(true);
-    await createTestAbandonedCart();
-    const updated = await getAdminAbandonedCarts();
-    setAbandonedCarts(updated);
-    setLoadingCarts(false);
   };
 
   const handleRefreshCarts = async () => {
@@ -1279,15 +1277,10 @@ https://foxdrop.com.mx`;
       }`}>
         {/* Cabecera del Menú Lateral */}
         <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#E65F2B] to-[#B84012] flex items-center justify-center text-white text-xl shadow-md border border-orange-400/30 shrink-0">
-              🦊
-            </div>
-            <div>
-              <span className="font-black text-white text-base tracking-tight leading-none block">
-                FOXDROP
-              </span>
-              <span className="inline-block bg-[#E65F2B]/20 text-[#E65F2B] text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md mt-1 border border-[#E65F2B]/30">
+          <div className="flex flex-col gap-1">
+            <FoxDropLogo size="sm" showTagline={true} />
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="inline-block bg-[#E65F2B]/20 text-[#E65F2B] text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md border border-[#E65F2B]/30">
                 PANEL ADMIN
               </span>
             </div>
@@ -2287,19 +2280,11 @@ https://foxdrop.com.mx`;
                   <button
                     onClick={handleRefreshCarts}
                     disabled={loadingCarts}
-                    className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
+                    className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
                     title="Actualizar listado"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${loadingCarts ? 'animate-spin text-[#E65F2B]' : ''}`} />
                     Actualizar
-                  </button>
-                  <button
-                    onClick={handleCreateTestCart}
-                    disabled={loadingCarts}
-                    className="px-3.5 py-2 bg-[#203641] hover:bg-[#182932] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-amber-400" />
-                    Generar Carrito de Prueba
                   </button>
                 </div>
               </div>
@@ -2385,10 +2370,11 @@ https://foxdrop.com.mx`;
                   </p>
                   <div className="pt-2">
                     <button
-                      onClick={handleCreateTestCart}
+                      onClick={handleRefreshCarts}
+                      disabled={loadingCarts}
                       className="px-4 py-2 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs inline-flex items-center gap-1.5 transition shadow-2xs"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Generar Carrito de Prueba para Evaluar
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingCarts ? 'animate-spin' : ''}`} /> Actualizar Carritos
                     </button>
                   </div>
                 </div>
