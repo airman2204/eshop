@@ -8,7 +8,7 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent
+  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -46,6 +46,7 @@ export default function AdminCRM() {
 
   // Navegación CRM
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty'>('inventory');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Datos principales
   const [products, setProducts] = useState<Product[]>([]);
@@ -1175,7 +1176,7 @@ https://foxdrop.com.mx`;
   // DASHBOARD PRINCIPAL DEL CRM ADMIN
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#F4F6F8] text-[#222E3C] flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white">
+    <div className="min-h-screen bg-[#F4F6F8] text-[#222E3C] flex font-sans selection:bg-[#E65F2B] selection:text-white relative">
       
       {/* ======================================================== */}
       {/* MODAL OBLIGATORIO DE ACTUALIZACIÓN DE CONTRASEÑA */}
@@ -1264,155 +1265,342 @@ https://foxdrop.com.mx`;
         </div>
       )}
 
-      {/* HEADER DEL CRM FOXDROP */}
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <FoxDropLogo size="md" />
-            <div className="border-l border-gray-200 pl-3 sm:pl-4">
-              <h1 className="font-black text-base sm:text-lg text-[#1F2D3D] tracking-tight flex items-center gap-2">
-                PANEL DE CONTROL <span className="bg-[#E65F2B] text-white text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase">CRM Admin</span>
-              </h1>
-              <p className="text-[11px] text-gray-500 font-medium">
-                {adminSession?.email} • Puebla
-              </p>
+      {/* BACKDROP PARA MÓVIL */}
+      {mobileSidebarOpen && (
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 md:hidden animate-in fade-in duration-200"
+        />
+      )}
+
+      {/* MENÚ LATERAL (SIDEBAR) ELEGANTE & LIMPIO */}
+      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#18252E] text-slate-300 flex flex-col z-50 shrink-0 transition-transform duration-200 ease-in-out border-r border-slate-800 ${
+        mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+      }`}>
+        {/* Cabecera del Menú Lateral */}
+        <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FoxDropLogo size="sm" />
+            <div>
+              <span className="font-black text-white text-sm tracking-tight block">FOXDROP</span>
+              <span className="text-[10px] text-[#E65F2B] font-black uppercase tracking-wider block">Panel Admin</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobileSidebarOpen(false)}
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Listado de Navegación con Categorías */}
+        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs scrollbar-thin">
+          {/* GRUPO 1: CATÁLOGO */}
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
+              Catálogo & Logística
+            </span>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'inventory' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Package className="w-4 h-4" /> Inventario
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'inventory' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {products.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('batches'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'batches' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Layers className="w-4 h-4 text-orange-300" /> Lotes de Flete
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'batches' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {batches.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('carousel'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'carousel' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-purple-300" /> Carrusel Hero
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'carousel' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {slides.length}
+                </span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              onClick={handleInstallApp}
-              title="Instalar FoxDrop en Celular o Escritorio"
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">Instalar App</span>
-              <span className="sm:hidden text-[10px]">App</span>
-            </button>
+          {/* GRUPO 2: VENTAS & PEDIDOS */}
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
+              Ventas & Pedidos
+            </span>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => { setCrmSubTab('orders'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Truck className="w-4 h-4" /> Pedidos Activos
+                </span>
+                {activeOrders.length > 0 ? (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black">
+                    {activeOrders.length}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                    0
+                  </span>
+                )}
+              </button>
 
-            <button
-              onClick={async () => {
-                const r = await getLiveExchangeRate();
-                setUsdRate(r);
-              }}
-              title="Click para actualizar tipo de cambio oficial en tiempo real"
-              className="hidden sm:flex items-center space-x-2 bg-orange-50/80 hover:bg-orange-100 border border-orange-200 rounded-lg px-3 py-1.5 text-xs text-orange-950 font-medium transition cursor-pointer"
-            >
-              <span className="text-orange-700 text-[10px] font-bold flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                USD/MXN:
-              </span>
-              <span className="font-extrabold text-[#E65F2B]">${usdRate.toFixed(2)}</span>
-              <RefreshCw className="w-3 h-3 text-orange-600 hover:rotate-180 transition-transform duration-300" />
-            </button>
-            <a
-              href="/tienda"
-              target="_blank"
-              className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-md transition flex items-center gap-1 shadow-sm"
-            >
-              <span className="hidden sm:inline">Ver Tienda</span>
-              <span className="sm:hidden text-[11px]">Tienda</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+              <button
+                onClick={() => { setCrmSubTab('cancelled_orders'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'cancelled_orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Ban className="w-4 h-4 text-red-400" /> Cancelados
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'cancelled_orders' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {cancelledOrders.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('special_orders'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'special_orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 text-amber-300" /> Encargos
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'special_orders' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {specialOrders.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('carts'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'carts' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" /> Carritos
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'carts'
+                    ? 'bg-black/20 text-white'
+                    : abandonedCarts.filter(c => !c.followedUp).length > 0
+                    ? 'bg-amber-500 text-slate-950 font-black'
+                    : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {abandonedCarts.length}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* GRUPO 3: CLIENTES & LEALTAD */}
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
+              Clientes & Lealtad
+            </span>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => { setCrmSubTab('clients'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'clients' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Users className="w-4 h-4 text-emerald-300" /> Clientes
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'clients' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {clients.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('loyalty'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'loyalty' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Award className="w-4 h-4 text-amber-400" /> Club & Fidelidad
+                </span>
+                <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">
+                  {clubSettings.currencySymbol}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* GRUPO 4: FINANZAS */}
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
+              Finanzas
+            </span>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => { setCrmSubTab('finance'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'finance' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <BarChart3 className="w-4 h-4" /> Utilidad & Margen
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-slate-800/80 bg-slate-900/60 space-y-2.5">
+          <button
+            onClick={() => {
+              setShowPosModal(true);
+              setMobileSidebarOpen(false);
+            }}
+            className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-sm"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Punto de Venta POS</span>
+          </button>
+
+          <div className="flex items-center justify-between pt-1 text-slate-400 text-[11px] px-1">
+            <div className="truncate max-w-[170px]">
+              <span className="block text-white font-bold truncate">{adminSession?.email?.split('@')[0]}</span>
+              <span className="block text-[10px] text-slate-400 truncate">{adminSession?.email}</span>
+            </div>
             <button
               onClick={handleLogout}
               title="Cerrar Sesión"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition flex items-center"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* SUB-NAVEGACIÓN CRM ESTILO FOXDROP */}
-      <div className="bg-[#2D4A58] text-white px-4 sm:px-6 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center space-x-2 overflow-x-auto text-xs scrollbar-none">
-          <button
-            onClick={() => setCrmSubTab('inventory')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'inventory' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Package className="w-4 h-4" /> Inventario ({products.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('batches')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'batches' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Layers className="w-4 h-4 text-orange-300" /> Lotes de Flete ({batches.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('orders')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'orders' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Truck className="w-4 h-4" /> Pedidos Activos ({activeOrders.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('cancelled_orders')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'cancelled_orders' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Ban className="w-4 h-4 text-red-400" /> Cancelados ({cancelledOrders.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('clients')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'clients' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Users className="w-4 h-4 text-emerald-300" /> Clientes ({clients.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('special_orders')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'special_orders' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <FileText className="w-4 h-4" /> Encargos ({specialOrders.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('finance')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'finance' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" /> Utilidad
-          </button>
-          <button
-            onClick={() => setCrmSubTab('carts')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'carts' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <AlertTriangle className="w-4 h-4 text-amber-300" /> Carritos ({abandonedCarts.length})
-          </button>
-          <button
-            onClick={() => setCrmSubTab('loyalty')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'loyalty' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Award className="w-4 h-4 text-amber-400" /> Club & Fidelidad
-          </button>
-          <button
-            onClick={() => setCrmSubTab('carousel')}
-            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              crmSubTab === 'carousel' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-purple-300" /> Carrusel ({slides.length})
-          </button>
-        </div>
-      </div>
+      {/* CONTENEDOR DERECHO (HEADER SUPERIOR + MAIN) */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* HEADER SUPERIOR */}
+        <header className="border-b border-gray-200 bg-white sticky top-0 z-40 shadow-2xs">
+          <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden p-2 -ml-2 rounded-xl text-slate-700 hover:bg-slate-100 transition"
+                title="Abrir menú lateral"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="font-black text-base sm:text-lg text-slate-900 tracking-tight">
+                  {crmSubTab === 'inventory' && 'Inventario de Productos'}
+                  {crmSubTab === 'batches' && 'Lotes de Importación'}
+                  {crmSubTab === 'orders' && 'Pedidos Activos'}
+                  {crmSubTab === 'cancelled_orders' && 'Pedidos Cancelados'}
+                  {crmSubTab === 'special_orders' && 'Encargos Especiales'}
+                  {crmSubTab === 'carts' && 'Carritos Abandonados'}
+                  {crmSubTab === 'clients' && 'Directorio de Clientes'}
+                  {crmSubTab === 'loyalty' && 'Club FoxDrop & Fidelidad'}
+                  {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
+                  {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
+                </h1>
+                <p className="text-xs text-slate-500 hidden sm:block">
+                  {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
+                  {crmSubTab === 'batches' && 'Prorrateo de fletes internacionales y costeo unitario'}
+                  {crmSubTab === 'orders' && 'Monitoreo de órdenes, estados de pago y guías de envío'}
+                  {crmSubTab === 'cancelled_orders' && 'Historial de cancelaciones y motivos reportados'}
+                  {crmSubTab === 'special_orders' && 'Cotizaciones y solicitudes a medida de clientes'}
+                  {crmSubTab === 'carts' && 'Bolsas pendientes y recuperación directa por WhatsApp'}
+                  {crmSubTab === 'clients' && 'Perfiles, puntos acumulados y compras conectadas'}
+                  {crmSubTab === 'loyalty' && 'Configuración de estrellas por peso, niveles e inversión'}
+                  {crmSubTab === 'finance' && 'Rendimiento financiero y márgenes de ganancia'}
+                  {crmSubTab === 'carousel' && 'Banners destacados y colecciones visuales'}
+                </p>
+              </div>
+            </div>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-20 md:pb-6 space-y-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={async () => {
+                  const r = await getLiveExchangeRate();
+                  setUsdRate(r);
+                }}
+                title="Click para actualizar tipo de cambio oficial"
+                className="hidden sm:flex items-center space-x-1.5 bg-orange-50/80 hover:bg-orange-100 border border-orange-200 rounded-lg px-2.5 py-1 text-xs text-orange-950 font-medium transition cursor-pointer"
+              >
+                <span className="text-orange-700 text-[10px] font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  USD/MXN:
+                </span>
+                <span className="font-extrabold text-[#E65F2B]">${usdRate.toFixed(2)}</span>
+                <RefreshCw className="w-3 h-3 text-orange-600 hover:rotate-180 transition-transform duration-300" />
+              </button>
+
+              <button
+                onClick={handleInstallApp}
+                title="Instalar FoxDrop en Celular o Escritorio"
+                className="hidden lg:flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Instalar App</span>
+              </button>
+
+              <a
+                href="/tienda"
+                target="_blank"
+                className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition flex items-center gap-1 shadow-2xs"
+              >
+                <span className="hidden sm:inline">Ver Tienda</span>
+                <span className="sm:hidden text-xs">Tienda</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </header>
+
+        {/* CONTENIDO PRINCIPAL */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-20 md:pb-6 space-y-6">
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
         {crmSubTab === 'inventory' && (
@@ -3323,43 +3511,26 @@ https://foxdrop.com.mx`;
         )}
 
       </main>
+      </div>
 
       {/* ======================================================== */}
       {/* BOTTOM NAVIGATION BAR MÓVIL PARA ADMIN CRM (PWA WEBAPP) */}
       {/* ======================================================== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2D4A58] text-white border-t border-slate-700 z-40 px-2 py-2 flex items-center justify-around shadow-2xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#18252E] text-white border-t border-slate-800 z-40 px-2 py-2 flex items-center justify-around shadow-2xl">
         <button
-          onClick={() => setCrmSubTab('inventory')}
+          onClick={() => { setCrmSubTab('inventory'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           className={`flex flex-col items-center gap-1 transition ${
-            crmSubTab === 'inventory' ? 'text-[#E65F2B]' : 'text-gray-300 hover:text-white'
+            crmSubTab === 'inventory' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
           }`}
         >
           <Package className="w-5 h-5" />
-          <span className="text-[10px] font-bold">Stock</span>
+          <span className="text-[10px]">Stock</span>
         </button>
 
         <button
-          onClick={() => setCrmSubTab('batches')}
-          className={`flex flex-col items-center gap-1 transition ${
-            crmSubTab === 'batches' ? 'text-[#E65F2B]' : 'text-gray-300 hover:text-white'
-          }`}
-        >
-          <Layers className="w-5 h-5" />
-          <span className="text-[10px] font-bold">Lotes</span>
-        </button>
-
-        <button
-          onClick={() => setShowPosModal(true)}
-          className="flex flex-col items-center justify-center -mt-6 bg-[#E65F2B] text-white w-13 h-13 rounded-full shadow-2xl border-4 border-[#2D4A58] ring-2 ring-orange-400/50 hover:scale-105 active:scale-95 transition"
-        >
-          <QrCode className="w-6 h-6" />
-          <span className="text-[8px] font-black uppercase tracking-tighter">POS</span>
-        </button>
-
-        <button
-          onClick={() => setCrmSubTab('orders')}
+          onClick={() => { setCrmSubTab('orders'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           className={`flex flex-col items-center gap-1 transition relative ${
-            crmSubTab === 'orders' ? 'text-[#E65F2B]' : 'text-gray-300 hover:text-white'
+            crmSubTab === 'orders' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
           }`}
         >
           <Truck className="w-5 h-5" />
@@ -3368,17 +3539,38 @@ https://foxdrop.com.mx`;
               {activeOrders.length}
             </span>
           )}
-          <span className="text-[10px] font-bold">Pedidos</span>
+          <span className="text-[10px]">Pedidos</span>
         </button>
 
         <button
-          onClick={() => setCrmSubTab('clients')}
-          className={`flex flex-col items-center gap-1 transition ${
-            crmSubTab === 'clients' ? 'text-[#E65F2B]' : 'text-gray-300 hover:text-white'
+          onClick={() => setShowPosModal(true)}
+          className="flex flex-col items-center justify-center -mt-6 bg-[#E65F2B] text-white w-13 h-13 rounded-full shadow-2xl border-4 border-[#18252E] ring-2 ring-orange-400/50 hover:scale-105 active:scale-95 transition"
+        >
+          <QrCode className="w-6 h-6" />
+          <span className="text-[8px] font-black uppercase tracking-tighter">POS</span>
+        </button>
+
+        <button
+          onClick={() => { setCrmSubTab('carts'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          className={`flex flex-col items-center gap-1 transition relative ${
+            crmSubTab === 'carts' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Users className="w-5 h-5" />
-          <span className="text-[10px] font-bold">Clientes</span>
+          <AlertTriangle className="w-5 h-5 text-amber-400" />
+          {abandonedCarts.length > 0 && (
+            <span className="absolute -top-1 right-1 bg-amber-500 text-slate-950 text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-black">
+              {abandonedCarts.length}
+            </span>
+          )}
+          <span className="text-[10px]">Carritos</span>
+        </button>
+
+        <button
+          onClick={() => setMobileSidebarOpen(true)}
+          className="flex flex-col items-center gap-1 transition text-slate-400 hover:text-white"
+        >
+          <Menu className="w-5 h-5 text-slate-200" />
+          <span className="text-[10px] font-bold text-slate-200">Más Menú</span>
         </button>
       </nav>
 
@@ -3822,80 +4014,7 @@ https://foxdrop.com.mx`;
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* BARRA INFERIOR DE NAVEGACIÓN MÓVIL ESTILO APP (ADMIN PWA) */}
-      {/* ======================================================== */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#2D4A58] border-t border-slate-700 z-40 px-2 py-2 flex items-center justify-around shadow-2xl text-white">
-        <button
-          onClick={() => {
-            setCrmSubTab('inventory');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 transition ${
-            crmSubTab === 'inventory' ? 'text-[#E65F2B] font-bold' : 'text-gray-300 hover:text-white'
-          }`}
-        >
-          <Package className="w-5 h-5" />
-          <span className="text-[10px]">Inventario</span>
-        </button>
 
-        <button
-          onClick={() => {
-            setCrmSubTab('orders');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 transition relative ${
-            crmSubTab === 'orders' ? 'text-[#E65F2B] font-bold' : 'text-gray-300 hover:text-white'
-          }`}
-        >
-          <Truck className="w-5 h-5" />
-          {activeOrders.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#E65F2B] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-              {activeOrders.length}
-            </span>
-          )}
-          <span className="text-[10px]">Pedidos</span>
-        </button>
-
-        <button
-          onClick={() => setShowPosModal(true)}
-          className="flex flex-col items-center gap-0.5 -mt-4 bg-[#E65F2B] text-white rounded-full p-2.5 shadow-lg border-2 border-white hover:bg-[#D45321] transition active:scale-95"
-        >
-          <ShoppingBag className="w-5 h-5" />
-          <span className="text-[9px] font-black uppercase">POS</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setCrmSubTab('special_orders');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 transition relative ${
-            crmSubTab === 'special_orders' ? 'text-[#E65F2B] font-bold' : 'text-gray-300 hover:text-white'
-          }`}
-        >
-          <FileText className="w-5 h-5" />
-          {specialOrders.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-amber-400 text-slate-900 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-              {specialOrders.length}
-            </span>
-          )}
-          <span className="text-[10px]">Encargos</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setCrmSubTab('clients');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className={`flex flex-col items-center gap-1 transition ${
-            crmSubTab === 'clients' ? 'text-[#E65F2B] font-bold' : 'text-gray-300 hover:text-white'
-          }`}
-        >
-          <Users className="w-5 h-5" />
-          <span className="text-[10px]">Clientes</span>
-        </button>
-      </nav>
 
       {/* ======================================================== */}
       {/* COMPONENTE ESCÁNER DE CÁMARA (MÓVIL) */}
