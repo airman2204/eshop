@@ -8,7 +8,8 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard
+  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
+  Bell, BellRing, Volume2, VolumeX
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -21,10 +22,11 @@ import {
   getClubSettings, saveClubSettings, getLoyaltyMetrics
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
-import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder } from '@/lib/orders';
+import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
+import { soundManager } from '@/lib/sounds';
 
 export default function AdminCRM() {
   // Estado de Autenticación y Seguridad
@@ -140,6 +142,16 @@ export default function AdminCRM() {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellingLoading, setCancellingLoading] = useState(false);
+
+  // Notificaciones en Tiempo Real (Admin)
+  const [adminRealtimeToast, setAdminRealtimeToast] = useState<{
+    id: string;
+    type: 'new_order' | 'status_update' | 'cancelled' | 'deleted';
+    title: string;
+    message: string;
+    orderId?: string;
+  } | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(true);
 
   // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -300,7 +312,129 @@ export default function AdminCRM() {
       if (dbCheckout) setCheckoutSettings(dbCheckout);
     }
     loadData();
-  }, [adminSession]);
+
+    // ─────────────────────────────────────────────────────────
+    // Suscripción Realtime a Pedidos para Notificaciones Inmediatas
+    // ─────────────────────────────────────────────────────────
+    const unsubscribe = subscribeToAllOrders((payload) => {
+      const { eventType, new: newRecord, old: oldRecord } = payload;
+
+      if (eventType === 'INSERT' && newRecord) {
+        // Nuevo pedido recibido
+        const formattedOrder: Order = {
+          id: newRecord.order_number || newRecord.id,
+          clientName: newRecord.client_name || 'Cliente FoxDrop',
+          clientPhone: newRecord.client_phone || '',
+          clientEmail: newRecord.client_email,
+          status: newRecord.status || 'pending',
+          shippingType: newRecord.shipping_type || 'puebla_local',
+          pickupPoint: newRecord.pickup_point,
+          subtotal: Number(newRecord.subtotal) || 0,
+          shippingCost: Number(newRecord.shipping_cost) || 0,
+          total: Number(newRecord.total) || 0,
+          trackingNumber: newRecord.tracking_number,
+          createdAt: newRecord.created_at || new Date().toISOString(),
+          itemsCount: 1,
+          notes: newRecord.notes,
+          order_items: [],
+        };
+
+        // Recargar pedidos completos en segundo plano para traer los order_items
+        getAdminOrders().then(freshOrders => {
+          if (freshOrders && freshOrders.length > 0) {
+            const mapped: Order[] = freshOrders.map((o: any) => ({
+              id: o.order_number || o.id,
+              clientName: o.client_name,
+              clientPhone: o.client_phone,
+              clientEmail: o.client_email,
+              status: o.status || 'pending',
+              shippingType: o.shipping_type || 'puebla_local',
+              pickupPoint: o.pickup_point,
+              subtotal: Number(o.subtotal) || 0,
+              shippingCost: Number(o.shipping_cost) || 0,
+              total: Number(o.total) || 0,
+              trackingNumber: o.tracking_number,
+              createdAt: o.created_at,
+              itemsCount: o.order_items?.length || 1,
+              notes: o.notes || undefined,
+              order_items: o.order_items || [],
+            }));
+            setOrders(mapped);
+          } else {
+            setOrders(prev => [formattedOrder, ...prev.filter(o => o.id !== formattedOrder.id)]);
+          }
+        });
+
+        // Reproducir sonido de caja registradora / venta
+        if (audioEnabled) {
+          soundManager.playOrderCreated();
+        }
+
+        // Mostrar notificación flotante interactiva
+        setAdminRealtimeToast({
+          id: `toast-${Date.now()}`,
+          type: 'new_order',
+          title: '¡Nueva Compra Recibida!',
+          message: `${formattedOrder.clientName} ordenó $${formattedOrder.total.toLocaleString('es-MX')} MXN (${formattedOrder.id})`,
+          orderId: formattedOrder.id,
+        });
+
+        // Notificación de escritorio del navegador si está permitido
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('🛒 ¡Nueva compra en FoxDrop!', {
+              body: `${formattedOrder.clientName} - Total: $${formattedOrder.total} MXN`,
+              icon: '/icons/icon-192x192.png',
+            });
+          } catch {}
+        }
+      } else if (eventType === 'UPDATE' && newRecord) {
+        // Estado o datos de pedido modificados (por cliente o repartidor)
+        const orderId = newRecord.order_number || newRecord.id;
+        const newStatus = newRecord.status;
+        const isCancelled = newStatus === 'cancelled';
+
+        setOrders(prev => prev.map(o => {
+          if (o.id === orderId || o.id === newRecord.id || o.id === newRecord.order_number) {
+            return {
+              ...o,
+              status: newRecord.status || o.status,
+              notes: newRecord.notes !== undefined ? newRecord.notes : o.notes,
+              trackingNumber: newRecord.tracking_number !== undefined ? newRecord.tracking_number : o.trackingNumber,
+            };
+          }
+          return o;
+        }));
+
+        if (isCancelled) {
+          if (audioEnabled) soundManager.playOrderCancelled();
+          setAdminRealtimeToast({
+            id: `toast-${Date.now()}`,
+            type: 'cancelled',
+            title: 'Pedido Cancelado',
+            message: `El pedido ${orderId} fue marcado como cancelado. ${newRecord.notes ? `Motivo: ${newRecord.notes}` : ''}`,
+            orderId,
+          });
+        } else {
+          if (audioEnabled) soundManager.playStatusUpdated();
+          setAdminRealtimeToast({
+            id: `toast-${Date.now()}`,
+            type: 'status_update',
+            title: 'Estado de Pedido Actualizado',
+            message: `El pedido ${orderId} cambió a: ${newStatus}`,
+            orderId,
+          });
+        }
+      } else if (eventType === 'DELETE' && oldRecord) {
+        const delId = oldRecord.order_number || oldRecord.id;
+        setOrders(prev => prev.filter(o => o.id !== delId && o.id !== oldRecord.id));
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [adminSession, audioEnabled]);
 
   useEffect(() => {
     if (crmSubTab === 'carts') {
@@ -1664,6 +1798,33 @@ https://foxdrop.com.mx`;
                 <RefreshCw className="w-3 h-3 text-orange-600 hover:rotate-180 transition-transform duration-300" />
               </button>
 
+              {/* Indicador Realtime y Sonido de Alertas */}
+              <button
+                onClick={() => setAudioEnabled(!audioEnabled)}
+                title={audioEnabled ? "Alertas de audio activadas (click para silenciar)" : "Alertas de audio silenciadas (click para activar)"}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition border ${
+                  audioEnabled 
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' 
+                    : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
+                }`}
+              >
+                <div className="relative">
+                  <span className={`w-2 h-2 rounded-full block ${audioEnabled ? 'bg-emerald-500 animate-ping' : 'bg-gray-400'}`} />
+                  <span className={`w-2 h-2 rounded-full block absolute inset-0 ${audioEnabled ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                </div>
+                {audioEnabled ? (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-600 hidden sm:inline" />
+                    <span className="hidden sm:inline">En Vivo</span>
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 text-gray-500 hidden sm:inline" />
+                    <span className="hidden sm:inline">Silenciado</span>
+                  </>
+                )}
+              </button>
+
               <button
                 onClick={handleInstallApp}
                 title="Instalar FoxDrop en Celular o Escritorio"
@@ -1684,6 +1845,41 @@ https://foxdrop.com.mx`;
               </a>
             </div>
           </div>
+
+          {/* BANNER FLOTANTE DE NOTIFICACIÓN EN TIEMPO REAL */}
+          {adminRealtimeToast && (
+            <div className="bg-gradient-to-r from-slate-900 to-[#0F3E36] text-white px-4 py-2.5 shadow-lg border-b border-white/10 flex items-center justify-between animate-in slide-in-from-top duration-300">
+              <div className="flex items-center gap-3">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                  adminRealtimeToast.type === 'new_order' ? 'bg-emerald-500 text-white animate-bounce' :
+                  adminRealtimeToast.type === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-[#DF7F2D] text-white'
+                }`}>
+                  <Bell className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <span className="font-extrabold block text-amber-300">{adminRealtimeToast.title}</span>
+                  <span className="text-white/90">{adminRealtimeToast.message}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setCrmSubTab('orders');
+                    setAdminRealtimeToast(null);
+                  }}
+                  className="bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition cursor-pointer"
+                >
+                  Ver Pedidos
+                </button>
+                <button
+                  onClick={() => setAdminRealtimeToast(null)}
+                  className="text-white/60 hover:text-white p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* CONTENIDO PRINCIPAL */}

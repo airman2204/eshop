@@ -526,3 +526,77 @@ export async function updateSpecialOrderStatus(id: string, status: string) {
   }
 }
 
+/**
+ * Suscripción en Tiempo Real para el Panel Administrador
+ * Notifica cualquier INSERT, UPDATE o DELETE en la tabla 'orders'
+ */
+export function subscribeToAllOrders(
+  callback: (payload: { eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new: any; old: any }) => void
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseBrowserClient() as any;
+  const channelName = `admin-orders-realtime-${Date.now()}-${Math.random()}`;
+
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      (payload: any) => {
+        callback({
+          eventType: payload.eventType,
+          new: payload.new,
+          old: payload.old,
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
+ * Suscripción en Tiempo Real para el Cliente en Tienda Web
+ * Escucha cambios en sus pedidos por userId o teléfono/email
+ */
+export function subscribeToClientOrders(
+  userIdentifier: { userId?: string; phone?: string; email?: string },
+  callback: (payload: { eventType: 'INSERT' | 'UPDATE' | 'DELETE'; new: any; old: any }) => void
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = getSupabaseBrowserClient() as any;
+  const channelName = `client-orders-realtime-${Date.now()}-${Math.random()}`;
+
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      (payload: any) => {
+        const orderData = payload.new || payload.old;
+        if (!orderData) return;
+
+        // Comprobar si la orden pertenece al cliente
+        const matchesUser = userIdentifier.userId && orderData.user_id === userIdentifier.userId;
+        const matchesPhone = userIdentifier.phone && orderData.client_phone === userIdentifier.phone;
+        const matchesEmail = userIdentifier.email && orderData.client_email === userIdentifier.email;
+
+        if (matchesUser || matchesPhone || matchesEmail) {
+          callback({
+            eventType: payload.eventType,
+            new: payload.new,
+            old: payload.old,
+          });
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+

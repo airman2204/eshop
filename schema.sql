@@ -260,3 +260,11 @@ SELECT
   12.00, 240.00, 70.00, 580.00, 20,
   ARRAY['https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800']
 ON CONFLICT (sku) DO NOTHING;
+
+-- 15. ACTIVACIÓN DE SUPABASE REALTIME (ACTUALIZACIONES EN VIVO)
+-- Permite que los cambios de pedidos se emitan por WebSocket en tiempo real hacia la tienda y el CRM
+ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.special_orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.abandoned_carts;
+

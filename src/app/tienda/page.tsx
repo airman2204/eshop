@@ -9,7 +9,7 @@ import {
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
   Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy,
-  Clock, AlertTriangle, Ban
+  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2
 } from 'lucide-react';
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
@@ -20,11 +20,12 @@ import {
   lookupUserByEmail, FullUserProfile, getUserFullProfile, saveUserAddress, deleteUserAddress, 
   saveUserCard, deleteUserCard, updateUserProfileData 
 } from '@/lib/auth';
-import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart, cancelOrderAsClient } from '@/lib/orders';
+import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart, cancelOrderAsClient, subscribeToClientOrders } from '@/lib/orders';
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCarouselSlides, CarouselSlide, getClubSettings } from '@/lib/admin';
 import { ClubFoxDropSettings } from '@/types';
 import { trackEcommerceEvent } from '@/components/Analytics';
+import { soundManager } from '@/lib/sounds';
 
 // Normaliza texto eliminando acentos, caracteres especiales y mayúsculas
 function normalizeSearchText(text: string): string {
@@ -256,6 +257,15 @@ export default function TiendaFoxDrop() {
   const [clientCancelReason, setClientCancelReason] = useState('Encontré un mejor precio / Ya no lo necesito');
   const [clientCancelNotes, setClientCancelNotes] = useState('');
   const [clientCancellingLoading, setClientCancellingLoading] = useState(false);
+
+  // Notificación flotante en tiempo real para el cliente
+  const [clientRealtimeToast, setClientRealtimeToast] = useState<{
+    id: string;
+    type: 'status_update' | 'shipped' | 'delivered' | 'cancelled' | 'confirmed';
+    title: string;
+    message: string;
+    orderId?: string;
+  } | null>(null);
 
   // Modales de dirección y tarjeta dentro de la tienda
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -766,6 +776,108 @@ export default function TiendaFoxDrop() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────
+  // Suscripción Realtime a Pedidos para el Cliente
+  // ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user && !fullProfile) return;
+
+    const userPhone = user?.phone || fullProfile?.phone;
+    const userEmail = user?.email || fullProfile?.email;
+    const userId = user?.id || fullProfile?.id;
+
+    if (!userPhone && !userEmail && !userId) return;
+
+    const unsubscribe = subscribeToClientOrders(
+      { userId, phone: userPhone, email: userEmail },
+      (payload) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+
+        if (eventType === 'INSERT' && newRecord) {
+          // El cliente completó un pedido o se le asignó uno
+          setUserOrders(prev => {
+            const exists = prev.some(o => (o.id === newRecord.id || o.order_number === newRecord.order_number));
+            if (exists) return prev;
+            return [newRecord, ...prev];
+          });
+        } else if (eventType === 'UPDATE' && newRecord) {
+          const orderNum = newRecord.order_number || newRecord.id;
+          const newStatus = newRecord.status;
+
+          setUserOrders(prev => prev.map(o => {
+            if (o.id === newRecord.id || o.order_number === newRecord.order_number) {
+              return { ...o, ...newRecord };
+            }
+            return o;
+          }));
+
+          // Si el modal de detalle del pedido está abierto con este pedido, actualizarlo
+          setSelectedOrderForDetail((current: any) => {
+            if (current && (current.id === newRecord.id || current.order_number === newRecord.order_number)) {
+              return { ...current, ...newRecord };
+            }
+            return current;
+          });
+
+          // Textos y sonidos amigables según status estilo Mercado Libre / Amazon
+          if (newStatus === 'processing') {
+            soundManager.playStatusUpdated();
+            setClientRealtimeToast({
+              id: `toast-${Date.now()}`,
+              type: 'confirmed',
+              title: '¡Tu pedido fue confirmado!',
+              message: `El pedido ${orderNum} ya está siendo preparado en almacén.`,
+              orderId: orderNum,
+            });
+          } else if (newStatus === 'shipped') {
+            soundManager.playStatusUpdated();
+            setClientRealtimeToast({
+              id: `toast-${Date.now()}`,
+              type: 'shipped',
+              title: '📦 ¡Tu pedido está en camino!',
+              message: `El pedido ${orderNum} ya salió a reparto.${newRecord.tracking_number ? ` Guía: ${newRecord.tracking_number}` : ''}`,
+              orderId: orderNum,
+            });
+          } else if (newStatus === 'delivered') {
+            soundManager.playOrderDelivered();
+            setClientRealtimeToast({
+              id: `toast-${Date.now()}`,
+              type: 'delivered',
+              title: '🎉 ¡Pedido Entregado!',
+              message: `Tu pedido ${orderNum} ha sido entregado exitosamente. ¡Gracias por tu compra!`,
+              orderId: orderNum,
+            });
+          } else if (newStatus === 'cancelled') {
+            soundManager.playOrderCancelled();
+            setClientRealtimeToast({
+              id: `toast-${Date.now()}`,
+              type: 'cancelled',
+              title: 'Pedido Cancelado',
+              message: `El pedido ${orderNum} ha sido cancelado.`,
+              orderId: orderNum,
+            });
+          } else {
+            soundManager.playStatusUpdated();
+            setClientRealtimeToast({
+              id: `toast-${Date.now()}`,
+              type: 'status_update',
+              title: 'Actualización en tu pedido',
+              message: `El pedido ${orderNum} se actualizó a estado: ${newStatus}`,
+              orderId: orderNum,
+            });
+          }
+        } else if (eventType === 'DELETE' && oldRecord) {
+          const delId = oldRecord.order_number || oldRecord.id;
+          setUserOrders(prev => prev.filter(o => o.id !== delId && o.order_number !== delId && o.id !== oldRecord.id));
+        }
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user, fullProfile]);
+
   // Manejador de cancelación al estilo Amazon / Mercado Libre
   const handleExecuteClientCancellation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1217,6 +1329,43 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
       </header>
+
+      {/* BANNER FLOTANTE DE NOTIFICACIÓN DE PEDIDO EN TIEMPO REAL */}
+      {clientRealtimeToast && (
+        <div className="bg-gradient-to-r from-[#0F3E36] to-[#1A5248] text-white px-4 py-2.5 shadow-lg border-b border-white/10 flex items-center justify-between sticky top-[61px] z-30 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+              clientRealtimeToast.type === 'delivered' ? 'bg-emerald-500 text-white animate-bounce' :
+              clientRealtimeToast.type === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-[#DF7F2D] text-white'
+            }`}>
+              <Bell className="w-4 h-4" />
+            </div>
+            <div className="text-xs">
+              <span className="font-extrabold block text-amber-300">{clientRealtimeToast.title}</span>
+              <span className="text-white/90">{clientRealtimeToast.message}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setAccountTab('orders');
+                setCurrentView('account');
+                setClientRealtimeToast(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition cursor-pointer"
+            >
+              Ver Detalle
+            </button>
+            <button
+              onClick={() => setClientRealtimeToast(null)}
+              className="text-white/60 hover:text-white p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {currentView === 'store' ? (
         <>
