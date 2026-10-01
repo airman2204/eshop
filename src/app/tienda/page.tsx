@@ -2336,62 +2336,29 @@ export default function TiendaFoxDrop() {
                     />
                   </div>
 
-                  <div>
-                    <label className="text-gray-700 font-bold block mb-1">Calle y número (exterior/interior):</label>
-                    <input
-                      type="text"
-                      required
-                      value={addressForm.street || ''}
-                      onChange={e => setAddressForm(p => ({ ...p, street: e.target.value }))}
-                      className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                  {/* Búsqueda inteligente con Google Places Autocomplete */}
+                  <div className="pt-1">
+                    <label className="text-gray-700 font-bold block mb-1">
+                      Dirección de entrega (con autocompletado de Google Maps):
+                    </label>
+                    <GoogleAddressInput
+                      key={editingAddress ? editingAddress.id : 'new-address-modal'}
+                      initialStreet={addressForm.street || ''}
+                      initialColonia={addressForm.colonia || ''}
+                      initialZip={addressForm.zip || ''}
+                      initialCity={addressForm.city || 'Puebla'}
+                      initialState={addressForm.state || 'Puebla'}
+                      onAddressChange={(parsed) => {
+                        setAddressForm(prev => ({
+                          ...prev,
+                          street: parsed.street,
+                          colonia: parsed.colonia || '',
+                          zip: parsed.zip,
+                          city: parsed.city,
+                          state: parsed.state,
+                        }));
+                      }}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-gray-700 font-bold block mb-1">Colonia:</label>
-                      <input
-                        type="text"
-                        required
-                        value={addressForm.colonia || ''}
-                        onChange={e => setAddressForm(p => ({ ...p, colonia: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-700 font-bold block mb-1">Código Postal:</label>
-                      <input
-                        type="text"
-                        required
-                        maxLength={5}
-                        value={addressForm.zip || ''}
-                        onChange={e => setAddressForm(p => ({ ...p, zip: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-gray-700 font-bold block mb-1">Ciudad / Municipio:</label>
-                      <input
-                        type="text"
-                        required
-                        value={addressForm.city || ''}
-                        onChange={e => setAddressForm(p => ({ ...p, city: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-700 font-bold block mb-1">Estado:</label>
-                      <input
-                        type="text"
-                        required
-                        value={addressForm.state || ''}
-                        onChange={e => setAddressForm(p => ({ ...p, state: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      />
-                    </div>
                   </div>
 
                   <div>
