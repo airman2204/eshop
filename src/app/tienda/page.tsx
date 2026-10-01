@@ -2485,10 +2485,10 @@ export default function TiendaFoxDrop() {
                     />
                   </div>
 
-                  {/* Búsqueda inteligente con Google Places Autocomplete */}
+                  {/* Dirección de entrega */}
                   <div className="pt-1">
                     <label className="text-gray-700 font-bold block mb-1">
-                      Dirección de entrega (con autocompletado de Google Maps):
+                      Dirección de entrega:
                     </label>
                     <GoogleAddressInput
                       key={editingAddress ? editingAddress.id : 'new-address-modal'}
