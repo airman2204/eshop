@@ -17,9 +17,10 @@ import {
   lookupUserByEmail, FullUserProfile, getUserFullProfile, saveUserAddress, deleteUserAddress, 
   saveUserCard, deleteUserCard, updateUserProfileData 
 } from '@/lib/auth';
-import { createOrderInDb, submitSpecialOrder, getClientOrderHistory } from '@/lib/orders';
-import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier } from '@/lib/clubFoxdrop';
-import { getCarouselSlides, CarouselSlide } from '@/lib/admin';
+import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart } from '@/lib/orders';
+import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
+import { getCarouselSlides, CarouselSlide, getClubSettings } from '@/lib/admin';
+import { ClubFoxDropSettings } from '@/types';
 import { trackEcommerceEvent } from '@/components/Analytics';
 
 // Normaliza texto eliminando acentos, caracteres especiales y mayúsculas
@@ -228,9 +229,42 @@ export default function TiendaFoxDrop() {
   // Carrusel hero — slides gestionados desde el panel admin (Supabase)
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
 
+  // Configuración dinámica del Club FoxDrop
+  const [clubSettings, setClubSettings] = useState<ClubFoxDropSettings>(DEFAULT_CLUB_SETTINGS);
+
   useEffect(() => {
     getCarouselSlides().then(setSlides);
+    getClubSettings().then(cfg => {
+      if (cfg) setClubSettings(cfg);
+    });
   }, []);
+
+  // Sincronizar carrito abandonado en segundo plano cuando el cliente tiene artículos e información de contacto
+  useEffect(() => {
+    if (!cart || cart.length === 0) return;
+    const phone = user?.phone;
+    const email = user?.email;
+    if (!phone && !email) return;
+
+    const timer = setTimeout(() => {
+      const currentTotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
+      trackAbandonedCart({
+        clientName: user?.name || 'Cliente Invitado',
+        clientPhone: phone || '',
+        clientEmail: email || undefined,
+        items: cart.map(item => ({
+          title: item.product.title,
+          quantity: item.quantity,
+          price: item.product.publicPrice,
+          image: item.product.images?.[0] || undefined,
+        })),
+        total: currentTotal,
+      });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [cart, user]);
+
 
   // Categorías calculadas dinámicamente de los productos existentes en la tienda
   const categoryIconMap: Record<string, any> = {
@@ -767,6 +801,7 @@ export default function TiendaFoxDrop() {
       setConfirmedOrderId(fallbackId);
     }
     setCheckoutStep('success');
+    resolveAbandonedCart(user?.phone, user?.email);
     setCart([]);
   };
 
@@ -1321,7 +1356,7 @@ export default function TiendaFoxDrop() {
                 {/* Badge de Membresía Club Foxdrop */}
                 {(() => {
                   const pts = user?.points ?? 0;
-                  const tier = getClubFoxDropTier(pts);
+                  const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
                   return (
                     <div className="bg-white/10 border border-white/15 backdrop-blur-xs rounded-2xl p-3 sm:px-4 flex items-center gap-3 shrink-0">
                       <div className="text-2xl">{tier.badge}</div>
@@ -1409,7 +1444,7 @@ export default function TiendaFoxDrop() {
                   <div className="flex items-center justify-between mb-1">
                     <Award className={`w-5 h-5 ${accountTab === 'club' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {getClubFoxDropTier(user?.points ?? 0).discountPercent}%
+                      {getClubFoxDropTier(user?.points ?? 0, clubSettings?.tiers).discountPercent}%
                     </span>
                   </div>
                   <span className="text-xs font-bold block">Beneficios Club</span>
@@ -1802,7 +1837,7 @@ export default function TiendaFoxDrop() {
               <div className="space-y-5">
                 {(() => {
                   const pts = user?.points ?? 0;
-                  const tier = getClubFoxDropTier(pts);
+                  const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
                   return (
                     <div className="bg-gradient-to-br from-[#0F3E36] via-[#1E5D52] to-[#DF7F2D] rounded-3xl p-6 text-white shadow-lg space-y-4">
                       <div className="flex items-center justify-between">
@@ -2395,7 +2430,7 @@ export default function TiendaFoxDrop() {
                   {/* CLUB FOXDROP PUNTOS */}
                   <div className="mt-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-center gap-2 text-[11px] text-amber-900 font-medium">
                     <Sparkles className="w-4 h-4 text-[#E65F2B] shrink-0" />
-                    <span>Ganas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice)} puntos</strong> para tu <strong>Club Foxdrop</strong>.</span>
+                    <span>Ganas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'} {clubSettings?.currencyName || 'puntos'}</strong> para tu <strong>Club Foxdrop</strong>.</span>
                   </div>
 
                   {/* DISPONIBILIDAD DE STOCK & BADGES */}
@@ -2983,7 +3018,7 @@ export default function TiendaFoxDrop() {
             {/* Tarjeta de Lealtad: Club Foxdrop */}
             {(() => {
               const points = user?.points ?? 0;
-              const tier = getClubFoxDropTier(points);
+              const tier = getClubFoxDropTier(points, clubSettings?.tiers);
               return (
                 <div className="bg-gradient-to-br from-[#2D4A58] to-[#1F2D3D] text-white p-4 rounded-xl space-y-2 shadow-md">
                   <div className="flex items-center justify-between">

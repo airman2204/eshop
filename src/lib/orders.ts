@@ -283,24 +283,80 @@ export async function trackAbandonedCart(cartData: {
   clientName?: string;
   clientPhone: string;
   clientEmail?: string;
-  items: { title: string; quantity: number; price: number }[];
+  items: { title: string; quantity: number; price: number; image?: string }[];
   total: number;
 }) {
+  if (!cartData.clientPhone && !cartData.clientEmail) return;
+  if (!cartData.items || cartData.items.length === 0) return;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
-    await supabase.from("abandoned_carts").insert([
-      {
-        client_name: cartData.clientName || null,
-        client_phone: cartData.clientPhone,
-        client_email: cartData.clientEmail || null,
-        items: cartData.items,
-        total: cartData.total,
-        last_active: new Date().toISOString(),
-      },
-    ]);
+
+    // Buscar si ya existe un carrito previo para este teléfono o correo
+    let query = supabase.from("abandoned_carts").select("id");
+    if (cartData.clientPhone && cartData.clientEmail) {
+      query = query.or(`client_phone.eq.${cartData.clientPhone},client_email.eq.${cartData.clientEmail}`);
+    } else if (cartData.clientPhone) {
+      query = query.eq("client_phone", cartData.clientPhone);
+    } else if (cartData.clientEmail) {
+      query = query.eq("client_email", cartData.clientEmail);
+    }
+
+    const { data: existing } = await query.limit(1);
+
+    if (existing && existing.length > 0) {
+      // Actualizar el carrito existente
+      await supabase
+        .from("abandoned_carts")
+        .update({
+          client_name: cartData.clientName || null,
+          client_phone: cartData.clientPhone || null,
+          client_email: cartData.clientEmail || null,
+          items: cartData.items,
+          total: cartData.total,
+          last_active: new Date().toISOString(),
+          followed_up: false,
+        })
+        .eq("id", existing[0].id);
+    } else {
+      // Insertar nuevo registro
+      await supabase.from("abandoned_carts").insert([
+        {
+          client_name: cartData.clientName || null,
+          client_phone: cartData.clientPhone || null,
+          client_email: cartData.clientEmail || null,
+          items: cartData.items,
+          total: cartData.total,
+          followed_up: false,
+          last_active: new Date().toISOString(),
+        },
+      ]);
+    }
   } catch (err) {
     console.warn("No se pudo registrar carrito abandonado:", err);
+  }
+}
+
+/**
+ * Elimina o resuelve el carrito abandonado tras completar la orden con éxito
+ */
+export async function resolveAbandonedCart(clientPhone?: string, clientEmail?: string) {
+  if (!clientPhone && !clientEmail) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = getSupabaseBrowserClient() as any;
+    let query = supabase.from("abandoned_carts").delete();
+    if (clientPhone && clientEmail) {
+      query = query.or(`client_phone.eq.${clientPhone},client_email.eq.${clientEmail}`);
+    } else if (clientPhone) {
+      query = query.eq("client_phone", clientPhone);
+    } else if (clientEmail) {
+      query = query.eq("client_email", clientEmail);
+    }
+    await query;
+  } catch (err) {
+    console.warn("No se pudo resolver el carrito abandonado tras compra:", err);
   }
 }
 

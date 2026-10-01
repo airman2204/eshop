@@ -94,10 +94,42 @@ export interface AbandonedCart {
   id: string;
   clientName: string;
   clientPhone: string;
-  items: { title: string; quantity: number; price: number }[];
+  clientEmail?: string;
+  items: { title: string; quantity: number; price: number; image?: string }[];
   total: number;
   lastActive: string;
   followedUp: boolean;
+  createdAt?: string;
+}
+
+export interface ClubFoxDropTier {
+  name: string;
+  minPoints: number;
+  discountPercent: number;
+  badge: string;
+}
+
+export interface ClubFoxDropSettings {
+  currencyName: string; // 'Estrellas' | 'Puntos'
+  currencySymbol: string; // '⭐' | '🦊'
+  pesosPerPoint: number; // Ej. 10 ($10 MXN = 1 estrella) o 1 ($1 MXN = 1 estrella)
+  pointMonetaryValueMxn: number; // Ej. 0.10 MXN por estrella/punto
+  tiers: ClubFoxDropTier[];
+}
+
+export interface LoyaltyMetrics {
+  totalClients: number;
+  totalCirculatingPoints: number;
+  totalLoyaltyDiscountGiven: number;
+  pointMonetaryValueMxn?: number;
+  circulatingLiabilityMxn?: number;
+  tierCounts: {
+    bronze: number;
+    silver: number;
+    gold: number;
+    platinum: number;
+  };
+  totalOrdersAnalyzed: number;
 }
 
 export interface SpecialOrder {

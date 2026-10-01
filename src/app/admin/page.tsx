@@ -8,20 +8,22 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon, Wand2, Download
+  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent
 } from 'lucide-react';
-import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile } from '@/types';
+import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
-  fetchAdminCategories, createAdminCategory
+  fetchAdminCategories, createAdminCategory,
+  getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart, createTestAbandonedCart,
+  getClubSettings, saveClubSettings, getLoyaltyMetrics
 } from '@/lib/admin';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
-import { getClubFoxDropTier } from '@/lib/clubFoxdrop';
+import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 
 export default function AdminCRM() {
   // Estado de Autenticación y Seguridad
@@ -43,16 +45,25 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty'>('inventory');
   
   // Datos principales
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [specialOrders, setSpecialOrders] = useState<SpecialOrder[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<AbandonedCart[]>([]);
+  const [loadingCarts, setLoadingCarts] = useState(false);
+  const [cartFilter, setCartFilter] = useState<'all' | 'pending' | 'followed'>('all');
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [selectedClientForModal, setSelectedClientForModal] = useState<ClientProfile | null>(null);
+
+  // Configuración Club FoxDrop & Métricas de Fidelidad
+  const [clubSettings, setClubSettings] = useState<ClubFoxDropSettings>(DEFAULT_CLUB_SETTINGS);
+  const [savingClubSettings, setSavingClubSettings] = useState(false);
+  const [clubSettingsSavedNotice, setClubSettingsSavedNotice] = useState(false);
+  const [loyaltyMetrics, setLoyaltyMetrics] = useState<LoyaltyMetrics | null>(null);
+  const [loadingLoyaltyMetrics, setLoadingLoyaltyMetrics] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [usdRate, setUsdRate] = useState(20.00);
@@ -264,6 +275,18 @@ export default function AdminCRM() {
           setNewCategory(cats[0].name);
         }
       }
+
+      // Carritos abandonados
+      const dbCarts = await getAdminAbandonedCarts();
+      setAbandonedCarts(dbCarts ?? []);
+
+      // Configuración dinámica Club Foxdrop
+      const dbClub = await getClubSettings();
+      if (dbClub) setClubSettings(dbClub);
+
+      // Métricas de inversión en fidelidad
+      const dbMetrics = await getLoyaltyMetrics();
+      if (dbMetrics) setLoyaltyMetrics(dbMetrics);
     }
     loadData();
   }, [adminSession]);
@@ -344,6 +367,62 @@ export default function AdminCRM() {
     } finally {
       setResetLoading(false);
     }
+  };
+
+  // ─── ACCIONES CARRITOS ABANDONADOS ─────────────────────────────────────────
+  const handleToggleCartFollowedUp = async (cartId: string, currentStatus: boolean) => {
+    const nextStatus = !currentStatus;
+    setAbandonedCarts(prev => prev.map(c => c.id === cartId ? { ...c, followedUp: nextStatus } : c));
+    await updateAdminAbandonedCart(cartId, nextStatus);
+  };
+
+  const handleDeleteCart = async (cartId: string) => {
+    if (!confirm('¿Deseas eliminar este carrito abandonado?')) return;
+    setAbandonedCarts(prev => prev.filter(c => c.id !== cartId));
+    await deleteAdminAbandonedCart(cartId);
+  };
+
+  const handleCreateTestCart = async () => {
+    setLoadingCarts(true);
+    await createTestAbandonedCart();
+    const updated = await getAdminAbandonedCarts();
+    setAbandonedCarts(updated);
+    setLoadingCarts(false);
+  };
+
+  const handleRefreshCarts = async () => {
+    setLoadingCarts(true);
+    const updated = await getAdminAbandonedCarts();
+    setAbandonedCarts(updated);
+    setLoadingCarts(false);
+  };
+
+  // ─── ACCIONES PROGRAMA CLUB FOXDROP & MÉTRICAS ─────────────────────────────
+  const handleSaveClubSettings = async () => {
+    setSavingClubSettings(true);
+    setClubSettingsSavedNotice(false);
+    const success = await saveClubSettings(clubSettings);
+    setSavingClubSettings(false);
+    if (success) {
+      setClubSettingsSavedNotice(true);
+      setTimeout(() => setClubSettingsSavedNotice(false), 3500);
+      handleRefreshLoyaltyMetrics();
+    } else {
+      alert('Error al guardar la configuración del club. Verifica tu conexión.');
+    }
+  };
+
+  const handleResetClubSettings = () => {
+    if (confirm('¿Restablecer la configuración del Club FoxDrop a los valores iniciales ($10 MXN = 1 Estrella)?')) {
+      setClubSettings(DEFAULT_CLUB_SETTINGS);
+    }
+  };
+
+  const handleRefreshLoyaltyMetrics = async () => {
+    setLoadingLoyaltyMetrics(true);
+    const metrics = await getLoyaltyMetrics();
+    if (metrics) setLoyaltyMetrics(metrics);
+    setLoadingLoyaltyMetrics(false);
   };
 
   // Procesar archivo de imagen (desde input file o desde evento de pegado)
@@ -869,7 +948,7 @@ export default function AdminCRM() {
   };
 
   const posTotal = posCart.reduce((acc, item) => acc + (item.product.publicPrice * item.quantity), 0);
-  const posPointsEarned = Math.floor(posTotal / 10);
+  const posPointsEarned = Math.floor(posTotal / (clubSettings.pesosPerPoint || 10));
 
   // Cliente detectado en tiempo real según el teléfono tecleado en el POS
   const posDetectedClient = posClientPhone.trim() ? clients.find(c => {
@@ -1312,6 +1391,14 @@ https://foxdrop.com.mx`;
             }`}
           >
             <AlertTriangle className="w-4 h-4 text-amber-300" /> Carritos ({abandonedCarts.length})
+          </button>
+          <button
+            onClick={() => setCrmSubTab('loyalty')}
+            className={`px-3.5 py-2 rounded-md font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+              crmSubTab === 'loyalty' ? 'bg-[#E65F2B] text-white shadow' : 'bg-[#203641] text-gray-200 hover:bg-[#182932]'
+            }`}
+          >
+            <Award className="w-4 h-4 text-amber-400" /> Club & Fidelidad
           </button>
           <button
             onClick={() => setCrmSubTab('carousel')}
@@ -1768,7 +1855,7 @@ https://foxdrop.com.mx`;
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {clients.map(client => {
-                      const tier = getClubFoxDropTier(client.loyaltyPoints || 0);
+                      const tier = getClubFoxDropTier(client.loyaltyPoints || 0, clubSettings.tiers);
                       return (
                         <tr key={client.id} className="hover:bg-slate-50/60 transition">
                           <td className="py-3.5 px-4">
@@ -1977,43 +2064,277 @@ https://foxdrop.com.mx`;
           </div>
         )}
 
-        {/* 8. SECCIÓN CARRITOS INACTIVOS */}
-        {crmSubTab === 'carts' && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Carritos Inactivos</h2>
-              <p className="text-xs text-slate-500">Contacta a los clientes que dejaron productos sin finalizar su orden.</p>
-            </div>
+        {/* 8. SECCIÓN CARRITOS INACTIVOS & RECUPERACIÓN */}
+        {crmSubTab === 'carts' && (() => {
+          const totalPendingCarts = abandonedCarts.filter(c => !c.followedUp).length;
+          const totalFollowedCarts = abandonedCarts.filter(c => c.followedUp).length;
+          const totalCartsValue = abandonedCarts.reduce((acc, c) => acc + (Number(c.total) || 0), 0);
+          const filteredCarts = abandonedCarts.filter(c => {
+            if (cartFilter === 'pending') return !c.followedUp;
+            if (cartFilter === 'followed') return c.followedUp;
+            return true;
+          });
 
-            <div className="grid grid-cols-1 gap-3">
-              {abandonedCarts.map(cart => (
-                <div key={cart.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-sm">
-                  <div>
-                    <span className="font-bold text-slate-900 text-sm">{cart.clientName}</span>
-                    <span className="text-slate-500 ml-2">({cart.clientPhone})</span>
-                    <p className="text-slate-500 mt-1">
-                      Artículos: {cart.items.map(i => `${i.title} (x${i.quantity})`).join(', ')}
-                    </p>
-                    <span className="text-[10px] text-amber-600 block mt-0.5">Inactivo: {cart.lastActive}</span>
+          return (
+            <div className="space-y-6">
+              {/* Encabezado */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    Carritos Abandonados & Recuperación
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Supervisa bolsas de compra no concretadas, contacta al cliente vía WhatsApp con 1 clic y ofrécele el cupón de rescate (5% OFF).
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    onClick={handleRefreshCarts}
+                    disabled={loadingCarts}
+                    className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
+                    title="Actualizar listado"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingCarts ? 'animate-spin text-[#E65F2B]' : ''}`} />
+                    Actualizar
+                  </button>
+                  <button
+                    onClick={handleCreateTestCart}
+                    disabled={loadingCarts}
+                    className="px-3.5 py-2 bg-[#203641] hover:bg-[#182932] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-amber-400" />
+                    Generar Carrito de Prueba
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Cards Resumen */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Carritos Totales
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-slate-900">{abandonedCarts.length}</span>
+                    <span className="text-xs text-slate-500 font-medium">registrados</span>
                   </div>
+                </div>
 
-                  <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                    <span className="text-base font-black text-slate-900">${cart.total.toFixed(2)} MXN</span>
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Venta en Riesgo
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-amber-600">${totalCartsValue.toFixed(2)}</span>
+                    <span className="text-xs text-slate-500 font-medium">MXN</span>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Estatus de Seguimiento
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
+                      {totalPendingCarts} pendientes
+                    </span>
+                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/60">
+                      {totalFollowedCarts} contactados
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtros de Pestaña */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                <button
+                  onClick={() => setCartFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    cartFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Todos ({abandonedCarts.length})
+                </button>
+                <button
+                  onClick={() => setCartFilter('pending')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    cartFilter === 'pending'
+                      ? 'bg-amber-500 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Pendientes ({totalPendingCarts})
+                </button>
+                <button
+                  onClick={() => setCartFilter('followed')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    cartFilter === 'followed'
+                      ? 'bg-emerald-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Contactados ({totalFollowedCarts})
+                </button>
+              </div>
+
+              {/* Listado de Carritos */}
+              {filteredCarts.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-400 space-y-3 shadow-2xs">
+                  <AlertTriangle className="w-10 h-10 mx-auto text-amber-400 opacity-60" />
+                  <p className="font-bold text-slate-700 text-sm">No hay carritos abandonados en esta vista</p>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Cuando un cliente navega en la tienda e ingresa artículos con su teléfono o sesión activa sin concluir el pedido, se registrará aquí en tiempo real.
+                  </p>
+                  <div className="pt-2">
                     <button
-                      onClick={() => sendWhatsAppNotification(
-                        cart.clientPhone,
-                        `Hola ${cart.clientName}, notamos que tienes artículos pendientes en tu bolsa de compra. Te ofrecemos un 5% de descuento especial con el código DESC5 para completar tu pedido hoy.`
-                      )}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition text-xs shadow-sm"
+                      onClick={handleCreateTestCart}
+                      className="px-4 py-2 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs inline-flex items-center gap-1.5 transition shadow-2xs"
                     >
-                      <MessageSquare className="w-3.5 h-3.5" /> Enviar Cupón WA
+                      <Plus className="w-3.5 h-3.5" /> Generar Carrito de Prueba para Evaluar
                     </button>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-4">
+                  {filteredCarts.map(cart => {
+                    const cleanPhone = (cart.clientPhone || '').replace(/[^0-9]/g, '');
+                    const waMessage = `Hola ${cart.clientName || 'Cliente'}, te saludamos de FoxDrop Puebla 🦊✨. Notamos que dejaste artículos seleccionados en tu bolsa de compra. Te ofrecemos un cupón especial del 5% de descuento con el código *DESC5* y envío preferencial para completar tu orden hoy. ¿Te gustaría que te asista a finalizarla?`;
+                    const waUrl = cleanPhone ? `https://wa.me/52${cleanPhone}?text=${encodeURIComponent(waMessage)}` : '#';
+
+                    return (
+                      <div
+                        key={cart.id}
+                        className={`bg-white border rounded-2xl p-5 shadow-2xs transition hover:shadow-sm ${
+                          cart.followedUp ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-200'
+                        }`}
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          {/* Datos del Cliente y Tiempo */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-black text-slate-900 text-sm">{cart.clientName || 'Cliente Invitado'}</span>
+                              {cart.followedUp ? (
+                                <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Contactado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                  <Clock className="w-3 h-3 text-amber-600" /> Pendiente de Rescate
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                              {cart.clientPhone && (
+                                <a
+                                  href={`tel:${cart.clientPhone}`}
+                                  className="inline-flex items-center gap-1 text-slate-700 hover:text-[#E65F2B] font-medium"
+                                >
+                                  <Phone className="w-3.5 h-3.5 text-slate-400" /> {cart.clientPhone}
+                                </a>
+                              )}
+                              {cart.clientEmail && (
+                                <span className="inline-flex items-center gap-1 text-slate-500">
+                                  <Mail className="w-3.5 h-3.5 text-slate-400" /> {cart.clientEmail}
+                                </span>
+                              )}
+                              <span className="text-[11px] text-slate-400">
+                                Última actividad: {new Date(cart.lastActive).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Total y Acciones Directas */}
+                          <div className="flex items-center gap-3 self-end lg:self-auto flex-wrap">
+                            <div className="text-right">
+                              <span className="text-xs text-slate-400 block font-medium">Valor en Bolsa</span>
+                              <span className="text-lg font-black text-slate-900">${cart.total.toFixed(2)} MXN</span>
+                            </div>
+
+                            {cleanPhone && (
+                              <a
+                                href={waUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => {
+                                  if (!cart.followedUp) handleToggleCartFollowedUp(cart.id, false);
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 transition text-xs shadow-2xs"
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                Contactar WA (Cupón 5%)
+                              </a>
+                            )}
+
+                            <button
+                              onClick={() => handleToggleCartFollowedUp(cart.id, cart.followedUp)}
+                              className={`p-2 rounded-xl border text-xs font-bold transition flex items-center gap-1 ${
+                                cart.followedUp
+                                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-700'
+                              }`}
+                              title={cart.followedUp ? 'Marcar como pendiente' : 'Marcar como contactado'}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span className="hidden sm:inline">
+                                {cart.followedUp ? 'Desmarcar' : 'Hecho'}
+                              </span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteCart(cart.id)}
+                              className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition"
+                              title="Eliminar carrito"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Desglose de Artículos del Carrito */}
+                        <div className="mt-4 pt-3 border-t border-slate-100">
+                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                            Artículos en la bolsa ({cart.items.reduce((acc, i) => acc + (i.quantity || 1), 0)} u):
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {cart.items.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-xl border border-slate-100 text-xs"
+                              >
+                                {item.image ? (
+                                  <img
+                                    src={item.image}
+                                    alt={item.title}
+                                    className="w-9 h-9 object-cover rounded-lg shrink-0 border border-slate-200"
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center shrink-0 text-slate-500">
+                                    <ShoppingBag className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-bold text-slate-800 truncate">{item.title}</p>
+                                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-0.5">
+                                    <span>Cant: {item.quantity}</span>
+                                    <span className="font-bold text-slate-700">${item.price.toFixed(2)} c/u</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 9. SECCIÓN GESTIÓN DEL CARRUSEL HERO */}
         {crmSubTab === 'carousel' && (
@@ -2176,6 +2497,304 @@ https://foxdrop.com.mx`;
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 10. SECCIÓN CLUB FOXDROP & MÉTRICAS DE FIDELIDAD */}
+        {crmSubTab === 'loyalty' && (
+          <div className="space-y-6">
+            {/* Encabezado */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-500" />
+                  Programa de Miembros (Club FoxDrop) & Fidelidad
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Monitorea cuánto dinero se invierte en fidelidad, el pasivo de puntos acumulados y ajusta las reglas de conversión y niveles.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  onClick={handleRefreshLoyaltyMetrics}
+                  disabled={loadingLoyaltyMetrics}
+                  className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingLoyaltyMetrics ? 'animate-spin text-[#E65F2B]' : ''}`} />
+                  Actualizar Métricas
+                </button>
+                <button
+                  onClick={handleSaveClubSettings}
+                  disabled={savingClubSettings}
+                  className="px-4 py-2 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {savingClubSettings ? 'Guardando...' : 'Guardar Reglas del Club'}
+                </button>
+              </div>
+            </div>
+
+            {/* Aviso visual de guardado */}
+            {clubSettingsSavedNotice && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>¡Configuración del Club FoxDrop guardada exitosamente en Supabase! La tienda ahora aplica estas reglas en vivo.</span>
+              </div>
+            )}
+
+            {/* KPI Cards: Inversión en Fidelidad & Métricas Financieras */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-white to-orange-50/40 border border-orange-200/80 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between text-orange-600 mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider">Inversión en Fidelidad</span>
+                  <HeartHandshake className="w-4 h-4" />
+                </div>
+                <div className="text-2xl font-black text-slate-900">
+                  ${(loyaltyMetrics?.totalLoyaltyDiscountGiven || 0).toFixed(2)} <span className="text-xs font-bold text-slate-400">MXN</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Descuentos reales otorgados a miembros en {loyaltyMetrics?.totalOrdersAnalyzed || 0} órdenes analizadas.
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-amber-50/40 border border-amber-200/80 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between text-amber-600 mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider">Puntos en Circulación</span>
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                </div>
+                <div className="text-2xl font-black text-slate-900">
+                  {(loyaltyMetrics?.totalCirculatingPoints || 0).toLocaleString()} <span className="text-sm font-bold text-amber-600">{clubSettings.currencySymbol}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Acumulado entre los {loyaltyMetrics?.totalClients || 0} clientes registrados en la plataforma.
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-blue-50/40 border border-blue-200/80 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between text-blue-600 mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider">Pasivo Financiero Estimado</span>
+                  <DollarSign className="w-4 h-4" />
+                </div>
+                <div className="text-2xl font-black text-slate-900">
+                  ${(loyaltyMetrics?.circulatingLiabilityMxn || 0).toFixed(2)} <span className="text-xs font-bold text-slate-400">MXN</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Valor económico a redimir (${clubSettings.pointMonetaryValueMxn.toFixed(2)} MXN por {clubSettings.currencySymbol}).
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between text-slate-600 mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider">Miembros por Nivel</span>
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-xs font-bold mt-1">
+                  <span className="bg-amber-100/70 text-amber-900 px-2 py-0.5 rounded-md flex items-center justify-between">
+                    <span>🥉 Bronce</span>
+                    <span>{loyaltyMetrics?.tierCounts.bronze || 0}</span>
+                  </span>
+                  <span className="bg-slate-200/70 text-slate-800 px-2 py-0.5 rounded-md flex items-center justify-between">
+                    <span>🥈 Plata</span>
+                    <span>{loyaltyMetrics?.tierCounts.silver || 0}</span>
+                  </span>
+                  <span className="bg-yellow-100/70 text-yellow-900 px-2 py-0.5 rounded-md flex items-center justify-between">
+                    <span>🥇 Oro</span>
+                    <span>{loyaltyMetrics?.tierCounts.gold || 0}</span>
+                  </span>
+                  <span className="bg-purple-100/70 text-purple-900 px-2 py-0.5 rounded-md flex items-center justify-between">
+                    <span>👑 Platino</span>
+                    <span>{loyaltyMetrics?.tierCounts.platinum || 0}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Editor de Parámetros del Club */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Reglas de Conversión y Equivalencias</h3>
+                  <p className="text-xs text-slate-500">Define cuántos pesos equivalen a 1 estrella/punto y el valor monetario de recompensa.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResetClubSettings}
+                  className="text-xs font-bold text-slate-400 hover:text-slate-600 underline self-start sm:self-auto"
+                >
+                  Restablecer valores predeterminados
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Nombre de la Moneda</label>
+                  <input
+                    type="text"
+                    value={clubSettings.currencyName}
+                    onChange={e => setClubSettings({ ...clubSettings, currencyName: e.target.value })}
+                    placeholder="Ej. Estrellas, Puntos Fox"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Ícono o Símbolo</label>
+                  <input
+                    type="text"
+                    value={clubSettings.currencySymbol}
+                    onChange={e => setClubSettings({ ...clubSettings, currencySymbol: e.target.value })}
+                    placeholder="Ej. ⭐, 🦊, 💎"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Pesos por cada {clubSettings.currencySymbol} ($ MXN)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={clubSettings.pesosPerPoint}
+                    onChange={e => setClubSettings({ ...clubSettings, pesosPerPoint: Math.max(1, Number(e.target.value) || 1) })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-1">
+                    Ej: $10 gastados = 1 {clubSettings.currencySymbol} ganada.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Valor Monetario por {clubSettings.currencySymbol} ($ MXN)
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={clubSettings.pointMonetaryValueMxn}
+                    onChange={e => setClubSettings({ ...clubSettings, pointMonetaryValueMxn: Math.max(0.01, Number(e.target.value) || 0.01) })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-1">
+                    Valor de canje para calcular el pasivo financiero.
+                  </span>
+                </div>
+              </div>
+
+              {/* Simulador Dinámico en Vivo */}
+              <div className="p-4 bg-orange-50/60 border border-orange-200/80 rounded-2xl text-xs space-y-1">
+                <span className="font-black text-orange-950 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#E65F2B]" />
+                  Simulador en tiempo real para el cliente:
+                </span>
+                <p className="text-orange-900 leading-relaxed">
+                  Por cada compra de <strong>$500.00 MXN</strong>, el cliente recibirá{' '}
+                  <span className="font-mono font-black text-[#E65F2B] bg-white px-2 py-0.5 rounded-md border border-orange-200">
+                    +{Math.floor(500 / clubSettings.pesosPerPoint)} {clubSettings.currencySymbol} {clubSettings.currencyName}
+                  </span>
+                  , con un valor de recompensa estimado de{' '}
+                  <strong>${(Math.floor(500 / clubSettings.pesosPerPoint) * clubSettings.pointMonetaryValueMxn).toFixed(2)} MXN</strong> (inversión de fidelidad del {((Math.floor(500 / clubSettings.pesosPerPoint) * clubSettings.pointMonetaryValueMxn / 500) * 100).toFixed(1)}%).
+                </p>
+              </div>
+            </div>
+
+            {/* Editor de Niveles de Membresía (Tiers) */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-6">
+              <div className="border-b border-slate-100 pb-4">
+                <h3 className="text-base font-black text-slate-900">Niveles de Membresía & Descuentos Directos</h3>
+                <p className="text-xs text-slate-500">Configura los puntos requeridos y el beneficio porcentual que desbloquea cada nivel.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {clubSettings.tiers.map((tier, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50/50 space-y-3.5 text-xs shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-slate-400">Nivel #{idx + 1}</span>
+                      <input
+                        type="text"
+                        value={tier.badge}
+                        onChange={e => {
+                          const updated = [...clubSettings.tiers];
+                          updated[idx] = { ...updated[idx], badge: e.target.value };
+                          setClubSettings({ ...clubSettings, tiers: updated });
+                        }}
+                        className="w-10 text-center text-lg py-0.5 border border-slate-200 rounded-lg bg-white"
+                        title="Emoji o Insignia"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Nombre del Nivel</label>
+                      <input
+                        type="text"
+                        value={tier.name}
+                        onChange={e => {
+                          const updated = [...clubSettings.tiers];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setClubSettings({ ...clubSettings, tiers: updated });
+                        }}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">
+                        Puntos Mínimos ({clubSettings.currencySymbol})
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={tier.minPoints}
+                        onChange={e => {
+                          const updated = [...clubSettings.tiers];
+                          updated[idx] = { ...updated[idx], minPoints: Math.max(0, Number(e.target.value) || 0) };
+                          setClubSettings({ ...clubSettings, tiers: updated });
+                        }}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Descuento Directo (%)</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={tier.discountPercent}
+                          onChange={e => {
+                            const updated = [...clubSettings.tiers];
+                            updated[idx] = { ...updated[idx], discountPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) };
+                            setClubSettings({ ...clubSettings, tiers: updated });
+                          }}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-[#E65F2B] bg-white pr-8"
+                        />
+                        <Percent className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Botón de Guardar en Pie */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSaveClubSettings}
+                  disabled={savingClubSettings}
+                  className="px-6 py-3 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-2xl text-xs flex items-center gap-2 transition shadow-md disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingClubSettings ? 'Guardando Cambios...' : 'Guardar y Publicar en Tienda'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -2640,7 +3259,7 @@ https://foxdrop.com.mx`;
 
               {/* Tarjeta de Lealtad */}
               {(() => {
-                const tier = getClubFoxDropTier(selectedClientForModal.loyaltyPoints || 0);
+                const tier = getClubFoxDropTier(selectedClientForModal.loyaltyPoints || 0, clubSettings.tiers);
                 return (
                   <div className="bg-gradient-to-r from-[#2D4A58] to-[#1F2D3D] text-white p-4 rounded-xl flex items-center justify-between shadow">
                     <div>

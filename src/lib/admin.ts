@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from "./supabase/client";
+import { AbandonedCart, ClubFoxDropSettings, LoyaltyMetrics } from "@/types";
 
 /**
  * Consulta el tipo de cambio oficial USD a MXN en tiempo real con redundancia de APIs financieras
@@ -287,3 +288,126 @@ export async function createAdminCategory(name: string): Promise<{ id: string; n
   const json = await res.json();
   return json.data;
 }
+
+// ─── CARRITOS ABANDONADOS ─────────────────────────────────────────────────────
+
+export async function getAdminAbandonedCarts(): Promise<AbandonedCart[]> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_abandoned_carts" }),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.data || [];
+  } catch (err) {
+    console.error("Error al obtener carritos abandonados:", err);
+    return [];
+  }
+}
+
+export async function updateAdminAbandonedCart(cartId: string, followedUp: boolean): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update_abandoned_cart", cartId, followedUp }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Error actualizando carrito abandonado:", err);
+    return false;
+  }
+}
+
+export async function deleteAdminAbandonedCart(id: string): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete_abandoned_cart", id }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Error eliminando carrito abandonado:", err);
+    return false;
+  }
+}
+
+export async function createTestAbandonedCart(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create_test_abandoned_cart" }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Error creando carrito de prueba:", err);
+    return false;
+  }
+}
+
+// ─── CONFIGURACIÓN CLUB FOXDROP & MÉTRICAS DE FIDELIDAD ────────────────────────
+
+export async function getClubSettings(): Promise<ClubFoxDropSettings> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_club_settings" }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.settings) return json.settings;
+    }
+  } catch (err) {
+    console.warn("Fallo cargando configuración de club:", err);
+  }
+  return {
+    currencyName: "Estrellas",
+    currencySymbol: "⭐",
+    pesosPerPoint: 10,
+    pointMonetaryValueMxn: 0.10,
+    tiers: [
+      { name: "Miembro Bronce", minPoints: 0, discountPercent: 0, badge: "🥉" },
+      { name: "Miembro Plata", minPoints: 500, discountPercent: 3, badge: "🥈" },
+      { name: "Miembro Oro", minPoints: 1500, discountPercent: 7, badge: "🥇" },
+      { name: "Miembro Platino Fox", minPoints: 3000, discountPercent: 12, badge: "👑" },
+    ],
+  };
+}
+
+export async function saveClubSettings(settings: ClubFoxDropSettings): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_club_settings", settings }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Error guardando configuración de club:", err);
+    return false;
+  }
+}
+
+export async function getLoyaltyMetrics(): Promise<LoyaltyMetrics | null> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_loyalty_metrics" }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return json.metrics || null;
+    }
+    return null;
+  } catch (err) {
+    console.error("Error cargando métricas de lealtad:", err);
+    return null;
+  }
+}
+

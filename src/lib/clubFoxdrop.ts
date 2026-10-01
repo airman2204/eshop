@@ -1,33 +1,36 @@
 import { getSupabaseBrowserClient } from "./supabase/client";
-import { Product } from "@/types";
+import { Product, ClubFoxDropTier, ClubFoxDropSettings } from "@/types";
 
-export interface ClubFoxDropTier {
-  name: string;
-  minPoints: number;
-  discountPercent: number;
-  badge: string;
-}
+export const DEFAULT_CLUB_SETTINGS: ClubFoxDropSettings = {
+  currencyName: "Estrellas",
+  currencySymbol: "⭐",
+  pesosPerPoint: 10,
+  pointMonetaryValueMxn: 0.10,
+  tiers: [
+    { name: "Miembro Bronce", minPoints: 0, discountPercent: 0, badge: "🥉" },
+    { name: "Miembro Plata", minPoints: 500, discountPercent: 3, badge: "🥈" },
+    { name: "Miembro Oro", minPoints: 1500, discountPercent: 7, badge: "🥇" },
+    { name: "Miembro Platino Fox", minPoints: 3000, discountPercent: 12, badge: "👑" },
+  ],
+};
 
-export const CLUB_FOXDROP_TIERS: ClubFoxDropTier[] = [
-  { name: "Miembro Bronce", minPoints: 0, discountPercent: 0, badge: "🥉" },
-  { name: "Miembro Plata", minPoints: 500, discountPercent: 3, badge: "🥈" },
-  { name: "Miembro Oro", minPoints: 1500, discountPercent: 7, badge: "🥇" },
-  { name: "Miembro Platino Fox", minPoints: 3000, discountPercent: 12, badge: "👑" },
-];
-
-/**
- * 1 punto por cada $10 MXN gastados
- */
-export function calculateEarnedPoints(totalMxn: number): number {
-  return Math.floor(totalMxn / 10);
-}
+export const CLUB_FOXDROP_TIERS: ClubFoxDropTier[] = DEFAULT_CLUB_SETTINGS.tiers;
 
 /**
- * Obtiene el nivel del cliente según sus puntos en Club Foxdrop
+ * Calcula puntos ganados según configuración dinámica ($X MXN = 1 punto/estrella)
  */
-export function getClubFoxDropTier(points: number): ClubFoxDropTier {
-  const sorted = [...CLUB_FOXDROP_TIERS].sort((a, b) => b.minPoints - a.minPoints);
-  return sorted.find((tier) => points >= tier.minPoints) || CLUB_FOXDROP_TIERS[0];
+export function calculateEarnedPoints(totalMxn: number, pesosPerPoint: number = 10): number {
+  const rate = pesosPerPoint > 0 ? pesosPerPoint : 10;
+  return Math.floor(totalMxn / rate);
+}
+
+/**
+ * Obtiene el nivel del cliente según sus puntos en Club Foxdrop (acepta niveles configurados)
+ */
+export function getClubFoxDropTier(points: number, tiers: ClubFoxDropTier[] = DEFAULT_CLUB_SETTINGS.tiers): ClubFoxDropTier {
+  const activeTiers = tiers && tiers.length > 0 ? tiers : DEFAULT_CLUB_SETTINGS.tiers;
+  const sorted = [...activeTiers].sort((a, b) => b.minPoints - a.minPoints);
+  return sorted.find((tier) => points >= tier.minPoints) || sorted[sorted.length - 1];
 }
 
 /**

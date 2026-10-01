@@ -700,6 +700,217 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: data || [] });
     }
 
+    // ─── CARRITOS ABANDONADOS ────────────────────────────────────
+    if (action === "get_abandoned_carts") {
+      const { data, error } = await supabase
+        .from("abandoned_carts")
+        .select("*")
+        .order("last_active", { ascending: false });
+
+      if (error) {
+        console.warn("Error consultando carritos abandonados:", error);
+        return NextResponse.json({ success: true, data: [] });
+      }
+
+      const mapped = (data || []).map((c: any) => ({
+        id: c.id,
+        clientName: c.client_name || "Cliente Invitado",
+        clientPhone: c.client_phone || "",
+        clientEmail: c.client_email || undefined,
+        items: Array.isArray(c.items) ? c.items : [],
+        total: Number(c.total) || 0,
+        lastActive: c.last_active || c.created_at,
+        followedUp: Boolean(c.followed_up),
+        createdAt: c.created_at,
+      }));
+
+      return NextResponse.json({ success: true, data: mapped });
+    }
+
+    if (action === "update_abandoned_cart") {
+      const { cartId, followedUp } = body;
+      if (!cartId) return NextResponse.json({ error: "cartId requerido" }, { status: 400 });
+
+      const { data, error } = await supabase
+        .from("abandoned_carts")
+        .update({ followed_up: Boolean(followedUp) })
+        .eq("id", cartId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (action === "delete_abandoned_cart") {
+      if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+      const { error } = await supabase.from("abandoned_carts").delete().eq("id", id);
+      if (error) throw error;
+      return NextResponse.json({ success: true, deletedId: id });
+    }
+
+    if (action === "create_test_abandoned_cart") {
+      const sampleItems = [
+        { title: "Kit Cosméticos Coreanos Fox Glow", quantity: 1, price: 349, image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=80" },
+        { title: "Llavero Edición Especial FoxDrop", quantity: 2, price: 89, image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&q=80" }
+      ];
+      const { data, error } = await supabase
+        .from("abandoned_carts")
+        .insert([
+          {
+            client_name: "Mariana Soto",
+            client_phone: "2221234567",
+            client_email: "mariana.soto@ejemplo.com",
+            items: sampleItems,
+            total: 527.00,
+            followed_up: false,
+            last_active: new Date().toISOString(),
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
+    // ─── CONFIGURACIÓN PROGRAMA DE MIEMBROS & FIDELIDAD ────────────
+    if (action === "get_club_settings") {
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/club_settings.json");
+
+        if (fileData) {
+          const rawText = await fileData.text();
+          const parsed = JSON.parse(rawText || "{}");
+          if (parsed && parsed.tiers && parsed.tiers.length > 0) {
+            return NextResponse.json({ success: true, settings: parsed });
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso: club_settings.json aún no configurado en storage, devolviendo default:", err);
+      }
+
+      const defaultSettings = {
+        currencyName: "Estrellas",
+        currencySymbol: "⭐",
+        pesosPerPoint: 10,
+        pointMonetaryValueMxn: 0.10,
+        tiers: [
+          { name: "Miembro Bronce", minPoints: 0, discountPercent: 0, badge: "🥉" },
+          { name: "Miembro Plata", minPoints: 500, discountPercent: 3, badge: "🥈" },
+          { name: "Miembro Oro", minPoints: 1500, discountPercent: 7, badge: "🥇" },
+          { name: "Miembro Platino Fox", minPoints: 3000, discountPercent: 12, badge: "👑" },
+        ],
+      };
+      return NextResponse.json({ success: true, settings: defaultSettings });
+    }
+
+    if (action === "save_club_settings") {
+      const { settings } = body;
+      if (!settings || !Array.isArray(settings.tiers)) {
+        return NextResponse.json({ error: "Configuración inválida" }, { status: 400 });
+      }
+
+      const buffer = Buffer.from(JSON.stringify(settings, null, 2));
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload("_system/club_settings.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Error guardando club_settings en Supabase:", uploadError);
+        throw uploadError;
+      }
+
+      return NextResponse.json({ success: true, settings });
+    }
+
+    // ─── MÉTRICAS DE FIDELIDAD & INVERSIÓN AL CLIENTE ─────────────
+    if (action === "get_loyalty_metrics") {
+      try {
+        // 1. Perfiles y puntos en circulación
+        const { data: profiles, error: pError } = await supabase
+          .from("profiles")
+          .select("id, full_name, loyalty_points, created_at");
+
+        if (pError) console.warn("Error perfiles para métricas:", pError);
+
+        // 2. Pedidos y descuentos otorgados
+        const { data: orders, error: oError } = await supabase
+          .from("orders")
+          .select("id, subtotal, shipping_cost, total, status, created_at");
+
+        if (oError) console.warn("Error orders para métricas:", oError);
+
+        // 3. Descargar configuración actual de tiers
+        let tiers = [
+          { name: "Miembro Bronce", minPoints: 0, discountPercent: 0, badge: "🥉" },
+          { name: "Miembro Plata", minPoints: 500, discountPercent: 3, badge: "🥈" },
+          { name: "Miembro Oro", minPoints: 1500, discountPercent: 7, badge: "🥇" },
+          { name: "Miembro Platino Fox", minPoints: 3000, discountPercent: 12, badge: "👑" },
+        ];
+        let pointMonetaryValueMxn = 0.10;
+
+        try {
+          const { data: fileData } = await supabase.storage
+            .from("product-images")
+            .download("_system/club_settings.json");
+          if (fileData) {
+            const raw = JSON.parse(await fileData.text() || "{}");
+            if (raw.tiers) tiers = raw.tiers;
+            if (raw.pointMonetaryValueMxn) pointMonetaryValueMxn = Number(raw.pointMonetaryValueMxn);
+          }
+        } catch {}
+
+        let totalCirculatingPoints = 0;
+        const tierCounts = { bronze: 0, silver: 0, gold: 0, platinum: 0 };
+
+        (profiles || []).forEach((p: any) => {
+          const pts = Number(p.loyalty_points) || 0;
+          totalCirculatingPoints += pts;
+
+          const sortedTiers = [...tiers].sort((a, b) => b.minPoints - a.minPoints);
+          const currentTier = sortedTiers.find(t => pts >= t.minPoints) || sortedTiers[sortedTiers.length - 1];
+
+          const tName = (currentTier?.name || "").toLowerCase();
+          if (tName.includes("platino")) tierCounts.platinum++;
+          else if (tName.includes("oro")) tierCounts.gold++;
+          else if (tName.includes("plata")) tierCounts.silver++;
+          else tierCounts.bronze++;
+        });
+
+        // Calcular descuentos otorgados en pedidos
+        let totalLoyaltyDiscountGiven = 0;
+        (orders || []).forEach((o: any) => {
+          const expectedTotal = (Number(o.subtotal) || 0) + (Number(o.shipping_cost) || 0);
+          const actualTotal = Number(o.total) || 0;
+          const diff = expectedTotal - actualTotal;
+          if (diff > 0.01) {
+            totalLoyaltyDiscountGiven += diff;
+          }
+        });
+
+        const metrics = {
+          totalClients: (profiles || []).length,
+          totalCirculatingPoints,
+          pointMonetaryValueMxn,
+          circulatingLiabilityMxn: Number((totalCirculatingPoints * pointMonetaryValueMxn).toFixed(2)),
+          totalLoyaltyDiscountGiven: Number(totalLoyaltyDiscountGiven.toFixed(2)),
+          tierCounts,
+          totalOrdersAnalyzed: (orders || []).length,
+        };
+
+        return NextResponse.json({ success: true, metrics });
+      } catch (err: any) {
+        console.error("Error calculando loyalty metrics:", err);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (err: any) {
     console.error("Error en /api/admin:", err);
