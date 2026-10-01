@@ -829,6 +829,86 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, settings });
     }
 
+    // ─── CONFIGURACIÓN DE ENVÍOS & DATOS DE TRANSFERENCIA (CHECKOUT) ────────────
+    if (action === "get_checkout_settings") {
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/checkout_settings.json");
+
+        if (fileData) {
+          const rawText = await fileData.text();
+          const parsed = JSON.parse(rawText || "{}");
+          if (parsed && Array.isArray(parsed.shippingMethods)) {
+            return NextResponse.json({ success: true, settings: parsed });
+          }
+        }
+      } catch (err) {
+        console.warn("checkout_settings.json no encontrado, usando defaults:", err);
+      }
+
+      const defaultSettings = {
+        shippingMethods: [
+          {
+            id: 'pickup',
+            name: 'Acordar con el vendedor (Entrega Personal)',
+            description: 'Punto de encuentro personal en Puebla o coordinar por WhatsApp (Sin costo)',
+            price: 0,
+            requiresAddress: false,
+            enabled: true,
+          },
+          {
+            id: 'local_puebla',
+            name: 'Envío Local (Puebla y alrededores)',
+            description: 'Entrega por mensajería local a domicilio',
+            price: 50,
+            requiresAddress: true,
+            enabled: true,
+          },
+          {
+            id: 'national',
+            name: 'Envío Nacional por Paquetería',
+            description: 'Guía de rastreo nacional a cualquier estado de la República (FedEx/Estafeta/DHL)',
+            price: 140,
+            requiresAddress: true,
+            enabled: true,
+          },
+        ],
+        bankTransfer: {
+          bankName: 'BBVA México',
+          accountHolder: 'FoxDrop México',
+          clabe: '012680015948372619',
+          accountNumber: '1594837261',
+          notes: 'Realiza tu transferencia desde tu aplicación bancaria. Envía tu captura de pantalla por WhatsApp para despachar tu paquete de inmediato.',
+        },
+        allowCashOnDelivery: true,
+      };
+
+      return NextResponse.json({ success: true, settings: defaultSettings });
+    }
+
+    if (action === "save_checkout_settings") {
+      const { settings } = body;
+      if (!settings || !Array.isArray(settings.shippingMethods)) {
+        return NextResponse.json({ error: "Configuración inválida" }, { status: 400 });
+      }
+
+      const buffer = Buffer.from(JSON.stringify(settings, null, 2));
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload("_system/checkout_settings.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Error guardando checkout_settings en Supabase:", uploadError);
+        throw uploadError;
+      }
+
+      return NextResponse.json({ success: true, settings });
+    }
+
     // ─── MÉTRICAS DE FIDELIDAD & INVERSIÓN AL CLIENTE ─────────────
     if (action === "get_loyalty_metrics") {
       try {

@@ -8,9 +8,11 @@ import {
   Search, ShoppingCart, User, Menu, Star, ChevronLeft, ChevronRight, X, Truck, ShieldCheck, 
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
-  Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag
+  Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy
 } from 'lucide-react';
-import { Product, UserAddress, UserCard } from '@/types';
+import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
+import GoogleAddressInput from '@/components/GoogleAddressInput';
+import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getActiveProducts } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
@@ -348,10 +350,43 @@ export default function TiendaFoxDrop() {
 
   // Proceso de Checkout en la plataforma
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
-  const [shippingMethod, setShippingMethod] = useState<'puebla_local' | 'national'>('puebla_local');
-  const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: 'Puebla' });
-  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'card'>('spei');
+  const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(DEFAULT_CHECKOUT_SETTINGS);
+  const [selectedShippingId, setSelectedShippingId] = useState<string>('pickup');
+  const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: 'Puebla', colonia: '', state: 'Puebla' });
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
+  const [useNewAddress, setUseNewAddress] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash'>('spei');
+  const [clabeCopied, setClabeCopied] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+
+  // Cargar configuración de envíos y pagos
+  useEffect(() => {
+    getCheckoutSettings().then(settings => {
+      if (settings) {
+        setCheckoutSettings(settings);
+        const firstActive = settings.shippingMethods.find(m => m.enabled);
+        if (firstActive) setSelectedShippingId(firstActive.id);
+      }
+    });
+  }, []);
+
+  // Pre-cargar dirección guardada del cliente si existe
+  useEffect(() => {
+    if (fullProfile?.addresses && fullProfile.addresses.length > 0 && !shippingAddress.street) {
+      const defaultAddr = fullProfile.addresses.find(a => a.isDefault) || fullProfile.addresses[0];
+      if (defaultAddr) {
+        setShippingAddress({
+          street: defaultAddr.street,
+          colonia: defaultAddr.colonia || '',
+          zip: defaultAddr.zip,
+          city: defaultAddr.city || 'Puebla',
+          state: defaultAddr.state || 'Puebla',
+        });
+        setSelectedAddressId(defaultAddr.id);
+      }
+    }
+  }, [fullProfile]);
 
   // Encargo especial modal
   const [showCustomOrderModal, setShowCustomOrderModal] = useState(false);
@@ -894,15 +929,19 @@ export default function TiendaFoxDrop() {
         clientName: user?.name || '',
         clientPhone: user?.phone || '',
         clientEmail: user?.email,
-        shippingType: shippingMethod === 'puebla_local' ? 'puebla_local' : 'national_shipping',
+        shippingType: isPersonalDelivery ? 'agreed_pickup' : (selectedShippingId === 'national' ? 'national_shipping' : 'puebla_local'),
         shippingCost: shippingFee,
         subtotal: cartSubtotal,
         total: cartTotal,
-        paymentMethod: paymentMethod === 'card' ? 'card' : 'spei',
-        shippingAddress: {
-          street: shippingAddress.street,
+        paymentMethod: paymentMethod === 'cash' ? 'cash' : 'spei',
+        shippingAddress: isPersonalDelivery ? {
+          street: 'Entrega personal / Acordar con vendedor',
+          zip: '72000',
+          city: 'Puebla',
+        } : {
+          street: `${shippingAddress.street}${shippingAddress.colonia ? ', ' + shippingAddress.colonia : ''}`,
           zip: shippingAddress.zip,
-          city: shippingAddress.city,
+          city: shippingAddress.city || 'Puebla',
         },
         items: cart,
       });
@@ -957,7 +996,11 @@ export default function TiendaFoxDrop() {
   };
 
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
-  const shippingFee = shippingMethod === 'puebla_local' ? 50.00 : 140.00;
+  const activeShippingMethod = checkoutSettings.shippingMethods.find(m => m.id === selectedShippingId && m.enabled)
+    || checkoutSettings.shippingMethods.find(m => m.enabled)
+    || checkoutSettings.shippingMethods[0];
+  const isPersonalDelivery = activeShippingMethod ? !activeShippingMethod.requiresAddress : true;
+  const shippingFee = activeShippingMethod ? activeShippingMethod.price : 0;
   const cartTotal = cartSubtotal + shippingFee;
   const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
@@ -2769,96 +2812,331 @@ export default function TiendaFoxDrop() {
               </div>
             )}
 
-            {/* SELECCIÓN DE ENVÍO */}
+            {/* SELECCIÓN DE FORMA DE ENTREGA */}
             {checkoutStep === 'shipping' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-[#1F2D3D] border-b border-gray-200 pb-2">Selecciona forma de entrega</h4>
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-sm text-[#1F2D3D]">Forma de entrega</h4>
+                  <button
+                    onClick={() => setCheckoutStep('cart')}
+                    className="text-[#E65F2B] font-bold text-xs hover:underline"
+                  >
+                    ← Volver a bolsa
+                  </button>
+                </div>
                 
+                {/* Listado de Métodos de Entrega Activos */}
                 <div className="space-y-2">
-                  <label
-                    onClick={() => setShippingMethod('puebla_local')}
-                    className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'puebla_local' ? 'bg-[#EDF5F7] border-[#2D4A58] text-gray-900' : 'border-gray-200 text-gray-600'}`}
-                  >
-                    <div>
-                      <p className="font-bold text-gray-900">Envío Local (Puebla y alrededores)</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">Entrega por mensajería local</p>
-                    </div>
-                    <span className="font-bold text-gray-900">$50.00 MXN</span>
-                  </label>
-
-                  <label
-                    onClick={() => setShippingMethod('national')}
-                    className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer transition ${shippingMethod === 'national' ? 'bg-[#EDF5F7] border-[#2D4A58] text-gray-900' : 'border-gray-200 text-gray-600'}`}
-                  >
-                    <div>
-                      <p className="font-bold text-gray-900">Envío Nacional por Paquetería</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">Guía de rastreo nacional</p>
-                    </div>
-                    <span className="font-bold text-gray-900">$140.00 MXN</span>
-                  </label>
+                  {checkoutSettings.shippingMethods
+                    .filter(m => m.enabled)
+                    .map((method) => {
+                      const isSelected = selectedShippingId === method.id;
+                      return (
+                        <label
+                          key={method.id}
+                          onClick={() => {
+                            setSelectedShippingId(method.id);
+                            setAddressError(null);
+                          }}
+                          className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition select-none ${
+                            isSelected ? 'bg-[#EDF5F7] border-[#2D4A58] ring-1 ring-[#2D4A58]' : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <div className={`w-4 h-4 rounded-full mt-0.5 border flex items-center justify-center shrink-0 ${
+                              isSelected ? 'border-[#2D4A58] bg-[#2D4A58]' : 'border-gray-300'
+                            }`}>
+                              {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                                <span>{method.name}</span>
+                                {!method.requiresAddress && (
+                                  <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
+                                    Sin dirección
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[11px] text-gray-500 mt-0.5 leading-tight">{method.description}</p>
+                            </div>
+                          </div>
+                          <span className="font-black text-gray-900 shrink-0 ml-2">
+                            {method.price === 0 ? 'Gratis' : `$${method.price.toFixed(0)} MXN`}
+                          </span>
+                        </label>
+                      );
+                    })}
                 </div>
 
-                <div className="space-y-2 pt-2">
-                  <label className="font-bold text-gray-700">Dirección de entrega:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Calle, Número y Colonia..."
-                    value={shippingAddress.street}
-                    onChange={e => setShippingAddress({ ...shippingAddress, street: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-800"
-                  />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Código Postal..."
-                    value={shippingAddress.zip}
-                    onChange={e => setShippingAddress({ ...shippingAddress, zip: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded p-2 text-xs text-gray-800"
-                  />
-                </div>
+                {/* DIRECCIÓN DE ENTREGA O ENTREGA PERSONAL */}
+                {isPersonalDelivery ? (
+                  <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 text-emerald-900 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center gap-2 font-bold text-xs text-emerald-800">
+                      <span className="text-base">🤝</span>
+                      <span>Entrega personal o a acordar seleccionada</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 leading-relaxed">
+                      No es necesario ingresar dirección de entrega. Al completar tu pedido, coordinaremos el punto de encuentro en Puebla o detalles de envío directamente por WhatsApp.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-gray-800 text-xs flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#E65F2B]" />
+                        Dirección de entrega obligatoria:
+                      </label>
+                      {fullProfile?.addresses && fullProfile.addresses.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setUseNewAddress(!useNewAddress)}
+                          className="text-[#E65F2B] text-[11px] font-bold hover:underline"
+                        >
+                          {useNewAddress ? 'Usar dirección guardada' : '+ Otra dirección'}
+                        </button>
+                      )}
+                    </div>
 
+                    {/* Si tiene direcciones guardadas y no eligió ingresar una nueva */}
+                    {fullProfile?.addresses && fullProfile.addresses.length > 0 && !useNewAddress ? (
+                      <div className="space-y-2">
+                        {fullProfile.addresses.map((addr) => {
+                          const isSel = selectedAddressId === addr.id;
+                          return (
+                            <div
+                              key={addr.id}
+                              onClick={() => {
+                                setSelectedAddressId(addr.id);
+                                setShippingAddress({
+                                  street: addr.street,
+                                  colonia: addr.colonia || '',
+                                  zip: addr.zip,
+                                  city: addr.city || 'Puebla',
+                                  state: addr.state || 'Puebla',
+                                });
+                                setAddressError(null);
+                              }}
+                              className={`p-3 rounded-xl border cursor-pointer transition text-xs ${
+                                isSel ? 'bg-[#EDF5F7] border-[#2D4A58] ring-1 ring-[#2D4A58]' : 'border-gray-200 hover:border-gray-300 bg-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between font-bold text-gray-900">
+                                <span>{addr.name || 'Mi Dirección'}</span>
+                                {addr.isDefault && (
+                                  <span className="text-[9px] bg-gray-200 text-gray-700 font-bold px-1.5 py-0.2 rounded">
+                                    Predeterminada
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-gray-600 text-[11px] mt-0.5">
+                                {addr.street}{addr.colonia ? `, Col. ${addr.colonia}` : ''}, C.P. {addr.zip}, {addr.city}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* Formulario con Google Places Autocomplete */
+                      <GoogleAddressInput
+                        initialStreet={shippingAddress.street}
+                        initialColonia={shippingAddress.colonia}
+                        initialZip={shippingAddress.zip}
+                        initialCity={shippingAddress.city}
+                        initialState={shippingAddress.state}
+                        onAddressChange={(parsed) => {
+                          setShippingAddress({
+                            street: parsed.street,
+                            colonia: parsed.colonia || '',
+                            zip: parsed.zip,
+                            city: parsed.city || 'Puebla',
+                            state: parsed.state || 'Puebla',
+                          });
+                          if (parsed.street && parsed.zip) {
+                            setAddressError(null);
+                          }
+                        }}
+                      />
+                    )}
+
+                    {addressError && (
+                      <p className="text-rose-600 text-[11px] font-bold bg-rose-50 border border-rose-200 p-2 rounded-lg animate-in fade-in">
+                        ⚠️ {addressError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Subtotal, Envío y Total */}
                 <div className="pt-4 border-t border-gray-200 space-y-2">
-                  <div className="flex justify-between font-bold text-sm">
-                    <span>Total con envío:</span>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Artículos ({cartItemCount}):</span>
+                    <span>${cartSubtotal.toFixed(0)} MXN</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Costo de entrega:</span>
+                    <span className="font-bold text-gray-900">
+                      {shippingFee === 0 ? 'Sin costo' : `$${shippingFee.toFixed(0)} MXN`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-black text-sm pt-1 border-t border-gray-100">
+                    <span>Total estimado:</span>
                     <span className="text-[#E65F2B]">${cartTotal.toFixed(0)} MXN</span>
                   </div>
                   <button
-                    onClick={() => setCheckoutStep('payment')}
-                    className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3.5 rounded text-xs transition"
+                    onClick={() => {
+                      if (!isPersonalDelivery) {
+                        if (!shippingAddress.street.trim() || !shippingAddress.zip.trim()) {
+                          setAddressError('Debes ingresar tu calle, número y código postal completos para el envío.');
+                          return;
+                        }
+                      }
+                      setAddressError(null);
+                      setCheckoutStep('payment');
+                    }}
+                    className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3.5 rounded-xl text-xs transition shadow-sm"
                   >
-                    Continuar al pago
+                    Continuar al pago →
                   </button>
                 </div>
               </div>
             )}
 
-            {/* PAGO */}
+            {/* SELECCIÓN DE PAGO (SOLO TRANSFERENCIA SPEI O EFECTIVO) */}
             {checkoutStep === 'payment' && (
               <div className="space-y-4 flex-1 text-xs">
-                <h4 className="font-bold text-sm text-[#1F2D3D] border-b border-gray-200 pb-2">Método de pago</h4>
+                <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <h4 className="font-bold text-sm text-[#1F2D3D]">Método de pago</h4>
+                  <button
+                    onClick={() => setCheckoutStep('shipping')}
+                    className="text-[#E65F2B] font-bold text-xs hover:underline"
+                  >
+                    ← Modificar entrega
+                  </button>
+                </div>
                 
-                <div className="space-y-2">
-                  <label onClick={() => setPaymentMethod('spei')} className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer ${paymentMethod === 'spei' ? 'bg-[#EDF5F7] border-[#2D4A58]' : 'border-gray-200'}`}>
-                    <div>
-                      <p className="font-bold text-gray-800">Transferencia bancaria SPEI</p>
-                      <p className="text-[11px] text-gray-500">Datos bancarios al confirmar</p>
+                <div className="space-y-2.5">
+                  {/* Opción SPEI */}
+                  <label
+                    onClick={() => setPaymentMethod('spei')}
+                    className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                      paymentMethod === 'spei' ? 'bg-[#EDF5F7] border-[#2D4A58] ring-1 ring-[#2D4A58]' : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full mt-0.5 border flex items-center justify-center shrink-0 ${
+                      paymentMethod === 'spei' ? 'border-[#2D4A58] bg-[#2D4A58]' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'spei' && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
                     </div>
-                    <span className="text-[10px] text-emerald-600 font-bold">Sin Comisión</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-gray-900 text-xs">Transferencia bancaria SPEI</p>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-1.5 py-0.2 rounded">
+                          Sin comisión
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Transfiere desde tu app bancaria a nuestra cuenta oficial.
+                      </p>
+                    </div>
                   </label>
 
-                  <label onClick={() => setPaymentMethod('card')} className={`p-3.5 rounded-lg border flex items-center justify-between cursor-pointer ${paymentMethod === 'card' ? 'bg-[#EDF5F7] border-[#2D4A58]' : 'border-gray-200'}`}>
-                    <div>
-                      <p className="font-bold text-gray-800">Tarjeta Débito / Crédito</p>
-                      <p className="text-[11px] text-gray-500">Pasarela protegida</p>
+                  {/* Detalle interactivo de la Transferencia SPEI */}
+                  {paymentMethod === 'spei' && (
+                    <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-3 shadow-md border border-slate-800 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                        <span className="text-[11px] text-slate-300 uppercase tracking-wider font-bold">
+                          Datos de Transferencia Bancaria
+                        </span>
+                        <span className="text-xs font-black text-amber-400">
+                          Total: ${cartTotal.toFixed(0)} MXN
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Banco:</span>
+                          <span className="font-bold text-white">{checkoutSettings.bankTransfer.bankName || 'BBVA México'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Beneficiario:</span>
+                          <span className="font-bold text-white truncate max-w-[200px]">
+                            {checkoutSettings.bankTransfer.accountHolder || 'FoxDrop México'}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-slate-400">CLABE Interbancaria:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (navigator?.clipboard) {
+                                  navigator.clipboard.writeText(checkoutSettings.bankTransfer.clabe);
+                                  setClabeCopied(true);
+                                  setTimeout(() => setClabeCopied(false), 3000);
+                                }
+                              }}
+                              className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition"
+                            >
+                              {clabeCopied ? (
+                                <span className="text-emerald-400 flex items-center gap-0.5">
+                                  <Check className="w-3 h-3" /> ¡Copiada!
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-0.5">
+                                  <Copy className="w-3 h-3" /> Copiar CLABE
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                          <div className="bg-black/40 border border-white/10 rounded-xl p-2.5 font-mono text-center font-bold tracking-wider text-amber-300 text-sm">
+                            {checkoutSettings.bankTransfer.clabe || '012680015948372619'}
+                          </div>
+                        </div>
+
+                        {checkoutSettings.bankTransfer.notes && (
+                          <p className="text-[10px] text-slate-400 bg-white/5 p-2 rounded-lg leading-relaxed">
+                            💡 {checkoutSettings.bankTransfer.notes}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </label>
+                  )}
+
+                  {/* Opción Efectivo si está permitido */}
+                  {checkoutSettings.allowCashOnDelivery && (
+                    <label
+                      onClick={() => setPaymentMethod('cash')}
+                      className={`p-3.5 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                        paymentMethod === 'cash' ? 'bg-[#EDF5F7] border-[#2D4A58] ring-1 ring-[#2D4A58]' : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full mt-0.5 border flex items-center justify-center shrink-0 ${
+                        paymentMethod === 'cash' ? 'border-[#2D4A58] bg-[#2D4A58]' : 'border-gray-300'
+                      }`}>
+                        {paymentMethod === 'cash' && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-xs">Efectivo contra entrega</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Paga en efectivo al recibir tu producto o en el punto de encuentro personal.
+                        </p>
+                      </div>
+                    </label>
+                  )}
                 </div>
 
-                <div className="pt-4 border-t border-gray-200">
+                <div className="pt-4 border-t border-gray-200 space-y-2">
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Método de entrega:</span>
+                    <span className="font-bold text-gray-900">{activeShippingMethod?.name}</span>
+                  </div>
+                  <div className="flex justify-between font-black text-sm">
+                    <span>Total a pagar:</span>
+                    <span className="text-[#E65F2B]">${cartTotal.toFixed(0)} MXN</span>
+                  </div>
                   <button
                     onClick={handleFinishOrder}
-                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded text-xs transition shadow"
+                    className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded-xl text-xs transition shadow"
                   >
                     Confirmar pedido (${cartTotal.toFixed(0)} MXN)
                   </button>
@@ -2866,22 +3144,69 @@ export default function TiendaFoxDrop() {
               </div>
             )}
 
-            {/* ÉXITO */}
-            {checkoutStep === 'success' && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-4 space-y-3">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                  <CheckCircle2 className="w-8 h-8" />
+            {/* PANTALLA DE ÉXITO */}
+            {checkoutStep === 'success' && (() => {
+              const waMsg = `Hola FoxDrop 🦊✨, acabo de realizar el pedido *${confirmedOrderId}* por un total de *$${cartTotal.toFixed(0)} MXN*. Adjunto mi comprobante de pago para confirmarlo y coordinar mi entrega.`;
+              const waLink = `https://wa.me/522221234567?text=${encodeURIComponent(waMsg)}`;
+
+              return (
+                <div className="flex-1 flex flex-col justify-between p-2 space-y-4 text-xs">
+                  <div className="space-y-4 text-center">
+                    <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-black text-[#1F2D3D]">¡Pedido recibido con éxito!</h4>
+                      <p className="text-xs text-gray-500 mt-1">Número de orden FoxDrop:</p>
+                      <span className="inline-block bg-slate-100 font-mono text-sm font-black px-3 py-1 rounded-lg mt-1 text-slate-900">
+                        {confirmedOrderId}
+                      </span>
+                    </div>
+
+                    {/* Si eligió transferencia SPEI, mostrar resumen claro */}
+                    {paymentMethod === 'spei' && (
+                      <div className="bg-slate-900 text-white rounded-2xl p-4 text-left space-y-2.5 shadow-sm">
+                        <span className="text-[11px] font-bold text-amber-400 block border-b border-white/10 pb-1.5 uppercase tracking-wider">
+                          Datos para realizar tu pago (${cartTotal.toFixed(0)} MXN)
+                        </span>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Banco:</span>
+                          <span className="font-bold">{checkoutSettings.bankTransfer.bankName || 'BBVA México'}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-400">Beneficiario:</span>
+                          <span className="font-bold">{checkoutSettings.bankTransfer.accountHolder || 'FoxDrop México'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">CLABE:</span>
+                          <div className="bg-black/40 border border-white/10 rounded-lg p-2 font-mono font-bold text-amber-300 text-center tracking-wider text-xs">
+                            {checkoutSettings.bankTransfer.clabe || '012680015948372619'}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Botón WhatsApp directo */}
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-3.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-md"
+                    >
+                      <MessageSquare className="w-4 h-4 fill-white" />
+                      <span>Enviar Comprobante por WhatsApp</span>
+                    </a>
+                  </div>
+
+                  <button
+                    onClick={() => { setIsCartOpen(false); setCheckoutStep('cart'); }}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs transition"
+                  >
+                    Seguir explorando la tienda
+                  </button>
                 </div>
-                <h4 className="text-lg font-black text-[#1F2D3D]">¡Pedido confirmado!</h4>
-                <p className="text-xs text-gray-500">Número de orden Foxdrop: <strong className="text-gray-900">{confirmedOrderId}</strong>.</p>
-                <button
-                  onClick={() => { setIsCartOpen(false); setCheckoutStep('cart'); }}
-                  className="w-full bg-[#2D4A58] text-white font-bold py-3 rounded text-xs"
-                >
-                  Seguir comprando
-                </button>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
         </div>

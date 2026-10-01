@@ -77,7 +77,7 @@ export interface Order {
   clientPhone: string;
   clientEmail?: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping';
+  shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping' | string;
   pickupPoint?: string;
   subtotal: number;
   shippingCost: number;
@@ -142,4 +142,29 @@ export interface SpecialOrder {
   estimated_price?: number;
   created_at: string;
 }
+
+export interface ShippingMethodConfig {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  requiresAddress: boolean;
+  enabled: boolean;
+}
+
+export interface BankTransferConfig {
+  bankName: string;
+  accountHolder: string;
+  clabe: string;
+  accountNumber?: string;
+  notes?: string;
+}
+
+export interface CheckoutSettings {
+  shippingMethods: ShippingMethodConfig[];
+  bankTransfer: BankTransferConfig;
+  allowCashOnDelivery: boolean;
+  skydropxApiKey?: string;
+}
+
 

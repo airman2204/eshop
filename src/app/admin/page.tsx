@@ -8,9 +8,9 @@ import {
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
-  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu
+  Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard
 } from 'lucide-react';
-import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics } from '@/types';
+import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
@@ -20,6 +20,7 @@ import {
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics
 } from '@/lib/admin';
+import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, createPhysicalSaleOrder } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
@@ -45,7 +46,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Datos principales
@@ -63,6 +64,11 @@ export default function AdminCRM() {
   const [clubSettings, setClubSettings] = useState<ClubFoxDropSettings>(DEFAULT_CLUB_SETTINGS);
   const [savingClubSettings, setSavingClubSettings] = useState(false);
   const [clubSettingsSavedNotice, setClubSettingsSavedNotice] = useState(false);
+
+  // Configuración de Envíos & Métodos de Pago
+  const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(DEFAULT_CHECKOUT_SETTINGS);
+  const [savingCheckoutSettings, setSavingCheckoutSettings] = useState(false);
+  const [checkoutSettingsSavedNotice, setCheckoutSettingsSavedNotice] = useState(false);
   const [loyaltyMetrics, setLoyaltyMetrics] = useState<LoyaltyMetrics | null>(null);
   const [loadingLoyaltyMetrics, setLoadingLoyaltyMetrics] = useState(false);
 
@@ -288,6 +294,10 @@ export default function AdminCRM() {
       // Métricas de inversión en fidelidad
       const dbMetrics = await getLoyaltyMetrics();
       if (dbMetrics) setLoyaltyMetrics(dbMetrics);
+
+      // Configuración de envíos y métodos de pago
+      const dbCheckout = await getCheckoutSettings();
+      if (dbCheckout) setCheckoutSettings(dbCheckout);
     }
     loadData();
   }, [adminSession]);
@@ -420,8 +430,54 @@ export default function AdminCRM() {
   const handleRefreshLoyaltyMetrics = async () => {
     setLoadingLoyaltyMetrics(true);
     const metrics = await getLoyaltyMetrics();
-    if (metrics) setLoyaltyMetrics(metrics);
     setLoadingLoyaltyMetrics(false);
+  };
+
+  // ─── ACCIONES ENVÍOS & MÉTODOS DE PAGO ──────────────────────────────────────
+  const handleSaveCheckoutSettings = async () => {
+    setSavingCheckoutSettings(true);
+    setCheckoutSettingsSavedNotice(false);
+    const success = await saveCheckoutSettings(checkoutSettings);
+    setSavingCheckoutSettings(false);
+    if (success) {
+      setCheckoutSettingsSavedNotice(true);
+      setTimeout(() => setCheckoutSettingsSavedNotice(false), 3500);
+    } else {
+      alert('Error al guardar la configuración de envíos y pagos.');
+    }
+  };
+
+  const handleAddShippingMethod = () => {
+    const newMethod: ShippingMethodConfig = {
+      id: `shipping_${Date.now()}`,
+      name: 'Nuevo método de entrega',
+      description: 'Detalles de entrega para el cliente',
+      price: 0,
+      requiresAddress: true,
+      enabled: true,
+    };
+    setCheckoutSettings(prev => ({
+      ...prev,
+      shippingMethods: [...prev.shippingMethods, newMethod],
+    }));
+  };
+
+  const handleRemoveShippingMethod = (id: string) => {
+    if (checkoutSettings.shippingMethods.length <= 1) {
+      alert('Debe existir al menos un método de entrega configurado.');
+      return;
+    }
+    setCheckoutSettings(prev => ({
+      ...prev,
+      shippingMethods: prev.shippingMethods.filter(m => m.id !== id),
+    }));
+  };
+
+  const handleUpdateShippingMethod = (id: string, updates: Partial<ShippingMethodConfig>) => {
+    setCheckoutSettings(prev => ({
+      ...prev,
+      shippingMethods: prev.shippingMethods.map(m => m.id === id ? { ...m, ...updates } : m),
+    }));
   };
 
   // Procesar archivo de imagen (desde input file o desde evento de pegado)
@@ -1349,6 +1405,22 @@ https://foxdrop.com.mx`;
                   {slides.length}
                 </span>
               </button>
+
+              <button
+                onClick={() => { setCrmSubTab('shipping_payments'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'shipping_payments' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Truck className="w-4 h-4 text-emerald-400" /> Envíos & Pagos
+                </span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  crmSubTab === 'shipping_payments' ? 'bg-black/20 text-white' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
+                }`}>
+                  Config
+                </span>
+              </button>
             </div>
           </div>
 
@@ -1544,6 +1616,7 @@ https://foxdrop.com.mx`;
                   {crmSubTab === 'loyalty' && 'Club FoxDrop & Fidelidad'}
                   {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
                   {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
+                  {crmSubTab === 'shipping_payments' && 'Configuración de Envíos & Pagos (SPEI)'}
                 </h1>
                 <p className="text-xs text-slate-500 hidden sm:block">
                   {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
@@ -1556,6 +1629,7 @@ https://foxdrop.com.mx`;
                   {crmSubTab === 'loyalty' && 'Configuración de estrellas por peso, niveles e inversión'}
                   {crmSubTab === 'finance' && 'Rendimiento financiero y márgenes de ganancia'}
                   {crmSubTab === 'carousel' && 'Banners destacados y colecciones visuales'}
+                  {crmSubTab === 'shipping_payments' && 'Edita métodos de entrega, costos y datos bancarios para transferencia'}
                 </p>
               </div>
             </div>
@@ -2975,6 +3049,342 @@ https://foxdrop.com.mx`;
                   {savingClubSettings ? 'Guardando Cambios...' : 'Guardar y Publicar en Tienda'}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 11. SECCIÓN ENVÍOS & MÉTODOS DE PAGO */}
+        {crmSubTab === 'shipping_payments' && (
+          <div className="space-y-6">
+            {/* Encabezado */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-emerald-500" />
+                  Configuración de Envíos & Métodos de Pago
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Establece los costos de entrega, condiciones para entrega personal o paquetería y tus datos bancarios para transferencias SPEI.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  onClick={handleSaveCheckoutSettings}
+                  disabled={savingCheckoutSettings}
+                  className="px-4 py-2 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-2xs disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {savingCheckoutSettings ? 'Guardando...' : 'Guardar Configuración'}
+                </button>
+              </div>
+            </div>
+
+            {/* Aviso de guardado exitoso */}
+            {checkoutSettingsSavedNotice && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-2xl flex items-center gap-2 shadow-2xs animate-in fade-in duration-200">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-bold">¡Configuración de envíos y pagos guardada y sincronizada con la tienda exitosamente!</span>
+              </div>
+            )}
+
+            {/* 1. MÉTODOS DE ENTREGA DISPONIBLES */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-[#E65F2B]" />
+                    Métodos de Entrega Activos en Tienda
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Configura las opciones que tus clientes pueden elegir al confirmar su bolsa de compra.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddShippingMethod}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#E65F2B]" />
+                  Agregar Método
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {checkoutSettings.shippingMethods.map((method) => (
+                  <div
+                    key={method.id}
+                    className={`border rounded-2xl p-4 transition ${
+                      method.enabled ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/60 opacity-60'
+                    }`}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={method.enabled}
+                            onChange={e => handleUpdateShippingMethod(method.id, { enabled: e.target.checked })}
+                            className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-4 h-4"
+                          />
+                          <span className="font-bold text-xs text-slate-800">
+                            {method.enabled ? 'Activo en Tienda' : 'Pausado'}
+                          </span>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {checkoutSettings.shippingMethods.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveShippingMethod(method.id)}
+                            className="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-50 transition text-xs flex items-center gap-1"
+                            title="Eliminar método"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                          Nombre del Método de Entrega
+                        </label>
+                        <input
+                          type="text"
+                          value={method.name}
+                          onChange={e => handleUpdateShippingMethod(method.id, { name: e.target.value })}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                          Costo en MXN ($)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={method.price}
+                          onChange={e => handleUpdateShippingMethod(method.id, { price: Math.max(0, Number(e.target.value) || 0) })}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                        Descripción visible para el cliente
+                      </label>
+                      <input
+                        type="text"
+                        value={method.description}
+                        onChange={e => handleUpdateShippingMethod(method.id, { description: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-600 focus:outline-none focus:border-[#E65F2B]"
+                      />
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={method.requiresAddress}
+                          onChange={e => handleUpdateShippingMethod(method.id, { requiresAddress: e.target.checked })}
+                          className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-4 h-4"
+                        />
+                        <span className="text-xs text-slate-700 font-medium">
+                          ¿Requiere dirección física de envío?
+                        </span>
+                      </label>
+                      <span className="text-[11px] text-slate-400">
+                        {method.requiresAddress ? '📦 El checkout pedirá dirección obligatoria' : '🤝 Entrega personal (NO pide dirección en checkout)'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 2. DATOS DE TRANSFERENCIA BANCARIA (SPEI) */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xs space-y-4">
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-emerald-600" />
+                  Datos Bancarios para Transferencia SPEI
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Estos datos se mostrarán directamente al cliente al seleccionar Pago con Transferencia y en su pantalla de confirmación.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Institución Bancaria
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutSettings.bankTransfer.bankName}
+                    onChange={e => setCheckoutSettings({
+                      ...checkoutSettings,
+                      bankTransfer: { ...checkoutSettings.bankTransfer, bankName: e.target.value }
+                    })}
+                    placeholder="Ej. BBVA México, Nu, Santander..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Nombre del Titular / Beneficiario
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutSettings.bankTransfer.accountHolder}
+                    onChange={e => setCheckoutSettings({
+                      ...checkoutSettings,
+                      bankTransfer: { ...checkoutSettings.bankTransfer, accountHolder: e.target.value }
+                    })}
+                    placeholder="Ej. FoxDrop México / Mario..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    CLABE Interbancaria (18 dígitos)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={18}
+                    value={checkoutSettings.bankTransfer.clabe}
+                    onChange={e => setCheckoutSettings({
+                      ...checkoutSettings,
+                      bankTransfer: { ...checkoutSettings.bankTransfer, clabe: e.target.value.replace(/[^0-9]/g, '') }
+                    })}
+                    placeholder="012680015948372619"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Número de Cuenta o Tarjeta (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={checkoutSettings.bankTransfer.accountNumber || ''}
+                    onChange={e => setCheckoutSettings({
+                      ...checkoutSettings,
+                      bankTransfer: { ...checkoutSettings.bankTransfer, accountNumber: e.target.value }
+                    })}
+                    placeholder="Ej. 1594837261"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Instrucciones o Referencia para el Cliente
+                </label>
+                <textarea
+                  rows={2}
+                  value={checkoutSettings.bankTransfer.notes || ''}
+                  onChange={e => setCheckoutSettings({
+                    ...checkoutSettings,
+                    bankTransfer: { ...checkoutSettings.bankTransfer, notes: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-[#E65F2B]"
+                />
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={checkoutSettings.allowCashOnDelivery}
+                    onChange={e => setCheckoutSettings({ ...checkoutSettings, allowCashOnDelivery: e.target.checked })}
+                    className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-4 h-4"
+                  />
+                  <span className="text-xs font-bold text-slate-800">
+                    Permitir Pago en Efectivo contra Entrega (ideal para entregas personales en Puebla)
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* 3. RECOMENDACIÓN DE API DE ENVÍOS A OTROS ESTADOS */}
+            <div className="bg-gradient-to-br from-slate-900 to-[#18252E] text-white rounded-3xl p-6 shadow-md space-y-4 border border-slate-800">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="inline-block bg-[#E65F2B] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full mb-2 tracking-wider">
+                    Recomendación de Paquetería
+                  </span>
+                  <h3 className="font-black text-lg text-white flex items-center gap-2">
+                    <span>🚀</span> API de Envíos Automatizados en México: Skydropx
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    Para calcular envíos a otros estados de la República en tiempo real de forma económica y sin costos fijos, la solución recomendada es <strong>Skydropx</strong> (o <strong>Envia.com</strong>):
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
+                  <span className="text-emerald-400 font-black text-sm block">1. Sin Mensualidad</span>
+                  <p className="text-slate-300 text-[11px]">Pagas exclusivamente la guía que generes cuando un cliente compra.</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
+                  <span className="text-orange-400 font-black text-sm block">2. Hasta 70% Descuento</span>
+                  <p className="text-slate-300 text-[11px]">Tarifas preferenciales de mayoreo en FedEx, Estafeta, DHL, Redpack y Paquetexpress.</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 space-y-1">
+                  <span className="text-blue-400 font-black text-sm block">3. Cotización Dinámica</span>
+                  <p className="text-slate-300 text-[11px]">Cotiza por Código Postal de origen (Puebla) al C.P. del cliente en milisegundos.</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="w-full sm:w-auto flex-1">
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                    API Key de Skydropx (Opcional - Ingresa tu clave para habilitar la cotización automática):
+                  </label>
+                  <input
+                    type="password"
+                    value={checkoutSettings.skydropxApiKey || ''}
+                    onChange={e => setCheckoutSettings({ ...checkoutSettings, skydropxApiKey: e.target.value })}
+                    placeholder="sk_live_..."
+                    className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+                <a
+                  href="https://www.skydropx.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition self-end sm:self-auto shrink-0"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Crear cuenta Skydropx
+                </a>
+              </div>
+            </div>
+
+            {/* Botón flotante/inferior de guardar */}
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveCheckoutSettings}
+                disabled={savingCheckoutSettings}
+                className="px-6 py-3 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-2xl text-xs flex items-center gap-2 transition shadow-md disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {savingCheckoutSettings ? 'Guardando Cambios...' : 'Guardar y Publicar en Tienda'}
+              </button>
             </div>
           </div>
         )}
