@@ -379,6 +379,7 @@ export default function TiendaFoxDrop() {
   const [addressError, setAddressError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash'>('spei');
   const [clabeCopied, setClabeCopied] = useState(false);
+  const [cardCopied, setCardCopied] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [confirmedOrderSummary, setConfirmedOrderSummary] = useState<any | null>(null);
@@ -2887,46 +2888,84 @@ export default function TiendaFoxDrop() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div className={`grid grid-cols-1 ${checkoutSettings.bankTransfer.showHolder !== false && checkoutSettings.bankTransfer.accountHolder ? 'sm:grid-cols-2' : ''} gap-4 text-xs`}>
                         <div className="bg-white/5 p-3 rounded-xl">
                           <span className="text-white/60 block text-[11px]">Banco Destino:</span>
                           <span className="font-black text-sm text-white">{checkoutSettings.bankTransfer.bankName || 'BBVA México'}</span>
                         </div>
-                        <div className="bg-white/5 p-3 rounded-xl">
-                          <span className="text-white/60 block text-[11px]">Beneficiario:</span>
-                          <span className="font-black text-sm text-white truncate block">{checkoutSettings.bankTransfer.accountHolder || 'FoxDrop México'}</span>
-                        </div>
+                        {checkoutSettings.bankTransfer.showHolder !== false && checkoutSettings.bankTransfer.accountHolder && (
+                          <div className="bg-white/5 p-3 rounded-xl">
+                            <span className="text-white/60 block text-[11px]">Beneficiario:</span>
+                            <span className="font-black text-sm text-white truncate block">{checkoutSettings.bankTransfer.accountHolder}</span>
+                          </div>
+                        )}
                       </div>
 
-                      <div>
-                        <div className="flex justify-between items-center mb-1 text-xs">
-                          <span className="text-white/80 font-bold">CLABE Interbancaria (18 dígitos):</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (navigator?.clipboard) {
-                                navigator.clipboard.writeText(checkoutSettings.bankTransfer.clabe);
-                                setClabeCopied(true);
-                                setTimeout(() => setClabeCopied(false), 3000);
-                              }
-                            }}
-                            className="text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition cursor-pointer"
-                          >
-                            {clabeCopied ? (
-                              <span className="text-emerald-400 flex items-center gap-1">
-                                <Check className="w-3.5 h-3.5" /> ¡CLABE Copiada!
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <Copy className="w-3.5 h-3.5" /> Copiar CLABE
-                              </span>
-                            )}
-                          </button>
+                      {/* CLABE Interbancaria (si está habilitada para mostrarse) */}
+                      {checkoutSettings.bankTransfer.showClabe !== false && checkoutSettings.bankTransfer.clabe && (
+                        <div>
+                          <div className="flex justify-between items-center mb-1 text-xs">
+                            <span className="text-white/80 font-bold">CLABE Interbancaria (18 dígitos):</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (navigator?.clipboard) {
+                                  navigator.clipboard.writeText(checkoutSettings.bankTransfer.clabe);
+                                  setClabeCopied(true);
+                                  setTimeout(() => setClabeCopied(false), 3000);
+                                }
+                              }}
+                              className="text-xs font-bold text-amber-300 hover:text-amber-200 flex items-center gap-1 transition cursor-pointer"
+                            >
+                              {clabeCopied ? (
+                                <span className="text-emerald-400 flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" /> ¡CLABE Copiada!
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Copy className="w-3.5 h-3.5" /> Copiar CLABE
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                          <div className="bg-black/40 border border-white/15 rounded-2xl p-3 font-mono text-center font-black tracking-widest text-amber-300 text-base sm:text-lg">
+                            {checkoutSettings.bankTransfer.clabe}
+                          </div>
                         </div>
-                        <div className="bg-black/40 border border-white/15 rounded-2xl p-3 font-mono text-center font-black tracking-widest text-amber-300 text-base sm:text-lg">
-                          {checkoutSettings.bankTransfer.clabe || '012680015948372619'}
+                      )}
+
+                      {/* Número de Tarjeta / Cuenta (si está habilitada para mostrarse) */}
+                      {checkoutSettings.bankTransfer.showCard !== false && checkoutSettings.bankTransfer.accountNumber && (
+                        <div>
+                          <div className="flex justify-between items-center mb-1 text-xs">
+                            <span className="text-white/80 font-bold">Número de Tarjeta / Cuenta:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (navigator?.clipboard && checkoutSettings.bankTransfer.accountNumber) {
+                                  navigator.clipboard.writeText(checkoutSettings.bankTransfer.accountNumber);
+                                  setCardCopied(true);
+                                  setTimeout(() => setCardCopied(false), 3000);
+                                }
+                              }}
+                              className="text-xs font-bold text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition cursor-pointer"
+                            >
+                              {cardCopied ? (
+                                <span className="text-emerald-400 flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" /> ¡Tarjeta Copiada!
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Copy className="w-3.5 h-3.5" /> Copiar Tarjeta
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                          <div className="bg-black/40 border border-white/15 rounded-2xl p-3 font-mono text-center font-black tracking-widest text-emerald-300 text-base sm:text-lg">
+                            {checkoutSettings.bankTransfer.accountNumber}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {checkoutSettings.bankTransfer.notes && (
                         <p className="text-[11px] text-white/80 bg-white/5 p-3 rounded-xl leading-relaxed">
@@ -3062,19 +3101,29 @@ export default function TiendaFoxDrop() {
                     <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider block">
                       Datos para tu Transferencia Bancaria (${confirmedOrderSummary.total.toFixed(0)} MXN)
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="flex flex-wrap gap-4 text-xs">
                       <div>
                         <span className="text-white/60 block text-[10px]">Banco:</span>
                         <strong className="font-bold">{checkoutSettings.bankTransfer.bankName || 'BBVA México'}</strong>
                       </div>
-                      <div>
-                        <span className="text-white/60 block text-[10px]">Beneficiario:</span>
-                        <strong className="font-bold">{checkoutSettings.bankTransfer.accountHolder || 'FoxDrop México'}</strong>
-                      </div>
-                      <div>
-                        <span className="text-white/60 block text-[10px]">CLABE:</span>
-                        <strong className="font-mono text-amber-300 font-bold">{checkoutSettings.bankTransfer.clabe || '012680015948372619'}</strong>
-                      </div>
+                      {checkoutSettings.bankTransfer.showHolder !== false && checkoutSettings.bankTransfer.accountHolder && (
+                        <div>
+                          <span className="text-white/60 block text-[10px]">Beneficiario:</span>
+                          <strong className="font-bold">{checkoutSettings.bankTransfer.accountHolder}</strong>
+                        </div>
+                      )}
+                      {checkoutSettings.bankTransfer.showClabe !== false && checkoutSettings.bankTransfer.clabe && (
+                        <div>
+                          <span className="text-white/60 block text-[10px]">CLABE:</span>
+                          <strong className="font-mono text-amber-300 font-bold">{checkoutSettings.bankTransfer.clabe}</strong>
+                        </div>
+                      )}
+                      {checkoutSettings.bankTransfer.showCard !== false && checkoutSettings.bankTransfer.accountNumber && (
+                        <div>
+                          <span className="text-white/60 block text-[10px]">Tarjeta / Cuenta:</span>
+                          <strong className="font-mono text-emerald-300 font-bold">{checkoutSettings.bankTransfer.accountNumber}</strong>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

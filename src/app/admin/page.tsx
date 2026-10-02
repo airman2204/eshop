@@ -3463,10 +3463,25 @@ https://foxdrop.com.mx`;
                   />
                 </div>
 
+                {/* Nombre del Titular con Checkbox para mostrar/ocultar */}
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    Nombre del Titular / Beneficiario
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Nombre del Titular / Beneficiario
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-500 hover:text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={checkoutSettings.bankTransfer.showHolder !== false}
+                        onChange={e => setCheckoutSettings({
+                          ...checkoutSettings,
+                          bankTransfer: { ...checkoutSettings.bankTransfer, showHolder: e.target.checked }
+                        })}
+                        className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
+                      />
+                      Mostrar al cliente
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={checkoutSettings.bankTransfer.accountHolder}
@@ -3479,10 +3494,25 @@ https://foxdrop.com.mx`;
                   />
                 </div>
 
+                {/* CLABE con Checkbox para mostrar/ocultar */}
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    CLABE Interbancaria (18 dígitos)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      CLABE Interbancaria (18 dígitos)
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-500 hover:text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={checkoutSettings.bankTransfer.showClabe !== false}
+                        onChange={e => setCheckoutSettings({
+                          ...checkoutSettings,
+                          bankTransfer: { ...checkoutSettings.bankTransfer, showClabe: e.target.checked }
+                        })}
+                        className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
+                      />
+                      Mostrar al cliente
+                    </label>
+                  </div>
                   <input
                     type="text"
                     maxLength={18}
@@ -3496,10 +3526,25 @@ https://foxdrop.com.mx`;
                   />
                 </div>
 
+                {/* Número de Tarjeta o Cuenta con Checkbox para mostrar/ocultar */}
                 <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    Número de Cuenta o Tarjeta (Opcional)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-slate-700">
+                      Número de Tarjeta o Cuenta
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-500 hover:text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={checkoutSettings.bankTransfer.showCard !== false}
+                        onChange={e => setCheckoutSettings({
+                          ...checkoutSettings,
+                          bankTransfer: { ...checkoutSettings.bankTransfer, showCard: e.target.checked }
+                        })}
+                        className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
+                      />
+                      Mostrar al cliente
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={checkoutSettings.bankTransfer.accountNumber || ''}
@@ -3507,7 +3552,7 @@ https://foxdrop.com.mx`;
                       ...checkoutSettings,
                       bankTransfer: { ...checkoutSettings.bankTransfer, accountNumber: e.target.value }
                     })}
-                    placeholder="Ej. 1594837261"
+                    placeholder="Ej. 5428780313554651"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-[#E65F2B]"
                   />
                 </div>

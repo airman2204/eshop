@@ -158,6 +158,9 @@ export interface BankTransferConfig {
   clabe: string;
   accountNumber?: string;
   notes?: string;
+  showHolder?: boolean;
+  showClabe?: boolean;
+  showCard?: boolean;
 }
 
 export interface CheckoutSettings {

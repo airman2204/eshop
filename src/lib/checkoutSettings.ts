@@ -33,6 +33,9 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
     clabe: '012680015948372619',
     accountNumber: '1594837261',
     notes: 'Realiza tu transferencia desde tu aplicación bancaria. Envía tu captura de pantalla por WhatsApp para despachar tu paquete de inmediato.',
+    showHolder: true,
+    showClabe: true,
+    showCard: true,
   },
   allowCashOnDelivery: true,
 };
