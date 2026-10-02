@@ -277,11 +277,17 @@ export async function POST(req: NextRequest) {
 
     // ─── CONSULTAS GLOBALES (BYPASS RLS PARA COMPARTIR ENTRE TODOS) ───
     if (action === "get_products") {
-      const { data, error } = await supabase
+      const includeInactive = Boolean(body.includeInactive);
+      let query = supabase
         .from("products")
         .select("*, categories(id, name, slug, icon)")
-        .eq("is_active", true)
         .order("created_at", { ascending: false });
+
+      if (!includeInactive) {
+        query = query.eq("is_active", true);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return NextResponse.json({ success: true, data: data || [] });
@@ -509,6 +515,7 @@ export async function POST(req: NextRequest) {
       if (product.shippingCostAllocated !== undefined) payload.shipping_cost_allocated = product.shippingCostAllocated;
       if (product.publicPrice !== undefined) payload.public_price = product.publicPrice;
       if (product.stock !== undefined) payload.stock = product.stock;
+      if (product.isActive !== undefined) payload.is_active = Boolean(product.isActive);
       if (product.images && product.images.length > 0) {
         payload.images = product.images;
       } else if (product.imageUrl) {

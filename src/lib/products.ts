@@ -54,18 +54,19 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
     expirationDate: dbProd.expiration_date || undefined,
     isCombo: dbProd.is_combo || false,
     comboProductIds: dbProd.combo_product_ids || [],
+    isActive: dbProd.is_active ?? true,
   };
 }
 
 /**
  * Obtener todos los productos activos desde Supabase de forma sincronizada para todos los usuarios
  */
-export async function getActiveProducts(): Promise<Product[] | null> {
+export async function getActiveProducts(includeInactive = false): Promise<Product[] | null> {
   try {
     const res = await fetch("/api/admin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "get_products" }),
+      body: JSON.stringify({ action: "get_products", includeInactive }),
     });
 
     if (res.ok) {
@@ -78,11 +79,16 @@ export async function getActiveProducts(): Promise<Product[] | null> {
     // Fallback directo a Supabase browser client si la ruta API no responde
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = getSupabaseBrowserClient() as any;
-    const { data, error } = await supabase
+    let query = supabase
       .from("products")
       .select("*, categories(id, name, slug, icon)")
-      .eq("is_active", true)
       .order("created_at", { ascending: false });
+
+    if (!includeInactive) {
+      query = query.eq("is_active", true);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error al obtener productos de Supabase:", error);

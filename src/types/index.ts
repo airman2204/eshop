@@ -21,6 +21,7 @@ export interface Product {
   discountPercent?: number;
   isCombo?: boolean;
   comboProductIds?: string[];
+  isActive?: boolean;
 }
 
 export interface ImportBatch {

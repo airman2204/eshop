@@ -45,6 +45,7 @@ export interface NewProductInput {
   sku?: string;
   isCombo?: boolean;
   comboProductIds?: string[];
+  isActive?: boolean;
 }
 
 /**

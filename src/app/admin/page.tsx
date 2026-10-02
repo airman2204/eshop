@@ -9,7 +9,7 @@ import {
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
-  Bell, BellRing, Volume2, VolumeX
+  Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -130,6 +130,14 @@ export default function AdminCRM() {
   const [soldNote, setSoldNote] = useState('Venta realizada previamente fuera de plataforma');
   const [savingSold, setSavingSold] = useState(false);
 
+  // Estados de Mejora de Inventario (Filtro por stock, categoría, estado y carga masiva)
+  const [stockFilter, setStockFilter] = useState<'all' | 'low_stock' | 'out_of_stock' | 'healthy' | 'combos' | 'inactive'>('all');
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('all');
+  const [updatingStockId, setUpdatingStockId] = useState<string | null>(null);
+  const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null);
+  const [showKardexModal, setShowKardexModal] = useState(false);
+  const [kardexProduct, setKardexProduct] = useState<Product | null>(null);
+
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchNameInput, setBatchNameInput] = useState('');
@@ -235,8 +243,8 @@ export default function AdminCRM() {
       const rate = await getLiveExchangeRate();
       setUsdRate(rate);
 
-      // Productos
-      const dbProducts = await getActiveProducts();
+      // Productos (activos e inactivos para administración completa)
+      const dbProducts = await getActiveProducts(true);
       setProducts(dbProducts ?? []);
 
       // Pedidos
@@ -824,12 +832,47 @@ export default function AdminCRM() {
   const profitUnit = newPublicPrice - totalCostUnitMxn;
   const marginPercent = newPublicPrice > 0 ? (profitUnit / newPublicPrice) * 100 : 0;
 
-  // Filtrado de productos
-  const filteredProducts = products.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Conteos para Filtros de Inventario
+  const countOutOfStock = products.filter(p => (p.stock || 0) <= 0).length;
+  const countLowStock = products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= 3).length;
+  const countHealthy = products.filter(p => (p.stock || 0) > 3).length;
+  const countCombos = products.filter(p => p.isCombo).length;
+  const countInactive = products.filter(p => p.isActive === false).length;
+
+  // Filtrado de productos mejorado
+  const filteredProducts = products.filter(p => {
+    // 1. Filtro por término de búsqueda
+    const matchesSearch = !searchTerm.trim() || 
+      p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // 2. Filtro por categoría seleccionada
+    if (inventoryCategoryFilter !== 'all' && p.category.toLowerCase() !== inventoryCategoryFilter.toLowerCase()) {
+      return false;
+    }
+
+    // 3. Filtro por estado de stock / tipo
+    if (stockFilter === 'low_stock') {
+      return (p.stock || 0) > 0 && (p.stock || 0) <= 3;
+    }
+    if (stockFilter === 'out_of_stock') {
+      return (p.stock || 0) <= 0;
+    }
+    if (stockFilter === 'healthy') {
+      return (p.stock || 0) > 3;
+    }
+    if (stockFilter === 'combos') {
+      return Boolean(p.isCombo);
+    }
+    if (stockFilter === 'inactive') {
+      return p.isActive === false;
+    }
+
+    return true;
+  });
 
   const totalInventoryUnits = products.reduce((acc, p) => acc + (p.stock || 0), 0);
   const totalInvestment = products.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
@@ -1061,6 +1104,103 @@ export default function AdminCRM() {
       console.error("Fallo al eliminar producto:", err);
       alert(`Error al eliminar de la base de datos: ${err.message || 'Intente nuevamente'}`);
     }
+  };
+
+  // 1. AJUSTE RÁPIDO DE STOCK (+ / - o directo)
+  const handleQuickStockAdjust = async (product: Product, delta: number) => {
+    const newStockVal = Math.max(0, (product.stock || 0) + delta);
+    if (newStockVal === product.stock) return;
+
+    setUpdatingStockId(product.id);
+    try {
+      // Optimistic update
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: newStockVal } : p));
+      await updateProductInDb(product.id, { stock: newStockVal });
+    } catch (err: any) {
+      console.error("Error al actualizar stock rápido:", err);
+      // Revert optimistic update
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock: product.stock } : p));
+      alert(`No se pudo actualizar el stock: ${err.message || 'Error de conexión'}`);
+    } finally {
+      setUpdatingStockId(null);
+    }
+  };
+
+  // 2. ACTIVAR / PAUSAR VISIBILIDAD (Sin borrar)
+  const handleToggleProductActive = async (product: Product) => {
+    const currentActive = product.isActive !== false;
+    const newActive = !currentActive;
+
+    setTogglingActiveId(product.id);
+    try {
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newActive } : p));
+      await updateProductInDb(product.id, { isActive: newActive });
+    } catch (err: any) {
+      console.error("Error al cambiar estado activo:", err);
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: currentActive } : p));
+      alert(`Error al cambiar visibilidad: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setTogglingActiveId(null);
+    }
+  };
+
+  // 3. DUPLICAR / CLONAR PRODUCTO
+  const handleDuplicateProduct = (prod: Product) => {
+    setEditingProductId(null); // Nuevo registro
+    setNewTitle(`${prod.title} (Copia)`);
+    setNewSku(''); // Vacío para que el usuario escriba o se genere nuevo
+    setNewCategory(prod.category || 'Electrónica');
+    setNewCostUsd(prod.baseCostUsd || 5.0);
+    setNewPublicPrice(prod.publicPrice || 250);
+    setNewStock(prod.stock || 10);
+    setNewImageUrl(prod.images[0] || '');
+    setNewImages(prod.images && prod.images.length > 0 ? [...prod.images] : []);
+    setIsCombo(Boolean(prod.isCombo));
+    setSelectedComboProductIds(prod.comboProductIds || []);
+    if (prod.batchId) setSelectedBatchId(prod.batchId);
+    setShowAddModal(true);
+  };
+
+  // 4. EXPORTAR INVENTARIO A CSV (Compatible con Excel y Google Sheets)
+  const handleExportInventoryCsv = () => {
+    if (products.length === 0) {
+      alert("No hay productos para exportar.");
+      return;
+    }
+
+    const headers = ["SKU", "Título", "Categoría", "Tipo", "Costo USD", "Costo MXN", "Flete MXN", "Costo Total MXN", "Precio Venta MXN", "Utilidad MXN", "Margen %", "Stock", "Estado"];
+    const rows = products.map(p => [
+      `"${p.sku || ''}"`,
+      `"${p.title.replace(/"/g, '""')}"`,
+      `"${p.category || ''}"`,
+      `"${p.isCombo ? 'Combo' : 'Individual'}"`,
+      p.baseCostUsd?.toFixed(2) || '0.00',
+      p.baseCostMxn?.toFixed(2) || '0.00',
+      p.shippingCostAllocated?.toFixed(2) || '0.00',
+      p.totalCostMxn?.toFixed(2) || '0.00',
+      p.publicPrice?.toFixed(2) || '0.00',
+      p.profitUnit?.toFixed(2) || '0.00',
+      `${p.marginPercent?.toFixed(1) || 0}%`,
+      p.stock || 0,
+      p.isActive === false ? "Pausado" : "Activo"
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Inventario_FoxDrop_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // 5. ABRIR KARDEX (Historial de movimientos de un producto)
+  const handleOpenKardex = (prod: Product) => {
+    setKardexProduct(prod);
+    setShowKardexModal(true);
   };
 
   // Crear Lote de Importación
@@ -2032,7 +2172,7 @@ https://foxdrop.com.mx`;
                 <p className="text-xs text-slate-500">Administra, edita precios/stock o elimina artículos del catálogo.</p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -2040,15 +2180,39 @@ https://foxdrop.com.mx`;
                     placeholder="Buscar SKU, título..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-slate-400 w-48 sm:w-64"
+                    className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-slate-400 w-44 sm:w-56"
                   />
                 </div>
+
+                {/* Categoría Selector */}
+                <select
+                  value={inventoryCategoryFilter}
+                  onChange={e => setInventoryCategoryFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {Array.from(new Set(products.map(p => p.category).filter(Boolean))).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+
+                {/* Botón Exportar CSV / Excel */}
+                <button
+                  onClick={handleExportInventoryCsv}
+                  title="Exportar inventario completo a archivo Excel / CSV"
+                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span className="hidden sm:inline">Exportar CSV</span>
+                </button>
+
                 <button
                   onClick={handleOpenCreateProduct}
                   className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
                 >
                   <Plus className="w-4 h-4" /> Dar de Alta Artículo
                 </button>
+
                 {products.length > 0 && (
                   <button
                     onClick={async () => {
@@ -2079,6 +2243,98 @@ https://foxdrop.com.mx`;
               </div>
             </div>
 
+            {/* BARRA DE FILTROS RÁPIDOS & SEMÁFORO DE STOCK */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <button
+                onClick={() => setStockFilter('all')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'all'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <span>Todos</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  {products.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStockFilter('low_stock')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'low_stock'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white border border-amber-200 text-amber-800 hover:bg-amber-50/50'
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span>Bajo Stock (1 a 3)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800 font-bold'}`}>
+                  {countLowStock}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStockFilter('out_of_stock')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'out_of_stock'
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-white border border-rose-200 text-rose-700 hover:bg-rose-50/50'
+                }`}
+              >
+                <Ban className="w-3.5 h-3.5 text-rose-500" />
+                <span>Agotados (0 pzas)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 font-bold'}`}>
+                  {countOutOfStock}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStockFilter('healthy')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'healthy'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50/50'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Stock Óptimo (&gt;3)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800 font-bold'}`}>
+                  {countHealthy}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStockFilter('combos')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'combos'
+                    ? 'bg-purple-600 text-white shadow-xs'
+                    : 'bg-white border border-purple-200 text-purple-800 hover:bg-purple-50/50'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-purple-600" />
+                <span>Combos</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800 font-bold'}`}>
+                  {countCombos}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStockFilter('inactive')}
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                  stockFilter === 'inactive'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Pausados</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
+                  {countInactive}
+                </span>
+              </button>
+            </div>
+
             {/* TABLA DE PRODUCTOS (DESKTOP) Y TARJETAS TÁCTILES (MÓVIL) */}
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               {/* VISTA DESKTOP (TABLA COMPLETA) */}
@@ -2091,68 +2347,167 @@ https://foxdrop.com.mx`;
                       <th className="py-3 px-4 font-black text-slate-900">Costo Total</th>
                       <th className="py-3 px-4 text-emerald-600 font-black">Precio Venta</th>
                       <th className="py-3 px-4 text-emerald-700">Utilidad</th>
-                      <th className="py-3 px-4">Stock</th>
+                      <th className="py-3 px-4 text-center">Stock Rápido</th>
+                      <th className="py-3 px-4 text-center">En Tienda</th>
                       <th className="py-3 px-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/60 transition">
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <img src={p.images[0]} alt="" className="w-10 h-10 object-cover rounded-lg border border-slate-200 shrink-0" />
-                            <div>
-                              <span className="font-bold text-slate-900 block truncate max-w-[200px]">{p.title}</span>
-                              <span className="text-[10px] text-slate-400">{p.sku} • {p.category}</span>
+                    {filteredProducts.map((p) => {
+                      const isOutOfStock = (p.stock || 0) <= 0;
+                      const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
+                      const isPaused = p.isActive === false;
+
+                      return (
+                        <tr key={p.id} className={`transition ${isPaused ? 'bg-slate-50/70 opacity-60' : 'hover:bg-slate-50/60'}`}>
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="relative shrink-0">
+                                <img src={p.images[0]} alt="" className="w-11 h-11 object-cover rounded-lg border border-slate-200 shrink-0" />
+                                {p.images.length > 1 && (
+                                  <span className="absolute -bottom-1 -right-1 bg-slate-900 text-white text-[9px] font-bold px-1 rounded-sm shadow-2xs">
+                                    +{p.images.length}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-slate-900 truncate max-w-[200px]">{p.title}</span>
+                                  {p.isCombo && (
+                                    <span className="bg-purple-100 text-purple-800 text-[9px] font-black px-1.5 py-0.2 rounded-full border border-purple-200">
+                                      COMBO
+                                    </span>
+                                  )}
+                                  {isPaused && (
+                                    <span className="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                                      PAUSADO
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-slate-400">{p.sku} • {p.category}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]">
-                            {p.batchName || 'Lote 1 (+Flete)'}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-black text-slate-900">${p.totalCostMxn.toFixed(2)}</td>
-                        <td className="py-3.5 px-4 font-mono font-black text-emerald-700 bg-emerald-50/50">${p.publicPrice.toFixed(2)}</td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
-                          +${p.profitUnit.toFixed(2)} <span className="text-[10px] text-slate-400">({p.marginPercent.toFixed(0)}%)</span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                            p.stock > 5 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600 font-black'
-                          }`}>
-                            {p.stock} pzas
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]">
+                              {p.batchName || 'Lote 1 (+Flete)'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-black text-slate-900">${p.totalCostMxn.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-mono font-black text-emerald-700 bg-emerald-50/50">${p.publicPrice.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
+                            +${p.profitUnit.toFixed(2)} <span className="text-[10px] text-slate-400">({p.marginPercent.toFixed(0)}%)</span>
+                          </td>
+                          
+                          {/* CONTROL RÁPIDO DE STOCK (+ / -) */}
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 shadow-2xs">
+                              <button
+                                onClick={() => handleQuickStockAdjust(p, -1)}
+                                disabled={p.stock <= 0 || updatingStockId === p.id}
+                                title="Descontar 1 pieza"
+                                className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition font-bold"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className={`min-w-[42px] px-1.5 py-0.5 text-center font-mono font-bold text-xs rounded-md ${
+                                isOutOfStock ? 'bg-rose-100 text-rose-700 font-black' :
+                                isLowStock ? 'bg-amber-100 text-amber-800 font-black' :
+                                'text-slate-800'
+                              }`}>
+                                {updatingStockId === p.id ? '...' : p.stock}
+                              </span>
+                              <button
+                                onClick={() => handleQuickStockAdjust(p, 1)}
+                                disabled={updatingStockId === p.id}
+                                title="Sumar 1 pieza"
+                                className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition font-bold"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <span className="block text-[9px] mt-0.5 font-bold">
+                              {isOutOfStock ? (
+                                <span className="text-rose-600 font-bold">Agotado</span>
+                              ) : isLowStock ? (
+                                <span className="text-amber-600 font-bold">Por agotarse</span>
+                              ) : (
+                                <span className="text-emerald-600">Disponible</span>
+                              )}
+                            </span>
+                          </td>
+
+                          {/* TOGGLE VISIBILIDAD EN TIENDA */}
+                          <td className="py-3.5 px-4 text-center">
                             <button
-                              onClick={() => handleOpenSoldModal(p)}
-                              title="Marcar piezas como ya vendidas (descontar de inventario y sumar a ventas realizadas)"
-                              className="px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
+                              onClick={() => handleToggleProductActive(p)}
+                              disabled={togglingActiveId === p.id}
+                              title={p.isActive !== false ? "Visible en la tienda web (clic para pausar)" : "Pausado en la tienda web (clic para reactivar)"}
+                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 mx-auto ${
+                                p.isActive !== false
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                              }`}
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Ya Vendido</span>
+                              {p.isActive !== false ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Activo</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>Pausado</span>
+                                </>
+                              )}
                             </button>
-                            <button
-                              onClick={() => handleOpenEditProduct(p)}
-                              title="Editar artículo"
-                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(p.id, p.title)}
-                              title="Eliminar artículo"
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+
+                          {/* ACCIONES */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleOpenSoldModal(p)}
+                                title="Marcar piezas como ya vendidas en mostrador o fuera de la web"
+                                className="px-2 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="hidden lg:inline">Ya Vendido</span>
+                              </button>
+                              <button
+                                onClick={() => handleOpenKardex(p)}
+                                title="Ver Kardex / Historial de movimientos"
+                                className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                              >
+                                <History className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDuplicateProduct(p)}
+                                title="Duplicar / Clonar este producto para dar de alta uno similar"
+                                className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditProduct(p)}
+                                title="Editar artículo"
+                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(p.id, p.title)}
+                                title="Eliminar artículo"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -2161,84 +2516,154 @@ https://foxdrop.com.mx`;
               <div className="md:hidden divide-y divide-slate-100">
                 {filteredProducts.length === 0 ? (
                   <div className="p-8 text-center text-xs text-gray-400">
-                    No se encontraron productos coincidentes.
+                    No se encontraron productos coincidentes con los filtros aplicados.
                   </div>
                 ) : (
-                  filteredProducts.map((p) => (
-                    <div key={p.id} className="p-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <img 
-                          src={p.images[0]} 
-                          alt="" 
-                          className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50" 
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-1">
-                            <h4 className="font-extrabold text-sm text-slate-900 leading-snug line-clamp-2">
-                              {p.title}
-                            </h4>
-                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${
-                              p.stock > 5 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600 font-black'
+                  filteredProducts.map((p) => {
+                    const isOutOfStock = (p.stock || 0) <= 0;
+                    const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
+                    const isPaused = p.isActive === false;
+
+                    return (
+                      <div key={p.id} className={`p-4 space-y-3 transition ${isPaused ? 'bg-slate-50/70 opacity-70' : ''}`}>
+                        <div className="flex items-start gap-3">
+                          <div className="relative shrink-0">
+                            <img 
+                              src={p.images[0]} 
+                              alt="" 
+                              className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50" 
+                            />
+                            {p.images.length > 1 && (
+                              <span className="absolute -bottom-1 -right-1 bg-slate-900 text-white text-[9px] font-bold px-1 rounded-sm shadow-2xs">
+                                +{p.images.length}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-1">
+                              <h4 className="font-extrabold text-sm text-slate-900 leading-snug line-clamp-2">
+                                {p.title}
+                              </h4>
+                              <button
+                                onClick={() => handleToggleProductActive(p)}
+                                title="Cambiar visibilidad en tienda"
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 transition flex items-center gap-1 ${
+                                  !isPaused
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {!isPaused ? <Eye className="w-3 h-3 text-emerald-600" /> : <EyeOff className="w-3 h-3 text-slate-500" />}
+                                <span>{!isPaused ? 'En tienda' : 'Pausado'}</span>
+                              </button>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+                              {p.sku || 'Sin SKU'} • <span className="font-semibold text-slate-600">{p.category}</span>
+                            </p>
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                              {p.isCombo && (
+                                <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2 py-0.5 rounded-md border border-purple-200">
+                                  COMBO
+                                </span>
+                              )}
+                              <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                {p.batchName || 'Lote 1'}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                +${p.shippingCostAllocated.toFixed(0)} flete
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Control Rápido de Stock en Celular */}
+                        <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200">
+                          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Stock disponible:</span>
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleQuickStockAdjust(p, -1)}
+                              disabled={p.stock <= 0 || updatingStockId === p.id}
+                              className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold text-sm shadow-2xs disabled:opacity-30"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className={`px-2 py-0.5 text-xs font-mono font-black rounded-md ${
+                              isOutOfStock ? 'bg-rose-100 text-rose-700' :
+                              isLowStock ? 'bg-amber-100 text-amber-800' :
+                              'bg-white border border-slate-200 text-slate-900'
                             }`}>
-                              {p.stock} {p.stock === 1 ? 'pza' : 'pzas'}
+                              {updatingStockId === p.id ? '...' : `${p.stock} pzas`}
                             </span>
-                          </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                            {p.sku || 'Sin SKU'} • <span className="font-semibold text-slate-600">{p.category}</span>
-                          </p>
-                          <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                            <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                              {p.batchName || 'Lote 1'}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              +${p.shippingCostAllocated.toFixed(0)} flete
-                            </span>
+                            <button
+                              onClick={() => handleQuickStockAdjust(p, 1)}
+                              disabled={updatingStockId === p.id}
+                              className="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center font-bold text-sm shadow-2xs"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Métricas financieras del producto */}
-                      <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center">
-                        <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo</span>
-                          <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(0)}</span>
+                        {/* Métricas financieras del producto */}
+                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center">
+                          <div>
+                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo</span>
+                            <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(0)}</span>
+                          </div>
+                          <div className="border-x border-slate-200">
+                            <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta</span>
+                            <span className="text-xs font-mono font-black text-emerald-700">${p.publicPrice.toFixed(0)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-emerald-600 font-bold block uppercase">Ganancia</span>
+                            <span className="text-xs font-mono font-black text-emerald-600">+${p.profitUnit.toFixed(0)}</span>
+                          </div>
                         </div>
-                        <div className="border-x border-slate-200">
-                          <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta</span>
-                          <span className="text-xs font-mono font-black text-emerald-700">${p.publicPrice.toFixed(0)}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-emerald-600 font-bold block uppercase">Ganancia</span>
-                          <span className="text-xs font-mono font-black text-emerald-600">+${p.profitUnit.toFixed(0)}</span>
-                        </div>
-                      </div>
 
-                      {/* Botones de acción móvil */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          onClick={() => handleOpenSoldModal(p)}
-                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-2 px-3 rounded-xl transition flex items-center justify-center gap-1"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Ya Vendido</span>
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditProduct(p)}
-                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1.5"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProduct(p.id, p.title)}
-                          className="px-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1 border border-red-100"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Eliminar</span>
-                        </button>
+                        {/* Botones de acción móvil */}
+                        <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                          <button
+                            onClick={() => handleOpenSoldModal(p)}
+                            className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Ya Vendido</span>
+                          </button>
+                          <button
+                            onClick={() => handleOpenKardex(p)}
+                            title="Kardex"
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs p-2 rounded-xl border border-indigo-100 transition"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDuplicateProduct(p)}
+                            title="Clonar"
+                            className="bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs p-2 rounded-xl border border-purple-100 transition"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditProduct(p)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 px-3 rounded-xl transition flex items-center justify-center gap-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id, p.title)}
+                            className="p-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition flex items-center justify-center border border-red-100"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -5061,6 +5486,164 @@ https://foxdrop.com.mx`;
       )}
 
 
+
+      {/* ======================================================== */}
+      {/* MODAL KARDEX / HISTORIAL DE MOVIMIENTOS POR PRODUCTO */}
+      {/* ======================================================== */}
+      {showKardexModal && kardexProduct && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Kardex */}
+            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-400/30 flex items-center justify-center">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-2">
+                    Kardex de Inventario
+                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded font-mono font-bold">
+                      {kardexProduct.sku || 'SIN-SKU'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400 line-clamp-1">{kardexProduct.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowKardexModal(false);
+                  setKardexProduct(null);
+                }}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Resumen Actual del Producto */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Stock Actual</span>
+                <span className={`text-base font-mono font-black ${
+                  kardexProduct.stock <= 0 ? 'text-rose-600' : kardexProduct.stock <= 3 ? 'text-amber-600' : 'text-emerald-700'
+                }`}>
+                  {kardexProduct.stock} pzas
+                </span>
+              </div>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Costo Unitario</span>
+                <span className="text-base font-mono font-black text-slate-800">
+                  ${kardexProduct.totalCostMxn?.toFixed(2)}
+                </span>
+              </div>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-bold text-emerald-600 block uppercase">Precio Público</span>
+                <span className="text-base font-mono font-black text-emerald-700">
+                  ${kardexProduct.publicPrice?.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Lista de Movimientos Detectados en Pedidos y Ventas */}
+            <div className="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
+              <h4 className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-slate-500" /> Movimientos Registrados en Pedidos & Ventas:
+              </h4>
+
+              {(() => {
+                // Buscar ventas asociadas en las órdenes
+                const movements = orders
+                  .filter(o => o.order_items?.some(it => 
+                    it.product_id === kardexProduct.id || 
+                    (it.product_title && it.product_title.toLowerCase() === kardexProduct.title.toLowerCase())
+                  ))
+                  .map(o => {
+                    const matchedItem = o.order_items?.find(it => 
+                      it.product_id === kardexProduct.id || 
+                      (it.product_title && it.product_title.toLowerCase() === kardexProduct.title.toLowerCase())
+                    );
+                    return {
+                      id: o.id,
+                      date: o.createdAt || new Date().toISOString(),
+                      type: 'salida',
+                      qty: matchedItem?.quantity || 1,
+                      client: o.clientName || 'Cliente FoxDrop',
+                      orderStatus: o.status,
+                      total: (matchedItem?.price_at_purchase || kardexProduct.publicPrice) * (matchedItem?.quantity || 1)
+                    };
+                  });
+
+                if (movements.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200 p-4">
+                      <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="font-bold text-slate-600">Sin salidas registradas todavía</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        El stock actual ({kardexProduct.stock} pzas) proviene del alta inicial o lote de importación.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-2">
+                    {movements.map(m => (
+                      <div key={m.id} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center font-bold">
+                            <Minus className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block">
+                              Venta #{m.id} • {m.client}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(m.date).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} • Estado: {m.orderStatus}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="font-mono font-black text-rose-600 text-sm block">
+                            -{m.qty} {m.qty === 1 ? 'pza' : 'pzas'}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500">
+                            ${m.total.toFixed(2)} MXN
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer Kardex */}
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setShowKardexModal(false);
+                  handleOpenSoldModal(kardexProduct);
+                }}
+                className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl font-bold text-xs flex items-center gap-1.5 transition"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Registrar Venta Física</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowKardexModal(false);
+                  setKardexProduct(null);
+                }}
+                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* COMPONENTE ESCÁNER DE CÁMARA (MÓVIL) */}
