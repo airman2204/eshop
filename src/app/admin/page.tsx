@@ -1468,10 +1468,14 @@ export default function AdminCRM() {
     try {
       const cleanPhone = posClientPhone.trim() || 'Mostrador';
       const cleanName = posClientName.trim() || posDetectedClient?.name || 'Cliente en Tienda';
+      const detectedEmail = posDetectedClient?.email && posDetectedClient.email !== 'Sin correo' ? posDetectedClient.email : undefined;
+      const detectedUserId = posDetectedClient?.id && !posDetectedClient.id.startsWith('cli-') ? posDetectedClient.id : undefined;
 
       const saleResult = await createPhysicalSaleOrder({
         clientName: cleanName,
         clientPhone: cleanPhone,
+        clientEmail: detectedEmail,
+        userId: detectedUserId,
         items: posCart,
         total: posTotal,
         paymentMethod: posPaymentMethod,

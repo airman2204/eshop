@@ -248,7 +248,7 @@ export default function TiendaFoxDrop() {
   const [accountTab, setAccountTab] = useState<'orders' | 'addresses' | 'cards' | 'club' | 'settings'>('orders');
   const [fullProfile, setFullProfile] = useState<FullUserProfile | null>(null);
   const [loadingFullProfile, setLoadingFullProfile] = useState(false);
-  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'cancelled'>('all');
+  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'pos' | 'cancelled'>('all');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
 
@@ -779,12 +779,23 @@ export default function TiendaFoxDrop() {
   const loadUserAccount = async (phone: string, email: string) => {
     setLoadingOrders(true);
     try {
-      const history = await getClientOrderHistory(phone);
+      const currentUserId = user?.id || fullProfile?.id;
+      const history = await getClientOrderHistory(phone || email || '', {
+        userId: currentUserId,
+        phone: phone || undefined,
+        email: email || undefined,
+      });
       if (history && history.length > 0) {
         setUserOrders(history);
-      } else if (email) {
-        const historyEmail = await getClientOrderHistory(email);
+      } else if (email && email !== phone) {
+        const historyEmail = await getClientOrderHistory(email, {
+          userId: currentUserId,
+          email,
+          phone: phone || undefined,
+        });
         setUserOrders(historyEmail || []);
+      } else {
+        setUserOrders(history || []);
       }
     } catch (err) {
       console.warn("Error cargando historial de pedidos:", err);
@@ -1976,12 +1987,13 @@ export default function TiendaFoxDrop() {
             {/* TAB 1: MIS PEDIDOS Y RASTREO */}
             {accountTab === 'orders' && (
               <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     {[
                       { id: 'all', label: `Todos (${userOrders.length})` },
                       { id: 'active', label: 'En Proceso' },
                       { id: 'delivered', label: 'Entregados' },
+                      { id: 'pos', label: `🏪 Tienda Física (${userOrders.filter(o => o.order_number?.startsWith('FX-POS') || o.id?.startsWith('FX-POS') || (o.notes && o.notes.includes('POS'))).length})` },
                       { id: 'cancelled', label: 'Cancelados' },
                     ].map(f => (
                       <button
@@ -2016,7 +2028,7 @@ export default function TiendaFoxDrop() {
                     <div className="space-y-1">
                       <h3 className="text-base font-black text-gray-900">Aún no tienes pedidos registrados</h3>
                       <p className="text-xs text-gray-500">
-                        Cuando realices compras en la tienda, aquí podrás ver el progreso de preparación y el rastreo de tu paquete en tiempo real.
+                        Cuando realices compras en la tienda web o en nuestro mostrador físico, aquí podrás consultar tu historial, boletos y tickets en tiempo real.
                       </p>
                     </div>
                     <button
@@ -2034,13 +2046,19 @@ export default function TiendaFoxDrop() {
                   <div className="space-y-4">
                     {userOrders
                       .filter(ord => {
-                        if (orderFilter === 'active') return ord.status === 'pending' || ord.status === 'processing' || ord.status === 'shipped';
+                        const isPosOrder = ord.order_number?.startsWith('FX-POS') || ord.id?.startsWith('FX-POS') || (ord.notes && ord.notes.includes('POS'));
+                        if (orderFilter === 'pos') return isPosOrder;
+                        if (orderFilter === 'active') return !isPosOrder && (ord.status === 'pending' || ord.status === 'processing' || ord.status === 'shipped');
                         if (orderFilter === 'delivered') return ord.status === 'delivered';
                         if (orderFilter === 'cancelled') return ord.status === 'cancelled';
                         return true;
                       })
                       .map(order => {
                         const isCancelled = order.status === 'cancelled';
+                        const isPos = order.order_number?.startsWith('FX-POS') || order.id?.startsWith('FX-POS') || (order.notes && order.notes.includes('POS'));
+                        const ticketUrlMatch = order.notes && order.notes.match(/Ticket:\s*(https?:\/\/[^\s]+|data:image\/[a-zA-Z]+;base64,[^\s]+)/);
+                        const ticketUrl = ticketUrlMatch ? ticketUrlMatch[1] : null;
+
                         const statusStep = (() => {
                           switch (order.status) {
                             case 'pending': return 1;
@@ -2052,6 +2070,9 @@ export default function TiendaFoxDrop() {
                         })();
 
                         const statusBadge = (() => {
+                          if (isPos) {
+                            return { label: 'Entregado en Mostrador', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+                          }
                           switch (order.status) {
                             case 'shipped': return { label: 'En Camino', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
                             case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
@@ -2079,8 +2100,18 @@ export default function TiendaFoxDrop() {
                                     ${Number(order.total).toFixed(2)} MXN
                                   </span>
                                 </div>
+                                {isPos && (
+                                  <span className="hidden sm:inline-flex items-center gap-1 bg-orange-100 text-[#DF7F2D] border border-orange-200 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                    🏪 Compra Física (POS)
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center gap-2">
+                                {isPos && (
+                                  <span className="sm:hidden inline-flex items-center gap-1 bg-orange-100 text-[#DF7F2D] border border-orange-200 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                    🏪 Física
+                                  </span>
+                                )}
                                 <span className={`text-[11px] font-black px-3 py-1 rounded-full border ${statusBadge.bg}`}>
                                   {statusBadge.label}
                                 </span>
@@ -2176,7 +2207,18 @@ export default function TiendaFoxDrop() {
                                 <span className="text-[11px] text-gray-500 font-medium">
                                   {order.order_items?.length || 0} producto(s) en este pedido
                                 </span>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {ticketUrl && (
+                                    <a
+                                      href={ticketUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#DF7F2D] font-bold text-xs transition cursor-pointer"
+                                    >
+                                      <span>🧾 Ver Ticket</span>
+                                      <ArrowUpRight className="w-3.5 h-3.5" />
+                                    </a>
+                                  )}
                                   {(order.status === 'pending' || order.status === 'processing') && (
                                     <button
                                       type="button"
@@ -4346,14 +4388,53 @@ export default function TiendaFoxDrop() {
               {/* Total y Datos de Entrega */}
               <div className="bg-[#FAF6F0] p-4 rounded-xl border border-gray-200 space-y-1.5 text-xs">
                 <div className="flex justify-between text-gray-600">
+                  <span>Canal de compra:</span>
+                  <span className="font-bold">
+                    {order.order_number?.startsWith('FX-POS') || order.id?.startsWith('FX-POS') || (order.notes && order.notes.includes('POS'))
+                      ? '🏪 Mostrador Físico (Punto de Venta POS)'
+                      : '🌐 Tienda Oficial en Línea'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-600">
                   <span>Método de pago:</span>
-                  <span className="font-bold capitalize">{order.payment_method === 'cash' ? 'Efectivo contra entrega' : 'Transferencia SPEI'}</span>
+                  <span className="font-bold capitalize">{order.payment_method === 'cash' ? 'Efectivo / Mostrador' : order.payment_method === 'card' ? 'Tarjeta' : 'Transferencia SPEI'}</span>
                 </div>
                 <div className="flex justify-between text-sm font-black text-gray-900 pt-1 border-t border-gray-200">
                   <span>Total de la Orden:</span>
                   <span className="text-[#DF7F2D] text-base">${Number(order.total).toFixed(2)} MXN</span>
                 </div>
               </div>
+
+              {/* Ticket Oficial de Venta POS si existe */}
+              {(() => {
+                const ticketUrlMatch = order.notes && order.notes.match(/Ticket:\s*(https?:\/\/[^\s]+|data:image\/[a-zA-Z]+;base64,[^\s]+)/);
+                const ticketUrl = ticketUrlMatch ? ticketUrlMatch[1] : null;
+                if (!ticketUrl) return null;
+                return (
+                  <div className="bg-orange-50/60 border border-orange-200 rounded-2xl p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        🧾 Comprobante / Ticket Oficial de Venta
+                      </span>
+                      <a
+                        href={ticketUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-[#E65F2B] hover:underline flex items-center gap-1"
+                      >
+                        Abrir imagen <ArrowUpRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="max-h-56 overflow-hidden rounded-xl border border-orange-100 bg-white flex justify-center p-2 shadow-inner">
+                      <img
+                        src={ticketUrl}
+                        alt={`Ticket oficial ${orderNum}`}
+                        className="max-h-52 w-auto object-contain rounded-lg shadow-sm"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Botón de Cancelación y WhatsApp de Atención Inmediata */}
               <div className="space-y-2 pt-1">

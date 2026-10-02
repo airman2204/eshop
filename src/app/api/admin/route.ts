@@ -722,7 +722,58 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Registrar orden en Supabase
+      // 2. Intentar asociar cliente existente a la orden (por userId, teléfono o email)
+      let resolvedUserId = sale.userId || null;
+      let resolvedClientEmail = sale.clientEmail || null;
+      let existingProfile: any = null;
+
+      const cleanPhone = sale.clientPhone && sale.clientPhone.trim() !== "Mostrador" ? sale.clientPhone.trim() : null;
+      const cleanDigits = cleanPhone ? cleanPhone.replace(/[^0-9]/g, '') : null;
+
+      if (!resolvedUserId && (cleanPhone || cleanDigits || resolvedClientEmail)) {
+        try {
+          const profileOrConditions: string[] = [];
+          if (cleanPhone) profileOrConditions.push(`phone.eq.${cleanPhone}`);
+          if (cleanDigits && cleanDigits !== cleanPhone) profileOrConditions.push(`phone.eq.${cleanDigits}`);
+          if (resolvedClientEmail) profileOrConditions.push(`email.ilike.${resolvedClientEmail.toLowerCase()}`);
+
+          if (profileOrConditions.length > 0) {
+            const { data: matchedProfile } = await supabase
+              .from("profiles")
+              .select("id, full_name, email, phone, loyalty_points")
+              .or(profileOrConditions.join(","))
+              .maybeSingle();
+
+            if (matchedProfile) {
+              existingProfile = matchedProfile;
+              resolvedUserId = matchedProfile.id;
+              if (!resolvedClientEmail && matchedProfile.email) {
+                resolvedClientEmail = matchedProfile.email;
+              }
+            }
+          }
+        } catch (findProfErr) {
+          console.warn("Aviso buscando perfil para venta POS:", findProfErr);
+        }
+      } else if (resolvedUserId) {
+        try {
+          const { data: matchedProfile } = await supabase
+            .from("profiles")
+            .select("id, full_name, email, phone, loyalty_points")
+            .eq("id", resolvedUserId)
+            .maybeSingle();
+          if (matchedProfile) {
+            existingProfile = matchedProfile;
+            if (!resolvedClientEmail && matchedProfile.email) {
+              resolvedClientEmail = matchedProfile.email;
+            }
+          }
+        } catch (errProf) {
+          console.warn("Aviso buscando perfil por ID:", errProf);
+        }
+      }
+
+      // 3. Registrar orden en Supabase
       const notes = sale.ticketImageUrl 
         ? `Venta física POS | Ticket: ${sale.ticketImageUrl}` 
         : "Venta física registrada con Escáner POS Móvil";
@@ -732,8 +783,10 @@ export async function POST(req: NextRequest) {
         .insert([
           {
             order_number: orderNumber,
-            client_name: sale.clientName || "Venta en Tienda Física",
-            client_phone: sale.clientPhone || "Mostrador",
+            user_id: resolvedUserId,
+            client_name: sale.clientName || existingProfile?.full_name || "Venta en Tienda Física",
+            client_phone: sale.clientPhone || existingProfile?.phone || "Mostrador",
+            client_email: resolvedClientEmail,
             shipping_type: "agreed_pickup",
             shipping_cost: 0,
             subtotal: sale.total,
@@ -751,7 +804,7 @@ export async function POST(req: NextRequest) {
         console.error("Error creando orden POS:", orderErr);
       }
 
-      // 3. Registrar ítems en order_items si se creó la orden
+      // 4. Registrar ítems en order_items si se creó la orden
       if (order?.id && sale.items.length > 0) {
         const orderItems = sale.items.map((item: any) => ({
           order_id: order.id,
@@ -765,19 +818,13 @@ export async function POST(req: NextRequest) {
         await supabase.from("order_items").insert(orderItems);
       }
 
-      // 4. Si el cliente proporcionó teléfono, acumular puntos Club FoxDrop
-      if (sale.clientPhone && sale.clientPhone.trim() !== "" && sale.clientPhone !== "Mostrador") {
+      // 5. Si el cliente proporcionó teléfono o tiene perfil, acumular puntos Club FoxDrop
+      if (existingProfile || (cleanPhone && cleanPhone !== "Mostrador")) {
         try {
-          const cleanPhone = sale.clientPhone.trim();
           const pointsEarned = Math.floor(sale.total / 10);
+          const targetProfileId = existingProfile?.id;
 
-          const { data: existingProfile } = await supabase
-            .from("profiles")
-            .select("id, loyalty_points")
-            .eq("phone", cleanPhone)
-            .maybeSingle();
-
-          if (existingProfile) {
+          if (targetProfileId) {
             const currentPoints = existingProfile.loyalty_points || 0;
             await supabase
               .from("profiles")
@@ -785,7 +832,24 @@ export async function POST(req: NextRequest) {
                 loyalty_points: currentPoints + pointsEarned,
                 updated_at: new Date().toISOString(),
               })
-              .eq("id", existingProfile.id);
+              .eq("id", targetProfileId);
+          } else if (cleanPhone) {
+            const { data: profByPhone } = await supabase
+              .from("profiles")
+              .select("id, loyalty_points")
+              .or(`phone.eq.${cleanPhone}${cleanDigits && cleanDigits !== cleanPhone ? `,phone.eq.${cleanDigits}` : ''}`)
+              .maybeSingle();
+
+            if (profByPhone) {
+              const currentPoints = profByPhone.loyalty_points || 0;
+              await supabase
+                .from("profiles")
+                .update({
+                  loyalty_points: currentPoints + pointsEarned,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", profByPhone.id);
+            }
           }
         } catch (profErr) {
           console.warn("Nota: error acumulando puntos en perfil:", profErr);

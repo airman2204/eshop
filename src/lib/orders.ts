@@ -146,6 +146,8 @@ export async function createOrderInDb(input: CreateOrderInput) {
 export async function createPhysicalSaleOrder(sale: {
   clientName?: string;
   clientPhone?: string;
+  clientEmail?: string;
+  userId?: string;
   items: { product: Product; quantity: number }[];
   total: number;
   paymentMethod: 'cash' | 'card' | 'spei';
@@ -230,8 +232,10 @@ export async function createPhysicalSaleOrder(sale: {
       .insert([
         {
           order_number: orderNumber,
+          user_id: sale.userId || null,
           client_name: sale.clientName || "Venta en Tienda Física",
           client_phone: sale.clientPhone || "Mostrador",
+          client_email: sale.clientEmail || null,
           shipping_type: "agreed_pickup",
           shipping_cost: 0,
           subtotal: sale.total,
@@ -515,8 +519,12 @@ export async function submitSpecialOrder(data: {
 /**
  * Obtener historial de pedidos de un cliente específico (con rastreo y detalle completo)
  */
-export async function getClientOrderHistory(identifier: string, options?: { email?: string; userId?: string }) {
+export async function getClientOrderHistory(identifier: string, options?: { email?: string; userId?: string; phone?: string }) {
   try {
+    const rawPhone = options?.phone || (!identifier.includes("@") ? identifier : undefined);
+    const cleanPhone = rawPhone ? rawPhone.replace(/[^0-9]/g, '') : undefined;
+    const cleanEmail = options?.email || (identifier.includes("@") ? identifier.trim().toLowerCase() : undefined);
+
     // 1. Intentar primero a través de la API protegida del servidor
     const res = await fetch("/api/user/profile", {
       method: "POST",
@@ -524,8 +532,8 @@ export async function getClientOrderHistory(identifier: string, options?: { emai
       body: JSON.stringify({
         action: "get_orders",
         userId: options?.userId,
-        email: options?.email || (identifier.includes("@") ? identifier : undefined),
-        phone: !identifier.includes("@") ? identifier : undefined,
+        email: cleanEmail,
+        phone: rawPhone,
       }),
     });
 
@@ -545,10 +553,26 @@ export async function getClientOrderHistory(identifier: string, options?: { emai
       .select("*, order_items(*)")
       .order("created_at", { ascending: false });
 
-    if (options?.userId) {
-      query = query.or(`user_id.eq.${options.userId},client_email.eq.${identifier},client_phone.eq.${identifier}`);
+    const orClauses: string[] = [];
+    if (options?.userId) orClauses.push(`user_id.eq.${options.userId}`);
+    if (identifier.includes("@")) {
+      orClauses.push(`client_email.ilike.${identifier.trim()}`);
     } else {
-      query = query.or(`client_email.eq.${identifier},client_phone.eq.${identifier}`);
+      orClauses.push(`client_phone.eq.${identifier.trim()}`);
+      const cleanDigits = identifier.replace(/[^0-9]/g, '');
+      if (cleanDigits && cleanDigits !== identifier.trim()) {
+        orClauses.push(`client_phone.eq.${cleanDigits}`);
+      }
+    }
+    if (options?.email && !identifier.includes("@")) {
+      orClauses.push(`client_email.ilike.${options.email.trim()}`);
+    }
+    if (options?.phone && identifier.includes("@")) {
+      orClauses.push(`client_phone.eq.${options.phone.trim()}`);
+    }
+
+    if (orClauses.length > 0) {
+      query = query.or(orClauses.join(","));
     }
 
     const { data, error } = await query;

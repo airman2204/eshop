@@ -246,8 +246,40 @@ export async function POST(req: NextRequest) {
     if (action === "get_orders") {
       const orClauses: string[] = [];
       if (userId) orClauses.push(`user_id.eq.${userId}`);
-      if (email) orClauses.push(`client_email.eq.${email.toLowerCase()}`);
-      if (body.phone) orClauses.push(`client_phone.eq.${body.phone}`);
+      if (email) orClauses.push(`client_email.ilike.${email.trim().toLowerCase()}`);
+      if (body.phone) {
+        const rawPhone = String(body.phone).trim();
+        const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+        orClauses.push(`client_phone.eq.${rawPhone}`);
+        if (cleanPhone && cleanPhone !== rawPhone) {
+          orClauses.push(`client_phone.eq.${cleanPhone}`);
+        }
+      }
+
+      // Si tenemos userId pero no teléfono en body, buscar el teléfono del perfil para incluir compras en mostrador
+      if (userId && (!body.phone || !email)) {
+        try {
+          const { data: userProfile } = await supabase
+            .from("profiles")
+            .select("phone, email")
+            .eq("id", userId)
+            .maybeSingle();
+
+          if (userProfile?.phone && !body.phone) {
+            const rawPhone = userProfile.phone.trim();
+            const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+            orClauses.push(`client_phone.eq.${rawPhone}`);
+            if (cleanPhone && cleanPhone !== rawPhone) {
+              orClauses.push(`client_phone.eq.${cleanPhone}`);
+            }
+          }
+          if (userProfile?.email && !email) {
+            orClauses.push(`client_email.ilike.${userProfile.email.trim().toLowerCase()}`);
+          }
+        } catch (findProfErr) {
+          console.warn("Aviso al consultar perfil para historial:", findProfErr);
+        }
+      }
 
       let query = supabase
         .from("orders")
