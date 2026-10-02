@@ -19,6 +19,8 @@ export interface DatabaseProduct {
   is_active: boolean;
   days_in_stock: number;
   expiration_date: string | null;
+  is_combo?: boolean;
+  combo_product_ids?: string[] | null;
   categories?: {
     id: string;
     name: string;
@@ -50,6 +52,8 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
     images: dbProd.images && dbProd.images.length > 0 ? dbProd.images : ["/file.svg"],
     daysInStock: dbProd.days_in_stock || 0,
     expirationDate: dbProd.expiration_date || undefined,
+    isCombo: dbProd.is_combo || false,
+    comboProductIds: dbProd.combo_product_ids || [],
   };
 }
 

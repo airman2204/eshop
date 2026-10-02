@@ -81,6 +81,56 @@ export async function createOrderInDb(input: CreateOrderInput) {
     if (itemsError) {
       console.warn("Advertencia al insertar ítems del pedido:", itemsError);
     }
+
+    // 3. Descontar inventario en Supabase (soporta combos y productos individuales)
+    for (const item of input.items) {
+      const prod = item.product;
+      const qtyPurchased = item.quantity;
+
+      // Si es un combo con productos vinculados, descontamos el inventario de cada parte
+      if (prod.isCombo && prod.comboProductIds && prod.comboProductIds.length > 0) {
+        for (const subProdId of prod.comboProductIds) {
+          try {
+            const { data: subData } = await supabase
+              .from("products")
+              .select("stock")
+              .eq("id", subProdId)
+              .maybeSingle();
+
+            if (subData && typeof subData.stock === 'number') {
+              const updatedStock = Math.max(0, subData.stock - qtyPurchased);
+              await supabase
+                .from("products")
+                .update({ stock: updatedStock })
+                .eq("id", subProdId);
+            }
+          } catch (comboErr) {
+            console.warn(`Error descontando stock de componente de combo ${subProdId}:`, comboErr);
+          }
+        }
+      }
+
+      // Descontar también el stock del registro del producto en sí
+      if (prod.id && !prod.id.startsWith("PROD-")) {
+        try {
+          const { data: pData } = await supabase
+            .from("products")
+            .select("stock")
+            .eq("id", prod.id)
+            .maybeSingle();
+
+          if (pData && typeof pData.stock === 'number') {
+            const updatedStock = Math.max(0, pData.stock - qtyPurchased);
+            await supabase
+              .from("products")
+              .update({ stock: updatedStock })
+              .eq("id", prod.id);
+          }
+        } catch (stockErr) {
+          console.warn(`Error descontando stock de producto ${prod.id}:`, stockErr);
+        }
+      }
+    }
   }
 
   return {
@@ -106,15 +156,41 @@ export async function createPhysicalSaleOrder(sale: {
 
   // 1. Descontar stock de cada producto vendido
   for (const item of sale.items) {
-    if (item.product.id) {
+    const prod = item.product;
+    const qty = item.quantity;
+
+    // Si es combo, descontar partes
+    if (prod.isCombo && prod.comboProductIds && prod.comboProductIds.length > 0) {
+      for (const subProdId of prod.comboProductIds) {
+        try {
+          const { data: subData } = await supabase
+            .from("products")
+            .select("stock")
+            .eq("id", subProdId)
+            .maybeSingle();
+
+          if (subData && typeof subData.stock === 'number') {
+            const updatedStock = Math.max(0, subData.stock - qty);
+            await supabase
+              .from("products")
+              .update({ stock: updatedStock })
+              .eq("id", subProdId);
+          }
+        } catch (comboErr) {
+          console.warn(`Error al descontar componente de combo ${subProdId}:`, comboErr);
+        }
+      }
+    }
+
+    if (prod.id) {
       try {
-        const newStock = Math.max(0, item.product.stock - item.quantity);
+        const newStock = Math.max(0, prod.stock - qty);
         await supabase
           .from("products")
           .update({ stock: newStock })
-          .eq("id", item.product.id);
+          .eq("id", prod.id);
       } catch (err) {
-        console.warn(`Error al descontar stock del producto ${item.product.id}:`, err);
+        console.warn(`Error al descontar stock del producto ${prod.id}:`, err);
       }
     }
   }

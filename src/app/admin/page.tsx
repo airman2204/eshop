@@ -93,6 +93,9 @@ export default function AdminCRM() {
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImages, setNewImages] = useState<string[]>([]);
+  const [isCombo, setIsCombo] = useState(false);
+  const [selectedComboProductIds, setSelectedComboProductIds] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [generatingAiImage, setGeneratingAiImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -630,13 +633,16 @@ export default function AdminCRM() {
     try {
       const publicUrl = await uploadProductImage(file);
       setNewImageUrl(publicUrl);
+      setNewImages(prev => prev.includes(publicUrl) ? prev : [...prev, publicUrl]);
       setUploadSuccess(true);
     } catch (err) {
       console.error('Error al subir imagen:', err);
       // Fallback local en memoria
       const reader = new FileReader();
       reader.onload = () => {
-        setNewImageUrl(reader.result as string);
+        const localUrl = reader.result as string;
+        setNewImageUrl(localUrl);
+        setNewImages(prev => prev.includes(localUrl) ? prev : [...prev, localUrl]);
         setUploadSuccess(true);
       };
       reader.readAsDataURL(file);
@@ -645,11 +651,39 @@ export default function AdminCRM() {
     }
   };
 
-  // Handle Subida de Imagen a Supabase Storage (Archivo local)
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await processImageFile(file);
+  // Handle Subida de Múltiples Imágenes (Archivos locales)
+  const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+          try {
+            const url = await uploadProductImage(file);
+            uploadedUrls.push(url);
+          } catch (err) {
+            console.warn('Fallo subiendo archivo:', err);
+          }
+        }
+      }
+      if (uploadedUrls.length > 0) {
+        setNewImages(prev => {
+          const combined = [...prev];
+          uploadedUrls.forEach(u => {
+            if (!combined.includes(u)) combined.push(u);
+          });
+          return combined;
+        });
+        setNewImageUrl(uploadedUrls[0]);
+        setUploadSuccess(true);
+      }
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   // Pegar imagen directamente desde el portapapeles (Ctrl+V o botón)
@@ -677,9 +711,11 @@ export default function AdminCRM() {
         try {
           const uploadedUrl = await uploadProductImageUrl(text.trim());
           setNewImageUrl(uploadedUrl);
+          setNewImages(prev => prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]);
           setUploadSuccess(true);
         } catch {
           setNewImageUrl(text.trim());
+          setNewImages(prev => prev.includes(text.trim()) ? prev : [...prev, text.trim()]);
           setUploadSuccess(true);
         } finally {
           setUploadingImage(false);
@@ -708,6 +744,7 @@ export default function AdminCRM() {
         if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
           const uploadedUrl = await uploadProductImageUrl(text.trim());
           setNewImageUrl(uploadedUrl);
+          setNewImages(prev => prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]);
           setUploadSuccess(true);
           return;
         }
@@ -721,9 +758,11 @@ export default function AdminCRM() {
           try {
             const uploaded = await uploadProductImageUrl(promptUrl.trim());
             setNewImageUrl(uploaded);
+            setNewImages(prev => prev.includes(uploaded) ? prev : [...prev, uploaded]);
             setUploadSuccess(true);
           } catch {
             setNewImageUrl(promptUrl.trim());
+            setNewImages(prev => prev.includes(promptUrl.trim()) ? prev : [...prev, promptUrl.trim()]);
             setUploadSuccess(true);
           }
         }
@@ -814,6 +853,9 @@ export default function AdminCRM() {
     setNewPublicPrice(prod.publicPrice);
     setNewStock(prod.stock);
     setNewImageUrl(prod.images[0] || '');
+    setNewImages(prod.images && prod.images.length > 0 ? prod.images : []);
+    setIsCombo(Boolean(prod.isCombo));
+    setSelectedComboProductIds(prod.comboProductIds || []);
     if (prod.batchId) setSelectedBatchId(prod.batchId);
     setShowAddModal(true);
   };
@@ -828,6 +870,9 @@ export default function AdminCRM() {
     setNewPublicPrice(230.00);
     setNewStock(15);
     setNewImageUrl('');
+    setNewImages([]);
+    setIsCombo(false);
+    setSelectedComboProductIds([]);
     setShowAddModal(true);
   };
 
@@ -837,6 +882,10 @@ export default function AdminCRM() {
     setIsSaving(true);
 
     try {
+      const finalImages = newImages.length > 0
+        ? newImages
+        : (newImageUrl ? [newImageUrl] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&auto=format&fit=crop&q=80']);
+
       if (editingProductId) {
         // EDICIÓN
         await updateProductInDb(editingProductId, {
@@ -848,7 +897,10 @@ export default function AdminCRM() {
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
           stock: newStock,
-          imageUrl: newImageUrl,
+          imageUrl: finalImages[0],
+          images: finalImages,
+          isCombo,
+          comboProductIds: isCombo ? selectedComboProductIds : [],
         });
 
         setProducts(prev => prev.map(p => {
@@ -868,7 +920,9 @@ export default function AdminCRM() {
               stock: newStock,
               batchId: currentBatch.id,
               batchName: currentBatch.batchName,
-              images: newImageUrl ? [newImageUrl] : p.images,
+              images: finalImages,
+              isCombo,
+              comboProductIds: isCombo ? selectedComboProductIds : [],
             };
           }
           return p;
@@ -884,7 +938,10 @@ export default function AdminCRM() {
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
           stock: newStock,
-          imageUrl: newImageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&auto=format&fit=crop&q=80',
+          imageUrl: finalImages[0],
+          images: finalImages,
+          isCombo,
+          comboProductIds: isCombo ? selectedComboProductIds : [],
         });
 
         const updatedProducts = await getActiveProducts();
@@ -908,6 +965,9 @@ export default function AdminCRM() {
       setEditingProductId(null);
       setNewTitle('');
       setNewImageUrl('');
+      setNewImages([]);
+      setIsCombo(false);
+      setSelectedComboProductIds([]);
       setUploadSuccess(false);
     }
   };
@@ -3670,10 +3730,15 @@ https://foxdrop.com.mx`;
                   </p>
                 </div>
 
-                {/* Subida de Imagen a Supabase Storage con IA, Buscador y Copiar/Pegar */}
+                {/* Subida de Múltiples Imágenes con Buscador y Portapapeles */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-slate-700 font-bold block text-xs">Fotografía del Producto:</label>
+                    <label className="text-slate-700 font-bold block text-xs flex items-center gap-1.5">
+                      <span>Fotografías del Producto</span>
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {newImages.length} {newImages.length === 1 ? 'foto' : 'fotos'}
+                      </span>
+                    </label>
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
@@ -3692,16 +3757,17 @@ https://foxdrop.com.mx`;
                     className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {/* Opción 1: Archivo local */}
+                      {/* Opción 1: Subir archivos múltiples */}
                       <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition">
                         <Upload className="w-4 h-4 text-[#E65F2B]" />
                         <span className="font-semibold text-xs">
-                          {uploadingImage ? 'Procesando...' : 'Subir archivo PC/móvil'}
+                          {uploadingImage ? 'Subiendo...' : '+ Subir Fotos (1 o varias)'}
                         </span>
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleFileUpload}
+                          multiple
+                          onChange={handleMultipleFilesUpload}
                           disabled={uploadingImage}
                           className="hidden"
                         />
@@ -3715,48 +3781,60 @@ https://foxdrop.com.mx`;
                         className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
                       >
                         <Clipboard className="w-4 h-4 text-emerald-600" />
-                        <span>Pegar foto (Ctrl+V)</span>
+                        <span>Pegar otra foto (Ctrl+V)</span>
                       </button>
                     </div>
 
                     <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>💡 Haz clic en <strong>Google Fotos</strong>, copia la foto del artículo y presiona <strong>Pegar foto (Ctrl+V)</strong>.</span>
+                        <span>💡 Puedes subir o pegar <strong>2 o más fotos</strong> para armar una galería del producto o combo.</span>
                       </span>
                       {uploadSuccess && (
                         <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">
-                          <Check className="w-4 h-4" /> ¡Lista!
+                          <Check className="w-4 h-4" /> ¡Guardada!
                         </span>
                       )}
                     </div>
 
-                    {newImageUrl && (
-                      <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
-                        <img 
-                          src={newImageUrl} 
-                          alt="Vista previa" 
-                          className="w-12 h-12 object-cover rounded-lg border border-slate-200" 
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[11px] font-bold text-slate-900 block truncate">Foto seleccionada</span>
-                          <span className="text-[10px] text-slate-400 truncate block">{newImageUrl}</span>
+                    {/* Galería de Miniaturas de Fotos */}
+                    {newImages.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-bold text-slate-600 block">Fotos cargadas (la primera será la portada principal):</span>
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                          {newImages.map((imgUrl, idx) => (
+                            <div key={idx} className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-white aspect-square shadow-2xs">
+                              <img
+                                src={imgUrl}
+                                alt={`Foto ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              {idx === 0 && (
+                                <span className="absolute top-1 left-1 bg-[#E65F2B] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
+                                  Portada
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = newImages.filter((_, i) => i !== idx);
+                                  setNewImages(updated);
+                                  if (updated.length > 0) setNewImageUrl(updated[0]);
+                                  else setNewImageUrl('');
+                                }}
+                                className="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-90 hover:opacity-100 hover:scale-110 transition shadow cursor-pointer"
+                                title="Eliminar foto"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => { setNewImageUrl(''); setUploadSuccess(false); }}
-                          className="text-xs text-rose-500 font-bold hover:underline px-2 py-1"
-                        >
-                          Quitar
-                        </button>
                       </div>
                     )}
 
                     <div className="flex items-center gap-2 pt-0.5">
-                      <span className="text-[10px] text-slate-400 font-medium shrink-0">O URL directa:</span>
+                      <span className="text-[10px] text-slate-400 font-medium shrink-0">+ Añadir por URL:</span>
                       <input
                         type="url"
                         placeholder="https://..."
@@ -3768,6 +3846,7 @@ https://foxdrop.com.mx`;
                             try {
                               const uploaded = await uploadProductImageUrl(val);
                               setNewImageUrl(uploaded);
+                              setNewImages(prev => prev.includes(uploaded) ? prev : [...prev, uploaded]);
                               setUploadSuccess(true);
                             } catch {}
                           }
@@ -3776,6 +3855,101 @@ https://foxdrop.com.mx`;
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* MODALIDAD: PRODUCTO INDIVIDUAL O COMBO */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-900 text-xs block flex items-center gap-1.5">
+                        <Package className="w-4 h-4 text-[#E65F2B]" /> Tipo de Oferta / Venta:
+                      </span>
+                      <span className="text-[10px] text-slate-500">¿Se vende como artículo individual o como un combo con varios productos?</span>
+                    </div>
+                    <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => setIsCombo(false)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                          !isCombo ? 'bg-[#2D4A58] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Individual
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsCombo(true)}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
+                          isCombo ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Sparkles className="w-3 h-3" /> Combo
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Configuración especial si es COMBO */}
+                  {isCombo && (
+                    <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-orange-950 flex items-center gap-1">
+                          📦 Selecciona los productos incluidos en este combo:
+                        </span>
+                        <span className="text-[10px] font-bold text-orange-800 bg-orange-100 px-2 py-0.5 rounded-full">
+                          {selectedComboProductIds.length} seleccionados
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-orange-900/80">
+                        El combo se venderá por un <strong>solo precio global</strong>, pero el inventario de cada artículo se mantendrá separado y se descontará automáticamente.
+                      </p>
+
+                      <div className="max-h-40 overflow-y-auto space-y-1 bg-white border border-orange-200 rounded-xl p-2">
+                        {products
+                          .filter(p => !editingProductId || p.id !== editingProductId)
+                          .map(p => {
+                            const isSelected = selectedComboProductIds.includes(p.id);
+                            return (
+                              <label
+                                key={p.id}
+                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition text-xs ${
+                                  isSelected ? 'bg-orange-50 border border-orange-300' : 'hover:bg-slate-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={e => {
+                                      if (e.target.checked) {
+                                        setSelectedComboProductIds(prev => [...prev, p.id]);
+                                      } else {
+                                        setSelectedComboProductIds(prev => prev.filter(id => id !== p.id));
+                                      }
+                                    }}
+                                    className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-4 h-4"
+                                  />
+                                  <img src={p.images[0] || '/file.svg'} alt={p.title} className="w-6 h-6 object-cover rounded" />
+                                  <span className="font-semibold text-slate-800">{p.title}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-500 font-mono">Stock: {p.stock}</span>
+                              </label>
+                            );
+                          })}
+                      </div>
+
+                      {/* Stock calculado para el combo si hay productos seleccionados */}
+                      {selectedComboProductIds.length > 0 && (() => {
+                        const includedProds = products.filter(p => selectedComboProductIds.includes(p.id));
+                        const minStock = includedProds.length > 0 ? Math.min(...includedProds.map(p => p.stock)) : 0;
+                        return (
+                          <div className="flex items-center justify-between text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 p-2 rounded-lg font-medium">
+                            <span>Stock disponible máximo del combo (según inventario de partes):</span>
+                            <strong className="font-black text-xs text-emerald-700">{minStock} combos listos</strong>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -3873,13 +4047,20 @@ https://foxdrop.com.mx`;
                     )}
                   </div>
                   <div>
-                    <label className="text-slate-700 font-bold block mb-1">Stock Inicial:</label>
+                    <label className="text-slate-700 font-bold block mb-1">
+                      {isCombo ? 'Stock Disponible del Combo:' : 'Stock Inicial:'}
+                    </label>
                     <input
                       type="number"
                       value={newStock}
                       onChange={e => setNewStock(parseInt(e.target.value) || 0)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
                     />
+                    {isCombo && selectedComboProductIds.length > 0 && (
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Limitado por el producto de menor stock en la lista.
+                      </span>
+                    )}
                   </div>
                 </div>
 

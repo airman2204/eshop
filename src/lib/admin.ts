@@ -41,7 +41,10 @@ export interface NewProductInput {
   publicPrice: number;
   stock: number;
   imageUrl?: string;
+  images?: string[];
   sku?: string;
+  isCombo?: boolean;
+  comboProductIds?: string[];
 }
 
 /**

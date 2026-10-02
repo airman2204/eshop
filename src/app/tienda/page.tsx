@@ -86,6 +86,7 @@ export default function TiendaFoxDrop() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalQuantity, setModalQuantity] = useState(1);
+  const [activeModalImageIndex, setActiveModalImageIndex] = useState(0);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
 
@@ -1657,19 +1658,24 @@ export default function TiendaFoxDrop() {
                   }}
                   className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5"
                 >
-                  {/* BADGES SUPERIORES: DESCUENTO / STOCK / FAVORITO */}
+                  {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
-                    {hasDiscount ? (
-                      <span className="bg-[#E65F2B] text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
-                        -{product.discountPercent}%
-                      </span>
-                    ) : product.stock === 1 ? (
-                      <span className="bg-amber-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
-                        Último
-                      </span>
-                    ) : (
-                      <span />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {product.isCombo && (
+                        <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" /> COMBO
+                        </span>
+                      )}
+                      {hasDiscount ? (
+                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
+                          -{product.discountPercent}%
+                        </span>
+                      ) : product.stock === 1 ? (
+                        <span className="bg-amber-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
+                          Último
+                        </span>
+                      ) : null}
+                    </div>
 
                     <button
                       onClick={(e) => toggleFav(product.id, e)}
@@ -3413,14 +3419,49 @@ export default function TiendaFoxDrop() {
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-              <div className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100">
-                <img src={selectedProduct.images[0]} alt={selectedProduct.title} className="max-h-full object-contain" />
+              {/* IMAGEN PRINCIPAL Y SELECTOR DE FOTOS MÚLTIPLES */}
+              <div className="space-y-3">
+                <div className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden">
+                  <img
+                    src={selectedProduct.images[activeModalImageIndex] || selectedProduct.images[0]}
+                    alt={selectedProduct.title}
+                    className="max-h-full object-contain transition-all duration-300"
+                  />
+                  {selectedProduct.isCombo && (
+                    <span className="absolute top-3 left-3 bg-[#E65F2B] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> COMBO PROMOCIONAL
+                    </span>
+                  )}
+                </div>
+
+                {/* Miniaturas de galería si tiene más de 1 imagen */}
+                {selectedProduct.images && selectedProduct.images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {selectedProduct.images.map((imgUrl, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setActiveModalImageIndex(i)}
+                        className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
+                          activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <img src={imgUrl} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-[#E65F2B] uppercase font-bold tracking-wider">{selectedProduct.category}</span>
+                    {selectedProduct.isCombo && (
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Precio especial todo incluido
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-lg sm:text-xl font-black text-[#1F2D3D] leading-snug mt-1">{selectedProduct.title}</h3>
                   
@@ -3436,6 +3477,33 @@ export default function TiendaFoxDrop() {
                   <p className="text-xs text-gray-600 mt-2.5 leading-relaxed border-t border-gray-100 pt-2.5">
                     {selectedProduct.description}
                   </p>
+
+                  {/* DESGLOSE DE PRODUCTOS INCLUIDOS EN ESTE COMBO */}
+                  {selectedProduct.isCombo && selectedProduct.comboProductIds && selectedProduct.comboProductIds.length > 0 && (
+                    <div className="mt-3 bg-orange-50/70 border border-orange-200 rounded-2xl p-3 space-y-2">
+                      <span className="text-xs font-bold text-orange-950 flex items-center gap-1">
+                        📦 Este combo incluye {selectedProduct.comboProductIds.length} artículos:
+                      </span>
+                      <div className="space-y-1.5">
+                        {products
+                          .filter(p => selectedProduct.comboProductIds?.includes(p.id))
+                          .map(includedProd => (
+                            <div key={includedProd.id} className="flex items-center justify-between bg-white/90 p-2 rounded-xl border border-orange-100 text-xs">
+                              <div className="flex items-center gap-2">
+                                <img src={includedProd.images[0] || '/file.svg'} alt={includedProd.title} className="w-7 h-7 object-contain rounded" />
+                                <div>
+                                  <span className="font-bold text-slate-800 block line-clamp-1">{includedProd.title}</span>
+                                  <span className="text-[10px] text-slate-400 block">{includedProd.category}</span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                Incluido
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* CLUB FOXDROP PUNTOS */}
                   <div className="mt-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-center gap-2 text-[11px] text-amber-900 font-medium">

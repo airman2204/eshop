@@ -19,6 +19,8 @@ export interface Product {
   batchId?: string;
   batchName?: string;
   discountPercent?: number;
+  isCombo?: boolean;
+  comboProductIds?: string[];
 }
 
 export interface ImportBatch {

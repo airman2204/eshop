@@ -447,20 +447,26 @@ export async function POST(req: NextRequest) {
 
       const sku = product.sku || `FX-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      const productImages = product.images && product.images.length > 0
+        ? product.images
+        : (product.imageUrl ? [product.imageUrl] : ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"]);
+
       const { data, error } = await supabase
         .from("products")
         .insert([
           {
             sku,
             title: product.title,
-            description: "Artículo verificado por FoxDrop.",
+            description: product.description || "Artículo verificado por FoxDrop.",
             category_id: categoryId,
             base_cost_usd: product.baseCostUsd || 0,
             base_cost_mxn: product.baseCostMxn || 0,
             shipping_cost_allocated: product.shippingCostAllocated || 0,
             public_price: product.publicPrice || 0,
             stock: product.stock ?? 0,
-            images: product.imageUrl ? [product.imageUrl] : ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"],
+            images: productImages,
+            is_combo: Boolean(product.isCombo),
+            combo_product_ids: product.comboProductIds || [],
             is_active: true,
           },
         ])
@@ -479,12 +485,19 @@ export async function POST(req: NextRequest) {
       const payload: any = { updated_at: new Date().toISOString() };
       if (product.title !== undefined) payload.title = product.title;
       if (product.sku !== undefined) payload.sku = product.sku;
+      if (product.description !== undefined) payload.description = product.description;
       if (product.baseCostUsd !== undefined) payload.base_cost_usd = product.baseCostUsd;
       if (product.baseCostMxn !== undefined) payload.base_cost_mxn = product.baseCostMxn;
       if (product.shippingCostAllocated !== undefined) payload.shipping_cost_allocated = product.shippingCostAllocated;
       if (product.publicPrice !== undefined) payload.public_price = product.publicPrice;
       if (product.stock !== undefined) payload.stock = product.stock;
-      if (product.imageUrl) payload.images = [product.imageUrl];
+      if (product.images && product.images.length > 0) {
+        payload.images = product.images;
+      } else if (product.imageUrl) {
+        payload.images = [product.imageUrl];
+      }
+      if (product.isCombo !== undefined) payload.is_combo = Boolean(product.isCombo);
+      if (product.comboProductIds !== undefined) payload.combo_product_ids = product.comboProductIds;
 
       if (product.categoryName) {
         const catTrimmed = product.categoryName.trim();

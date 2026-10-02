@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS public.products (
     is_special_order BOOLEAN DEFAULT FALSE,
     images TEXT[] DEFAULT '{}',
     is_active BOOLEAN DEFAULT TRUE,
+    is_combo BOOLEAN DEFAULT FALSE,
+    combo_product_ids UUID[] DEFAULT '{}',
     days_in_stock INTEGER DEFAULT 0,
     expiration_date DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
