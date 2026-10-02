@@ -1370,9 +1370,9 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {/* BARRA DE CATEGORÍAS EN PLECA SUPERIOR (ACCESO RÁPIDO Y PERSISTENTE) */}
-        <div className="border-t border-white/10 bg-[#0A3029]/90 backdrop-blur-xs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {/* BARRA DE CATEGORÍAS EN PLECA SUPERIOR (PLANA, TRANSPARENTE Y LIMPIA) */}
+        <div className="border-t border-white/10 bg-transparent">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
             {/* BOTÓN TODAS */}
             <button
               type="button"
@@ -1381,21 +1381,20 @@ export default function TiendaFoxDrop() {
                 setActiveTab('all');
                 if (currentView === 'account') setCurrentView('store');
               }}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
+              className={`py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer border-b-2 ${
                 selectedCategory === 'Todas'
-                  ? 'bg-[#E65F2B] text-white shadow-xs'
-                  : 'bg-white/10 hover:bg-white/20 text-[#FAF6F0] border border-white/10'
+                  ? 'border-[#E65F2B] text-white bg-white/5 font-black'
+                  : 'border-transparent text-white/70 hover:text-white hover:border-white/40 hover:bg-white/5'
               }`}
             >
               <span>🌍</span>
-              <span>Todas ({products.length})</span>
+              <span>Todas</span>
             </button>
 
-            {/* PÍLDORAS DINÁMICAS DE CATEGORÍA CON ÍCONO/EMOJI */}
+            {/* CATEGORÍAS DINÁMICAS (TRANSPARENTES, SIN CONTADOR, CON HOVER Y ACTIVO) */}
             {popularCategories.map((cat) => {
               const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
               const emoji = getCategoryIconEmoji(cat.name);
-              const count = products.filter(p => p.category?.trim().toLowerCase() === cat.name.trim().toLowerCase()).length;
 
               return (
                 <button
@@ -1408,21 +1407,14 @@ export default function TiendaFoxDrop() {
                     const el = document.getElementById('catalog-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                  className={`py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer border-b-2 ${
                     isSelected
-                      ? 'bg-[#E65F2B] text-white shadow-xs'
-                      : 'bg-white/10 hover:bg-white/20 text-[#FAF6F0] border border-white/10'
+                      ? 'border-[#E65F2B] text-white bg-white/5 font-black'
+                      : 'border-transparent text-white/70 hover:text-white hover:border-white/40 hover:bg-white/5'
                   }`}
                 >
                   <span className="text-sm">{emoji}</span>
                   <span>{cat.name}</span>
-                  {count > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isSelected ? 'bg-black/20 text-white' : 'bg-white/15 text-white/80'
-                    }`}>
-                      {count}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -1431,7 +1423,7 @@ export default function TiendaFoxDrop() {
             <button
               type="button"
               onClick={() => setShowCustomOrderModal(true)}
-              className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/30 transition shrink-0 flex items-center gap-1.5 cursor-pointer ml-auto"
+              className="py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ml-auto border-b-2 border-transparent text-amber-300/80 hover:text-amber-200 hover:border-amber-400/40 hover:bg-white/5"
               title="¿Buscas un producto que no ves en el catálogo? Solicítalo aquí"
             >
               <span>✨</span>
