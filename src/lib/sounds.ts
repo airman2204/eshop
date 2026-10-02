@@ -115,6 +115,7 @@ class SoundNotificationManager {
    * Sound when order is cancelled
    */
   playOrderCancelled() {
+    this.triggerHaptic('heavy');
     const ctx = this.getContext();
     if (!ctx) return;
 
@@ -122,16 +123,81 @@ class SoundNotificationManager {
       const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
+
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.exponentialRampToValueAtTime(220, now + 0.3);
-      gain.gain.setValueAtTime(0.1, now);
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.linearRampToValueAtTime(180, now + 0.35);
+
+      gain.gain.setValueAtTime(0.15, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.35);
+    } catch {}
+  }
+
+  /**
+   * Sound when item is added to cart
+   */
+  playAddToCart() {
+    this.triggerHaptic('light');
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(659.25, now); // E5
+      osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.1); // B5
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch {}
+  }
+
+  /**
+   * Quick scanner beep (barcode scan)
+   */
+  playBeep() {
+    this.triggerHaptic('medium');
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1800, now);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {}
+  }
+
+  /**
+   * Native device vibration / haptic feedback
+   */
+  triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'success' = 'light') {
+    if (typeof window === 'undefined' || !navigator.vibrate) return;
+    try {
+      if (type === 'light') {
+        navigator.vibrate(12);
+      } else if (type === 'medium') {
+        navigator.vibrate(25);
+      } else if (type === 'heavy') {
+        navigator.vibrate(45);
+      } else if (type === 'success') {
+        navigator.vibrate([15, 60, 25]);
+      }
     } catch {}
   }
 }

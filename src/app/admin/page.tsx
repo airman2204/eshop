@@ -6533,6 +6533,96 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         onScanSuccess={handleBarcodeScanSuccess}
       />
 
+      {/* ======================================================== */}
+      {/* BARRA MÓVIL DE ACCIONES RÁPIDAS DEL ADMIN (ESTILO APP) */}
+      {/* ======================================================== */}
+      <nav 
+        aria-label="Acciones rápidas del administrador"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 text-white shadow-[0_-4px_20px_rgba(0,0,0,0.35)] md:hidden safe-area-bottom select-none"
+      >
+        <div className="grid grid-cols-5 items-center h-16 px-1">
+          {/* TAB: INVENTARIO */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              setCrmSubTab('inventory');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+              crmSubTab === 'inventory' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Stock</span>
+          </button>
+
+          {/* TAB: PEDIDOS ACTIVOS */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              setCrmSubTab('orders');
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 relative ${
+              crmSubTab === 'orders' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <div className="relative">
+              <Truck className="w-5 h-5" />
+              {activeOrders.length > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-emerald-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-sm">
+                  {activeOrders.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight">Pedidos</span>
+          </button>
+
+          {/* ACCIÓN CENTRAL: BOTÓN POS FÍSICO */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('medium'); } catch {}
+              setShowPosModal(true);
+            }}
+            className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-all"
+            title="Abrir Punto de Venta POS"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F18956] text-white flex items-center justify-center shadow-lg shadow-orange-950/40 border-2 border-slate-900 group-hover:scale-105 transition-transform">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-black text-[#E65F2B] mt-0.5 tracking-tight">POS</span>
+          </button>
+
+          {/* ACCIÓN: ESCÁNER DE CÁMARA */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              setShowCameraScanner(true);
+            }}
+            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-400 hover:text-white"
+            title="Escanear código de barras con la cámara"
+          >
+            <Camera className="w-5 h-5 text-indigo-400" />
+            <span className="text-[10px] tracking-tight">Escanear</span>
+          </button>
+
+          {/* ACCIÓN: MENÚ COMPLETO */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              setMobileSidebarOpen(true);
+            }}
+            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-400 hover:text-white"
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Menú</span>
+          </button>
+        </div>
+      </nav>
+
     </div>
   );
 }

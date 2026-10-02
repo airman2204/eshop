@@ -548,6 +548,9 @@ export default function TiendaFoxDrop() {
 
   const addToCart = (product: Product, e?: React.MouseEvent, quantityToAdd: number = 1) => {
     if (e) e.stopPropagation();
+    try {
+      soundManager.playAddToCart();
+    } catch {}
     setCart(prev => {
       const exists = prev.find(i => i.product.id === product.id);
       if (exists) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantityToAdd } : i);
@@ -4605,6 +4608,107 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 9. BARRA DE NAVEGACIÓN MÓVIL INFERIOR NATIVA (ESTILO APP) */}
+      {/* ======================================================== */}
+      <nav 
+        aria-label="Navegación inferior móvil"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] md:hidden safe-area-bottom select-none"
+      >
+        <div className="grid grid-cols-4 items-center h-16 px-1">
+          {/* BOTÓN EXPLORAR / INICIO */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              setCurrentView('store');
+              setSelectedCategory('Todas');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+              currentView === 'store'
+                ? 'text-[#DF7F2D] font-bold'
+                : 'text-gray-500 hover:text-[#0F3E36]'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition ${currentView === 'store' ? 'bg-[#FFF3E6]' : ''}`}>
+              <HomeIcon className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Catálogo</span>
+          </button>
+
+          {/* BOTÓN CLUB FOXDROP */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              if (!user) {
+                openAuthModal();
+              } else {
+                setAccountTab('club');
+                setCurrentView('account');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+              currentView === 'account' && accountTab === 'club'
+                ? 'text-[#DF7F2D] font-bold'
+                : 'text-gray-500 hover:text-[#0F3E36]'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition ${currentView === 'account' && accountTab === 'club' ? 'bg-[#FFF3E6]' : ''}`}>
+              <Award className="w-5 h-5 text-amber-500" />
+            </div>
+            <span className="text-[10px] tracking-tight">Club Fox</span>
+          </button>
+
+          {/* BOTÓN MI BOLSA / CARRITO CON BADGE FLOTANTE */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('medium'); } catch {}
+              setIsCartOpen(true);
+            }}
+            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-gray-500 hover:text-[#0F3E36] relative"
+          >
+            <div className="relative p-1 rounded-xl">
+              <ShoppingCart className="w-5 h-5" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-[#DF7F2D] text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight">Mi Bolsa</span>
+          </button>
+
+          {/* BOTÓN MIS PEDIDOS / CUENTA */}
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('light'); } catch {}
+              if (!user) {
+                openAuthModal();
+              } else {
+                setAccountTab('orders');
+                setCurrentView('account');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+              currentView === 'account' && accountTab === 'orders'
+                ? 'text-[#DF7F2D] font-bold'
+                : 'text-gray-500 hover:text-[#0F3E36]'
+            }`}
+          >
+            <div className={`p-1 rounded-xl transition ${currentView === 'account' && accountTab === 'orders' ? 'bg-[#FFF3E6]' : ''}`}>
+              <Package className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">{user ? 'Pedidos' : 'Ingresar'}</span>
+          </button>
+        </div>
+      </nav>
 
     </div>
   );
