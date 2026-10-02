@@ -1369,6 +1369,76 @@ export default function TiendaFoxDrop() {
             )}
           </div>
         </div>
+
+        {/* BARRA DE CATEGORÍAS EN PLECA SUPERIOR (ACCESO RÁPIDO Y PERSISTENTE) */}
+        <div className="border-t border-white/10 bg-[#0A3029]/90 backdrop-blur-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {/* BOTÓN TODAS */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory('Todas');
+                setActiveTab('all');
+                if (currentView === 'account') setCurrentView('store');
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                selectedCategory === 'Todas'
+                  ? 'bg-[#E65F2B] text-white shadow-xs'
+                  : 'bg-white/10 hover:bg-white/20 text-[#FAF6F0] border border-white/10'
+              }`}
+            >
+              <span>🌍</span>
+              <span>Todas ({products.length})</span>
+            </button>
+
+            {/* PÍLDORAS DINÁMICAS DE CATEGORÍA CON ÍCONO/EMOJI */}
+            {popularCategories.map((cat) => {
+              const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
+              const emoji = getCategoryIconEmoji(cat.name);
+              const count = products.filter(p => p.category?.trim().toLowerCase() === cat.name.trim().toLowerCase()).length;
+
+              return (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.name);
+                    setActiveTab('all');
+                    if (currentView === 'account') setCurrentView('store');
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#E65F2B] text-white shadow-xs'
+                      : 'bg-white/10 hover:bg-white/20 text-[#FAF6F0] border border-white/10'
+                  }`}
+                >
+                  <span className="text-sm">{emoji}</span>
+                  <span>{cat.name}</span>
+                  {count > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                      isSelected ? 'bg-black/20 text-white' : 'bg-white/15 text-white/80'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* BOTÓN PEDIDOS ESPECIALES */}
+            <button
+              type="button"
+              onClick={() => setShowCustomOrderModal(true)}
+              className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/30 transition shrink-0 flex items-center gap-1.5 cursor-pointer ml-auto"
+              title="¿Buscas un producto que no ves en el catálogo? Solicítalo aquí"
+            >
+              <span>✨</span>
+              <span>Pedidos Especiales</span>
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* BANNER FLOTANTE DE NOTIFICACIÓN DE PEDIDO EN TIEMPO REAL */}
@@ -1605,75 +1675,7 @@ export default function TiendaFoxDrop() {
         })()}
       </section>
 
-      {/* ======================================================== */}
-      {/* 2.5 CATEGORÍAS EN PÍLDORAS REDONDEADAS (ESTILO PRESENTACIÓN) */}
-      {/* ======================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4 w-full">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
-            Categorías
-          </h2>
-          {selectedCategory !== 'Todas' && (
-            <button
-              onClick={() => setSelectedCategory('Todas')}
-              className="text-xs font-bold text-[#DF7F2D] hover:underline"
-            >
-              Ver todas ({products.length})
-            </button>
-          )}
-        </div>
 
-        <div className="flex items-center gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar pb-1">
-          {/* BOTÓN TODAS */}
-          <button
-            onClick={() => {
-              setSelectedCategory('Todas');
-              setActiveTab('all');
-            }}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 flex items-center gap-2 cursor-pointer shadow-xs ${
-              selectedCategory === 'Todas'
-                ? 'bg-[#0F3E36] text-white'
-                : 'bg-[#E1EBE8] hover:bg-[#D5E3DF] text-[#0F3E36] border border-[#CCDCD7]'
-            }`}
-          >
-            <span className="text-base">🌍</span>
-            <span>Todas</span>
-          </button>
-
-          {/* TARJETAS DE CATEGORÍA ESTILO PÍLDORA */}
-          {popularCategories.map((cat) => {
-            const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
-            const emoji = getCategoryIconEmoji(cat.name);
-            return (
-              <button
-                key={cat.name}
-                onClick={() => {
-                  setSelectedCategory(cat.name);
-                  setActiveTab('all');
-                }}
-                className={`px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 flex items-center gap-2 cursor-pointer shadow-xs ${
-                  isSelected
-                    ? 'bg-[#0F3E36] text-white'
-                    : 'bg-[#E1EBE8] hover:bg-[#D5E3DF] text-[#0F3E36] border border-[#CCDCD7]'
-                }`}
-              >
-                <span className="text-base">{emoji}</span>
-                <span>{cat.name}</span>
-              </button>
-            );
-          })}
-
-          {/* BOTÓN PEDIDOS ESPECIALES */}
-          <button
-            onClick={() => setShowCustomOrderModal(true)}
-            className="px-4 py-2 rounded-2xl text-xs font-bold bg-[#E1EBE8] hover:bg-[#D5E3DF] text-[#0F3E36] border border-[#CCDCD7] transition shrink-0 flex items-center gap-2 cursor-pointer shadow-xs"
-            title="¿Buscas un producto que no ves en el catálogo? Solicítalo aquí"
-          >
-            <span className="text-base">✨</span>
-            <span>Pedidos Especiales</span>
-          </button>
-        </div>
-      </section>
 
       {/* ======================================================== */}
       {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
