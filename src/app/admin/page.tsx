@@ -2090,21 +2090,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {abandonedCarts.length}
                 </span>
               </button>
-
-              <button
-                onClick={() => {
-                  setShowPosModal(true);
-                  setMobileSidebarOpen(false);
-                }}
-                className="w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between text-slate-300 hover:bg-slate-800/70 hover:text-white group border border-[#E65F2B]/30 bg-[#E65F2B]/10"
-              >
-                <span className="flex items-center gap-2.5">
-                  <ShoppingBag className="w-4 h-4 text-[#E65F2B] group-hover:scale-110 transition-transform" /> Punto de Venta POS
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E65F2B] text-white shadow-xs">
-                  Abrir
-                </span>
-              </button>
             </div>
           </div>
 
@@ -2200,16 +2185,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {/* HEADER SUPERIOR */}
         <header className="border-b border-gray-200 bg-white sticky top-0 z-40 shadow-2xs">
           <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden p-2 -ml-2 rounded-xl text-slate-700 hover:bg-slate-100 transition"
+                className="md:hidden p-2 -ml-2 rounded-xl text-slate-700 hover:bg-slate-100 transition shrink-0"
                 title="Abrir menú lateral"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div>
-                <h1 className="font-black text-base sm:text-lg text-slate-900 tracking-tight">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-black text-sm xs:text-base sm:text-lg text-slate-900 tracking-tight truncate">
                   {crmSubTab === 'inventory' && 'Inventario de Productos'}
                   {crmSubTab === 'batches' && 'Lotes de Importación'}
                   {crmSubTab === 'orders' && 'Pedidos Activos (En Proceso)'}
@@ -2223,7 +2208,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
                   {crmSubTab === 'shipping_payments' && 'Configuración de Envíos & Pagos (SPEI)'}
                 </h1>
-                <p className="text-xs text-slate-500 hidden sm:block">
+                <p className="text-xs text-slate-500 hidden sm:block truncate">
                   {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
                   {crmSubTab === 'batches' && 'Prorrateo de fletes internacionales y costeo unitario'}
                   {crmSubTab === 'orders' && 'Solo órdenes en línea activas pendientes de empaque y despacho'}
@@ -6540,7 +6525,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         aria-label="Acciones rápidas del administrador"
         className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 text-white shadow-[0_-4px_20px_rgba(0,0,0,0.35)] md:hidden safe-area-bottom select-none"
       >
-        <div className="grid grid-cols-5 items-center h-16 px-1">
+        <div className="grid grid-cols-4 items-center h-16 px-2">
           {/* TAB: INVENTARIO */}
           <button
             type="button"
@@ -6578,7 +6563,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <span className="text-[10px] tracking-tight">Pedidos</span>
           </button>
 
-          {/* ACCIÓN CENTRAL: BOTÓN POS FÍSICO */}
+          {/* ACCIÓN CENTRAL: BOTÓN QR */}
           <button
             type="button"
             onClick={() => {
@@ -6586,26 +6571,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               setShowPosModal(true);
             }}
             className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-all"
-            title="Abrir Punto de Venta POS"
+            title="Escanear Código QR / POS"
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F18956] text-white flex items-center justify-center shadow-lg shadow-orange-950/40 border-2 border-slate-900 group-hover:scale-105 transition-transform">
-              <ShoppingBag className="w-6 h-6" />
+            <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F18956] text-white flex items-center justify-center shadow-lg shadow-orange-950/40 border-2 border-slate-900 group-hover:scale-105 transition-transform">
+              <QrCode className="w-6 h-6" />
             </div>
-            <span className="text-[10px] font-black text-[#E65F2B] mt-0.5 tracking-tight">POS</span>
-          </button>
-
-          {/* ACCIÓN: ESCÁNER DE CÁMARA */}
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('light'); } catch {}
-              setShowCameraScanner(true);
-            }}
-            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-400 hover:text-white"
-            title="Escanear código de barras con la cámara"
-          >
-            <Camera className="w-5 h-5 text-indigo-400" />
-            <span className="text-[10px] tracking-tight">Escanear</span>
           </button>
 
           {/* ACCIÓN: MENÚ COMPLETO */}
