@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { toPng } from 'html-to-image';
 import FoxDropLogo from '@/components/FoxDropLogo';
+import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
@@ -5938,9 +5939,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
                   <div className="flex items-center justify-center gap-2.5 mb-1">
                     <img
-                      src="/fox-logo-head-3d.png"
+                      src={FOX_LOGO_BASE64}
                       alt="FoxDrop"
-                      crossOrigin="anonymous"
                       className="w-10 h-10 object-contain drop-shadow-md"
                     />
                     <div className="text-left">
