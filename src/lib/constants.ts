@@ -40,6 +40,51 @@ export const CATEGORIES = [
   { id: "coleccionables", name: "Coleccionables", slug: "coleccionables", icon: "🎁" },
 ] as const;
 
+/**
+ * Genera de forma inteligente un ícono representativo (Emoji / símbolo) según el nombre de la categoría
+ */
+export function getCategoryIconEmoji(categoryName: string): string {
+  const norm = (categoryName || "").toLowerCase().trim();
+
+  // Belleza & Cuidado personal
+  if (/cosm[eé]tic|belleza|maquill|skincare|perfum|labial|crema|facial|shampoo|capilar/.test(norm)) return "💄";
+  
+  // Electrónica & Tecnología
+  if (/electr[oó]nic|audio|auricular|headphone|reloj|watch|smart|celular|smartphone|gadget|c[aá]mara|pantalla|bater[ií]a|cargador|cable|laptop|computad/.test(norm)) return "💻";
+  
+  // Moda & Accesorios
+  if (/moda|ropa|vestid|camisa|playera|pantal[oó]n|zapato|calzado|tenis|bolsa|mochila|joyer[ií]a|lente|gorra/.test(norm)) return "👗";
+  
+  // Hogar & Limpieza & Cocina
+  if (/hogar|casa|mueble|cocina|decor|ba[ñn]o|aroma|difusor|glade|ambientador|vela|limpieza/.test(norm)) return "🏠";
+  
+  // Deportes & Fitness & Salud
+  if (/deport|fitness|ejercicio|gym|gimnasio|suplement|prote[ií]na|pesa|entrena|yoga/.test(norm)) return "🏋️";
+  
+  // Juguetes & Juegos & Entretenimiento
+  if (/juguet|gamer|videojuego|gaming|consola|play|nintendo|xbox|figura|peluche|coleccion|anime/.test(norm)) return "🎮";
+  
+  // Mascotas
+  if (/mascota|perro|gato|pet|croqueta|collar|veterinar/.test(norm)) return "🐾";
+  
+  // Bebé & Niños
+  if (/beb[eé]|ni[ñn]o|infantil|maternal|pa[ñn]al/.test(norm)) return "🍼";
+  
+  // Autos & Accesorios vehiculares
+  if (/auto|coche|veh[ií]cul|carro|motor|llanta|herramient/.test(norm)) return "🚗";
+  
+  // Alimentos, Bebidas & Gourmet
+  if (/alimento|comida|snack|dulce|caf[eé]|bebida|licor|vino|gourmet/.test(norm)) return "☕";
+  
+  // Papelería & Oficina
+  if (/papeler[ií]a|oficina|cuaderno|pluma|escolar|libro/.test(norm)) return "📚";
+  
+  // Regalos & Especiales
+  if (/regalo|combo|kit|pack|especial/.test(norm)) return "🎁";
+
+  return "🏷️";
+}
+
 // Tipo de cambio fallback (se sobreescribe con API en tiempo real)
 export const FALLBACK_USD_MXN = 20.0;
 

@@ -28,6 +28,7 @@ import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrder
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
+import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
 
 export default function AdminCRM() {
@@ -6859,12 +6860,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         ...products.map(p => p.category).filter(Boolean),
                         'Cosmética', 'Electrónica', 'Hogar', 'Moda', 'Accesorios'
                       ])).map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat} value={cat}>
+                          {getCategoryIconEmoji(cat)} {cat}
+                        </option>
                       ))}
                     </select>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">¿No está en la lista?</span>
+                      <span className="text-[10px] text-slate-400">
+                        Ícono asignado: <strong className="text-sm">{getCategoryIconEmoji(bulkTargetCategory)}</strong>
+                      </span>
                       <button
                         type="button"
                         onClick={() => setIsBulkCustomCategory(true)}
@@ -6876,16 +6881,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="Ej. Deportes, Mascotas, Juguetes..."
-                      value={bulkCustomCategoryName}
-                      onChange={e => setBulkCustomCategoryName(e.target.value)}
-                      className="w-full bg-slate-50 border border-orange-300 rounded-xl p-2.5 text-xs text-slate-900 font-bold focus:outline-hidden focus:border-[#E65F2B]"
-                      autoFocus
-                    />
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3 text-lg select-none">
+                        {getCategoryIconEmoji(bulkCustomCategoryName)}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Ej. Deportes, Mascotas, Juguetes..."
+                        value={bulkCustomCategoryName}
+                        onChange={e => setBulkCustomCategoryName(e.target.value)}
+                        className="w-full bg-slate-50 border border-orange-300 rounded-xl p-2.5 pl-10 text-xs text-slate-900 font-bold focus:outline-hidden focus:border-[#E65F2B]"
+                        autoFocus
+                      />
+                    </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">Se registrará automáticamente en Supabase.</span>
+                      <span className="text-[10px] text-slate-500 font-semibold">
+                        Ícono generado: <strong className="text-sm">{getCategoryIconEmoji(bulkCustomCategoryName)}</strong> (se guardará en Supabase)
+                      </span>
                       <button
                         type="button"
                         onClick={() => {

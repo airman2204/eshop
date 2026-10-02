@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { getCategoryIconEmoji } from "@/lib/constants";
 
 export async function POST(req: NextRequest) {
   try {
@@ -331,9 +332,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: existing });
       }
 
+      const icon = getCategoryIconEmoji(catTrimmed);
+
       const { data, error } = await supabase
         .from("categories")
-        .insert([{ name: catTrimmed, slug, is_active: true }])
+        .insert([{ name: catTrimmed, slug, icon, is_active: true }])
         .select()
         .single();
 
@@ -449,9 +452,10 @@ export async function POST(req: NextRequest) {
 
         if (!catData?.id) {
           const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+          const icon = getCategoryIconEmoji(catTrimmed);
           const { data: newCat } = await supabase
             .from("categories")
-            .insert([{ name: catTrimmed, slug }])
+            .insert([{ name: catTrimmed, slug, icon, is_active: true }])
             .select("id")
             .maybeSingle();
           catData = newCat;
@@ -543,9 +547,10 @@ export async function POST(req: NextRequest) {
 
         if (!catData?.id) {
           const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+          const icon = getCategoryIconEmoji(catTrimmed);
           const { data: newCat } = await supabase
             .from("categories")
-            .insert([{ name: catTrimmed, slug }])
+            .insert([{ name: catTrimmed, slug, icon, is_active: true }])
             .select("id")
             .maybeSingle();
           catData = newCat;
@@ -598,9 +603,10 @@ export async function POST(req: NextRequest) {
 
       if (!catData?.id) {
         const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+        const icon = getCategoryIconEmoji(catTrimmed);
         const { data: newCat, error: createCatErr } = await supabase
           .from("categories")
-          .insert([{ name: catTrimmed, slug, is_active: true }])
+          .insert([{ name: catTrimmed, slug, icon, is_active: true }])
           .select("id")
           .single();
         if (createCatErr) throw createCatErr;

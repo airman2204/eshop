@@ -23,6 +23,7 @@ import {
 import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart, cancelOrderAsClient, subscribeToClientOrders } from '@/lib/orders';
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCarouselSlides, CarouselSlide, getClubSettings } from '@/lib/admin';
+import { getCategoryIconEmoji } from '@/lib/constants';
 import { ClubFoxDropSettings } from '@/types';
 import { trackEcommerceEvent } from '@/components/Analytics';
 import { soundManager } from '@/lib/sounds';
@@ -1642,18 +1643,7 @@ export default function TiendaFoxDrop() {
           {/* TARJETAS DE CATEGORÍA ESTILO PÍLDORA */}
           {popularCategories.map((cat) => {
             const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
-            const emojiMap: Record<string, string> = {
-              'electrónica': '📱',
-              'electronica': '📱',
-              'moda': '👗',
-              'hogar': '🏠',
-              'juguetes': '🧸',
-              'cosmética': '💄',
-              'cosmetica': '💄',
-              'belleza': '💄',
-              'cuidado personal': '🧴',
-            };
-            const emoji = emojiMap[cat.name.toLowerCase()] || '📦';
+            const emoji = getCategoryIconEmoji(cat.name);
             return (
               <button
                 key={cat.name}
