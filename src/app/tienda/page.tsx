@@ -89,6 +89,7 @@ export default function TiendaFoxDrop() {
   const [activeModalImageIndex, setActiveModalImageIndex] = useState(0);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
+  const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc'>('default');
 
   // Soporte PWA WebApp (Instalación en celular o escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -512,19 +513,30 @@ export default function TiendaFoxDrop() {
     return matchSearch && matchCat;
   });
 
-  // Productos mostrados según la pestaña activa:
+  // Productos mostrados según la pestaña activa y ordenados según selección:
   // - 'new': Los últimos productos dados de alta (hasta 8 más recientes)
   // - 'deals': Artículos con descuento real
   // - 'all': Todo el catálogo completo
   const displayedProducts = (() => {
+    let prods = baseFilteredProducts;
     if (activeTab === 'deals') {
-      return baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
+      prods = baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
+    } else if (activeTab === 'new') {
+      prods = baseFilteredProducts.slice(0, 8);
     }
-    if (activeTab === 'new') {
-      // Si seleccionó una categoría específica, mostramos los últimos de esa categoría (máx 6)
-      return baseFilteredProducts.slice(0, 8);
+
+    // Ordenamiento por precio y A-Z
+    const sorted = [...prods];
+    if (sortBy === 'price_asc') {
+      sorted.sort((a, b) => a.publicPrice - b.publicPrice);
+    } else if (sortBy === 'price_desc') {
+      sorted.sort((a, b) => b.publicPrice - a.publicPrice);
+    } else if (sortBy === 'name_asc') {
+      sorted.sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
+    } else if (sortBy === 'name_desc') {
+      sorted.sort((a, b) => b.title.localeCompare(a.title, 'es', { sensitivity: 'base' }));
     }
-    return baseFilteredProducts;
+    return sorted;
   })();
 
   const filteredProducts = displayedProducts;
@@ -1601,7 +1613,23 @@ export default function TiendaFoxDrop() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* SELECTOR DE FILTRO DE ORDENAMIENTO (PRECIO / A-Z) */}
+            <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Ordenar por:</span>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
+              >
+                <option value="default">Recomendados / Novedades</option>
+                <option value="price_asc">Precio: Menor a Mayor ($ ↑)</option>
+                <option value="price_desc">Precio: Mayor a Menor ($ ↓)</option>
+                <option value="name_asc">Nombre: A - Z</option>
+                <option value="name_desc">Nombre: Z - A</option>
+              </select>
+            </div>
+
             {activeTab === 'new' && (
               <button
                 onClick={() => {
@@ -1610,7 +1638,7 @@ export default function TiendaFoxDrop() {
                 }}
                 className="bg-gray-100 hover:bg-gray-200 text-[#2D4A58] text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
               >
-                <span>Ver todo el catálogo</span>
+                <span>Ver todo</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}

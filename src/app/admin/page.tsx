@@ -122,6 +122,14 @@ export default function AdminCRM() {
     date: string;
   } | null>(null);
 
+  // Modal Marcar Producto como Ya Vendido (Venta previa o fuera de sistema)
+  const [showSoldModal, setShowSoldModal] = useState(false);
+  const [soldProduct, setSoldProduct] = useState<Product | null>(null);
+  const [soldQuantity, setSoldQuantity] = useState(1);
+  const [soldPriceUnit, setSoldPriceUnit] = useState(0);
+  const [soldNote, setSoldNote] = useState('Venta realizada previamente fuera de plataforma');
+  const [savingSold, setSavingSold] = useState(false);
+
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchNameInput, setBatchNameInput] = useState('');
@@ -969,6 +977,76 @@ export default function AdminCRM() {
       setIsCombo(false);
       setSelectedComboProductIds([]);
       setUploadSuccess(false);
+    }
+  };
+
+  // Abrir Modal para Marcar como Ya Vendido
+  const handleOpenSoldModal = (prod: Product) => {
+    setSoldProduct(prod);
+    setSoldQuantity(1);
+    setSoldPriceUnit(prod.publicPrice);
+    setSoldNote('Venta realizada previamente fuera de plataforma');
+    setShowSoldModal(true);
+  };
+
+  // Confirmar y Registrar Venta Previa
+  const handleConfirmSold = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!soldProduct) return;
+    if (soldQuantity <= 0) {
+      alert('La cantidad vendida debe ser mayor a 0');
+      return;
+    }
+
+    setSavingSold(true);
+    try {
+      // 1. Registrar la orden entregada y pagada en el historial de ventas
+      const totalAmount = soldPriceUnit * soldQuantity;
+      await createPhysicalSaleOrder({
+        clientName: 'Venta Registrada Previa',
+        clientPhone: 'Mostrador / Histórica',
+        items: [{ product: soldProduct, quantity: soldQuantity }],
+        total: totalAmount,
+        paymentMethod: 'cash',
+      });
+
+      // 2. Refrescar lista de pedidos para que sume a las métricas de ingresos, costos y ganancias
+      const dbOrders = await getAdminOrders();
+      if (dbOrders && dbOrders.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedOrders: Order[] = dbOrders.map((o: any) => ({
+          id: o.order_number || o.id,
+          clientName: o.client_name,
+          clientPhone: o.client_phone,
+          clientEmail: o.client_email,
+          status: o.status || 'pending',
+          shippingType: o.shipping_type || 'puebla_local',
+          pickupPoint: o.pickup_point,
+          subtotal: Number(o.subtotal) || 0,
+          shippingCost: Number(o.shipping_cost) || 0,
+          total: Number(o.total) || 0,
+          trackingNumber: o.tracking_number,
+          createdAt: o.created_at,
+          itemsCount: o.order_items?.length || 1,
+          notes: o.notes || undefined,
+          order_items: o.order_items || [],
+        }));
+        setOrders(mappedOrders);
+      }
+
+      // 3. Refrescar productos con el stock actualizado
+      const updatedProds = await getActiveProducts();
+      if (updatedProds) {
+        setProducts(updatedProds);
+      }
+
+      setShowSoldModal(false);
+      setSoldProduct(null);
+    } catch (err: any) {
+      console.error('Error al registrar venta previa:', err);
+      alert(`Error al registrar venta previa: ${err.message || 'Intente nuevamente'}`);
+    } finally {
+      setSavingSold(false);
     }
   };
 
@@ -2050,6 +2128,14 @@ https://foxdrop.com.mx`;
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
+                              onClick={() => handleOpenSoldModal(p)}
+                              title="Marcar piezas como ya vendidas (descontar de inventario y sumar a ventas realizadas)"
+                              className="px-2.5 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Ya Vendido</span>
+                            </button>
+                            <button
                               onClick={() => handleOpenEditProduct(p)}
                               title="Editar artículo"
                               className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -2129,6 +2215,13 @@ https://foxdrop.com.mx`;
 
                       {/* Botones de acción móvil */}
                       <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => handleOpenSoldModal(p)}
+                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-2 px-3 rounded-xl transition flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Ya Vendido</span>
+                        </button>
                         <button
                           onClick={() => handleOpenEditProduct(p)}
                           className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition flex items-center justify-center gap-1.5"
@@ -3661,6 +3754,128 @@ https://foxdrop.com.mx`;
                 <Save className="w-4 h-4" />
                 {savingCheckoutSettings ? 'Guardando Cambios...' : 'Guardar y Publicar en Tienda'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL REGISTRAR PRODUCTOS YA VENDIDOS PREVIAMENTE */}
+        {showSoldModal && soldProduct && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+              <button
+                type="button"
+                onClick={() => { setShowSoldModal(false); setSoldProduct(null); }}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="border-b border-slate-100 pb-3">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mb-1">
+                  Ajuste de Salida por Venta
+                </span>
+                <h3 className="text-base font-bold text-slate-900">
+                  Registrar Piezas Ya Vendidas
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Resta las piezas de tu inventario actual y súmalas automáticamente a tus métricas de ingresos, costos y ganancias.
+                </p>
+              </div>
+
+              {/* Ficha rápida del producto */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
+                <img
+                  src={soldProduct.images[0] || '/file.svg'}
+                  alt={soldProduct.title}
+                  className="w-12 h-12 rounded-xl object-contain bg-white border border-slate-200 p-1 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-slate-900 truncate">{soldProduct.title}</h4>
+                  <span className="text-[10px] text-slate-400 block font-mono">SKU: {soldProduct.sku || 'N/A'}</span>
+                  <span className="text-[11px] text-slate-600 font-bold block mt-0.5">
+                    Stock actual disponible: <strong className="text-slate-900">{soldProduct.stock} piezas</strong>
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handleConfirmSold} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-700 font-bold block mb-1">
+                      Cantidad Vendida:
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={soldProduct.stock}
+                      value={soldQuantity}
+                      onChange={e => setSoldQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-700 font-bold block mb-1">
+                      Precio de Venta ($ MXN):
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      step="1"
+                      value={soldPriceUnit}
+                      onChange={e => setSoldPriceUnit(Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-slate-700 font-bold block mb-1">
+                    Nota o Referencia de la Venta:
+                  </label>
+                  <input
+                    type="text"
+                    value={soldNote}
+                    onChange={e => setSoldNote(e.target.value)}
+                    placeholder="Ej. Venta en persona el fin de semana, amigo..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                  />
+                </div>
+
+                {/* Resumen del impacto en caja y métricas */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs space-y-1">
+                  <div className="flex justify-between items-center text-emerald-900">
+                    <span>Nuevo Stock restante:</span>
+                    <strong className="font-mono">{Math.max(0, soldProduct.stock - soldQuantity)} piezas</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-emerald-900">
+                    <span>Total que se sumará a tus ventas:</span>
+                    <strong className="font-mono text-sm font-black text-emerald-800">
+                      ${(soldPriceUnit * soldQuantity).toFixed(2)} MXN
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowSoldModal(false); setSoldProduct(null); }}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingSold}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{savingSold ? 'Registrando...' : 'Confirmar Venta'}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
