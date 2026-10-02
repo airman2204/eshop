@@ -2090,6 +2090,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {abandonedCarts.length}
                 </span>
               </button>
+
+              <button
+                onClick={() => {
+                  setShowPosModal(true);
+                  setMobileSidebarOpen(false);
+                }}
+                className="w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between text-slate-300 hover:bg-slate-800/70 hover:text-white group border border-[#E65F2B]/30 bg-[#E65F2B]/10"
+              >
+                <span className="flex items-center gap-2.5">
+                  <ShoppingBag className="w-4 h-4 text-[#E65F2B] group-hover:scale-110 transition-transform" /> Punto de Venta POS
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E65F2B] text-white shadow-xs">
+                  Abrir
+                </span>
+              </button>
             </div>
           </div>
 
@@ -2152,13 +2167,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-900/60 space-y-2.5">
+        <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-900/60 space-y-2.5">
           <button
             onClick={() => {
               setShowPosModal(true);
               setMobileSidebarOpen(false);
             }}
-            className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-sm"
+            className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Punto de Venta POS</span>
@@ -2172,7 +2187,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <button
               onClick={handleLogout}
               title="Cerrar Sesión"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

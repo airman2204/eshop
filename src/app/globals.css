@@ -31,17 +31,26 @@ body {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
 }
 
-/* Optimización PWA App Móvil nativa */
+/* Optimización PWA App Móvil nativa y fluidez táctil */
 html, body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
   touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Aceleración por hardware para transiciones y modales móviles */
+.will-change-transform {
+  will-change: transform;
 }
 
 /* Soporte para el notch y barra de inicio en iOS (Safe Area) */
 @supports (padding: env(safe-area-inset-bottom)) {
   nav {
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
