@@ -62,3 +62,28 @@ html, body {
   background-color: #fff7ed;
 }
 
+/* Animación de impresión térmica para terminal POS */
+@keyframes thermalPrint {
+  0% {
+    transform: translateY(-80%);
+    opacity: 0.1;
+    clip-path: inset(0 0 95% 0);
+  }
+  30% {
+    opacity: 0.7;
+    clip-path: inset(0 0 60% 0);
+  }
+  70% {
+    clip-path: inset(0 0 20% 0);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.animate-thermal-print {
+  animation: thermalPrint 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

@@ -149,7 +149,35 @@ export async function createPhysicalSaleOrder(sale: {
   items: { product: Product; quantity: number }[];
   total: number;
   paymentMethod: 'cash' | 'card' | 'spei';
+  ticketImageUrl?: string;
 }) {
+  // Intentar primero a través de la API administrativa con Service Role para asegurar
+  // el descuento de inventario sin bloqueos de RLS
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create_pos_sale",
+        sale,
+      }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success) {
+        return {
+          orderNumber: json.orderNumber,
+          date: json.date,
+          orderId: json.orderId,
+        };
+      }
+    }
+  } catch (apiErr) {
+    console.warn("Fallo en /api/admin create_pos_sale, recurriendo a cliente directo:", apiErr);
+  }
+
+  // Fallback con cliente Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
   const orderNumber = `FX-POS-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -211,7 +239,7 @@ export async function createPhysicalSaleOrder(sale: {
           payment_method: sale.paymentMethod,
           payment_status: "paid",
           status: "delivered",
-          notes: "Venta física registrada con Escáner POS Móvil",
+          notes: sale.ticketImageUrl ? `Venta física POS | Ticket: ${sale.ticketImageUrl}` : "Venta física registrada con Escáner POS Móvil",
         },
       ])
       .select()
@@ -232,34 +260,6 @@ export async function createPhysicalSaleOrder(sale: {
       }));
 
       await supabase.from("order_items").insert(orderItems);
-    }
-
-    // 3. Si el cliente proporcionó teléfono, acumular sus puntos de Club FoxDrop
-    if (sale.clientPhone && sale.clientPhone.trim() !== "" && sale.clientPhone !== "Mostrador") {
-      try {
-        const cleanPhone = sale.clientPhone.trim();
-        const pointsEarned = Math.floor(sale.total / 10);
-
-        // Buscar si existe un perfil con este teléfono
-        const { data: existingProfile } = await supabase
-          .from("profiles")
-          .select("id, loyalty_points")
-          .eq("phone", cleanPhone)
-          .single();
-
-        if (existingProfile) {
-          const currentPoints = existingProfile.loyalty_points || 0;
-          await supabase
-            .from("profiles")
-            .update({
-              loyalty_points: currentPoints + pointsEarned,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", existingProfile.id);
-        }
-      } catch (profErr) {
-        console.warn("Nota: puntos calculados para unificación posterior del cliente:", profErr);
-      }
     }
 
     return {

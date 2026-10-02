@@ -663,7 +663,142 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data });
     }
 
-    // ─── LOTES DE IMPORTACIÓN ─────────────────────────────────────
+    // ─── VENTA FÍSICA EN PUNTO DE VENTA (POS) CON SERVIDOR BYPASS RLS ───────
+    if (action === "create_pos_sale") {
+      const { sale } = body;
+      if (!sale || !sale.items || sale.items.length === 0) {
+        return NextResponse.json({ error: "Datos de venta POS inválidos o sin artículos" }, { status: 400 });
+      }
+
+      const orderNumber = `FX-POS-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // 1. Descontar stock de cada producto y sus componentes (con permisos completos de service_role)
+      for (const item of sale.items) {
+        const prod = item.product;
+        const qty = item.quantity || 1;
+
+        // Si es un combo, descontar partes
+        if (prod.isCombo && prod.comboProductIds && prod.comboProductIds.length > 0) {
+          for (const subProdId of prod.comboProductIds) {
+            try {
+              const { data: subData } = await supabase
+                .from("products")
+                .select("stock")
+                .eq("id", subProdId)
+                .maybeSingle();
+
+              if (subData && typeof subData.stock === "number") {
+                const updatedStock = Math.max(0, subData.stock - qty);
+                await supabase
+                  .from("products")
+                  .update({ stock: updatedStock, updated_at: new Date().toISOString() })
+                  .eq("id", subProdId);
+              }
+            } catch (comboErr) {
+              console.warn(`Error al descontar componente de combo ${subProdId}:`, comboErr);
+            }
+          }
+        }
+
+        // Descontar producto individual
+        if (prod.id) {
+          try {
+            const { data: currentData } = await supabase
+              .from("products")
+              .select("stock")
+              .eq("id", prod.id)
+              .maybeSingle();
+
+            const currentStock = currentData && typeof currentData.stock === "number" ? currentData.stock : prod.stock;
+            const newStock = Math.max(0, currentStock - qty);
+
+            await supabase
+              .from("products")
+              .update({ stock: newStock, updated_at: new Date().toISOString() })
+              .eq("id", prod.id);
+          } catch (err) {
+            console.warn(`Error al descontar stock del producto ${prod.id}:`, err);
+          }
+        }
+      }
+
+      // 2. Registrar orden en Supabase
+      const notes = sale.ticketImageUrl 
+        ? `Venta física POS | Ticket: ${sale.ticketImageUrl}` 
+        : "Venta física registrada con Escáner POS Móvil";
+
+      const { data: order, error: orderErr } = await supabase
+        .from("orders")
+        .insert([
+          {
+            order_number: orderNumber,
+            client_name: sale.clientName || "Venta en Tienda Física",
+            client_phone: sale.clientPhone || "Mostrador",
+            shipping_type: "agreed_pickup",
+            shipping_cost: 0,
+            subtotal: sale.total,
+            total: sale.total,
+            payment_method: sale.paymentMethod || "cash",
+            payment_status: "paid",
+            status: "delivered",
+            notes,
+          },
+        ])
+        .select()
+        .single();
+
+      if (orderErr) {
+        console.error("Error creando orden POS:", orderErr);
+      }
+
+      // 3. Registrar ítems en order_items si se creó la orden
+      if (order?.id && sale.items.length > 0) {
+        const orderItems = sale.items.map((item: any) => ({
+          order_id: order.id,
+          product_id: item.product.id && !item.product.id.startsWith("PROD-") ? item.product.id : null,
+          product_title: item.product.title,
+          quantity: item.quantity,
+          price_at_purchase: item.product.publicPrice,
+          cost_at_purchase: item.product.totalCostMxn || item.product.baseCostMxn || 0,
+        }));
+
+        await supabase.from("order_items").insert(orderItems);
+      }
+
+      // 4. Si el cliente proporcionó teléfono, acumular puntos Club FoxDrop
+      if (sale.clientPhone && sale.clientPhone.trim() !== "" && sale.clientPhone !== "Mostrador") {
+        try {
+          const cleanPhone = sale.clientPhone.trim();
+          const pointsEarned = Math.floor(sale.total / 10);
+
+          const { data: existingProfile } = await supabase
+            .from("profiles")
+            .select("id, loyalty_points")
+            .eq("phone", cleanPhone)
+            .maybeSingle();
+
+          if (existingProfile) {
+            const currentPoints = existingProfile.loyalty_points || 0;
+            await supabase
+              .from("profiles")
+              .update({
+                loyalty_points: currentPoints + pointsEarned,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingProfile.id);
+          }
+        } catch (profErr) {
+          console.warn("Nota: error acumulando puntos en perfil:", profErr);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        orderNumber,
+        date: new Date().toISOString(),
+        orderId: order?.id || null,
+      });
+    }
     if (action === "create_batch") {
       if (!batch || !batch.batchName) {
         return NextResponse.json({ error: "Datos de lote requeridos" }, { status: 400 });
@@ -1176,9 +1311,8 @@ export async function POST(req: NextRequest) {
           <rect x="0" y="146" width="${width}" height="5" fill="url(#orangeGrad)"/>
 
           <!-- Títulos del encabezado -->
-          <text x="340" y="65" font-family="'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="950" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">FOXDROP</text>
-          <text x="340" y="92" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="900" fill="#E6A76E" text-anchor="middle" letter-spacing="3">TU ATAJO AL MUNDO • PUEBLA</text>
-          <text x="340" y="122" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#94A3B8" text-anchor="middle">COMPROBANTE OFICIAL DE COMPRA</text>
+          <text x="340" y="70" font-family="'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="950" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">Foxdrop - Tu atajo al mundo</text>
+          <text x="340" y="105" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#E6A76E" text-anchor="middle" letter-spacing="2">COMPROBANTE OFICIAL DE COMPRA</text>
 
           <!-- Tarjeta central de ticket -->
           <rect x="25" y="170" width="550" height="${cardHeight}" rx="24" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
