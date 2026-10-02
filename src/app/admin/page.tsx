@@ -5929,15 +5929,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               <X className="w-4 h-4" />
             </button>
 
-            {/* DISPENSADOR / RANURA DE IMPRESORA TÉRMICA POS */}
-            <div className="relative pt-3">
-              <div className="w-48 h-3.5 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 mx-auto rounded-full shadow-inner border border-slate-700 flex items-center justify-center">
-                <div className="w-36 h-1 bg-black/80 rounded-full" />
-              </div>
-
-              {/* VISTA PREVIA DEL TICKET REAL CON ANIMACIÓN DE IMPRESIÓN */}
-              <div className="animate-thermal-print origin-top">
-                <div ref={ticketReceiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative mt-1">
+            {/* CONTENEDOR DE SALIDA DEL TICKET (EMERGE DE ABAJO HACIA ARRIBA) */}
+            <div className="relative pt-1 overflow-hidden rounded-2xl">
+              {/* VISTA PREVIA DEL TICKET REAL CON ANIMACIÓN DE SALIDA DE ABAJO HACIA ARRIBA */}
+              <div className="animate-thermal-ticket-rise origin-bottom">
+                <div ref={ticketReceiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative">
                   {/* Encabezado Verde Oscuro / Brand */}
                   <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
                   <div className="flex items-center justify-center gap-2.5 mb-1">
@@ -6048,8 +6044,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
           </div>
 
-            {/* Acciones de Envío Directo y Compartir */}
-            <div className="space-y-2 pt-1">
+          {/* Ranura dispensadora de la terminal sobre la que sale el ticket */}
+          <div className="relative -mt-2.5 z-20">
+            <div className="w-48 h-3 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 mx-auto rounded-full shadow-md border border-slate-700 flex items-center justify-center">
+              <div className="w-36 h-1 bg-black/90 rounded-full" />
+            </div>
+          </div>
+
+          {/* Acciones de Envío Directo y Compartir (con z-20 para estar al frente mientras el ticket emerge por detrás) */}
+          <div className="space-y-2 pt-1 relative z-20">
               <button
                 onClick={() => shareTicketImageDirectly(posCompletedTicket)}
                 className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98]"

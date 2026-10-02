@@ -62,22 +62,22 @@ html, body {
   background-color: #fff7ed;
 }
 
-/* Animación de dispensador e impresión térmica para terminal POS */
-@keyframes thermalPrintSlide {
+/* Animación realista de salida del ticket POS: emerge desde abajo hacia arriba con movimiento fluido continuo */
+@keyframes thermalTicketRise {
   0% {
-    transform: translateY(-80%);
-    opacity: 0.2;
+    transform: translateY(90%);
+    opacity: 0.1;
   }
-  25% {
-    transform: translateY(-55%);
-    opacity: 0.6;
+  20% {
+    transform: translateY(65%);
+    opacity: 0.7;
   }
-  60% {
-    transform: translateY(-25%);
-    opacity: 0.9;
+  50% {
+    transform: translateY(35%);
+    opacity: 0.95;
   }
-  85% {
-    transform: translateY(-5%);
+  75% {
+    transform: translateY(12%);
     opacity: 1;
   }
   100% {
@@ -86,9 +86,10 @@ html, body {
   }
 }
 
-.animate-thermal-print {
-  animation: thermalPrintSlide 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.animate-thermal-ticket-rise {
+  animation: thermalTicketRise 2.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
+
 
 
