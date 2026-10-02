@@ -1,6 +1,18 @@
+/**
+ * ============================================================================
+ * FOXDROP — SERVICIO DE PEDIDOS, CAJA REGISTRADORA POS Y SEGUIMIENTO
+ * ============================================================================
+ * Gestiona la creación de pedidos en línea, compras directas en punto de venta
+ * físico (POS), descuento de inventario unitario y componentes de combos,
+ * carritos abandonados y suscripciones en tiempo real mediante PostgreSQL.
+ */
+
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { Product } from "@/types";
 
+/**
+ * Payload requerido para formalizar un pedido de la tienda online.
+ */
 export interface CreateOrderInput {
   userId?: string;
   clientName: string;
@@ -25,7 +37,8 @@ export interface CreateOrderInput {
 }
 
 /**
- * Registra una orden y sus detalles en Supabase
+ * Registra un pedido web, inserta los artículos asociados y descuenta el stock
+ * automáticamente (incluyendo componentes vinculados si el artículo es un combo).
  */
 export async function createOrderInDb(input: CreateOrderInput) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

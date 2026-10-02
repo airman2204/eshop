@@ -1,3 +1,12 @@
+/**
+ * ============================================================================
+ * FOXDROP — ENDPOINT MAESTRO DEL SERVIDOR ADMINISTRATIVO (/api/admin)
+ * ============================================================================
+ * Ejecuta operaciones privilegiadas usando Supabase con `SUPABASE_SERVICE_ROLE_KEY`.
+ * Resuelve subida de imágenes, gestión de catálogo, lotes de importación,
+ * pedidos POS, configuración bancaria, club de puntos y carrusel hero.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 

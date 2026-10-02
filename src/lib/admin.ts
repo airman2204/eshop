@@ -1,8 +1,16 @@
+/**
+ * ============================================================================
+ * FOXDROP — SERVICIOS Y REPOSITORIO DE CONTROL ADMINISTRATIVO & CRM
+ * ============================================================================
+ * Funciones de alta, baja, cambio de productos, prorrateo de lotes de importación,
+ * consulta de cotización cambiaria USD en vivo y métricas contables.
+ */
+
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { AbandonedCart, ClubFoxDropSettings, LoyaltyMetrics } from "@/types";
 
 /**
- * Consulta el tipo de cambio oficial USD a MXN en tiempo real con redundancia de APIs financieras
+ * Consulta el tipo de cambio oficial USD a MXN en tiempo real con redundancia de APIs financieras.
  */
 export async function getLiveExchangeRate(): Promise<number> {
   const endpoints = [

@@ -1,6 +1,17 @@
+/**
+ * ============================================================================
+ * FOXDROP — REPOSITORIO & SERVICIOS DE PRODUCTOS
+ * ============================================================================
+ * Maneja el mapeo desde el esquema de base de datos de Supabase hacia el modelo
+ * de la aplicación, incluyendo cálculo reactivo de márgenes y sincronización.
+ */
+
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { Product } from "@/types";
 
+/**
+ * Esquema crudo devuelto por la tabla `public.products` de Supabase.
+ */
 export interface DatabaseProduct {
   id: string;
   sku: string;
@@ -29,6 +40,10 @@ export interface DatabaseProduct {
   } | null;
 }
 
+/**
+ * Mapea un registro crudo de Supabase a la estructura limpia de Product en React.
+ * Calcula automáticamente el margen porcentual y provee fallbacks para imágenes.
+ */
 export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
   const publicPrice = Number(dbProd.public_price) || 0;
   const totalCost = Number(dbProd.total_cost_mxn) || 0;
@@ -59,7 +74,9 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
 }
 
 /**
- * Obtener todos los productos activos desde Supabase de forma sincronizada para todos los usuarios
+ * Obtener todos los productos desde Supabase de forma sincronizada.
+ * @param includeInactive - Si es true, incluye los productos apagados (para el panel admin).
+ *                          Si es false, solo devuelve los encendidos (para la tienda pública).
  */
 export async function getActiveProducts(includeInactive = false): Promise<Product[] | null> {
   try {

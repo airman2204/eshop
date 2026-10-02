@@ -1,29 +1,71 @@
+/**
+ * ============================================================================
+ * FOXDROP — MODELOS DE DATOS & TIPOS DE TYPESCRIPT
+ * ============================================================================
+ * Este archivo centraliza los contratos de datos utilizados en toda la
+ * aplicación (Frontend, Backend, POS, Inventario y CRM).
+ */
+
+/**
+ * Representa un artículo o combo en el catálogo de FoxDrop.
+ * Incluye desglose de costos en USD y MXN, flete prorrateado y disponibilidad.
+ */
 export interface Product {
+  /** Identificador único UUID de Supabase */
   id: string;
+  /** Código único de inventario / código de barras (ej. FX-1029) */
   sku: string;
+  /** Nombre comercial del producto */
   title: string;
+  /** Descripción detallada o características del producto */
   description: string;
+  /** Nombre de la categoría (ej. Cosmética, Electrónica, Hogar) */
   category: string;
+  /** Costo base de adquisición en Dólares USD */
   baseCostUsd: number;
+  /** Costo base de adquisición convertido a Pesos MXN */
   baseCostMxn: number;
+  /** Monto de flete/importación prorrateado asignado a cada unidad en MXN */
   shippingCostAllocated: number;
+  /** Costo total unitario (baseCostMxn + shippingCostAllocated) */
   totalCostMxn: number;
+  /** Precio final de venta al público en MXN */
   publicPrice: number;
+  /** Ganancia o utilidad neta unitaria en MXN (publicPrice - totalCostMxn) */
   profitUnit: number;
+  /** Margen porcentual de ganancia bruta */
   marginPercent: number;
+  /** Unidades físicas disponibles para venta */
   stock: number;
+  /** Si el producto es sobre pedido especial */
   isSpecialOrder: boolean;
+  /** Lista de URLs de imágenes del producto */
   images: string[];
+  /** Fecha de caducidad si aplica (ej. cosméticos o alimentos) */
   expirationDate?: string;
+  /** Días que el artículo lleva en almacén */
   daysInStock: number;
+  /** ID del lote de importación vinculado */
   batchId?: string;
+  /** Nombre del lote de importación (ej. Lote Primavera 2026) */
   batchName?: string;
+  /** Descuento promocional en porcentaje */
   discountPercent?: number;
+  /** Indica si este producto es un paquete o kit compuesto por varios artículos */
   isCombo?: boolean;
+  /** IDs de los productos individuales que conforman este combo */
   comboProductIds?: string[];
+  /**
+   * Interruptor de visibilidad:
+   * - true: Encendido (visible para clientes en la tienda web).
+   * - false: Apagado (oculto a clientes sin borrarlo del inventario).
+   */
   isActive?: boolean;
 }
 
+/**
+ * Lote de importación para prorratear flete de forma masiva entre unidades.
+ */
 export interface ImportBatch {
   id: string;
   batchName: string;
@@ -57,6 +99,9 @@ export interface UserCard {
   isDefault?: boolean;
 }
 
+/**
+ * Perfil consolidado del cliente con métricas acumuladas de compra y puntos.
+ */
 export interface ClientProfile {
   id: string;
   name: string;
@@ -74,12 +119,18 @@ export interface ClientProfile {
   cards?: UserCard[];
 }
 
+/**
+ * Representa una orden de venta generada en la tienda online o en el mostrador POS.
+ */
 export interface Order {
+  /** Folio único (ej. FX-293849 o FX-POS-1029) */
   id: string;
   clientName: string;
   clientPhone: string;
   clientEmail?: string;
+  /** Estado de preparación / logística del pedido */
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  /** Tipo de entrega acordado */
   shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping' | string;
   pickupPoint?: string;
   subtotal: number;
@@ -95,6 +146,9 @@ export interface Order {
   order_items?: any[];
 }
 
+/**
+ * Carrito abandonado para seguimiento comercial y remarketing.
+ */
 export interface AbandonedCart {
   id: string;
   clientName: string;
