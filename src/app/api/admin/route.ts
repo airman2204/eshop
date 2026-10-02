@@ -451,27 +451,45 @@ export async function POST(req: NextRequest) {
         ? product.images
         : (product.imageUrl ? [product.imageUrl] : ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"]);
 
-      const { data, error } = await supabase
+      const insertRecord: any = {
+        sku,
+        title: product.title,
+        description: product.description || "Artículo verificado por FoxDrop.",
+        category_id: categoryId,
+        base_cost_usd: product.baseCostUsd || 0,
+        base_cost_mxn: product.baseCostMxn || 0,
+        shipping_cost_allocated: product.shippingCostAllocated || 0,
+        public_price: product.publicPrice || 0,
+        stock: product.stock ?? 0,
+        images: productImages,
+        is_active: true,
+      };
+
+      // Si el producto viene configurado como combo, incluimos los campos
+      if (product.isCombo) {
+        insertRecord.is_combo = true;
+        insertRecord.combo_product_ids = product.comboProductIds || [];
+      }
+
+      let { data, error } = await supabase
         .from("products")
-        .insert([
-          {
-            sku,
-            title: product.title,
-            description: product.description || "Artículo verificado por FoxDrop.",
-            category_id: categoryId,
-            base_cost_usd: product.baseCostUsd || 0,
-            base_cost_mxn: product.baseCostMxn || 0,
-            shipping_cost_allocated: product.shippingCostAllocated || 0,
-            public_price: product.publicPrice || 0,
-            stock: product.stock ?? 0,
-            images: productImages,
-            is_combo: Boolean(product.isCombo),
-            combo_product_ids: product.comboProductIds || [],
-            is_active: true,
-          },
-        ])
+        .insert([insertRecord])
         .select("*, categories(id, name, slug, icon)")
         .single();
+
+      // Si falla porque las columnas combo aún no se migran en la base de datos remota, reintentamos omitiendo los campos combo
+      if (error && (error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo"))) {
+        console.warn("Columnas combo no encontradas en Supabase, reintentando inserción básica:", error.message);
+        delete insertRecord.is_combo;
+        delete insertRecord.combo_product_ids;
+        const retryResult = await supabase
+          .from("products")
+          .insert([insertRecord])
+          .select("*, categories(id, name, slug, icon)")
+          .single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
 
       if (error) throw error;
       return NextResponse.json({ success: true, data });
@@ -522,12 +540,27 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("products")
         .update(payload)
         .eq("id", id)
         .select("*, categories(id, name, slug, icon)")
         .single();
+
+      // Si falla por columnas combo no existentes, reintentamos omitiéndolas
+      if (error && (error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo"))) {
+        console.warn("Columnas combo no encontradas al actualizar, reintentando actualización básica:", error.message);
+        delete payload.is_combo;
+        delete payload.combo_product_ids;
+        const retryResult = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", id)
+          .select("*, categories(id, name, slug, icon)")
+          .single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
 
       if (error) throw error;
       return NextResponse.json({ success: true, data });
