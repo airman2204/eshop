@@ -468,7 +468,7 @@ export async function POST(req: NextRequest) {
         public_price: product.publicPrice || 0,
         stock: product.stock ?? 0,
         images: productImages,
-        is_active: true,
+        is_active: product.isActive !== undefined ? Boolean(product.isActive) : true,
       };
 
       // Si el producto viene configurado como combo, incluimos los campos
