@@ -1091,6 +1091,199 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ─── GENERACIÓN DE TICKET PROFESIONAL CON LOGO FOXDROP ───────
+    if (action === "generate_ticket_image") {
+      try {
+        const { ticket } = body;
+        if (!ticket || !ticket.orderNumber) {
+          return NextResponse.json({ error: "Datos de ticket requeridos" }, { status: 400 });
+        }
+
+        const width = 600;
+        const items = ticket.items || [];
+        const orderNumber = ticket.orderNumber;
+        const dateStr = ticket.date ? new Date(ticket.date).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('es-MX');
+        const clientName = ticket.clientName || 'Cliente FoxDrop';
+        const clientPhone = ticket.clientPhone || 'Mostrador';
+        const total = Number(ticket.total) || 0;
+        const points = Number(ticket.pointsEarned) || Math.floor(total / 10);
+        const methodNames: Record<string, string> = {
+          cash: 'Efectivo',
+          card: 'Tarjeta Débito/Crédito',
+          spei: 'Transferencia SPEI',
+        };
+        const paymentMethod = methodNames[ticket.paymentMethod] || ticket.paymentMethod || 'Efectivo';
+
+        // Calcular altura dinámica según cantidad de artículos
+        const itemsHeight = Math.max(80, items.length * 42);
+        const totalHeight = 680 + itemsHeight;
+        const cardHeight = 480 + itemsHeight;
+
+        const escapeXml = (unsafe: string) => {
+          return (unsafe || '').replace(/[<>&'"]/g, (c) => {
+            switch (c) {
+              case '<': return '&lt;';
+              case '>': return '&gt;';
+              case '&': return '&amp;';
+              case '\'': return '&apos;';
+              case '"': return '&quot;';
+              default: return c;
+            }
+          });
+        };
+
+        const rowsSvg = items.map((it: any, idx: number) => {
+          const qty = it.quantity || 1;
+          const title = escapeXml((it.product?.title || it.title || 'Artículo').slice(0, 32));
+          const price = Number(it.product?.publicPrice || it.price || 0) * qty;
+          return `
+            <g transform="translate(0, ${idx * 40})">
+              <text x="50" y="20" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#1e293b">${qty}x ${title}</text>
+              <text x="550" y="20" font-family="'Courier New', monospace" font-size="16" font-weight="900" fill="#0f172a" text-anchor="end">$${price.toFixed(2)}</text>
+            </g>
+          `;
+        }).join('');
+
+        const dividerY = 360 + itemsHeight;
+        const payY = dividerY + 35;
+        const totalY = payY + 45;
+        const clubBoxY = totalY + 30;
+        const clubTextY = clubBoxY + 38;
+        const footerY1 = clubBoxY + 95;
+        const footerY2 = footerY1 + 22;
+
+        const svg = `
+        <svg width="${width}" height="${totalHeight}" viewBox="0 0 ${width} ${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0F3E36"/>
+              <stop offset="100%" stop-color="#1F2D3D"/>
+            </linearGradient>
+            <linearGradient id="orangeGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#E65F2B"/>
+              <stop offset="100%" stop-color="#FF8C42"/>
+            </linearGradient>
+            <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+              <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.1"/>
+            </filter>
+          </defs>
+
+          <!-- Fondo general -->
+          <rect width="${width}" height="${totalHeight}" rx="32" fill="#F1F5F9"/>
+          
+          <!-- Encabezado con degradado FoxDrop -->
+          <path d="M 0 32 Q 0 0 32 0 L ${width - 32} 0 Q ${width} 0 ${width} 32 L ${width} 150 L 0 150 Z" fill="url(#headerGrad)"/>
+          <rect x="0" y="146" width="${width}" height="5" fill="url(#orangeGrad)"/>
+
+          <!-- Títulos del encabezado -->
+          <text x="340" y="65" font-family="'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="950" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">FOXDROP</text>
+          <text x="340" y="92" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="900" fill="#E6A76E" text-anchor="middle" letter-spacing="3">TU ATAJO AL MUNDO • PUEBLA</text>
+          <text x="340" y="122" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" fill="#94A3B8" text-anchor="middle">COMPROBANTE OFICIAL DE COMPRA</text>
+
+          <!-- Tarjeta central de ticket -->
+          <rect x="25" y="170" width="550" height="${cardHeight}" rx="24" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" filter="url(#shadow)"/>
+
+          <!-- Metadatos de la venta -->
+          <text x="50" y="212" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#64748B">FOLIO DE ORDEN</text>
+          <text x="550" y="212" font-family="'Courier New', monospace" font-size="18" font-weight="900" fill="#E65F2B" text-anchor="end">${escapeXml(orderNumber)}</text>
+
+          <text x="50" y="242" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#64748B">FECHA Y HORA</text>
+          <text x="550" y="242" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="600" fill="#1E293B" text-anchor="end">${escapeXml(dateStr)}</text>
+
+          <text x="50" y="272" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#64748B">CLIENTE</text>
+          <text x="550" y="272" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#1E293B" text-anchor="end">${escapeXml(clientName)}</text>
+
+          <text x="50" y="302" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" fill="#64748B">TELÉFONO REGISTRADO</text>
+          <text x="550" y="302" font-family="'Courier New', monospace" font-size="15" font-weight="800" fill="#0284C7" text-anchor="end">${escapeXml(clientPhone)}</text>
+
+          <!-- Línea divisoria picada tipo ticket -->
+          <line x1="50" y1="326" x2="550" y2="326" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="6,6"/>
+
+          <!-- Encabezado de artículos -->
+          <text x="50" y="354" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#94A3B8" letter-spacing="1">PRODUCTO(S)</text>
+          <text x="550" y="354" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#94A3B8" text-anchor="end" letter-spacing="1">SUBTOTAL</text>
+
+          <!-- Lista de artículos -->
+          <g transform="translate(0, 360)">
+            ${rowsSvg}
+          </g>
+
+          <!-- Línea divisoria sólida -->
+          <line x1="50" y1="${dividerY}" x2="550" y2="${dividerY}" stroke="#E2E8F0" stroke-width="2"/>
+
+          <!-- Método de pago y Total -->
+          <text x="50" y="${payY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#64748B">MÉTODO DE PAGO</text>
+          <text x="550" y="${payY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#1E293B" text-anchor="end">${escapeXml(paymentMethod)}</text>
+
+          <text x="50" y="${totalY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="900" fill="#0F172A">TOTAL PAGADO</text>
+          <text x="550" y="${totalY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="950" fill="#0F3E36" text-anchor="end">$${total.toFixed(2)} MXN</text>
+
+          <!-- Caja de Puntos Club FoxDrop -->
+          <rect x="50" y="${clubBoxY}" width="500" height="62" rx="16" fill="#FFF7ED" stroke="#FDBA74" stroke-width="1.5"/>
+          <text x="75" y="${clubTextY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="900" fill="#9A3412">⭐ CLUB FOXDROP:</text>
+          <text x="525" y="${clubTextY}" font-family="'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="950" fill="#EA580C" text-anchor="end">+${points} Puntos Ganados</text>
+
+          <!-- Footer de garantía y web -->
+          <text x="${width / 2}" y="${footerY1}" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#64748B" text-anchor="middle">Consulta tus puntos y catálogo completo en https://foxdrop.mx</text>
+          <text x="${width / 2}" y="${footerY2}" font-family="'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#94A3B8" text-anchor="middle">¡GRACIAS POR TU COMPRA EN FOXDROP PUEBLA! 🦊</text>
+        </svg>
+        `;
+
+        // Renderizar PNG con sharp y estampar el logo del zorrito 3D
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const sharp = require("sharp");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const path = require("path");
+        const logoPath = path.join(process.cwd(), "public", "fox-logo-head-3d.png");
+
+        const headBuf = await sharp(logoPath)
+          .resize(90, 90, { fit: "contain" })
+          .png()
+          .toBuffer();
+
+        const ticketPngBuffer = await sharp(Buffer.from(svg))
+          .composite([{ input: headBuf, top: 30, left: 45 }])
+          .png()
+          .toBuffer();
+
+        // Subir a Supabase Storage para generar URL pública y descargable directa
+        const ticketFileName = `tickets/Ticket-${orderNumber}-${Date.now()}.png`;
+
+        try {
+          const { data: buckets } = await supabase.storage.listBuckets();
+          const hasBucket = buckets?.some((b: any) => b.name === "product-images");
+          if (!hasBucket) {
+            await supabase.storage.createBucket("product-images", { public: true, fileSizeLimit: 10485760 });
+          }
+        } catch {}
+
+        const { error: uploadErr } = await supabase.storage
+          .from("product-images")
+          .upload(ticketFileName, ticketPngBuffer, {
+            contentType: "image/png",
+            upsert: true,
+          });
+
+        let publicImageUrl = "";
+        if (!uploadErr) {
+          const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(ticketFileName);
+          publicImageUrl = pubData?.publicUrl || "";
+        }
+
+        const base64Data = `data:image/png;base64,${ticketPngBuffer.toString("base64")}`;
+
+        return NextResponse.json({
+          success: true,
+          imageUrl: publicImageUrl || base64Data,
+          downloadUrl: publicImageUrl || base64Data,
+          base64: base64Data,
+        });
+      } catch (ticketErr: any) {
+        console.error("Error generando ticket en servidor:", ticketErr);
+        return NextResponse.json({ error: ticketErr.message || "Error al renderizar ticket" }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (err: any) {
     console.error("Error en /api/admin:", err);

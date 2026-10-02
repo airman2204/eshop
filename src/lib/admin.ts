@@ -415,3 +415,30 @@ export async function getLoyaltyMetrics(): Promise<LoyaltyMetrics | null> {
   }
 }
 
+/**
+ * Genera una imagen oficial de ticket de compra con branding 3D FoxDrop
+ */
+export async function generateTicketImage(ticket: any): Promise<{ imageUrl: string; base64: string } | null> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "generate_ticket_image", ticket }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success) {
+        return {
+          imageUrl: json.imageUrl,
+          base64: json.base64,
+        };
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error("Fallo generando imagen de ticket:", err);
+    return null;
+  }
+}
+

@@ -19,7 +19,7 @@ import {
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
   fetchAdminCategories, createAdminCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
-  getClubSettings, saveClubSettings, getLoyaltyMetrics
+  getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -120,7 +120,9 @@ export default function AdminCRM() {
     clientName: string;
     pointsEarned: number;
     date: string;
+    ticketImageUrl?: string;
   } | null>(null);
+  const [generatingTicketImg, setGeneratingTicketImg] = useState(false);
 
   // Modal Marcar Producto como Ya Vendido (Venta previa o fuera de sistema)
   const [showSoldModal, setShowSoldModal] = useState(false);
@@ -1484,8 +1486,8 @@ export default function AdminCRM() {
       if (updatedOrders.length > 0) setOrders(updatedOrders);
       if (updatedClients.length > 0) setClients(updatedClients);
 
-      // Guardar ticket completado para mostrar modal
-      setPosCompletedTicket({
+      // Objeto base del ticket
+      const ticketData = {
         orderNumber: saleResult.orderNumber,
         items: [...posCart],
         total: posTotal,
@@ -1494,7 +1496,21 @@ export default function AdminCRM() {
         clientName: cleanName,
         pointsEarned: posPointsEarned,
         date: saleResult.date,
-      });
+      };
+
+      setPosCompletedTicket(ticketData);
+
+      // Generar ticket gráfico profesional en servidor en segundo plano
+      setGeneratingTicketImg(true);
+      generateTicketImage(ticketData)
+        .then(result => {
+          if (result?.imageUrl) {
+            setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: result.imageUrl } : null);
+          }
+        })
+        .finally(() => {
+          setGeneratingTicketImg(false);
+        });
 
       // Limpiar carrito
       setPosCart([]);
@@ -1517,28 +1533,35 @@ export default function AdminCRM() {
     };
 
     const itemsSummary = ticket.items
-      .map(item => `• ${item.quantity}x ${item.product.title} - $${(item.product.publicPrice * item.quantity).toFixed(2)} MXN`)
+      .map(item => `  ▪ ${item.quantity}x ${item.product.title} - $${(item.product.publicPrice * item.quantity).toFixed(2)} MXN`)
       .join('\n');
 
-    const msg = `🦊 *TICKET DE COMPRA FOXDROP PUEBLA*
-━━━━━━━━━━━━━━━━━━━━
-📄 *Orden:* ${ticket.orderNumber}
-📅 *Fecha:* ${new Date(ticket.date).toLocaleDateString()} ${new Date(ticket.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-👤 *Cliente:* ${ticket.clientName}
-📱 *Tel:* ${ticket.clientPhone}
+    let ticketImgSection = '';
+    if (ticket.ticketImageUrl) {
+      ticketImgSection = `\n🧾 *Descarga tu Ticket Gráfico Oficial aquí:*\n${ticket.ticketImageUrl}\n`;
+    }
 
-🛍️ *Detalle de Productos:*
+    const msg = `🦊 *FOXDROP PUEBLA* — *TU ATAJO AL MUNDO*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 *COMPROBANTE OFICIAL DE COMPRA*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔖 *Folio de Venta:* ${ticket.orderNumber}
+📅 *Fecha:* ${new Date(ticket.date).toLocaleDateString('es-MX')} ${new Date(ticket.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+👤 *Cliente:* ${ticket.clientName}
+📱 *Teléfono:* ${ticket.clientPhone}
+
+🛍️ *DETALLE DE TU COMPRA:*
 ${itemsSummary}
 
 💳 *Forma de Pago:* ${methodNames[ticket.paymentMethod] || ticket.paymentMethod}
 💰 *TOTAL PAGADO:* $${ticket.total.toFixed(2)} MXN
 ⭐ *Puntos Club Ganados:* +${ticket.pointsEarned} pts
+${ticketImgSection}
+✨ *¡Tus puntos Club FoxDrop están acreditados!*
+Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket.clientPhone}), podrás ver tu saldo de puntos acumulados para canjearlos por descuentos en tus próximas compras.
 
-✨ *¡Tus puntos están acreditados!*
-Cuando ingreses a nuestra tienda en línea con este número de celular, podrás ver todo tu historial y saldo de puntos Club FoxDrop.
-
-¡Gracias por tu compra en FoxDrop Puebla! 🦊🔥
-https://foxdrop.com.mx`;
+🦊 *Tienda Online Oficial:* https://foxdrop.mx
+¡Muchas gracias por tu compra y confianza! 🔥`;
 
     sendWhatsAppNotification(ticket.clientPhone, msg);
   };
@@ -5305,82 +5328,152 @@ https://foxdrop.com.mx`;
       {/* MODAL TICKET DIGITAL FOXDROP & ENVÍO POR WHATSAPP */}
       {/* ======================================================== */}
       {posCompletedTicket && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative border border-slate-200">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-slate-100 rounded-3xl max-w-sm w-full p-4 sm:p-5 space-y-3.5 shadow-2xl relative border border-slate-300 my-auto">
             <button
               onClick={() => setPosCompletedTicket(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700"
+              className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-slate-500 hover:text-slate-800 flex items-center justify-center shadow-xs transition z-10"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            {/* Cabecera del Ticket */}
-            <div className="text-center space-y-1 border-b border-dashed border-slate-300 pb-4">
-              <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Check className="w-6 h-6 stroke-[3]" />
-              </div>
-              <h3 className="font-black text-base text-slate-900">¡Venta Completada con Éxito!</h3>
-              <p className="text-xs text-slate-500 font-mono">Orden: {posCompletedTicket.orderNumber}</p>
-              <p className="text-[10px] text-slate-400">
-                {new Date(posCompletedTicket.date).toLocaleString()}
-              </p>
-            </div>
-
-            {/* Detalle Ticket */}
-            <div className="space-y-2 text-xs">
-              <div className="bg-slate-50 rounded-xl p-3 space-y-1">
-                <p className="text-[11px] text-slate-500">
-                  Cliente: <strong className="text-slate-900">{posCompletedTicket.clientName}</strong>
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Teléfono: <strong className="text-slate-900">{posCompletedTicket.clientPhone}</strong>
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Método de pago: <strong className="text-slate-900 capitalize">{posCompletedTicket.paymentMethod}</strong>
+            {/* VISTA PREVIA DEL TICKET REAL (DISEÑO TIPO TICKET DE COMPRA) */}
+            <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden relative">
+              {/* Encabezado Verde Oscuro / Brand */}
+              <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <img
+                    src="/fox-logo-head-3d.png"
+                    alt="FoxDrop"
+                    className="w-10 h-10 object-contain drop-shadow-md"
+                  />
+                  <div className="text-left">
+                    <span className="font-black tracking-tight text-lg text-white block leading-none">FOXDROP</span>
+                    <span className="text-[9px] font-bold text-[#E6A76E] tracking-widest uppercase block mt-0.5">PUEBLA • MÉXICO</span>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-300 font-semibold tracking-wider uppercase mt-1">
+                  Comprobante Oficial de Compra
                 </p>
               </div>
 
-              {/* Items */}
-              <div className="divide-y divide-slate-100 max-h-36 overflow-y-auto">
-                {posCompletedTicket.items.map(item => (
-                  <div key={item.product.id} className="py-1.5 flex justify-between">
-                    <span className="text-slate-700">
-                      {item.quantity}x {item.product.title}
-                    </span>
-                    <span className="font-bold text-slate-900">
-                      ${(item.product.publicPrice * item.quantity).toFixed(2)}
+              {/* Datos de la Venta */}
+              <div className="p-4 space-y-2.5 text-xs text-slate-700">
+                <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Folio de Venta</span>
+                  <span className="font-mono font-black text-sm text-[#E65F2B]">{posCompletedTicket.orderNumber}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1 text-[11px]">
+                  <div>
+                    <span className="text-[9px] text-slate-400 font-bold block uppercase">Fecha y Hora</span>
+                    <span className="font-semibold text-slate-800">
+                      {new Date(posCompletedTicket.date).toLocaleDateString('es-MX')} {new Date(posCompletedTicket.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
+                  <div className="text-right">
+                    <span className="text-[9px] text-slate-400 font-bold block uppercase">Cliente</span>
+                    <span className="font-bold text-slate-900 truncate block">{posCompletedTicket.clientName}</span>
+                  </div>
+                </div>
+
+                <div className="text-[11px] pb-1 border-b border-dashed border-slate-200">
+                  <span className="text-[9px] text-slate-400 font-bold block uppercase">Teléfono Registrado</span>
+                  <span className="font-mono font-bold text-sky-700">{posCompletedTicket.clientPhone}</span>
+                </div>
+
+                {/* Lista de Artículos */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                    <span>Artículos</span>
+                    <span>Importe</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 max-h-32 overflow-y-auto">
+                    {posCompletedTicket.items.map(item => (
+                      <div key={item.product.id} className="py-1 flex justify-between items-center text-xs">
+                        <span className="text-slate-800 font-medium truncate max-w-[190px]">
+                          {item.quantity}x {item.product.title}
+                        </span>
+                        <span className="font-mono font-bold text-slate-900 shrink-0">
+                          ${(item.product.publicPrice * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Subtotales y Total */}
+                <div className="border-t-2 border-slate-200 pt-2 space-y-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-medium">Método de pago:</span>
+                    <span className="font-bold text-slate-800 capitalize">
+                      {posCompletedTicket.paymentMethod === 'cash' ? '💵 Efectivo' : posCompletedTicket.paymentMethod === 'card' ? '💳 Tarjeta' : '⚡ SPEI'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-baseline pt-1">
+                    <span className="font-black text-slate-900 text-sm">TOTAL PAGADO:</span>
+                    <span className="font-mono font-black text-xl text-[#0F3E36]">
+                      ${posCompletedTicket.total.toFixed(2)} MXN
+                    </span>
+                  </div>
+                </div>
+
+                {/* Banner Club FoxDrop */}
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-2 flex items-center justify-between text-xs">
+                  <span className="font-bold text-amber-900 flex items-center gap-1">
+                    ⭐ Club FoxDrop:
+                  </span>
+                  <span className="font-mono font-black text-sm text-[#E65F2B]">
+                    +{posCompletedTicket.pointsEarned} Puntos
+                  </span>
+                </div>
+
+                <div className="text-center pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+                  <p className="font-bold text-slate-600">¡Gracias por tu compra en FoxDrop Puebla! 🦊</p>
+                  <p>https://foxdrop.mx</p>
+                </div>
+              </div>
+
+              {/* Dientes de sierra decorativos del ticket en el borde inferior */}
+              <div className="flex justify-between overflow-hidden bg-slate-100 h-2 px-1">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <div key={i} className="w-2.5 h-2.5 bg-white rotate-45 -translate-y-1.5 shrink-0" />
                 ))}
-              </div>
-
-              {/* Totales y Puntos */}
-              <div className="border-t border-slate-200 pt-2 flex justify-between items-baseline">
-                <span className="font-bold text-slate-900 text-sm">TOTAL:</span>
-                <span className="font-black text-lg text-slate-900">
-                  ${posCompletedTicket.total.toFixed(2)} MXN
-                </span>
-              </div>
-
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex items-center justify-between text-orange-950 font-bold text-xs">
-                <span>Puntos Club Acreditados:</span>
-                <span className="text-[#E65F2B] font-black text-sm">+{posCompletedTicket.pointsEarned} pts</span>
               </div>
             </div>
 
-            {/* Acciones */}
-            <div className="space-y-2 pt-2">
+            {/* Acciones de Envío y Descarga */}
+            <div className="space-y-2 pt-1">
               <button
                 onClick={() => sendWhatsAppTicket(posCompletedTicket)}
-                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition"
+                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98]"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Enviar Ticket por WhatsApp</span>
               </button>
 
+              {posCompletedTicket.ticketImageUrl && (
+                <a
+                  href={posCompletedTicket.ticketImageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold py-2.5 rounded-2xl shadow-2xs flex items-center justify-center gap-2 text-xs transition"
+                >
+                  <Download className="w-4 h-4 text-slate-600" />
+                  <span>Ver / Descargar Ticket Gráfico (PNG)</span>
+                </a>
+              )}
+
+              {generatingTicketImg && (
+                <p className="text-[10px] text-center text-slate-400 flex items-center justify-center gap-1">
+                  <RefreshCw className="w-3 h-3 animate-spin text-[#E65F2B]" />
+                  <span>Generando imagen de ticket oficial con logo...</span>
+                </p>
+              )}
+
               <button
                 onClick={() => setPosCompletedTicket(null)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition"
+                className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-2xl text-xs transition"
               >
                 Cerrar y Nueva Venta
               </button>
