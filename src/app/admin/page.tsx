@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { toPng } from 'html-to-image';
 import FoxDropLogo from '@/components/FoxDropLogo';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import { 
@@ -126,6 +127,7 @@ export default function AdminCRM() {
   } | null>(null);
   const [generatingTicketImg, setGeneratingTicketImg] = useState(false);
   const [viewingTicketOrder, setViewingTicketOrder] = useState<Order | null>(null);
+  const ticketReceiptRef = useRef<HTMLDivElement>(null);
 
   // Modal Marcar Producto como Ya Vendido (Venta previa o fuera de sistema)
   const [showSoldModal, setShowSoldModal] = useState(false);
@@ -1503,29 +1505,44 @@ export default function AdminCRM() {
 
       setPosCompletedTicket(ticketData);
 
-      // Generar ticket gráfico profesional en servidor en segundo plano y asociarlo al pedido
+      // Generar ticket gráfico nítido en el cliente y sincronizar con servidor
       setGeneratingTicketImg(true);
-      generateTicketImage(ticketData)
-        .then(async result => {
-          if (result?.imageUrl) {
-            setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: result.imageUrl } : null);
-            // Guardar URL del ticket en las notas de la orden para recuperarlo en el panel de pedidos
+      setTimeout(async () => {
+        try {
+          let clientDataUrl = "";
+          if (ticketReceiptRef.current) {
+            clientDataUrl = await toPng(ticketReceiptRef.current, {
+              cacheBust: true,
+              pixelRatio: 2,
+              backgroundColor: '#ffffff',
+            });
+          }
+
+          const result = await generateTicketImage({
+            ...ticketData,
+            imageDataUrl: clientDataUrl || undefined,
+          });
+
+          const finalImgUrl = result?.imageUrl || clientDataUrl;
+          if (finalImgUrl) {
+            setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: finalImgUrl } : null);
             try {
               await updateOrderStatusInDb(
                 saleResult.orderNumber,
                 'delivered',
-                `Venta física POS | Ticket: ${result.imageUrl}`
+                `Venta física POS | Ticket: ${finalImgUrl}`
               );
-              // Actualizar estado local de la orden
-              setOrders(prev => prev.map(o => o.id === saleResult.orderNumber ? { ...o, notes: `Venta física POS | Ticket: ${result.imageUrl}` } : o));
+              setOrders(prev => prev.map(o => o.id === saleResult.orderNumber ? { ...o, notes: `Venta física POS | Ticket: ${finalImgUrl}` } : o));
             } catch (saveNoteErr) {
               console.warn("No se pudo actualizar nota de ticket en la orden:", saveNoteErr);
             }
           }
-        })
-        .finally(() => {
+        } catch (genErr) {
+          console.warn("Error capturando o generando ticket:", genErr);
+        } finally {
           setGeneratingTicketImg(false);
-        });
+        }
+      }, 500);
 
       // Limpiar carrito
       setPosCart([]);
@@ -1542,18 +1559,41 @@ export default function AdminCRM() {
 
   // Compartir imagen del ticket directamente al WhatsApp o galería mediante Web Share API
   const shareTicketImageDirectly = async (ticket: NonNullable<typeof posCompletedTicket>) => {
-    if (!ticket.ticketImageUrl) {
-      sendWhatsAppTicket(ticket);
-      return;
-    }
-
     try {
-      // Descargar el blob de la imagen
-      const res = await fetch(ticket.ticketImageUrl);
-      const blob = await res.blob();
-      const file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+      let file: File | null = null;
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // 1. Si tenemos el ref del DOM del ticket en pantalla, renderizarlo exactamente como se ve (con fuentes perfectas del sistema)
+      if (ticketReceiptRef.current) {
+        try {
+          const dataUrl = await toPng(ticketReceiptRef.current, {
+            cacheBust: true,
+            pixelRatio: 2, // 2x alta resolución nítida
+            backgroundColor: '#ffffff',
+          });
+
+          // Convertir Data URL a File
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+
+          // Si el ticket no tenía imageUrl en storage, podemos actualizarlo para persistir
+          if (!ticket.ticketImageUrl) {
+            setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: dataUrl } : null);
+          }
+        } catch (domImgErr) {
+          console.warn("Fallo renderizando imagen de ticket desde DOM:", domImgErr);
+        }
+      }
+
+      // 2. Si no fue posible desde DOM pero hay ticketImageUrl guardado en el ticket
+      if (!file && ticket.ticketImageUrl) {
+        const res = await fetch(ticket.ticketImageUrl);
+        const blob = await res.blob();
+        file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+      }
+
+      // 3. Compartir archivo directo si Web Share está disponible
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: `Ticket FoxDrop ${ticket.orderNumber}`,
@@ -1562,7 +1602,7 @@ export default function AdminCRM() {
         return;
       }
     } catch (shareErr) {
-      console.warn("Web Share API con imagen no disponible o cancelado, fallback a WhatsApp estándar:", shareErr);
+      console.warn("Web Share API no disponible o cancelado, fallback a WhatsApp estándar:", shareErr);
     }
 
     // Fallback: Si no soporta compartir archivo directamente, enviar texto con enlace directo a WhatsApp
@@ -2233,7 +2273,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </header>
 
         {/* CONTENIDO PRINCIPAL */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-20 md:pb-6 space-y-6">
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-36 md:pb-8 space-y-6">
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
         {crmSubTab === 'inventory' && (
@@ -5079,10 +5119,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         <button
           onClick={() => setShowPosModal(true)}
-          className="flex flex-col items-center justify-center -mt-6 bg-[#E65F2B] text-white w-13 h-13 rounded-full shadow-2xl border-4 border-[#18252E] ring-2 ring-orange-400/50 hover:scale-105 active:scale-95 transition"
+          title="Abrir Escáner y Venta Física (POS)"
+          className="flex items-center justify-center -mt-6 bg-gradient-to-tr from-[#d44e1d] to-[#FF8C42] text-white w-13 h-13 rounded-full shadow-2xl border-4 border-[#18252E] ring-2 ring-orange-500/50 hover:scale-105 active:scale-95 transition"
         >
-          <QrCode className="w-6 h-6" />
-          <span className="text-[8px] font-black uppercase tracking-tighter">POS</span>
+          <QrCode className="w-7 h-7" />
         </button>
 
         <button
@@ -5502,7 +5542,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
 
               {/* VISTA PREVIA DEL TICKET REAL CON ANIMACIÓN DE IMPRESIÓN */}
-              <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative mt-1 animate-thermal-print origin-top">
+              <div ref={ticketReceiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative mt-1 animate-thermal-print origin-top">
                 {/* Encabezado Verde Oscuro / Brand */}
                 <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
                   <div className="flex items-center justify-center gap-2.5 mb-1">
@@ -5621,31 +5661,39 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span>Enviar Imagen de Ticket a WhatsApp</span>
               </button>
 
-              {posCompletedTicket.ticketImageUrl && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(posCompletedTicket.ticketImageUrl!);
-                      const blob = await res.blob();
-                      const url = window.URL.createObjectURL(blob);
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    let downloadUrl = posCompletedTicket.ticketImageUrl;
+                    if (ticketReceiptRef.current) {
+                      downloadUrl = await toPng(ticketReceiptRef.current, {
+                        cacheBust: true,
+                        pixelRatio: 2,
+                        backgroundColor: '#ffffff',
+                      });
+                    }
+
+                    if (downloadUrl) {
                       const a = document.createElement('a');
-                      a.href = url;
+                      a.href = downloadUrl;
                       a.download = `Ticket-${posCompletedTicket.orderNumber}.png`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
-                      window.URL.revokeObjectURL(url);
-                    } catch {
+                    }
+                  } catch (err) {
+                    console.warn("Fallo descarga de ticket:", err);
+                    if (posCompletedTicket.ticketImageUrl) {
                       window.open(posCompletedTicket.ticketImageUrl, '_blank');
                     }
-                  }}
-                  className="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold py-2.5 rounded-2xl shadow-2xs flex items-center justify-center gap-2 text-xs transition"
-                >
-                  <Download className="w-4 h-4 text-slate-600" />
-                  <span>Descargar Archivo de Imagen (PNG)</span>
-                </button>
-              )}
+                  }
+                }}
+                className="w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold py-2.5 rounded-2xl shadow-2xs flex items-center justify-center gap-2 text-xs transition"
+              >
+                <Download className="w-4 h-4 text-slate-600" />
+                <span>Descargar Archivo de Imagen (PNG)</span>
+              </button>
 
               {generatingTicketImg && (
                 <p className="text-[10px] text-center text-slate-400 flex items-center justify-center gap-1">

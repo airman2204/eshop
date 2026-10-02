@@ -1234,9 +1234,46 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "Datos de ticket requeridos" }, { status: 400 });
         }
 
+        const orderNumber = ticket.orderNumber;
+
+        // Si el cliente ya nos mandó la imagen de ticket capturada desde el DOM (pixel-perfect)
+        if (ticket.imageDataUrl && typeof ticket.imageDataUrl === "string" && ticket.imageDataUrl.startsWith("data:image/")) {
+          const parts = ticket.imageDataUrl.split(",");
+          const base64Str = parts[1] || parts[0];
+          const ticketPngBuffer = Buffer.from(base64Str, "base64");
+          const ticketFileName = `tickets/Ticket-${orderNumber}-${Date.now()}.png`;
+
+          try {
+            const { data: buckets } = await supabase.storage.listBuckets();
+            const hasBucket = buckets?.some((b: any) => b.name === "product-images");
+            if (!hasBucket) {
+              await supabase.storage.createBucket("product-images", { public: true, fileSizeLimit: 10485760 });
+            }
+          } catch {}
+
+          const { error: uploadErr } = await supabase.storage
+            .from("product-images")
+            .upload(ticketFileName, ticketPngBuffer, {
+              contentType: "image/png",
+              upsert: true,
+            });
+
+          let publicImageUrl = "";
+          if (!uploadErr) {
+            const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(ticketFileName);
+            publicImageUrl = pubData?.publicUrl || "";
+          }
+
+          return NextResponse.json({
+            success: true,
+            imageUrl: publicImageUrl || ticket.imageDataUrl,
+            downloadUrl: publicImageUrl || ticket.imageDataUrl,
+            base64: ticket.imageDataUrl,
+          });
+        }
+
         const width = 600;
         const items = ticket.items || [];
-        const orderNumber = ticket.orderNumber;
         const dateStr = ticket.date ? new Date(ticket.date).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('es-MX');
         const clientName = ticket.clientName || 'Cliente FoxDrop';
         const clientPhone = ticket.clientPhone || 'Mostrador';
