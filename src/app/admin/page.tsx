@@ -1518,16 +1518,27 @@ export default function AdminCRM() {
         try {
           let clientDataUrl = "";
           if (ticketReceiptRef.current) {
-            clientDataUrl = await toPng(ticketReceiptRef.current, {
-              cacheBust: true,
-              pixelRatio: 2,
-              backgroundColor: '#ffffff',
-            });
+            try {
+              clientDataUrl = await toPng(ticketReceiptRef.current, {
+                cacheBust: true,
+                pixelRatio: 2,
+                backgroundColor: '#ffffff',
+                skipFonts: true,
+                style: {
+                  transform: 'none',
+                  animation: 'none',
+                  clipPath: 'none',
+                  opacity: '1',
+                },
+              });
+            } catch (errCapture) {
+              console.warn("No se pudo capturar ticket desde DOM client-side:", errCapture);
+            }
           }
 
           const result = await generateTicketImage({
             ...ticketData,
-            imageDataUrl: clientDataUrl || undefined,
+            imageDataUrl: (clientDataUrl && clientDataUrl.length > 5000) ? clientDataUrl : undefined,
           });
 
           const finalImgUrl = result?.imageUrl || clientDataUrl;
@@ -1549,7 +1560,7 @@ export default function AdminCRM() {
         } finally {
           setGeneratingTicketImg(false);
         }
-      }, 500);
+      }, 800);
 
       // Limpiar carrito
       setPosCart([]);
@@ -1569,23 +1580,31 @@ export default function AdminCRM() {
     try {
       let file: File | null = null;
 
-      // 1. Si tenemos el ref del DOM del ticket en pantalla, renderizarlo exactamente como se ve (con fuentes perfectas del sistema)
+      // 1. Si tenemos el ref del DOM del ticket en pantalla, renderizarlo con html-to-image de forma segura
       if (ticketReceiptRef.current) {
         try {
           const dataUrl = await toPng(ticketReceiptRef.current, {
             cacheBust: true,
             pixelRatio: 2, // 2x alta resolución nítida
             backgroundColor: '#ffffff',
+            skipFonts: true,
+            style: {
+              transform: 'none',
+              animation: 'none',
+              clipPath: 'none',
+              opacity: '1',
+            },
           });
 
-          // Convertir Data URL a File
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+          if (dataUrl && dataUrl.length > 5000) {
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
 
-          // Si el ticket no tenía imageUrl en storage, podemos actualizarlo para persistir
-          if (!ticket.ticketImageUrl) {
-            setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: dataUrl } : null);
+            // Si el ticket no tenía imageUrl en storage, podemos actualizarlo
+            if (!ticket.ticketImageUrl) {
+              setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: dataUrl } : null);
+            }
           }
         } catch (domImgErr) {
           console.warn("Fallo renderizando imagen de ticket desde DOM:", domImgErr);
@@ -1594,9 +1613,13 @@ export default function AdminCRM() {
 
       // 2. Si no fue posible desde DOM pero hay ticketImageUrl guardado en el ticket
       if (!file && ticket.ticketImageUrl) {
-        const res = await fetch(ticket.ticketImageUrl);
-        const blob = await res.blob();
-        file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+        try {
+          const res = await fetch(ticket.ticketImageUrl);
+          const blob = await res.blob();
+          file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
+        } catch (fetchErr) {
+          console.warn("Error convirtiendo ticketImageUrl a File:", fetchErr);
+        }
       }
 
       // 3. Compartir archivo directo si Web Share está disponible
@@ -5913,13 +5936,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
 
               {/* VISTA PREVIA DEL TICKET REAL CON ANIMACIÓN DE IMPRESIÓN */}
-              <div ref={ticketReceiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative mt-1 animate-thermal-print origin-top">
-                {/* Encabezado Verde Oscuro / Brand */}
-                <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
+              <div className="animate-thermal-print origin-top">
+                <div ref={ticketReceiptRef} className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative mt-1">
+                  {/* Encabezado Verde Oscuro / Brand */}
+                  <div className="bg-[#0F3E36] text-white p-4 text-center relative border-b-4 border-[#E65F2B]">
                   <div className="flex items-center justify-center gap-2.5 mb-1">
                     <img
                       src="/fox-logo-head-3d.png"
                       alt="FoxDrop"
+                      crossOrigin="anonymous"
                       className="w-10 h-10 object-contain drop-shadow-md"
                     />
                     <div className="text-left">
@@ -6021,6 +6046,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
             </div>
+          </div>
 
             {/* Acciones de Envío Directo y Compartir */}
             <div className="space-y-2 pt-1">
@@ -6038,11 +6064,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   try {
                     let downloadUrl = posCompletedTicket.ticketImageUrl;
                     if (ticketReceiptRef.current) {
-                      downloadUrl = await toPng(ticketReceiptRef.current, {
-                        cacheBust: true,
-                        pixelRatio: 2,
-                        backgroundColor: '#ffffff',
-                      });
+                      try {
+                        downloadUrl = await toPng(ticketReceiptRef.current, {
+                          cacheBust: true,
+                          pixelRatio: 2,
+                          backgroundColor: '#ffffff',
+                          skipFonts: true,
+                          style: {
+                            transform: 'none',
+                            animation: 'none',
+                            clipPath: 'none',
+                            opacity: '1',
+                          },
+                        });
+                      } catch (cErr) {
+                        console.warn("Fallo toPng en descarga:", cErr);
+                      }
                     }
 
                     if (downloadUrl) {

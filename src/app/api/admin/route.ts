@@ -1236,40 +1236,43 @@ export async function POST(req: NextRequest) {
 
         const orderNumber = ticket.orderNumber;
 
-        // Si el cliente ya nos mandó la imagen de ticket capturada desde el DOM (pixel-perfect)
-        if (ticket.imageDataUrl && typeof ticket.imageDataUrl === "string" && ticket.imageDataUrl.startsWith("data:image/")) {
+        // Si el cliente nos mandó la imagen de ticket capturada y no está vacía (> 3000 chars)
+        if (ticket.imageDataUrl && typeof ticket.imageDataUrl === "string" && ticket.imageDataUrl.startsWith("data:image/") && ticket.imageDataUrl.length > 3000) {
           const parts = ticket.imageDataUrl.split(",");
           const base64Str = parts[1] || parts[0];
           const ticketPngBuffer = Buffer.from(base64Str, "base64");
-          const ticketFileName = `tickets/Ticket-${orderNumber}-${Date.now()}.png`;
+          // Si el buffer es mayor a 5KB (asegura que no es un pixel o canvas en blanco de 1KB)
+          if (ticketPngBuffer.length > 5000) {
+            const ticketFileName = `tickets/Ticket-${orderNumber}-${Date.now()}.png`;
 
-          try {
-            const { data: buckets } = await supabase.storage.listBuckets();
-            const hasBucket = buckets?.some((b: any) => b.name === "product-images");
-            if (!hasBucket) {
-              await supabase.storage.createBucket("product-images", { public: true, fileSizeLimit: 10485760 });
+            try {
+              const { data: buckets } = await supabase.storage.listBuckets();
+              const hasBucket = buckets?.some((b: any) => b.name === "product-images");
+              if (!hasBucket) {
+                await supabase.storage.createBucket("product-images", { public: true, fileSizeLimit: 10485760 });
+              }
+            } catch {}
+
+            const { error: uploadErr } = await supabase.storage
+              .from("product-images")
+              .upload(ticketFileName, ticketPngBuffer, {
+                contentType: "image/png",
+                upsert: true,
+              });
+
+            let publicImageUrl = "";
+            if (!uploadErr) {
+              const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(ticketFileName);
+              publicImageUrl = pubData?.publicUrl || "";
             }
-          } catch {}
 
-          const { error: uploadErr } = await supabase.storage
-            .from("product-images")
-            .upload(ticketFileName, ticketPngBuffer, {
-              contentType: "image/png",
-              upsert: true,
+            return NextResponse.json({
+              success: true,
+              imageUrl: publicImageUrl || ticket.imageDataUrl,
+              downloadUrl: publicImageUrl || ticket.imageDataUrl,
+              base64: ticket.imageDataUrl,
             });
-
-          let publicImageUrl = "";
-          if (!uploadErr) {
-            const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(ticketFileName);
-            publicImageUrl = pubData?.publicUrl || "";
           }
-
-          return NextResponse.json({
-            success: true,
-            imageUrl: publicImageUrl || ticket.imageDataUrl,
-            downloadUrl: publicImageUrl || ticket.imageDataUrl,
-            base64: ticket.imageDataUrl,
-          });
         }
 
         const width = 600;

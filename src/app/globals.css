@@ -62,36 +62,33 @@ html, body {
   background-color: #fff7ed;
 }
 
-/* Animación de impresión térmica para terminal POS (efecto realista pausado) */
-@keyframes thermalPrint {
+/* Animación de dispensador e impresión térmica para terminal POS */
+@keyframes thermalPrintSlide {
   0% {
-    transform: translateY(-85%);
-    opacity: 0.1;
-    clip-path: inset(0 0 92% 0);
+    transform: translateY(-80%);
+    opacity: 0.2;
   }
   25% {
-    transform: translateY(-60%);
+    transform: translateY(-55%);
     opacity: 0.6;
-    clip-path: inset(0 0 70% 0);
   }
-  55% {
-    transform: translateY(-30%);
+  60% {
+    transform: translateY(-25%);
     opacity: 0.9;
-    clip-path: inset(0 0 35% 0);
   }
   85% {
     transform: translateY(-5%);
     opacity: 1;
-    clip-path: inset(0 0 5% 0);
   }
   100% {
     transform: translateY(0);
     opacity: 1;
-    clip-path: inset(0 0 0 0);
   }
 }
 
 .animate-thermal-print {
-  animation: thermalPrint 3.2s cubic-bezier(0.25, 0.9, 0.35, 1) forwards;
+  animation: thermalPrintSlide 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
 }
+
 
