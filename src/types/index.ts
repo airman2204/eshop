@@ -89,6 +89,8 @@ export interface Order {
   createdAt: string;
   itemsCount: number;
   notes?: string;
+  paymentMethod?: 'spei' | 'card' | 'cash' | 'mercadopago' | string;
+  paymentStatus?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   order_items?: any[];
 }

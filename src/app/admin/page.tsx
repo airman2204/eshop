@@ -49,7 +49,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Datos principales
@@ -169,6 +169,11 @@ export default function AdminCRM() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellingLoading, setCancellingLoading] = useState(false);
 
+  // Filtros Historial General de Pedidos
+  const [orderHistorySearchTerm, setOrderHistorySearchTerm] = useState('');
+  const [orderHistoryChannelFilter, setOrderHistoryChannelFilter] = useState<'all' | 'pos' | 'online'>('all');
+  const [orderHistoryStatusFilter, setOrderHistoryStatusFilter] = useState<'all' | 'delivered' | 'cancelled' | 'pending' | 'processing' | 'shipped'>('all');
+
   // Notificaciones en Tiempo Real (Admin)
   const [adminRealtimeToast, setAdminRealtimeToast] = useState<{
     id: string;
@@ -273,6 +278,8 @@ export default function AdminCRM() {
           createdAt: o.created_at,
           itemsCount: o.order_items?.length || 1,
           notes: o.notes || undefined,
+          paymentMethod: o.payment_method || (o.order_number?.startsWith('FX-POS') ? 'cash' : undefined),
+          paymentStatus: o.payment_status || 'pending',
           order_items: o.order_items || [],
         }));
         setOrders(mappedOrders);
@@ -1655,9 +1662,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
     window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encoded}`, '_blank');
   };
 
-  // Pedidos activos (excluyendo cancelados del panel principal)
-  const activeOrders = orders.filter(o => o.status !== 'cancelled');
-  // Pedidos cancelados (historial separado)
+  // Pedidos activos (Exclusivamente pedidos en línea en proceso: pendiente, preparación o en camino.
+  // Las ventas en físico (POS) se entregan en el acto y los pedidos entregados/cancelados pasan automáticamente al Historial).
+  const activeOrders = orders.filter(o => 
+    o.status !== 'cancelled' && 
+    o.status !== 'delivered' && 
+    !o.id.startsWith('FX-POS')
+  );
+  // Pedidos cancelados (historial separado de bajas)
   const cancelledOrders = orders.filter(o => o.status === 'cancelled');
 
   // Esperar a que se revise el localStorage para evitar parpadeos
@@ -1974,10 +1986,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Truck className="w-4 h-4" /> Pedidos Activos
+                  <Truck className="w-4 h-4 text-emerald-400" /> Pedidos Activos
                 </span>
                 {activeOrders.length > 0 ? (
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black animate-pulse">
                     {activeOrders.length}
                   </span>
                 ) : (
@@ -1985,6 +1997,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     0
                   </span>
                 )}
+              </button>
+
+              <button
+                onClick={() => { setCrmSubTab('order_history'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
+                  crmSubTab === 'order_history' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <History className="w-4 h-4 text-blue-400" /> Historial de Pedidos
+                </span>
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'order_history' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {orders.length}
+                </span>
               </button>
 
               <button
@@ -2145,7 +2173,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <h1 className="font-black text-base sm:text-lg text-slate-900 tracking-tight">
                   {crmSubTab === 'inventory' && 'Inventario de Productos'}
                   {crmSubTab === 'batches' && 'Lotes de Importación'}
-                  {crmSubTab === 'orders' && 'Pedidos Activos'}
+                  {crmSubTab === 'orders' && 'Pedidos Activos (En Proceso)'}
+                  {crmSubTab === 'order_history' && 'Historial General de Pedidos & Ventas'}
                   {crmSubTab === 'cancelled_orders' && 'Pedidos Cancelados'}
                   {crmSubTab === 'special_orders' && 'Encargos Especiales'}
                   {crmSubTab === 'carts' && 'Carritos Abandonados'}
@@ -2158,7 +2187,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <p className="text-xs text-slate-500 hidden sm:block">
                   {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
                   {crmSubTab === 'batches' && 'Prorrateo de fletes internacionales y costeo unitario'}
-                  {crmSubTab === 'orders' && 'Monitoreo de órdenes, estados de pago y guías de envío'}
+                  {crmSubTab === 'orders' && 'Solo órdenes en línea activas pendientes de empaque y despacho'}
+                  {crmSubTab === 'order_history' && 'Registro histórico consolidado de ventas físicas (Mostrador POS) y pedidos web (Entregados, Cancelados y Activos)'}
                   {crmSubTab === 'cancelled_orders' && 'Historial de cancelaciones y motivos reportados'}
                   {crmSubTab === 'special_orders' && 'Cotizaciones y solicitudes a medida de clientes'}
                   {crmSubTab === 'carts' && 'Bolsas pendientes y recuperación directa por WhatsApp'}
@@ -2952,7 +2982,348 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         )}
 
-        {/* 4. SECCIÓN PEDIDOS CANCELADOS (HISTORIAL SEPARADO) */}
+        {/* 4. SECCIÓN HISTORIAL GENERAL DE PEDIDOS & VENTAS */}
+        {crmSubTab === 'order_history' && (() => {
+          // Filtrado del historial según canal, estado y término de búsqueda
+          const filteredHistory = orders.filter(order => {
+            const isPos = order.id.startsWith('FX-POS');
+            
+            // Filtro por canal
+            if (orderHistoryChannelFilter === 'pos' && !isPos) return false;
+            if (orderHistoryChannelFilter === 'online' && isPos) return false;
+
+            // Filtro por estado
+            if (orderHistoryStatusFilter !== 'all' && order.status !== orderHistoryStatusFilter) return false;
+
+            // Filtro por búsqueda
+            if (orderHistorySearchTerm.trim()) {
+              const query = orderHistorySearchTerm.toLowerCase();
+              const matchId = order.id.toLowerCase().includes(query);
+              const matchClient = order.clientName?.toLowerCase().includes(query);
+              const matchPhone = order.clientPhone?.toLowerCase().includes(query);
+              const matchProduct = order.order_items?.some(it => it.product_title?.toLowerCase().includes(query));
+              if (!matchId && !matchClient && !matchPhone && !matchProduct) return false;
+            }
+
+            return true;
+          });
+
+          // Métricas rápidas del historial
+          const totalHistoryRevenue = filteredHistory
+            .filter(o => o.status !== 'cancelled')
+            .reduce((sum, o) => sum + (o.total || 0), 0);
+
+          const posCount = orders.filter(o => o.id.startsWith('FX-POS')).length;
+          const onlineCount = orders.filter(o => !o.id.startsWith('FX-POS')).length;
+          const deliveredCount = orders.filter(o => o.status === 'delivered').length;
+          const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
+
+          return (
+            <div className="space-y-5">
+              {/* Encabezado y Métricas Rápidas */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <History className="w-5 h-5 text-blue-600" /> Historial General de Pedidos & Ventas
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Registro completo de transacciones físicas de mostrador y pedidos web (entregados, en curso y cancelados).
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-xl font-bold">
+                    {filteredHistory.length} registros encontrados
+                  </span>
+                </div>
+              </div>
+
+              {/* Tarjetas de Resumen Rápido */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Total Registrado</span>
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl font-black text-slate-900">
+                    ${totalHistoryRevenue.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  </div>
+                  <span className="text-[10px] text-slate-400">En ventas no canceladas</span>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Mostrador POS</span>
+                    <ShoppingBag className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl font-black text-orange-700">
+                    {posCount} <span className="text-xs font-medium text-slate-500">ventas</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Entregadas en físico</span>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Tienda Online</span>
+                    <Globe className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl font-black text-blue-700">
+                    {onlineCount} <span className="text-xs font-medium text-slate-500">órdenes</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">Pedidos web realizados</span>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                  <div className="flex items-center justify-between text-slate-400 mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">Completados</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="text-lg sm:text-xl font-black text-emerald-700">
+                    {deliveredCount} <span className="text-xs font-medium text-slate-500">entregados</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">{cancelledCount} cancelados</span>
+                </div>
+              </div>
+
+              {/* Filtros Interactivos: Canal, Estado y Buscador */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs space-y-3">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                  {/* Buscador */}
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por folio (FX-...), cliente, teléfono o producto..."
+                      value={orderHistorySearchTerm}
+                      onChange={e => setOrderHistorySearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-slate-400 focus:bg-white transition"
+                    />
+                    {orderHistorySearchTerm && (
+                      <button
+                        onClick={() => setOrderHistorySearchTerm('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Selector de Canal */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0">Canal:</span>
+                    <button
+                      onClick={() => setOrderHistoryChannelFilter('all')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                        orderHistoryChannelFilter === 'all'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      onClick={() => setOrderHistoryChannelFilter('pos')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 ${
+                        orderHistoryChannelFilter === 'pos'
+                          ? 'bg-[#E65F2B] text-white'
+                          : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
+                      }`}
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" /> Mostrador (POS)
+                    </button>
+                    <button
+                      onClick={() => setOrderHistoryChannelFilter('online')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 ${
+                        orderHistoryChannelFilter === 'online'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+                      }`}
+                    >
+                      <Globe className="w-3.5 h-3.5" /> Tienda Online
+                    </button>
+                  </div>
+
+                  {/* Selector de Estado */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[11px] font-bold text-slate-500">Estado:</span>
+                    <select
+                      value={orderHistoryStatusFilter}
+                      onChange={e => setOrderHistoryStatusFilter(e.target.value as any)}
+                      className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-bold focus:outline-none focus:border-slate-400"
+                    >
+                      <option value="all">Todos los estados</option>
+                      <option value="delivered">✓ Entregados</option>
+                      <option value="shipped">🚚 En Camino</option>
+                      <option value="processing">⏳ En Preparación</option>
+                      <option value="pending">🕒 Pendientes</option>
+                      <option value="cancelled">✕ Cancelados</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de Registros */}
+              {filteredHistory.length === 0 ? (
+                <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center text-gray-400 text-xs">
+                  No se encontraron pedidos en el historial con los filtros aplicados.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {filteredHistory.map(order => {
+                    const isPos = order.id.startsWith('FX-POS');
+                    const isCancelled = order.status === 'cancelled';
+                    const isDelivered = order.status === 'delivered';
+
+                    // Etiqueta de medio de compra
+                    const channelLabel = isPos ? 'Mostrador (POS Físico)' : 'Tienda Online Web';
+                    const shippingDesc = isPos 
+                      ? 'Entrega Inmediata en Mostrador' 
+                      : order.shippingType === 'puebla_local' 
+                      ? 'Envío Local Puebla' 
+                      : order.shippingType === 'national_shipping'
+                      ? 'Envío Nacional Estafeta/DHL'
+                      : 'Punto de Entrega Acordado';
+
+                    // Etiqueta de método de pago
+                    const paymentLabel = order.paymentMethod === 'card'
+                      ? '💳 Tarjeta'
+                      : order.paymentMethod === 'spei'
+                      ? '⚡ SPEI'
+                      : '💵 Efectivo';
+
+                    return (
+                      <div
+                        key={order.id}
+                        className={`bg-white border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-2xs transition ${
+                          isCancelled
+                            ? 'border-red-200 bg-red-50/20 opacity-80'
+                            : isPos
+                            ? 'border-orange-100 hover:border-orange-300'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {/* Información del Pedido */}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 text-sm font-mono">{order.id}</span>
+                            
+                            {/* Insignia Canal de Venta */}
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] flex items-center gap-1 ${
+                              isPos
+                                ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            }`}>
+                              {isPos ? <ShoppingBag className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                              {channelLabel}
+                            </span>
+
+                            {/* Insignia Estado */}
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                              isCancelled
+                                ? 'bg-red-50 text-red-700 border border-red-200'
+                                : isDelivered
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : order.status === 'shipped'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}>
+                              {isCancelled ? '✕ Cancelado' : isDelivered ? '✓ Entregado' : order.status === 'shipped' ? '🚚 En Camino' : '⏳ En Proceso'}
+                            </span>
+
+                            {/* Forma de Pago */}
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold text-[10px]">
+                              {paymentLabel}
+                            </span>
+
+                            <span className="text-slate-400 text-[11px]">
+                              {new Date(order.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-slate-700">
+                            <p className="font-bold text-slate-900">
+                              {order.clientName || 'Cliente FoxDrop'} • <span className="font-normal text-slate-500 font-mono">{order.clientPhone}</span>
+                            </p>
+                            <span className="text-slate-400 hidden sm:inline">•</span>
+                            <p className="text-slate-600 text-[11px]">
+                              Método de Entrega: <strong className="text-slate-800">{shippingDesc}</strong>
+                            </p>
+                          </div>
+
+                          {/* Artículos Comprados */}
+                          {order.order_items && order.order_items.length > 0 && (
+                            <div className="text-[11px] text-slate-600 bg-slate-50/80 p-2 rounded-xl border border-slate-100">
+                              <span className="font-bold text-slate-700 block mb-0.5">Productos adquiridos:</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {order.order_items.map((it, idx) => (
+                                  <span key={idx} className="bg-white border border-slate-200 px-2 py-0.5 rounded-lg text-slate-800 font-medium">
+                                    {it.quantity}x {it.product_title || 'Producto'}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Notas o motivo de cancelación */}
+                          {order.notes && (
+                            <p className="text-[11px] text-slate-500 italic bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                              {order.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Montos y Acciones */}
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
+                          <div className="text-right">
+                            <span className="text-slate-400 text-[10px] block">Total Pagado</span>
+                            <span className={`text-base font-black ${isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                              ${order.total.toFixed(2)} MXN
+                            </span>
+                          </div>
+
+                          {/* Botón Ver Ticket Oficial */}
+                          {(isPos || (order.notes && order.notes.includes("Ticket:"))) && (
+                            <button
+                              onClick={() => setViewingTicketOrder(order)}
+                              title="Ver y re-enviar comprobante oficial de ticket"
+                              className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition text-xs border border-orange-200 shadow-2xs"
+                            >
+                              <Receipt className="w-3.5 h-3.5" /> Ver Ticket
+                            </button>
+                          )}
+
+                          {/* Botón WhatsApp */}
+                          {order.clientPhone && order.clientPhone !== 'Mostrador / Histórica' && (
+                            <button
+                              onClick={() => sendWhatsAppNotification(
+                                order.clientPhone,
+                                `Hola ${order.clientName || ''}! Te contactamos de FoxDrop respecto a tu pedido ${order.id}. Estamos a tu servicio para cualquier duda o consulta sobre tu compra.`
+                              )}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition text-xs shadow-2xs"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> WA
+                            </button>
+                          )}
+
+                          {/* Botón Eliminar Permanente */}
+                          <button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            title="Eliminar pedido permanentemente de la base de datos"
+                            className="bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-700 font-bold p-2 rounded-xl flex items-center transition text-xs border border-slate-200"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* 5. SECCIÓN PEDIDOS CANCELADOS (HISTORIAL SEPARADO) */}
         {crmSubTab === 'cancelled_orders' && (
           <div className="space-y-4">
             <div>
