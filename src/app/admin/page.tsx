@@ -4019,15 +4019,51 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     </div>
 
                     <div>
-                      <label className="text-slate-700 font-bold block mb-1">URL de la Imagen *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-slate-700 font-bold">Imagen del Banner *</label>
+                        <label className="text-[10px] font-bold text-[#E65F2B] hover:underline cursor-pointer flex items-center gap-1">
+                          <Upload className="w-3 h-3" />
+                          <span>Subir desde dispositivo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setSavingSlide(true);
+                              try {
+                                const url = await uploadProductImage(file);
+                                setSlideImageUrl(url);
+                              } catch (errUpload) {
+                                console.warn("Error subiendo imagen de slide:", errUpload);
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  if (typeof reader.result === 'string') {
+                                    setSlideImageUrl(reader.result);
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              } finally {
+                                setSavingSlide(false);
+                              }
+                            }}
+                          />
+                        </label>
+                      </div>
                       <input
                         type="url"
                         required
                         value={slideImageUrl}
                         onChange={e => setSlideImageUrl(e.target.value)}
-                        placeholder="https://..."
+                        placeholder="https://... o sube una imagen arriba"
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
                       />
+                      {slideImageUrl && (
+                        <div className="mt-2 h-20 w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-900 flex items-center justify-center">
+                          <img src={slideImageUrl} alt="Preview" className="h-full w-full object-cover opacity-90" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

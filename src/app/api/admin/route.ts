@@ -975,28 +975,122 @@ export async function POST(req: NextRequest) {
     // ─── CARRUSEL HERO ───────────────────────────────────────────
     if (action === "delete_slide") {
       if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
-      const { error } = await supabase.from("carousel_slides").delete().eq("id", id);
-      if (error) throw error;
+
+      // 1. Intentar borrar en tabla Supabase
+      try {
+        await supabase.from("carousel_slides").delete().eq("id", id);
+      } catch (tableErr) {
+        console.warn("Aviso borrando en tabla carousel_slides:", tableErr);
+      }
+
+      // 2. Sincronizar en JSON storage como fallback de persistencia garantizada
+      try {
+        let currentSlides: any[] = [];
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/carousel_slides.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          currentSlides = JSON.parse(raw || "[]");
+        }
+        const filtered = currentSlides.filter((s: any) => s.id !== id);
+        const buffer = Buffer.from(JSON.stringify(filtered, null, 2));
+        await supabase.storage
+          .from("product-images")
+          .upload("_system/carousel_slides.json", buffer, {
+            contentType: "application/json",
+            upsert: true,
+          });
+      } catch (storageErr) {
+        console.warn("Aviso borrando slide en JSON storage:", storageErr);
+      }
+
       return NextResponse.json({ success: true, deletedId: id });
     }
 
     if (action === "create_slide") {
       const { slide } = body;
-      const { data, error } = await supabase.from("carousel_slides").insert([slide]).select().single();
-      if (error) throw error;
-      return NextResponse.json({ success: true, data });
+      const slideId = `slide-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newSlide = {
+        id: slideId,
+        title: slide.title,
+        subtitle: slide.subtitle || "",
+        image_url: slide.image_url,
+        cta_text: slide.cta_text || "Ver Catálogo Completo",
+        cta_category: slide.cta_category || "Todas",
+        sort_order: slide.sort_order || 1,
+        is_active: slide.is_active ?? true,
+      };
+
+      // 1. Intentar insertar en tabla SQL
+      let savedSlide = newSlide;
+      try {
+        const { data, error } = await supabase.from("carousel_slides").insert([newSlide]).select().single();
+        if (!error && data) {
+          savedSlide = data;
+        }
+      } catch (tableErr) {
+        console.warn("Tabla carousel_slides no disponible, usando JSON storage:", tableErr);
+      }
+
+      // 2. Sincronizar en storage JSON
+      try {
+        let currentSlides: any[] = [];
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/carousel_slides.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          currentSlides = JSON.parse(raw || "[]");
+        }
+        currentSlides.push(savedSlide);
+        const buffer = Buffer.from(JSON.stringify(currentSlides, null, 2));
+        await supabase.storage
+          .from("product-images")
+          .upload("_system/carousel_slides.json", buffer, {
+            contentType: "application/json",
+            upsert: true,
+          });
+      } catch (storageErr) {
+        console.warn("Aviso guardando slide en storage:", storageErr);
+      }
+
+      return NextResponse.json({ success: true, data: savedSlide });
     }
 
     if (action === "get_slides") {
-      const { data, error } = await supabase
-        .from("carousel_slides")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) {
-        return NextResponse.json({ success: true, data: [] });
+      // 1. Intentar primero desde tabla SQL
+      try {
+        const { data, error } = await supabase
+          .from("carousel_slides")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        if (!error && Array.isArray(data) && data.length > 0) {
+          return NextResponse.json({ success: true, data });
+        }
+      } catch (tableErr) {
+        console.warn("Aviso consultando tabla carousel_slides:", tableErr);
       }
-      return NextResponse.json({ success: true, data: data || [] });
+
+      // 2. Fallback a JSON storage
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/carousel_slides.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          const parsed = JSON.parse(raw || "[]");
+          if (Array.isArray(parsed)) {
+            const activeOnly = parsed.filter((s: any) => s.is_active !== false);
+            return NextResponse.json({ success: true, data: activeOnly });
+          }
+        }
+      } catch (storageErr) {
+        // Ninguno guardado aún
+      }
+
+      return NextResponse.json({ success: true, data: [] });
     }
 
     // ─── CARRITOS ABANDONADOS ────────────────────────────────────

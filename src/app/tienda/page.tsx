@@ -439,6 +439,18 @@ export default function TiendaFoxDrop() {
     });
   }, []);
 
+  // Avance automático suave de slides si hay más de 1 slide configurado
+  useEffect(() => {
+    const totalCount = slides.length > 0 ? slides.length : 1;
+    if (totalCount <= 1) return;
+
+    const interval = setInterval(() => {
+      setActiveSlide(prev => (prev + 1) % totalCount);
+    }, 5500);
+
+    return () => clearInterval(interval);
+  }, [slides.length]);
+
   // Sincronizar carrito abandonado en segundo plano cuando el cliente tiene artículos e información de contacto
   useEffect(() => {
     if (!cart || cart.length === 0) return;
@@ -1402,127 +1414,194 @@ export default function TiendaFoxDrop() {
           {/* ======================================================== */}
       
       {/* ======================================================== */}
-      {/* 2. HERO BANNER: COMPONENTE NATIVO VIBRANTE (SIN PIXELACIÓN) */}
+      {/* ======================================================== */}
+      {/* 2. HERO BANNER: COMPONENTE DINÁMICO & SINCRONIZADO CON ADMIN */}
       {/* ======================================================== */}
       
       {/* VERSIÓN MÓVIL (NATIVA 100% NÍTIDA) */}
       <section className="md:hidden pt-4 pb-2 px-4 w-full">
-        <div className="relative rounded-2xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[190px] flex items-stretch">
-          {/* Curva naranja cálida de fondo en el lado derecho */}
-          <div 
-            className="absolute right-0 top-0 bottom-0 w-[45%] bg-[#DF7F2D]"
-            style={{
-              borderTopLeftRadius: '60% 100%',
-              borderBottomLeftRadius: '30% 60%',
-            }}
-          />
+        {(() => {
+          const totalHeroSlides = slides.length > 0 ? slides : [
+            {
+              id: 'default-welcome',
+              title: user?.name 
+                ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
+                : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
+              subtitle: 'TU ATAJO AL MUNDO',
+              image_url: '/fox-mascot-hd-transparent.png',
+              cta_text: 'Ver Catálogo Completo',
+              cta_category: 'Todas',
+              sort_order: 1,
+              is_active: true,
+            }
+          ];
 
-          {/* Contenido izquierdo: Tag, Título y Botón */}
-          <div className="relative z-10 w-[62%] p-4 flex flex-col justify-between">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black tracking-widest text-[#E3B888] uppercase block">
-                TU ATAJO AL MUNDO
-              </span>
-              <h2 className="text-sm font-black text-white leading-tight">
-                {user?.name 
-                  ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                  : '¡Hola! Descubre tesoros, calidad garantizada.'}
-              </h2>
+          const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
+          const isDefaultSlide = currentSlide.id === 'default-welcome';
+
+          return (
+            <div>
+              <div className="relative rounded-2xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[190px] flex items-stretch">
+                {/* Curva naranja cálida de fondo en el lado derecho */}
+                <div 
+                  className="absolute right-0 top-0 bottom-0 w-[45%] bg-[#DF7F2D]"
+                  style={{
+                    borderTopLeftRadius: '60% 100%',
+                    borderBottomLeftRadius: '30% 60%',
+                  }}
+                />
+
+                {/* Contenido izquierdo: Tag, Título y Botón */}
+                <div className="relative z-10 w-[62%] p-4 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black tracking-widest text-[#E3B888] uppercase block">
+                      {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                    </span>
+                    <h2 className="text-sm font-black text-white leading-tight">
+                      {currentSlide.title}
+                    </h2>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(currentSlide.cta_category || 'Todas');
+                        setActiveTab('all');
+                        const el = document.getElementById('catalog-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white text-[11px] font-black px-3.5 py-1.5 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
+                    >
+                      <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ilustración o Mascota en el lado derecho */}
+                <div className="relative z-10 w-[38%] flex items-end justify-center pr-2 pb-1">
+                  <img
+                    src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
+                    alt={currentSlide.title}
+                    className={`max-h-[175px] w-auto drop-shadow-xl ${isDefaultSlide ? 'object-contain' : 'object-cover rounded-xl my-auto max-h-[140px] border border-white/20'}`}
+                  />
+                </div>
+              </div>
+
+              {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER: Exactamente 1 puntito por slide */}
+              <div className="flex items-center justify-center gap-1.5 pt-2.5">
+                {totalHeroSlides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => setActiveSlide(dotIdx)}
+                    className={`transition-all rounded-full cursor-pointer ${
+                      activeSlide % totalHeroSlides.length === dotIdx
+                        ? 'w-5 h-2 bg-[#0F3E36] rounded-full'
+                        : 'w-2 h-2 bg-[#CBD8D4] hover:bg-[#0F3E36]'
+                    }`}
+                    title={`Slide ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
             </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  setSelectedCategory('Todas');
-                  setActiveTab('all');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white text-[11px] font-black px-3.5 py-1.5 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1 cursor-pointer"
-              >
-                <span>Ver Catálogo Completo</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          {/* Zorrito 3D HD Transparente en el lado derecho */}
-          <div className="relative z-10 w-[38%] flex items-end justify-center pr-2 pb-1">
-            <img
-              src="/fox-mascot-hd-transparent.png"
-              alt="Mascota FoxDrop"
-              className="max-h-[175px] w-auto object-contain drop-shadow-xl"
-            />
-          </div>
-        </div>
-
-        {/* DOTS INDICADORES DE CARRUSEL DEBAJO DEL BANNER */}
-        <div className="flex items-center justify-center gap-1.5 pt-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#0F3E36] transition-all"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all"></span>
-        </div>
+          );
+        })()}
       </section>
 
-      {/* VERSIÓN ESCRITORIO (NATIVA 100% NÍTIDA) */}
+      {/* VERSIÓN ESCRITORIO (NATIVA 100% NÍTIDA & SINCRONIZADA CON ADMIN) */}
       <section className="hidden md:block pt-6 pb-2 px-6 max-w-7xl mx-auto w-full">
-        <div className="relative rounded-3xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[300px] lg:min-h-[340px] flex items-stretch">
-          {/* Curva naranja cálida de fondo en el cuadrante derecho */}
-          <div 
-            className="absolute right-0 top-0 bottom-0 w-[42%] bg-[#DF7F2D]"
-            style={{
-              borderTopLeftRadius: '55% 100%',
-              borderBottomLeftRadius: '25% 50%',
-            }}
-          />
+        {(() => {
+          const totalHeroSlides = slides.length > 0 ? slides : [
+            {
+              id: 'default-welcome',
+              title: user?.name 
+                ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
+                : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
+              subtitle: 'TU ATAJO AL MUNDO',
+              image_url: '/fox-mascot-hd-transparent.png',
+              cta_text: 'Ver Catálogo Completo',
+              cta_category: 'Todas',
+              sort_order: 1,
+              is_active: true,
+            }
+          ];
 
-          {/* Columna Izquierda: Tipografía nítida y botón CTA */}
-          <div className="relative z-10 w-[60%] lg:w-[58%] p-8 lg:p-12 flex flex-col justify-between">
-            <div className="space-y-3">
-              <span className="text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase block">
-                TU ATAJO AL MUNDO
-              </span>
-              <h2 className="text-2xl lg:text-4xl font-black text-white leading-tight max-w-xl">
-                {user?.name 
-                  ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                  : '¡Hola! Descubre tesoros, calidad garantizada.'}
-              </h2>
+          const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
+          const isDefaultSlide = currentSlide.id === 'default-welcome';
+
+          return (
+            <div>
+              <div className="relative rounded-3xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[300px] lg:min-h-[340px] flex items-stretch">
+                {/* Curva naranja cálida de fondo en el cuadrante derecho */}
+                <div 
+                  className="absolute right-0 top-0 bottom-0 w-[42%] bg-[#DF7F2D]"
+                  style={{
+                    borderTopLeftRadius: '55% 100%',
+                    borderBottomLeftRadius: '25% 50%',
+                  }}
+                />
+
+                {/* Columna Izquierda: Tipografía nítida y botón CTA */}
+                <div className="relative z-10 w-[60%] lg:w-[58%] p-8 lg:p-12 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <span className="text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase block">
+                      {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                    </span>
+                    <h2 className="text-2xl lg:text-4xl font-black text-white leading-tight max-w-xl">
+                      {currentSlide.title}
+                    </h2>
+                  </div>
+
+                  <div className="pt-4">
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(currentSlide.cta_category || 'Todas');
+                        setActiveTab('all');
+                        const el = document.getElementById('catalog-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white font-black px-6 py-2.5 rounded-full text-xs lg:text-sm shadow-md transition transform hover:scale-105 flex items-center gap-2 cursor-pointer w-fit"
+                    >
+                      <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Columna Derecha: Imagen o Mascota FoxDrop 3D HD en gran detalle */}
+                <div className="relative z-10 w-[40%] lg:w-[42%] flex items-end justify-center pr-6 pb-2">
+                  <img
+                    src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
+                    alt={currentSlide.title}
+                    className={`drop-shadow-2xl transition-transform duration-300 hover:scale-105 ${
+                      isDefaultSlide 
+                        ? 'max-h-[290px] lg:max-h-[330px] w-auto object-contain' 
+                        : 'max-h-[260px] lg:max-h-[290px] w-auto object-cover rounded-2xl my-auto border-2 border-white/20 shadow-xl'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER: Exactamente 1 puntito por slide */}
+              <div className="flex items-center justify-center gap-2 pt-3.5">
+                {totalHeroSlides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => setActiveSlide(dotIdx)}
+                    className={`transition-all rounded-full cursor-pointer ${
+                      activeSlide % totalHeroSlides.length === dotIdx
+                        ? 'w-7 h-2.5 bg-[#0F3E36] rounded-full shadow-xs'
+                        : 'w-2.5 h-2.5 bg-[#CBD8D4] hover:bg-[#0F3E36]'
+                    }`}
+                    title={`Slide ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
             </div>
-
-            <div className="pt-4">
-              <button
-                onClick={() => {
-                  setSelectedCategory('Todas');
-                  setActiveTab('all');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white font-black px-6 py-2.5 rounded-full text-xs lg:text-sm shadow-md transition transform hover:scale-105 flex items-center gap-2 cursor-pointer w-fit"
-              >
-                <span>Ver Catálogo Completo</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Columna Derecha: Mascota FoxDrop 3D HD en gran detalle */}
-          <div className="relative z-10 w-[40%] lg:w-[42%] flex items-end justify-center pr-6 pb-2">
-            <img
-              src="/fox-mascot-hd-transparent.png"
-              alt="Mascota FoxDrop 3D"
-              className="max-h-[290px] lg:max-h-[330px] w-auto object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-105"
-            />
-          </div>
-        </div>
-
-        {/* DOTS INDICADORES DE CARRUSEL DEBAJO DEL BANNER */}
-        <div className="flex items-center justify-center gap-2 pt-3.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#0F3E36] shadow-xs"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all cursor-pointer"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all cursor-pointer"></span>
-          <span className="w-2 h-2 rounded-full bg-[#CBD8D4] hover:bg-[#0F3E36] transition-all cursor-pointer"></span>
-        </div>
+          );
+        })()}
       </section>
 
       {/* ======================================================== */}
