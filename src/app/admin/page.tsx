@@ -11,7 +11,7 @@ import {
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
-  Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power
+  Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -19,7 +19,7 @@ import {
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
-  fetchAdminCategories, createAdminCategory,
+  fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage
 } from '@/lib/admin';
@@ -146,6 +146,14 @@ export default function AdminCRM() {
   const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null);
   const [showKardexModal, setShowKardexModal] = useState(false);
   const [kardexProduct, setKardexProduct] = useState<Product | null>(null);
+
+  // Selección Múltiple de Productos para Acciones en Lote (ej. Cambiar Categoría)
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
+  const [bulkTargetCategory, setBulkTargetCategory] = useState('');
+  const [isBulkCustomCategory, setIsBulkCustomCategory] = useState(false);
+  const [bulkCustomCategoryName, setBulkCustomCategoryName] = useState('');
+  const [savingBulkCategory, setSavingBulkCategory] = useState(false);
 
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -1228,6 +1236,80 @@ export default function AdminCRM() {
   const handleOpenKardex = (prod: Product) => {
     setKardexProduct(prod);
     setShowKardexModal(true);
+  };
+
+  // 6. GESTIÓN DE SELECCIÓN MÚLTIPLE DE PRODUCTOS
+  const handleToggleSelectProduct = (productId: string) => {
+    setSelectedProductIds(prev =>
+      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
+    );
+  };
+
+  const handleSelectAllVisibleProducts = () => {
+    const visibleIds = filteredProducts.map(p => p.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedProductIds.includes(id));
+    if (allSelected) {
+      // Deseleccionar los visibles
+      setSelectedProductIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      // Seleccionar todos los visibles
+      setSelectedProductIds(prev => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
+  const handleClearSelectedProducts = () => {
+    setSelectedProductIds([]);
+  };
+
+  // 7. APLICAR CAMBIO MASIVO DE CATEGORÍA
+  const handleOpenBulkCategoryModal = () => {
+    if (selectedProductIds.length === 0) {
+      alert("Selecciona al menos un artículo para cambiar de categoría.");
+      return;
+    }
+    const defaultCat = dbCategories[0]?.name || 'Cosmética';
+    setBulkTargetCategory(defaultCat);
+    setIsBulkCustomCategory(false);
+    setBulkCustomCategoryName('');
+    setShowBulkCategoryModal(true);
+  };
+
+  const handleApplyBulkCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalCategory = isBulkCustomCategory ? bulkCustomCategoryName.trim() : bulkTargetCategory.trim();
+    if (!finalCategory) {
+      alert("Por favor ingresa o selecciona el nombre de la categoría.");
+      return;
+    }
+
+    setSavingBulkCategory(true);
+    try {
+      await bulkUpdateProductsCategory(selectedProductIds, finalCategory);
+
+      // Actualizar optimistamente el estado local de productos
+      setProducts(prev => prev.map(p => {
+        if (selectedProductIds.includes(p.id)) {
+          return { ...p, category: finalCategory };
+        }
+        return p;
+      }));
+
+      // Refrescar categorías en la lista si fue una categoría nueva
+      const refreshedCats = await fetchAdminCategories();
+      if (refreshedCats && refreshedCats.length > 0) {
+        setDbCategories(refreshedCats);
+      }
+
+      const totalUpdated = selectedProductIds.length;
+      setSelectedProductIds([]);
+      setShowBulkCategoryModal(false);
+      alert(`¡Listo! Se cambió la categoría a "${finalCategory}" para ${totalUpdated} artículo(s).`);
+    } catch (err: any) {
+      console.error("Error al cambiar categorías masivamente:", err);
+      alert(`Error al cambiar categorías: ${err.message || 'Intente nuevamente'}`);
+    } finally {
+      setSavingBulkCategory(false);
+    }
   };
 
   // Crear Lote de Importación
@@ -2512,6 +2594,39 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </button>
             </div>
 
+            {/* BARRA FLOTANTE DE ACCIONES EN LOTE (CUANDO HAY ARTÍCULOS SELECCIONADOS) */}
+            {selectedProductIds.length > 0 && (
+              <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 border border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="bg-[#E65F2B] text-white text-xs font-black px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4" />
+                    <span>{selectedProductIds.length} seleccionados</span>
+                  </div>
+                  <span className="text-xs text-slate-300 hidden sm:inline">
+                    Aplica cambios a todos los artículos seleccionados simultáneamente.
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleOpenBulkCategoryModal}
+                    className="bg-[#2D4A58] hover:bg-[#3d6072] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2 border border-slate-700 shadow-xs cursor-pointer"
+                  >
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Cambiar Categoría ({selectedProductIds.length})</span>
+                  </button>
+
+                  <button
+                    onClick={handleClearSelectedProducts}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Deseleccionar</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* TABLA DE PRODUCTOS (DESKTOP) Y TARJETAS TÁCTILES (MÓVIL) */}
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               {/* VISTA DESKTOP (TABLA COMPLETA) */}
@@ -2519,6 +2634,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <table className="w-full text-left text-xs text-slate-600">
                   <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 uppercase text-[10px]">
                     <tr>
+                      <th className="py-3 px-3 w-10 text-center">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllVisibleProducts}
+                          title={filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.includes(p.id)) ? "Deseleccionar todos" : "Seleccionar todos"}
+                          className="text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                        >
+                          {filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.includes(p.id)) ? (
+                            <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-300 hover:text-slate-500" />
+                          )}
+                        </button>
+                      </th>
                       <th className="py-3 px-4">Artículo</th>
                       <th className="py-3 px-4">Lote / Flete</th>
                       <th className="py-3 px-4 font-black text-slate-900">Costo Total</th>
@@ -2534,9 +2663,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       const isOutOfStock = (p.stock || 0) <= 0;
                       const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
                       const isPaused = p.isActive === false;
+                      const isSelected = selectedProductIds.includes(p.id);
 
                       return (
-                        <tr key={p.id} className={`transition ${isPaused ? 'bg-slate-50/70 opacity-60' : 'hover:bg-slate-50/60'}`}>
+                        <tr 
+                          key={p.id} 
+                          className={`transition ${
+                            isSelected 
+                              ? 'bg-orange-50/70 border-l-4 border-l-[#E65F2B]' 
+                              : isPaused 
+                                ? 'bg-slate-50/70 opacity-60' 
+                                : 'hover:bg-slate-50/60'
+                          }`}
+                        >
+                          <td className="py-3.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSelectProduct(p.id)}
+                              className="text-slate-400 hover:text-slate-700 transition cursor-pointer p-1"
+                              title={isSelected ? "Quitar selección" : "Seleccionar artículo"}
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-300 hover:text-slate-500" />
+                              )}
+                            </button>
+                          </td>
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div className="relative shrink-0">
@@ -2682,6 +2835,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
               {/* VISTA MÓVIL OPTIMIZADA (TARJETAS INTUITIVAS TIPO APP) */}
               <div className="md:hidden divide-y divide-slate-100">
+                {filteredProducts.length > 0 && (
+                  <div className="p-3 bg-slate-50 flex items-center justify-between border-b border-slate-200">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllVisibleProducts}
+                      className="text-xs font-bold text-slate-700 flex items-center gap-2 cursor-pointer hover:text-slate-900"
+                    >
+                      {filteredProducts.every(p => selectedProductIds.includes(p.id)) ? (
+                        <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                      ) : (
+                        <Square className="w-4 h-4 text-slate-400" />
+                      )}
+                      <span>
+                        {filteredProducts.every(p => selectedProductIds.includes(p.id))
+                          ? 'Deseleccionar todos'
+                          : `Seleccionar todos (${filteredProducts.length})`}
+                      </span>
+                    </button>
+                    {selectedProductIds.length > 0 && (
+                      <span className="text-[11px] font-bold text-[#E65F2B]">
+                        {selectedProductIds.length} marcado(s)
+                      </span>
+                    )}
+                  </div>
+                )}
                 {filteredProducts.length === 0 ? (
                   <div className="p-8 text-center text-xs text-gray-400">
                     No se encontraron productos coincidentes con los filtros aplicados.
@@ -2691,10 +2869,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     const isOutOfStock = (p.stock || 0) <= 0;
                     const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
                     const isPaused = p.isActive === false;
+                    const isSelected = selectedProductIds.includes(p.id);
 
                     return (
-                      <div key={p.id} className={`p-4 space-y-3 transition ${isPaused ? 'bg-slate-50/70 opacity-70' : ''}`}>
+                      <div 
+                        key={p.id} 
+                        className={`p-4 space-y-3 transition ${
+                          isSelected 
+                            ? 'bg-orange-50/80 border-l-4 border-l-[#E65F2B]' 
+                            : isPaused 
+                              ? 'bg-slate-50/70 opacity-70' 
+                              : ''
+                        }`}
+                      >
                         <div className="flex items-start gap-3">
+                          {/* Checkbox táctil para celular */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSelectProduct(p.id)}
+                            className="pt-1 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
+                            title={isSelected ? "Quitar selección" : "Seleccionar artículo"}
+                          >
+                            {isSelected ? (
+                              <CheckSquare className="w-5 h-5 text-[#E65F2B]" />
+                            ) : (
+                              <Square className="w-5 h-5 text-slate-300" />
+                            )}
+                          </button>
+
                           <div className="relative shrink-0">
                             <img 
                               src={p.images[0]} 
@@ -6593,6 +6795,140 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL CAMBIO MASIVO DE CATEGORÍA PARA ARTÍCULOS SELECCIONADOS */}
+      {/* ======================================================== */}
+      {showBulkCategoryModal && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative border border-slate-200 animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => setShowBulkCategoryModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+                <Tag className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  Cambiar Categoría en Lote
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Asignarás una nueva categoría a <span className="font-bold text-[#E65F2B]">{selectedProductIds.length}</span> artículo(s) seleccionados.
+                </p>
+              </div>
+            </div>
+
+            {/* Lista previa de los primeros artículos seleccionados */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-600 block mb-1.5">Artículos a reasignar:</span>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-xs text-slate-700">
+                {products
+                  .filter(p => selectedProductIds.includes(p.id))
+                  .map(p => (
+                    <div key={p.id} className="flex items-center justify-between text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200">
+                      <span className="font-bold truncate max-w-[260px]">{p.title}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">Actual: {p.category}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleApplyBulkCategory} className="space-y-4 pt-1">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Selecciona la Nueva Categoría:
+                </label>
+
+                {!isBulkCustomCategory ? (
+                  <div className="space-y-2">
+                    <select
+                      value={bulkTargetCategory}
+                      onChange={e => setBulkTargetCategory(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-bold focus:outline-hidden focus:border-[#2D4A58]"
+                    >
+                      {Array.from(new Set([
+                        ...dbCategories.map(c => c.name),
+                        ...products.map(p => p.category).filter(Boolean),
+                        'Cosmética', 'Electrónica', 'Hogar', 'Moda', 'Accesorios'
+                      ])).map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400">¿No está en la lista?</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsBulkCustomCategory(true)}
+                        className="text-[11px] font-bold text-[#E65F2B] hover:underline cursor-pointer"
+                      >
+                        + Escribir una categoría nueva
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Ej. Deportes, Mascotas, Juguetes..."
+                      value={bulkCustomCategoryName}
+                      onChange={e => setBulkCustomCategoryName(e.target.value)}
+                      className="w-full bg-slate-50 border border-orange-300 rounded-xl p-2.5 text-xs text-slate-900 font-bold focus:outline-hidden focus:border-[#E65F2B]"
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400">Se registrará automáticamente en Supabase.</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsBulkCustomCategory(false);
+                          setBulkCustomCategoryName('');
+                        }}
+                        className="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
+                      >
+                        ← Volver a categorías existentes
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkCategoryModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingBulkCategory}
+                  className="flex-1 py-2.5 bg-[#E65F2B] hover:bg-[#D45321] text-white font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-orange-950/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {savingBulkCategory ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Actualizando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Aplicar a {selectedProductIds.length} artículos</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

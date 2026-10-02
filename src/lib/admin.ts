@@ -95,6 +95,25 @@ export async function updateProductInDb(id: string, updates: Partial<NewProductI
 }
 
 /**
+ * Cambia la categoría de múltiples productos de forma simultánea.
+ */
+export async function bulkUpdateProductsCategory(productIds: string[], categoryName: string) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "bulk_update_category", productIds, categoryName }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al actualizar categorías en lote");
+  }
+
+  const json = await res.json();
+  return json;
+}
+
+/**
  * Elimina un producto de Supabase de manera definitiva usando la API segura de servidor
  */
 export async function deleteProductInDb(id: string) {

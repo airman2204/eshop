@@ -582,6 +582,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data });
     }
 
+    // ─── CAMBIO MASIVO DE CATEGORÍA PARA MÚLTIPLES PRODUCTOS ────────────────
+    if (action === "bulk_update_category") {
+      const { productIds, categoryName } = body;
+      if (!Array.isArray(productIds) || productIds.length === 0 || !categoryName || !categoryName.trim()) {
+        return NextResponse.json({ error: "productIds (array) y categoryName requeridos" }, { status: 400 });
+      }
+
+      const catTrimmed = categoryName.trim();
+      let { data: catData } = await supabase
+        .from("categories")
+        .select("id")
+        .ilike("name", catTrimmed)
+        .maybeSingle();
+
+      if (!catData?.id) {
+        const slug = catTrimmed.toLowerCase().replace(/[^a-z0-9]/g, "-") || "cat";
+        const { data: newCat, error: createCatErr } = await supabase
+          .from("categories")
+          .insert([{ name: catTrimmed, slug, is_active: true }])
+          .select("id")
+          .single();
+        if (createCatErr) throw createCatErr;
+        catData = newCat;
+      }
+
+      if (!catData?.id) {
+        return NextResponse.json({ error: "No se pudo obtener el ID de la categoría" }, { status: 500 });
+      }
+
+      const { data: updatedProds, error: bulkError } = await supabase
+        .from("products")
+        .update({ 
+          category_id: catData.id,
+          updated_at: new Date().toISOString()
+        })
+        .in("id", productIds)
+        .select("id, title, category_id");
+
+      if (bulkError) throw bulkError;
+
+      return NextResponse.json({ 
+        success: true, 
+        updatedCount: updatedProds?.length || productIds.length,
+        categoryName: catTrimmed,
+        categoryId: catData.id
+      });
+    }
+
     if (action === "delete_product") {
       if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
       const { error } = await supabase.from("products").delete().eq("id", id);
