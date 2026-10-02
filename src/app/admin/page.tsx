@@ -704,7 +704,7 @@ export default function AdminCRM() {
 
   // Pegar imagen directamente desde el portapapeles (Ctrl+V o botón)
   const handlePasteImage = async (e?: React.ClipboardEvent) => {
-    // Si viene de un evento onPaste nativo
+    // 1. Si viene de un evento onPaste nativo (ej. Ctrl+V en teclado físico o pegar en campo)
     if (e && e.clipboardData) {
       const items = e.clipboardData.items;
       for (let i = 0; i < items.length; i++) {
@@ -740,53 +740,58 @@ export default function AdminCRM() {
       }
     }
 
-    // Si se invoca desde el botón "Pegar Imagen" usando la Clipboard API
-    if (navigator.clipboard && navigator.clipboard.read) {
-      try {
-        setUploadingImage(true);
-        const clipboardItems = await navigator.clipboard.read();
-        for (const item of clipboardItems) {
-          const imageType = item.types.find(type => type.startsWith('image/'));
-          if (imageType) {
-            const blob = await item.getType(imageType);
-            const file = new File([blob], `pasted-${Date.now()}.${imageType.split('/')[1] || 'png'}`, { type: imageType });
-            await processImageFile(file);
-            return;
-          }
-        }
+    // 2. Si se invoca desde el botón "Pegar foto" usando la Clipboard API
+    if (navigator.clipboard) {
+      setUploadingImage(true);
+      setUploadSuccess(false);
 
-        // Si en el portapapeles hay texto (ej. URL copiada de Google)
-        const text = await navigator.clipboard.readText();
-        if (text && (text.startsWith('http://') || text.startsWith('https://') || text.startsWith('data:image/'))) {
-          const uploadedUrl = await uploadProductImageUrl(text.trim());
-          setNewImageUrl(uploadedUrl);
-          setNewImages(prev => prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]);
-          setUploadSuccess(true);
-          return;
-        }
-
-        alert('No se detectó ninguna imagen ni enlace en el portapapeles. Copia una imagen primero (Clic derecho -> Copiar imagen).');
-      } catch (clipErr) {
-        console.warn('Clipboard read permission denied or unsupported:', clipErr);
-        const promptUrl = prompt('Pega aquí el enlace directo de la imagen (URL):');
-        if (promptUrl && promptUrl.trim()) {
-          setUploadingImage(true);
-          try {
-            const uploaded = await uploadProductImageUrl(promptUrl.trim());
-            setNewImageUrl(uploaded);
-            setNewImages(prev => prev.includes(uploaded) ? prev : [...prev, uploaded]);
-            setUploadSuccess(true);
-          } catch {
-            setNewImageUrl(promptUrl.trim());
-            setNewImages(prev => prev.includes(promptUrl.trim()) ? prev : [...prev, promptUrl.trim()]);
-            setUploadSuccess(true);
+      // Intento A: Leer imágenes binarias del portapapeles (Chrome desktop, Safari iOS 16+)
+      if (navigator.clipboard.read) {
+        try {
+          const clipboardItems = await navigator.clipboard.read();
+          for (const item of clipboardItems) {
+            const imageType = item.types.find(type => type.startsWith('image/'));
+            if (imageType) {
+              const blob = await item.getType(imageType);
+              const file = new File([blob], `pasted-${Date.now()}.${imageType.split('/')[1] || 'png'}`, { type: imageType });
+              await processImageFile(file);
+              return;
+            }
           }
+        } catch (readErr: any) {
+          console.warn('Lectura de blob bloqueada en este dispositivo o permisos no otorgados:', readErr);
         }
-      } finally {
-        setUploadingImage(false);
       }
+
+      // Intento B: Leer texto / enlace copiado del portapapeles
+      if (navigator.clipboard.readText) {
+        try {
+          const text = await navigator.clipboard.readText();
+          const trimmed = text ? text.trim() : '';
+          if (trimmed && (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/'))) {
+            try {
+              const uploadedUrl = await uploadProductImageUrl(trimmed);
+              setNewImageUrl(uploadedUrl);
+              setNewImages(prev => prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]);
+              setUploadSuccess(true);
+              return;
+            } catch {
+              setNewImageUrl(trimmed);
+              setNewImages(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+              setUploadSuccess(true);
+              return;
+            }
+          }
+        } catch (textErr: any) {
+          console.warn('Lectura de texto de portapapeles bloqueada:', textErr);
+        }
+      }
+
+      setUploadingImage(false);
+      // Mensaje amigable y claro para móvil
+      alert('Para pegar una foto en tu celular:\n\n1. Copia la foto desde tu navegador o galería.\n2. Si tu celular bloquea el acceso directo al portapapeles, puedes usar el botón "+ Tomar Foto con Cámara" o "+ Subir Fotos" de arriba.');
     } else {
-      alert('Tu navegador no soporta lectura directa del portapapeles. Usa el atajo Ctrl+V o pega el enlace en la caja.');
+      alert('Tu navegador no admite acceso directo al portapapeles. Usa el botón "+ Tomar Foto con Cámara" o "+ Subir Fotos".');
     }
   };
 
@@ -4396,12 +4401,28 @@ https://foxdrop.com.mx`;
                     onPaste={handlePasteImage}
                     className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {/* Opción 1: Subir archivos múltiples */}
-                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition">
-                        <Upload className="w-4 h-4 text-[#E65F2B]" />
-                        <span className="font-semibold text-xs">
-                          {uploadingImage ? 'Subiendo...' : '+ Subir Fotos (1 o varias)'}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {/* Opción 1: Tomar foto directa con la cámara del celular */}
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition shadow-2xs">
+                        <Camera className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="font-semibold text-xs truncate">
+                          {uploadingImage ? 'Procesando...' : '+ Tomar Foto con Cámara'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handleMultipleFilesUpload}
+                          disabled={uploadingImage}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* Opción 2: Subir archivos desde la galería / archivos */}
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition shadow-2xs">
+                        <Upload className="w-4 h-4 text-[#E65F2B] shrink-0" />
+                        <span className="font-semibold text-xs truncate">
+                          {uploadingImage ? 'Subiendo...' : '+ Subir Fotos (Galería)'}
                         </span>
                         <input
                           type="file"
@@ -4413,29 +4434,25 @@ https://foxdrop.com.mx`;
                         />
                       </label>
 
-                      {/* Opción 2: Pegar imagen directamente desde portapapeles */}
+                      {/* Opción 3: Pegar foto del portapapeles */}
                       <button
                         type="button"
                         onClick={() => handlePasteImage()}
                         disabled={uploadingImage}
-                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-xs"
+                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-2xs truncate"
                       >
-                        <Clipboard className="w-4 h-4 text-emerald-600" />
-                        <span>Pegar otra foto (Ctrl+V)</span>
+                        <Clipboard className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="truncate">Pegar foto copiada</span>
                       </button>
                     </div>
 
-                    <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>💡 Puedes subir o pegar <strong>2 o más fotos</strong> para armar una galería del producto o combo.</span>
-                      </span>
-                      {uploadSuccess && (
-                        <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 shrink-0">
-                          <Check className="w-4 h-4" /> ¡Guardada!
+                    {uploadSuccess && (
+                      <div className="text-[11px] text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" /> ¡Fotografía añadida a la galería con éxito!
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Galería de Miniaturas de Fotos */}
                     {newImages.length > 0 && (
