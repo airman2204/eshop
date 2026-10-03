@@ -588,7 +588,22 @@ export default function AdminCRM() {
   const handleSaveClubSettings = async () => {
     setSavingClubSettings(true);
     setClubSettingsSavedNotice(false);
-    const success = await saveClubSettings(clubSettings);
+
+    // Sanitizar valores numéricos asegurando que no queden vacíos o inválidos
+    const sanitizedSettings: ClubFoxDropSettings = {
+      ...clubSettings,
+      pesosPerPoint: Math.max(1, Number(clubSettings.pesosPerPoint) || 10),
+      pointMonetaryValueMxn: Math.max(0.01, Number(clubSettings.pointMonetaryValueMxn) || 0.1),
+      tiers: (clubSettings.tiers || []).map((t, idx) => ({
+        ...t,
+        minPoints: Math.max(0, Number(t.minPoints) || 0),
+        discountPercent: Math.max(0, Math.min(100, Number(t.discountPercent) || 0)),
+      })),
+    };
+
+    setClubSettings(sanitizedSettings);
+
+    const success = await saveClubSettings(sanitizedSettings);
     setSavingClubSettings(false);
     if (success) {
       setClubSettingsSavedNotice(true);
@@ -4475,8 +4490,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     type="number"
                     min="1"
                     step="1"
-                    value={clubSettings.pesosPerPoint}
-                    onChange={e => setClubSettings({ ...clubSettings, pesosPerPoint: Math.max(1, Number(e.target.value) || 1) })}
+                    value={clubSettings.pesosPerPoint === 0 || isNaN(Number(clubSettings.pesosPerPoint)) ? '' : clubSettings.pesosPerPoint}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setClubSettings({
+                        ...clubSettings,
+                        pesosPerPoint: val === '' ? ('' as any) : Number(val),
+                      });
+                    }}
+                    onBlur={() => {
+                      const num = Number(clubSettings.pesosPerPoint);
+                      if (isNaN(num) || num < 1) {
+                        setClubSettings({ ...clubSettings, pesosPerPoint: 10 });
+                      }
+                    }}
+                    placeholder="10"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
                   />
                   <span className="text-[10px] text-slate-400 block mt-1">
@@ -4492,8 +4520,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     type="number"
                     min="0.01"
                     step="0.01"
-                    value={clubSettings.pointMonetaryValueMxn}
-                    onChange={e => setClubSettings({ ...clubSettings, pointMonetaryValueMxn: Math.max(0.01, Number(e.target.value) || 0.01) })}
+                    value={clubSettings.pointMonetaryValueMxn === 0 || isNaN(Number(clubSettings.pointMonetaryValueMxn)) ? '' : clubSettings.pointMonetaryValueMxn}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setClubSettings({
+                        ...clubSettings,
+                        pointMonetaryValueMxn: val === '' ? ('' as any) : Number(val),
+                      });
+                    }}
+                    onBlur={() => {
+                      const num = Number(clubSettings.pointMonetaryValueMxn);
+                      if (isNaN(num) || num <= 0) {
+                        setClubSettings({ ...clubSettings, pointMonetaryValueMxn: 0.1 });
+                      }
+                    }}
+                    placeholder="0.10"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
                   />
                   <span className="text-[10px] text-slate-400 block mt-1">
@@ -4511,10 +4552,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <p className="text-orange-900 leading-relaxed">
                   Por cada compra de <strong>$500.00 MXN</strong>, el cliente recibirá{' '}
                   <span className="font-mono font-black text-[#E65F2B] bg-white px-2 py-0.5 rounded-md border border-orange-200">
-                    +{Math.floor(500 / clubSettings.pesosPerPoint)} {clubSettings.currencySymbol} {clubSettings.currencyName}
+                    +{Math.floor(500 / (Number(clubSettings.pesosPerPoint) || 10))} {clubSettings.currencySymbol} {clubSettings.currencyName}
                   </span>
                   , con un valor de recompensa estimado de{' '}
-                  <strong>${(Math.floor(500 / clubSettings.pesosPerPoint) * clubSettings.pointMonetaryValueMxn).toFixed(2)} MXN</strong> (inversión de fidelidad del {((Math.floor(500 / clubSettings.pesosPerPoint) * clubSettings.pointMonetaryValueMxn / 500) * 100).toFixed(1)}%).
+                  <strong>${((Math.floor(500 / (Number(clubSettings.pesosPerPoint) || 10))) * (Number(clubSettings.pointMonetaryValueMxn) || 0.1)).toFixed(2)} MXN</strong> (inversión de fidelidad del {(((Math.floor(500 / (Number(clubSettings.pesosPerPoint) || 10)) * (Number(clubSettings.pointMonetaryValueMxn) || 0.1)) / 500) * 100).toFixed(1)}%).
                 </p>
               </div>
             </div>
@@ -4568,12 +4609,26 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <input
                         type="number"
                         min="0"
-                        value={tier.minPoints}
+                        value={tier.minPoints === undefined || isNaN(Number(tier.minPoints)) ? '' : tier.minPoints}
                         onChange={e => {
+                          const val = e.target.value;
                           const updated = [...clubSettings.tiers];
-                          updated[idx] = { ...updated[idx], minPoints: Math.max(0, Number(e.target.value) || 0) };
+                          updated[idx] = {
+                            ...updated[idx],
+                            minPoints: val === '' ? ('' as any) : Number(val),
+                          };
                           setClubSettings({ ...clubSettings, tiers: updated });
                         }}
+                        onBlur={() => {
+                          const updated = [...clubSettings.tiers];
+                          const num = Number(updated[idx].minPoints);
+                          updated[idx] = {
+                            ...updated[idx],
+                            minPoints: isNaN(num) || num < 0 ? 0 : num,
+                          };
+                          setClubSettings({ ...clubSettings, tiers: updated });
+                        }}
+                        placeholder="0"
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 bg-white"
                       />
                     </div>
@@ -4585,12 +4640,26 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           type="number"
                           min="0"
                           max="100"
-                          value={tier.discountPercent}
+                          value={tier.discountPercent === undefined || isNaN(Number(tier.discountPercent)) ? '' : tier.discountPercent}
                           onChange={e => {
+                            const val = e.target.value;
                             const updated = [...clubSettings.tiers];
-                            updated[idx] = { ...updated[idx], discountPercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) };
+                            updated[idx] = {
+                              ...updated[idx],
+                              discountPercent: val === '' ? ('' as any) : Number(val),
+                            };
                             setClubSettings({ ...clubSettings, tiers: updated });
                           }}
+                          onBlur={() => {
+                            const updated = [...clubSettings.tiers];
+                            const num = Number(updated[idx].discountPercent);
+                            updated[idx] = {
+                              ...updated[idx],
+                              discountPercent: isNaN(num) ? 0 : Math.max(0, Math.min(100, num)),
+                            };
+                            setClubSettings({ ...clubSettings, tiers: updated });
+                          }}
+                          placeholder="0"
                           className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-[#E65F2B] bg-white pr-8"
                         />
                         <Percent className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
