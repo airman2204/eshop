@@ -21,7 +21,8 @@ import {
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
-  getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage
+  getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
+  deleteClientFromDb
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -64,6 +65,7 @@ export default function AdminCRM() {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [clients, setClients] = useState<ClientProfile[]>([]);
   const [selectedClientForModal, setSelectedClientForModal] = useState<ClientProfile | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
 
   // Configuración Club FoxDrop & Métricas de Fidelidad
   const [clubSettings, setClubSettings] = useState<ClubFoxDropSettings>(DEFAULT_CLUB_SETTINGS);
@@ -624,6 +626,27 @@ export default function AdminCRM() {
     setLoadingLoyaltyMetrics(true);
     const metrics = await getLoyaltyMetrics();
     setLoadingLoyaltyMetrics(false);
+  };
+
+  const handleDeleteClient = async (client: ClientProfile) => {
+    const confirmMsg = `¿Estás seguro de que deseas eliminar permanentemente la cuenta de "${client.name}" (${client.email || client.phone})?\n\nEsta acción no se puede deshacer y retirará el usuario de la lista de clientes.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeletingClientId(client.id);
+    try {
+      await deleteClientFromDb(client.id, client.email, client.phone, false);
+      setClients(prev => prev.filter(c => c.id !== client.id && c.email !== client.email && c.phone !== client.phone));
+      if (selectedClientForModal?.id === client.id) {
+        setSelectedClientForModal(null);
+      }
+      handleRefreshLoyaltyMetrics();
+      alert(`La cuenta de "${client.name}" ha sido eliminada con éxito.`);
+    } catch (err: any) {
+      console.error('Error al eliminar cliente:', err);
+      alert(err.message || 'Error al eliminar cliente');
+    } finally {
+      setDeletingClientId(null);
+    }
   };
 
   // ─── ACCIONES ENVÍOS & MÉTODOS DE PAGO ──────────────────────────────────────
@@ -3709,6 +3732,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               >
                                 <MessageSquare className="w-3.5 h-3.5" />
                               </button>
+                              <button
+                                onClick={() => handleDeleteClient(client)}
+                                disabled={deletingClientId === client.id}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 p-1.5 rounded transition disabled:opacity-50"
+                                title="Eliminar cuenta de cliente"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -5825,15 +5856,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => sendWhatsAppNotification(
                     selectedClientForModal.phone,
                     `Hola ${selectedClientForModal.name}! Te contactamos de FoxDrop Puebla para dar seguimiento a tu cuenta y pedidos.`
                   )}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs shadow transition flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5"
                 >
                   <MessageSquare className="w-4 h-4" /> Enviar Mensaje por WhatsApp
+                </button>
+                <button
+                  onClick={() => handleDeleteClient(selectedClientForModal)}
+                  disabled={deletingClientId === selectedClientForModal.id}
+                  className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  title="Eliminar esta cuenta"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {deletingClientId === selectedClientForModal.id ? 'Eliminando...' : 'Eliminar Cuenta'}
                 </button>
               </div>
             </div>

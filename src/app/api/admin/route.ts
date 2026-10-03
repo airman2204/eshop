@@ -425,6 +425,65 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: Array.from(clientMap.values()) });
     }
 
+    if (action === "delete_client") {
+      const clientId = body.clientId || id;
+      const clientEmail = (body.clientEmail || "").trim().toLowerCase();
+      const clientPhone = (body.clientPhone || "").trim();
+
+      if (!clientId && !clientEmail && !clientPhone) {
+        return NextResponse.json({ error: "Identificador de cliente requerido" }, { status: 400 });
+      }
+
+      // Si es un ID de Supabase auth/profiles (UUID)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId);
+
+      try {
+        // 1. Desvincular o limpiar pedidos asociados a este cliente para evitar errores de clave foránea
+        if (isUuid) {
+          await supabase.from("orders").update({ user_id: null }).eq("user_id", clientId);
+        }
+
+        // 2. Si el cliente fue generado únicamente a partir de órdenes de compra sin registro formal
+        // o si se solicitó limpiar pedidos huérfanos asociados
+        if (body.deleteOrders) {
+          if (clientPhone) {
+            await supabase.from("orders").delete().eq("client_phone", clientPhone);
+          }
+          if (clientEmail && clientEmail !== "sin correo") {
+            await supabase.from("orders").delete().eq("client_email", clientEmail);
+          }
+        }
+
+        // 3. Eliminar de la tabla pública de perfiles si existe
+        if (isUuid) {
+          await supabase.from("profiles").delete().eq("id", clientId);
+          // 4. Intentar eliminar de auth.users si es usuario autenticado
+          try {
+            await supabase.auth.admin.deleteUser(clientId);
+          } catch (authErr) {
+            console.warn("Aviso eliminando usuario en auth.users:", authErr);
+          }
+        } else {
+          // Si no es UUID pero tiene email o teléfono registrado en profiles
+          if (clientEmail && clientEmail !== "sin correo") {
+            const { data: pByEmail } = await supabase.from("profiles").select("id").eq("email", clientEmail).maybeSingle();
+            if (pByEmail?.id) {
+              await supabase.from("orders").update({ user_id: null }).eq("user_id", pByEmail.id);
+              await supabase.from("profiles").delete().eq("id", pByEmail.id);
+              try {
+                await supabase.auth.admin.deleteUser(pByEmail.id);
+              } catch {}
+            }
+          }
+        }
+
+        return NextResponse.json({ success: true, message: "Cliente eliminado correctamente" });
+      } catch (err: any) {
+        console.error("Error eliminando cliente:", err);
+        return NextResponse.json({ error: err.message || "Error al eliminar cliente" }, { status: 500 });
+      }
+    }
+
     if (action === "get_special_orders") {
       const { data, error } = await supabase
         .from("special_orders")
