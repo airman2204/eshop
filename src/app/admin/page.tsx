@@ -4413,7 +4413,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   ${(loyaltyMetrics?.circulatingLiabilityMxn || 0).toFixed(2)} <span className="text-xs font-bold text-slate-400">MXN</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Valor económico a redimir (${clubSettings.pointMonetaryValueMxn.toFixed(2)} MXN por {clubSettings.currencySymbol}).
+                  Valor económico a redimir (${(Number(clubSettings.pointMonetaryValueMxn) || 0).toFixed(2)} MXN por {clubSettings.currencySymbol}).
                 </p>
               </div>
 
