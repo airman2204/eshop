@@ -206,12 +206,12 @@ export default function AdminCRM() {
     {
       id: 'welcome',
       sender: 'agent',
-      text: '¡Hola! 🦊 Soy **FoxBot**, tu copiloto de ventas, marketing y operaciones de FoxDrop Puebla.\n\nPuedo ayudarte a:\n- 📅 **Crear tu plan de difusión continua semanal** para que toda Puebla conozca la tienda.\n- 🎨 **Generar flyers visuales HD listos para publicar** con fotos de tus productos y precios.\n- 📢 **Redactar publicaciones y copys** para Instagram, Facebook, TikTok y WhatsApp.\n- 📦 **Dar seguimiento inteligente a pedidos** pendientes o en camino.\n- 💡 **Sugerirte estrategias** con base en tu inventario en tiempo real.\n\n¿En qué te apoyo hoy?',
+      text: '¡Hola! 🦊 Soy **Fox**, tu Inteligencia Artificial ejecutiva y copiloto de operaciones de FoxDrop Puebla.\n\nEstoy conectado en vivo a tu inventario, finanzas y pedidos. Cuento con protocolos de seguridad para proteger tu catálogo.\n\nPuedes hablarme por micrófono o pedirme:\n- ☀️ **"Briefing matutino"** para el balance de hoy y entregas en Puebla.\n- ⚡ **Ajustar stock o precios** con confirmación en un clic.\n- 📅 **Crear el plan de difusión continua (7 días)** para Instagram y Facebook.\n- 📦 **Redactar seguimientos de pedidos** para enviar por WhatsApp.\n\n¿En qué te apoyo?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actionSuggestions: [
+        'Buenos días Fox, dame el briefing ejecutivo de hoy',
+        '¿Cuáles son nuestros productos con mayor margen de ganancia?',
         'Genera el plan de difusión continua para esta semana',
-        '¿Qué productos tienen poco stock para promocionar?',
-        'Escribe un post de Instagram sobre novedades de importación',
       ],
     },
   ]);
