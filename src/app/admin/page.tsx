@@ -218,10 +218,12 @@ export default function AdminCRM() {
   const [agentInputText, setAgentInputText] = useState('');
   const [agentChatLoading, setAgentChatLoading] = useState(false);
 
-  // Jarvis Voice & Speech States (Solo Admin)
+  // Fox Voice & Speech States (Solo Admin)
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
   const [autoVoiceReplyEnabled, setAutoVoiceReplyEnabled] = useState(true);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceUri, setSelectedVoiceUri] = useState<string>('');
   const recognitionRef = useRef<any>(null);
 
   // Marketing Generator State
@@ -253,19 +255,44 @@ export default function AdminCRM() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
 
-  // 1. Verificar sesión persistente y cargar tipo de cambio real inmediatamente al montar
+  // Cargar y sincronizar voces nativas del navegador (evento onvoiceschanged)
   useEffect(() => {
-    // Listener para instalación PWA (Web App)
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      const spanishVoices = allVoices.filter(v => v.lang.startsWith('es'));
+      setAvailableVoices(spanishVoices.length > 0 ? spanishVoices : allVoices);
+
+      // Si el usuario ya tenía una guardada en localStorage
+      const savedVoice = localStorage.getItem('foxdrop_agent_voice_uri');
+      if (savedVoice && allVoices.some(v => v.voiceURI === savedVoice)) {
+        setSelectedVoiceUri(savedVoice);
+        return;
+      }
+
+      // Priorizar voces mexicanas de alta definición
+      const mexicanBest = allVoices.find(v => 
+        (v.lang === 'es-MX' || v.lang === 'es_MX') &&
+        (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Paulina') || v.name.includes('Dalia') || v.name.includes('Jorge') || v.name.includes('Raul'))
+      );
+      const anyMexican = allVoices.find(v => v.lang === 'es-MX' || v.lang === 'es_MX');
+      const anyNaturalSpanish = allVoices.find(v => v.lang.startsWith('es') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google')));
+      const anySpanish = allVoices.find(v => v.lang.startsWith('es'));
+
+      const defaultBest = mexicanBest || anyMexican || anyNaturalSpanish || anySpanish;
+      if (defaultBest) {
+        setSelectedVoiceUri(defaultBest.voiceURI);
+      }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
     };
   }, []);
 
@@ -727,30 +754,28 @@ export default function AdminCRM() {
       utterance.rate = 1.0;  // Velocidad natural humana (1.0 estándar)
       utterance.pitch = 1.0; // Tono natural y cálido (no robótico ni grave artificial)
 
-      // Priorizar voces de alta definición (Neural / Natural / Google / Microsoft)
+      // Asignar voz seleccionada por el usuario o la mejor voz mexicana detectada
       const voices = window.speechSynthesis.getVoices();
-      
-      // 1. Voces mexicanas de alta calidad (Google español, Microsoft Sabina / Jorge / Dalia / Raul)
-      const highQualityMexicanVoice = voices.find(v => 
-        (v.lang === 'es-MX' || v.lang === 'es_MX') &&
-        (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Paulina') || v.name.includes('Dalia'))
-      );
+      let matchedVoice: SpeechSynthesisVoice | undefined;
 
-      // 2. Cualquier voz de México
-      const anyMexicanVoice = voices.find(v => v.lang === 'es-MX' || v.lang === 'es_MX');
+      if (selectedVoiceUri) {
+        matchedVoice = voices.find(v => v.voiceURI === selectedVoiceUri);
+      }
 
-      // 3. Cualquier voz en español de alta calidad
-      const highQualitySpanishVoice = voices.find(v =>
-        v.lang.startsWith('es') &&
-        (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google'))
-      );
+      if (!matchedVoice) {
+        // Priorizar voces mexicanas naturales (Google, Microsoft Sabina / Jorge / Dalia / Raul / Paulina)
+        matchedVoice = voices.find(v => 
+          (v.lang === 'es-MX' || v.lang === 'es_MX') &&
+          (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Paulina') || v.name.includes('Dalia') || v.name.includes('Jorge') || v.name.includes('Raul'))
+        ) ||
+        voices.find(v => v.lang === 'es-MX' || v.lang === 'es_MX') ||
+        voices.find(v => v.lang.startsWith('es') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google'))) ||
+        voices.find(v => v.lang.startsWith('es'));
+      }
 
-      // 4. Cualquier voz en español
-      const anySpanishVoice = voices.find(v => v.lang.startsWith('es'));
-
-      const selectedVoice = highQualityMexicanVoice || anyMexicanVoice || highQualitySpanishVoice || anySpanishVoice;
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+        utterance.lang = matchedVoice.lang;
       }
 
       utterance.onstart = () => setIsVoiceSpeaking(true);
@@ -5858,6 +5883,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <span>☀️ Briefing Matutino</span>
                     </button>
 
+                    {/* Selector de Voz Dinámico */}
+                    {availableVoices.length > 0 && (
+                      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1">
+                        <Volume2 className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
+                        <select
+                          value={selectedVoiceUri}
+                          onChange={e => {
+                            const newUri = e.target.value;
+                            setSelectedVoiceUri(newUri);
+                            localStorage.setItem('foxdrop_agent_voice_uri', newUri);
+                            const matched = availableVoices.find(v => v.voiceURI === newUri);
+                            if (matched) {
+                              speakWithFoxVoice("Hola, soy Fox. ¿Cómo escuchas mi voz ahora?");
+                            }
+                          }}
+                          title="Selecciona la voz para Fox (se guarda tu preferencia)"
+                          className="bg-transparent text-[11px] font-bold text-slate-700 outline-none max-w-[130px] sm:max-w-[180px] truncate cursor-pointer"
+                        >
+                          {availableVoices.map(v => (
+                            <option key={v.voiceURI} value={v.voiceURI}>
+                              {v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX') ? '🇲🇽 ' : '🌐 '}
+                              {v.name.replace(/(Microsoft|Google|Desktop|Natural|Online \([^)]+\))/gi, '').trim() || v.name} ({v.lang})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
                       <input
                         type="checkbox"
@@ -5869,7 +5922,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
                       />
                       <Volume2 className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Respuesta por Voz</span>
+                      <span className="hidden sm:inline">Hablar Respuestas</span>
                     </label>
 
                     {isVoiceSpeaking && (
