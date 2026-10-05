@@ -8539,9 +8539,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               setAgentActiveTab('chat');
             }}
             title="Abrir asistente Fox"
-            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white/80 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
           >
-            <Bot className="w-7 h-7" />
+            <span className="text-2xl select-none filter drop-shadow-sm">🦊</span>
             {/* Indicador de estado en vivo */}
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
