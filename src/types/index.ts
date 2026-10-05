@@ -229,4 +229,22 @@ export interface CheckoutSettings {
   skydropxApiKey?: string;
 }
 
+export interface AgentChatMessage {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: string;
+  actionSuggestions?: string[];
+}
+
+export interface AgentSocialPost {
+  platform: 'instagram' | 'facebook' | 'tiktok' | 'whatsapp';
+  headline: string;
+  body: string;
+  hashtags: string[];
+  callToAction: string;
+  fullCopy: string;
+}
+
+
 

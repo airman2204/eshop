@@ -11,9 +11,10 @@ import {
   Lock, LogOut, KeyRound, Upload, Check, ShieldCheck, FileText, Send, Eye, EyeOff, Edit3, Trash2, Ban,
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
-  Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square
+  Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
+  Bot, Share2, Flame, Lightbulb, MessageCircle
 } from 'lucide-react';
-import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig } from '@/types';
+import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
@@ -22,7 +23,8 @@ import {
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
-  deleteClientFromDb
+  deleteClientFromDb,
+  generateAgentSocialPost, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -52,7 +54,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Datos principales
@@ -196,6 +198,40 @@ export default function AdminCRM() {
     orderId?: string;
   } | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
+
+  // ─── ESTADO FOXBOT AI AGENT ─────────────────────────────────────────────────
+  const [agentActiveTab, setAgentActiveTab] = useState<'chat' | 'marketing' | 'sales_radar'>('chat');
+  const [agentChatMessages, setAgentChatMessages] = useState<AgentChatMessage[]>([
+    {
+      id: 'welcome',
+      sender: 'agent',
+      text: '¡Hola! 🦊 Soy **FoxBot**, tu copiloto de ventas, marketing y operaciones de FoxDrop Puebla.\n\nPuedo ayudarte a:\n- 📢 **Redactar publicaciones y copys** para Instagram, Facebook, TikTok y estados de WhatsApp.\n- 📦 **Dar seguimiento inteligente a pedidos** pendientes o en camino.\n- 🛒 **Recuperar carritos abandonados** con promociones.\n- 💡 **Sugerirte estrategias** con base en tu inventario en tiempo real.\n\n¿En qué te apoyo hoy?',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      actionSuggestions: [
+        '¿Qué productos tienen poco stock para promocionar?',
+        'Escribe un post de Instagram sobre novedades de importación',
+        '¿Hay pedidos pendientes que requieran mi atención hoy?'
+      ],
+    },
+  ]);
+  const [agentInputText, setAgentInputText] = useState('');
+  const [agentChatLoading, setAgentChatLoading] = useState(false);
+
+  // Marketing Generator State
+  const [agentSelectedProductId, setAgentSelectedProductId] = useState<string>('');
+  const [agentPlatform, setAgentPlatform] = useState<'instagram' | 'facebook' | 'tiktok' | 'whatsapp'>('instagram');
+  const [agentTone, setAgentTone] = useState<string>('Divertido y entusiasta');
+  const [agentAudience, setAgentAudience] = useState<string>('Jóvenes y familias en Puebla amantes de productos virales de importación');
+  const [agentCustomDiscount, setAgentCustomDiscount] = useState<number>(0);
+  const [agentGeneratedPost, setAgentGeneratedPost] = useState<AgentSocialPost | null>(null);
+  const [agentGeneratingPost, setAgentGeneratingPost] = useState(false);
+  const [agentPostCopied, setAgentPostCopied] = useState(false);
+
+  // Followup Generator State
+  const [agentFollowupOrderId, setAgentFollowupOrderId] = useState<string | null>(null);
+  const [agentGeneratedFollowupText, setAgentGeneratedFollowupText] = useState<string>('');
+  const [agentFollowupLoading, setAgentFollowupLoading] = useState(false);
+
 
   // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -648,6 +684,101 @@ export default function AdminCRM() {
       setDeletingClientId(null);
     }
   };
+
+  // ─── ACCIONES FOXBOT AI AGENT ───────────────────────────────────────────────
+  const handleSendAgentChatMessage = async (msgText?: string) => {
+    const textToSend = msgText || agentInputText;
+    if (!textToSend.trim() || agentChatLoading) return;
+
+    const userMsg: AgentChatMessage = {
+      id: `user_${Date.now()}`,
+      sender: 'user',
+      text: textToSend.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setAgentChatMessages(prev => [...prev, userMsg]);
+    if (!msgText) setAgentInputText('');
+    setAgentChatLoading(true);
+
+    try {
+      const historyPayload = agentChatMessages.slice(-6).map(m => ({
+        sender: m.sender,
+        text: m.text,
+      }));
+      const reply = await chatWithFoxBot(textToSend.trim(), historyPayload);
+      const agentMsg: AgentChatMessage = {
+        id: `agent_${Date.now()}`,
+        sender: 'agent',
+        text: reply,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setAgentChatMessages(prev => [...prev, agentMsg]);
+    } catch (err: any) {
+      const errorMsg: AgentChatMessage = {
+        id: `agent_err_${Date.now()}`,
+        sender: 'agent',
+        text: `⚠️ Hubo un inconveniente al conectar con Gemini: ${err.message || 'Error desconocido'}. Verifica que tu conexión o API key sean válidas.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setAgentChatMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setAgentChatLoading(false);
+    }
+  };
+
+  const handleGenerateSocialPost = async () => {
+    const targetProduct = products.find(p => p.id === agentSelectedProductId);
+    if (!targetProduct) {
+      alert('Por favor selecciona un producto para crear la publicación.');
+      return;
+    }
+
+    setAgentGeneratingPost(true);
+    setAgentGeneratedPost(null);
+
+    try {
+      const post = await generateAgentSocialPost({
+        productTitle: targetProduct.title,
+        productCategory: targetProduct.category,
+        price: targetProduct.publicPrice,
+        discountPercent: agentCustomDiscount || targetProduct.discountPercent || 0,
+        platform: agentPlatform,
+        tone: agentTone,
+        audience: agentAudience,
+      });
+      setAgentGeneratedPost(post);
+    } catch (err: any) {
+      alert(err.message || 'Error al generar la publicación');
+    } finally {
+      setAgentGeneratingPost(false);
+    }
+  };
+
+  const handleGenerateOrderFollowup = async (order: Order) => {
+    setAgentFollowupOrderId(order.id);
+    setAgentGeneratedFollowupText('');
+    setAgentFollowupLoading(true);
+
+    const daysSince = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+
+    try {
+      const msg = await generateAgentOrderFollowup({
+        orderNumber: order.id,
+        clientName: order.clientName,
+        status: order.status,
+        total: order.total,
+        daysSinceCreated: Math.max(0, daysSince),
+        trackingNumber: order.trackingNumber,
+      });
+      setAgentGeneratedFollowupText(msg);
+    } catch (err: any) {
+      alert(err.message || 'Error al generar seguimiento');
+    } finally {
+      setAgentFollowupLoading(false);
+    }
+  };
+
 
   // ─── ACCIONES ENVÍOS & MÉTODOS DE PAGO ──────────────────────────────────────
   const handleSaveCheckoutSettings = async () => {
@@ -2057,6 +2188,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* Listado de Navegación con Categorías */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs scrollbar-thin">
+          {/* BOTÓN DESTACADO: AGENTE INTELIGENTE FOXBOT */}
+          <div>
+            <button
+              onClick={() => { setCrmSubTab('agent'); setMobileSidebarOpen(false); }}
+              className={`w-full p-2.5 rounded-2xl font-bold transition flex items-center justify-between border ${
+                crmSubTab === 'agent'
+                  ? 'bg-gradient-to-r from-[#E65F2B] to-[#FF8A00] text-white border-orange-400 shadow-md ring-2 ring-orange-400/40'
+                  : 'bg-gradient-to-r from-slate-900 to-indigo-950/80 text-orange-200 border-indigo-800/40 hover:border-orange-500/50 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 text-left">
+                <div className="w-7 h-7 rounded-xl bg-orange-500/20 text-[#E65F2B] flex items-center justify-center shrink-0 border border-orange-500/30">
+                  <Bot className="w-4 h-4 text-orange-400 animate-pulse" />
+                </div>
+                <div>
+                  <span className="block font-black text-xs leading-none">Agente FoxBot</span>
+                  <span className="text-[10px] text-orange-300/80 font-normal">Marketing & Ventas AI</span>
+                </div>
+              </div>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                AI 2.0
+              </span>
+            </button>
+          </div>
+
           {/* GRUPO 1: CATÁLOGO */}
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
@@ -5040,6 +5196,473 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 {savingCheckoutSettings ? 'Guardando Cambios...' : 'Guardar y Publicar en Tienda'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 12. SECCIÓN AGENTE FOXBOT AI (MARKETING, SEGUIMIENTO & VENTAS) */}
+        {crmSubTab === 'agent' && (
+          <div className="space-y-6">
+            {/* Encabezado del Agente */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 text-white border border-indigo-900/40 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+              
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E65F2B] to-[#FF8A00] flex items-center justify-center text-white shadow-lg shadow-orange-500/30 shrink-0">
+                    <Bot className="w-8 h-8 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-xl sm:text-2xl font-black tracking-tight">FoxBot AI Copilot</h2>
+                      <span className="bg-orange-500 text-white font-black text-[10px] uppercase px-2 py-0.5 rounded-full tracking-wider">
+                        Gemini Pro
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                      Tu asistente comercial autónomo. Promociona productos, crea posts para Instagram/TikTok, da seguimiento a pedidos en Puebla y recupera carritos con 1 clic.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Subtabs del Agente */}
+                <div className="flex bg-slate-800/80 p-1 rounded-2xl border border-slate-700/60 self-start md:self-auto">
+                  <button
+                    onClick={() => setAgentActiveTab('chat')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      agentActiveTab === 'chat'
+                        ? 'bg-[#E65F2B] text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Chat Estratégico</span>
+                  </button>
+                  <button
+                    onClick={() => setAgentActiveTab('marketing')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      agentActiveTab === 'marketing'
+                        ? 'bg-[#E65F2B] text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Redes & Marketing</span>
+                  </button>
+                  <button
+                    onClick={() => setAgentActiveTab('sales_radar')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      agentActiveTab === 'sales_radar'
+                        ? 'bg-[#E65F2B] text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>Radar de Pedidos ({orders.filter(o => o.status === 'pending' || o.status === 'processing').length})</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* VISTA 1: CHAT ESTRATÉGICO CON EL AGENTE */}
+            {agentActiveTab === 'chat' && (
+              <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col h-[650px] overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
+                    <span className="text-xs font-black text-slate-800">Conectado a FoxDrop Database</span>
+                    <span className="text-[10px] text-slate-400">({products.length} productos, {orders.length} pedidos)</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAgentChatMessages([agentChatMessages[0]]);
+                    }}
+                    className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold"
+                  >
+                    Limpiar conversación
+                  </button>
+                </div>
+
+                {/* Mensajes */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                  {agentChatMessages.map(msg => (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      {msg.sender === 'agent' && (
+                        <div className="w-8 h-8 rounded-xl bg-[#E65F2B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                          🦊
+                        </div>
+                      )}
+                      <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-xs leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-[#2D4A58] text-white rounded-tr-none shadow-xs'
+                          : 'bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-none shadow-2xs'
+                      }`}>
+                        <div className="whitespace-pre-line font-normal">{msg.text}</div>
+                        <span className={`block text-[9px] mt-2 font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
+                          {msg.timestamp}
+                        </span>
+
+                        {/* Sugerencias de acción rápida */}
+                        {msg.actionSuggestions && msg.actionSuggestions.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-slate-200/60 space-y-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              Sugerencias rápidas:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {msg.actionSuggestions.map((sug, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleSendAgentChatMessage(sug)}
+                                  className="text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 px-2.5 py-1 rounded-xl transition text-left"
+                                >
+                                  💬 {sug}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {msg.sender === 'user' && (
+                        <div className="w-8 h-8 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          👤
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {agentChatLoading && (
+                    <div className="flex gap-3 justify-start items-center">
+                      <div className="w-8 h-8 rounded-xl bg-[#E65F2B] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        🦊
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-500 flex items-center gap-2">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#E65F2B]" />
+                        <span>FoxBot está consultando los datos de la tienda y formulando la mejor respuesta...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Input del Chat */}
+                <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-200">
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      handleSendAgentChatMessage();
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={agentInputText}
+                      onChange={e => setAgentInputText(e.target.value)}
+                      placeholder="Pregúntale a FoxBot (ej. 'Escribe un post de oferta para TikTok' o '¿Qué productos llevan más días en almacén?')..."
+                      disabled={agentChatLoading}
+                      className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs focus:outline-none focus:border-[#E65F2B] font-medium text-slate-800 disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={agentChatLoading || !agentInputText.trim()}
+                      className="px-5 py-3 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-2xl text-xs flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 shrink-0"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span className="hidden sm:inline">Enviar</span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VISTA 2: GENERADOR DE MARKETING & REDES SOCIALES */}
+            {agentActiveTab === 'marketing' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Formulario de Configuración del Post */}
+                <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm text-xs">
+                  <div className="border-b border-slate-100 pb-3">
+                    <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#E65F2B]" />
+                      Crear Publicación para Redes
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Selecciona el producto y la red social; el agente redactará el copy con ganchos, hashtags y llamadas a la acción.</p>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Producto a Promocionar</label>
+                    <select
+                      value={agentSelectedProductId}
+                      onChange={e => setAgentSelectedProductId(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                    >
+                      <option value="">-- Elige un producto de tu catálogo --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.title} (${p.publicPrice} MXN - Stock: {p.stock})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Red Social / Canal</label>
+                      <select
+                        value={agentPlatform}
+                        onChange={e => setAgentPlatform(e.target.value as any)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                      >
+                        <option value="instagram">📸 Instagram Post / Reel</option>
+                        <option value="facebook">📘 Facebook Marketplace / Post</option>
+                        <option value="tiktok">🎵 TikTok Guion / Caption</option>
+                        <option value="whatsapp">💬 Estado / Mensaje WhatsApp</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Tono de Voz</label>
+                      <select
+                        value={agentTone}
+                        onChange={e => setAgentTone(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                      >
+                        <option value="Divertido y entusiasta">🎉 Divertido & Viral</option>
+                        <option value="Urgencia y oferta relámpago">🔥 Urgencia (¡Pocas piezas!)</option>
+                        <option value="Elegante y exclusivo">✨ Exclusivo & Estético</option>
+                        <option value="Directo y comercial">💼 Directo al beneficio</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Público Objetivo</label>
+                    <input
+                      type="text"
+                      value={agentAudience}
+                      onChange={e => setAgentAudience(e.target.value)}
+                      placeholder="Ej. Jóvenes en Puebla buscando cosméticos coreanos..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Descuento Promocional Extra (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="90"
+                      value={agentCustomDiscount || ''}
+                      onChange={e => setAgentCustomDiscount(Number(e.target.value) || 0)}
+                      placeholder="0"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleGenerateSocialPost}
+                    disabled={agentGeneratingPost || !agentSelectedProductId}
+                    className="w-full py-3 bg-gradient-to-r from-[#E65F2B] to-[#FF8A00] hover:opacity-95 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-md disabled:opacity-50"
+                  >
+                    {agentGeneratingPost ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Generando copy con IA...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4" />
+                        <span>Generar Copy de Venta con FoxBot</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Previsualización del Resultado */}
+                <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between text-xs">
+                  {agentGeneratedPost ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-900 text-sm">Copy Generado</span>
+                          <span className="uppercase text-[9px] font-black bg-orange-100 text-[#E65F2B] px-2 py-0.5 rounded-md">
+                            {agentPlatform}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(agentGeneratedPost.fullCopy);
+                              setAgentPostCopied(true);
+                              setTimeout(() => setAgentPostCopied(false), 2500);
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            {agentPostCopied ? '¡Copiado!' : 'Copiar Texto'}
+                          </button>
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(agentGeneratedPost.fullCopy)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs shadow-xs"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            Compartir a WhatsApp
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Caja de contenido lista para publicar */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3 font-mono text-xs text-slate-800 leading-relaxed whitespace-pre-wrap select-all max-h-[420px] overflow-y-auto">
+                        {agentGeneratedPost.fullCopy}
+                      </div>
+
+                      {/* Hashtags sugeridos */}
+                      {agentGeneratedPost.hashtags && agentGeneratedPost.hashtags.length > 0 && (
+                        <div className="pt-2">
+                          <span className="font-bold text-slate-500 text-[11px] block mb-1">Hashtags incluidos:</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {agentGeneratedPost.hashtags.map((tag, idx) => (
+                              <span key={idx} className="bg-indigo-50 text-indigo-700 font-semibold px-2 py-0.5 rounded-md text-[10px] border border-indigo-200/60">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center p-12 text-center text-slate-400 space-y-3">
+                      <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400">
+                        <Sparkles className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-700 text-sm">Tu publicación aparecerá aquí</h4>
+                        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                          Selecciona un producto del panel izquierdo y presiona el botón para que FoxBot redacte un copy de alta conversión.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VISTA 3: RADAR DE PEDIDOS & SEGUIMIENTO INTELIGENTE */}
+            {agentActiveTab === 'sales_radar' && (
+              <div className="space-y-6">
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+                  <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-emerald-600" />
+                        Radar de Pedidos para Seguimiento
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Pedidos que requieren confirmación, empaque o aviso de entrega. Genera mensajes de seguimiento de 1 clic para enviar por WhatsApp.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                    {orders
+                      .filter(o => o.status === 'pending' || o.status === 'processing' || o.status === 'shipped')
+                      .slice(0, 9)
+                      .map(order => {
+                        const daysSince = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+                        return (
+                          <div
+                            key={order.id}
+                            className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 space-y-3 flex flex-col justify-between"
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono font-black text-slate-900 text-xs">{order.id}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                  order.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                                  order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-purple-100 text-purple-800'
+                                }`}>
+                                  {order.status}
+                                </span>
+                              </div>
+
+                              <div className="font-bold text-slate-800">{order.clientName}</div>
+                              <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                {order.clientPhone}
+                              </div>
+                              <div className="text-[11px] font-mono font-bold text-emerald-700">
+                                Total: ${order.total.toFixed(2)} MXN
+                              </div>
+                              <span className="text-[10px] text-slate-400 block">
+                                Hace {daysSince === 0 ? 'hoy' : `${daysSince} día(s)`}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleGenerateOrderFollowup(order)}
+                              disabled={agentFollowupLoading && agentFollowupOrderId === order.id}
+                              className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-200 font-bold text-slate-700 rounded-xl transition flex items-center justify-center gap-1.5 text-[11px] shadow-2xs"
+                            >
+                              <Wand2 className="w-3.5 h-3.5 text-[#E65F2B]" />
+                              {agentFollowupLoading && agentFollowupOrderId === order.id
+                                ? 'Redactando con IA...'
+                                : 'Redactar Seguimiento WhatsApp'}
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                    {orders.filter(o => o.status === 'pending' || o.status === 'processing' || o.status === 'shipped').length === 0 && (
+                      <div className="col-span-full p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+                        🎉 ¡Todo al día! No hay pedidos activos pendientes de entrega en este momento.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mensaje de Seguimiento Generado */}
+                {agentGeneratedFollowupText && (
+                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-6 space-y-3 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <h4 className="font-black text-slate-900 text-sm">Mensaje de Seguimiento Listo</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(agentGeneratedFollowupText);
+                            alert('¡Mensaje copiado al portapapeles!');
+                          }}
+                          className="bg-white text-slate-700 font-bold px-3 py-1.5 rounded-xl border border-emerald-200 text-xs flex items-center gap-1.5"
+                        >
+                          <Copy className="w-3.5 h-3.5" /> Copiar
+                        </button>
+                        {(() => {
+                          const targetOrder = orders.find(o => o.id === agentFollowupOrderId);
+                          return (
+                            <a
+                              href={`https://wa.me/${(targetOrder?.clientPhone || '').replace(/\D/g, '')}?text=${encodeURIComponent(agentGeneratedFollowupText)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" /> Enviar por WhatsApp Ahora
+                            </a>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-emerald-200/80 text-xs font-mono text-slate-800 whitespace-pre-wrap leading-relaxed select-all">
+                      {agentGeneratedFollowupText}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

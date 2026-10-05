@@ -490,3 +490,70 @@ export async function generateTicketImage(ticket: any): Promise<{ imageUrl: stri
   }
 }
 
+// ─── FOXBOT AI AGENT ─────────────────────────────────────────────────────────
+
+export async function generateAgentSocialPost(params: {
+  productTitle: string;
+  productCategory?: string;
+  price: number;
+  discountPercent?: number;
+  platform: string;
+  tone?: string;
+  audience?: string;
+}) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "generate_social_post", ...params }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar publicación");
+  return data.post;
+}
+
+export async function generateAgentOrderFollowup(params: {
+  orderNumber: string;
+  clientName: string;
+  status: string;
+  total: number;
+  daysSinceCreated: number;
+  trackingNumber?: string;
+}) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "generate_order_followup", ...params }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al redactar seguimiento");
+  return data.message;
+}
+
+export async function generateAgentCartRecovery(params: {
+  clientName: string;
+  itemsSummary: string;
+  total: number;
+  discountCode?: string;
+}) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "generate_cart_recovery", ...params }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al redactar mensaje");
+  return data.message;
+}
+
+export async function chatWithFoxBot(userMessage: string, history: Array<{ sender: string; text: string }>) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "chat", userMessage, history }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al consultar a FoxBot");
+  return data.reply;
+}
+
+
