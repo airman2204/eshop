@@ -8464,6 +8464,39 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </div>
       </nav>
 
+      {/* ======================================================== */}
+      {/* BURBUJA FLOTANTE PARA ACCEDER A FOX DESDE CUALQUIER PESTAÑA */}
+      {/* ======================================================== */}
+      {crmSubTab !== 'agent' && (
+        <aside
+          aria-label="Acceso flotante a Fox"
+          className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2 group animate-in fade-in zoom-in-95 duration-200"
+        >
+          {/* Tooltip / Píldora descriptiva al hacer hover */}
+          <div className="hidden sm:flex items-center gap-2 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-orange-500/30 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Hablar con Fox</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              try { soundManager.triggerHaptic('medium'); } catch {}
+              setCrmSubTab('agent');
+              setAgentActiveTab('chat');
+            }}
+            title="Abrir asistente Fox"
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white/80 hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
+          >
+            <Bot className="w-7 h-7" />
+            {/* Indicador de estado en vivo */}
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+            </span>
+          </button>
+        </aside>
+      )}
+
     </div>
   );
 }
