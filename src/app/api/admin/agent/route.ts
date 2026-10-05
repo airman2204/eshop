@@ -29,8 +29,8 @@ async function callGemini(prompt: string, systemInstruction?: string): Promise<s
     throw new Error("GEMINI_API_KEY no está configurada en .env.local");
   }
 
-  // Modelos ordenados por prioridad y compatibilidad
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"];
+  // Modelos ordenados por prioridad y compatibilidad garantizada
+  const models = ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-3.8-flash"];
   let lastError = "";
 
   for (const model of models) {
