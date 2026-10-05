@@ -316,7 +316,7 @@ El mensaje debe ser amigable, recordar que los productos de importación son de 
       }
     }
 
-    // ── 4. CHAT ASISTENTE ESTRATÉGICO CON DATOS EN VIVO ──
+    // ── 4. CHAT ASISTENTE ESTRATÉGICO CON DATOS EN VIVO Y CAPACIDAD EJECUTIVA (JARVIS) ──
     if (action === "chat") {
       const { userMessage, history } = body;
 
@@ -324,9 +324,10 @@ El mensaje debe ser amigable, recordar que los productos de importación son de 
         return NextResponse.json({ error: "Mensaje requerido" }, { status: 400 });
       }
 
-      // Obtenemos contexto 360° en tiempo real del negocio para convertirlo en un verdadero JARVIS
+      // Obtenemos contexto 360° en tiempo real del negocio
       const [
         { count: totalProducts },
+        { data: allProductsBrief },
         { data: pendingOrders },
         { data: lowStockProducts },
         { data: agedProducts },
@@ -334,48 +335,91 @@ El mensaje debe ser amigable, recordar que los productos de importación son de 
         { count: totalClients },
         { data: recentOrders },
         { data: loyaltyRows },
+        { data: abandonedCarts },
       ] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id, status, total, client_name, client_phone, created_at").eq("status", "pending").limit(8),
-        supabase.from("products").select("title, stock, days_in_stock, public_price").lte("stock", 2).limit(6),
-        supabase.from("products").select("title, stock, days_in_stock, public_price, profit_unit").gt("days_in_stock", 30).order("days_in_stock", { ascending: false }).limit(6),
-        supabase.from("products").select("title, public_price, profit_unit, total_cost_mxn").order("profit_unit", { ascending: false }).limit(6),
+        supabase.from("products").select("id, title, sku, public_price, stock, is_active, category_id, profit_unit").limit(100),
+        supabase.from("orders").select("id, status, total, client_name, client_phone, shipping_type, pickup_point, created_at").eq("status", "pending").limit(10),
+        supabase.from("products").select("id, title, stock, days_in_stock, public_price").lte("stock", 2).limit(6),
+        supabase.from("products").select("id, title, stock, days_in_stock, public_price, profit_unit").gt("days_in_stock", 30).order("days_in_stock", { ascending: false }).limit(6),
+        supabase.from("products").select("id, title, public_price, profit_unit, total_cost_mxn").order("profit_unit", { ascending: false }).limit(6),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("total, status").neq("status", "cancelled").limit(50),
-        supabase.from("profiles").select("loyalty_points").gt("loyalty_points", 0).limit(20),
+        supabase.from("orders").select("total, status, created_at").neq("status", "cancelled").order("created_at", { ascending: false }).limit(50),
+        supabase.from("profiles").select("full_name, phone, loyalty_points").gt("loyalty_points", 0).order("loyalty_points", { ascending: false }).limit(10),
+        supabase.from("abandoned_carts").select("id, client_name, client_phone, total, items, followed_up").eq("followed_up", false).limit(5),
       ]);
 
       const totalRevenueCalculated = (recentOrders || []).reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
       const totalPointsCirculating = (loyaltyRows || []).reduce((acc: number, p: any) => acc + (Number(p.loyalty_points) || 0), 0);
 
+      // Catálogo abreviado para que el LLM pueda hacer matching exacto de IDs y títulos
+      const catalogMini = (allProductsBrief || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        price: p.public_price,
+        stock: p.stock,
+        active: p.is_active,
+        sku: p.sku,
+      }));
+
       const storeContext = `
 === AUDITORÍA OPERATIVA & FINANCIERA EN TIEMPO REAL (FOXDROP PUEBLA) ===
-- Catálogo total: ${totalProducts || 0} productos activos.
+- Catálogo total: ${totalProducts || 0} productos registrados.
+- Catálogo activo actual (muestra para acciones):
+${JSON.stringify(catalogMini.slice(0, 40), null, 1)}
+
 - Ventas registradas recientes: $${totalRevenueCalculated.toFixed(2)} MXN (${(recentOrders || []).length} compras analizadas).
 - Pedidos pendientes de entrega o confirmación: ${(pendingOrders || []).length}
-  ${(pendingOrders || []).map((o: any) => `  * Folio ${o.id}: ${o.client_name} ($${o.total} MXN) - Tel: ${o.client_phone || 'N/A'}`).join("\n") || "  (Ninguno)"}
-- Base de clientes: ${totalClients || 0} registrados. Puntos de lealtad en circulación: ${totalPointsCirculating} ⭐.
-- Logística local oficial en Puebla: Puntos de entrega personales en Plaza Dorada, Angelópolis, Zona Zócalo y Central CAPU. Envíos nacionales con cobertura nacional.
+${(pendingOrders || []).map((o: any) => `  * Folio ${o.id}: Cliente ${o.client_name} ($${o.total} MXN) - Entrega: ${o.shipping_type || 'local'} (${o.pickup_point || 'Puebla'}) - Tel: ${o.client_phone || 'N/A'}`).join("\n") || "  (Ninguno pendiente)"}
+
+- Carritos abandonados sin contactar: ${(abandonedCarts || []).length}
+${(abandonedCarts || []).map((c: any) => `  * Carrito ID ${c.id}: ${c.client_name || 'Cliente'} - Tel: ${c.client_phone || 'N/A'} - Total: $${c.total} MXN`).join("\n") || "  (Sin carritos pendientes)"}
+
+- Clientes VIP con más estrellas:
+${(loyaltyRows || []).map((l: any) => `  * ${l.full_name || 'Usuario'}: ${l.loyalty_points} ⭐ - Tel: ${l.phone || 'N/A'}`).join("\n") || "  (Sin clientes VIP)"}
+
+- Logística local oficial en Puebla: Puntos de entrega personales en Plaza Dorada, Angelópolis, Zona Zócalo y Central CAPU.
 - Productos con mayor margen de ganancia unitaria:
-  ${(highMarginProducts || []).map((p: any) => `  * ${p.title}: Precio $${p.public_price} MXN (Utilidad neta: +$${p.profit_unit || 0} MXN)`).join("\n") || "  (N/A)"}
+${(highMarginProducts || []).map((p: any) => `  * ${p.title}: Precio $${p.public_price} MXN (Utilidad neta: +$${p.profit_unit || 0} MXN)`).join("\n") || "  (N/A)"}
 - Productos estancados en almacén (>30 días):
-  ${(agedProducts || []).map((p: any) => `  * ${p.title}: ${p.days_in_stock} días en bodega, ${p.stock} uds disponibles (Precio: $${p.public_price} MXN)`).join("\n") || "  (Inventario fresco sin estancamiento)"}
+${(agedProducts || []).map((p: any) => `  * ${p.title} (ID: ${p.id}): ${p.days_in_stock} días en bodega, ${p.stock} uds (Precio: $${p.public_price} MXN)`).join("\n") || "  (Inventario fresco sin estancamiento)"}
 - Productos con stock crítico (<= 2 unidades):
-  ${(lowStockProducts || []).map((p: any) => `  * ${p.title} (${p.stock} uds restantes)`).join("\n") || "  (Stock saludable)"}
+${(lowStockProducts || []).map((p: any) => `  * ${p.title} (${p.stock} uds restantes)`).join("\n") || "  (Stock saludable)"}
 `;
 
       const systemPrompt = `Eres "JARVIS FoxDrop", la Inteligencia Artificial ejecutiva, estratega de negocios y copiloto comercial de FoxDrop Puebla.
-No eres un bot común de respuestas genéricas. Eres el Director de Operaciones y Crecimiento (Chief Growth Officer) de la tienda. Conoces a fondo las cifras, los costos, las ganancias, el inventario y las entregas en Puebla.
+Tienes PODERES EJECUTIVOS DIRECTOS. No solo das consejos: puedes preparar y proponer ACCIONES CONCRETAS en la base de datos (modificar stock, cambiar precios, pausar/activar productos, preparar mensajes de WhatsApp de entrega o recuperación de carritos).
 
 PERSONALIDAD & PROTOCOLO JARVIS:
-1. Trato: Educado, perspicaz, sumamente analítico, seguro de ti mismo, ágil y enfocado 100% en maximizar las ganancias y posicionar la marca FoxDrop en Puebla.
-2. Formato: Respuestas claras, directas al grano, estructuradas con viñetas elegantes cuando convenga, sin rodeos innecesarios.
-3. Habilidades que tienes a tu disposición:
-   - Diagnóstico financiero: Sabes qué productos dejan más ganancia para priorizarlos.
-   - Liquidación inteligente: Propones combos o promociones para artículos con muchos días en almacén.
-   - Seguimiento a pedidos: Identificas pedidos pendientes y redactas el mensaje ideal para el cliente por WhatsApp.
-   - Posicionamiento de marca: Propones campañas y ganchos de venta para Facebook, Instagram, TikTok y estados de WhatsApp.
-4. Voz y Escucha: Estás preparado para responder comandos hablados por voz. Si la respuesta es leída en voz alta, sé conciso y elocuente.
+1. Trato: Educado, ágil, altamente analítico y enfocado en la rentabilidad y crecimiento de FoxDrop Puebla.
+2. Si el usuario te pide una acción operativa directa (ej. "sube el stock de X a 10", "cambia el precio de Y a 150", "bájale 10% a los productos viejos", "mándale mensaje al pedido de Carlos"), debes:
+   a) Responder en texto explicando lo que harás de forma concisa.
+   b) Al final de tu respuesta, si detectas una acción ejecutable precisa, añade un bloque de acción JSON con este formato EXACTO:
+
+<<<ACTION_PROPOSAL
+{
+  "type": "update_stock" | "update_price" | "toggle_product" | "order_whatsapp" | "cart_recovery",
+  "label": "Texto corto del botón (ej. Aplicar nuevo stock a 10 unidades)",
+  "payload": {
+    "productId": "id_del_producto",
+    "productTitle": "nombre",
+    "newStock": 10,
+    "newPrice": 150,
+    "isActive": true,
+    "phone": "2221234567",
+    "whatsappText": "texto del mensaje para el cliente"
+  }
+}
+ACTION_PROPOSAL>>>
+
+3. Si el usuario pide un "briefing matutino", "resumen del día" o "buenos días":
+   - Saluda como JARVIS.
+   - Resume en 3 viñetas ejecutivas:
+     1) Pedidos y entregas de hoy (en Plaza Dorada, Angelópolis, etc.).
+     2) Ventas recientes e ingresos.
+     3) Alertas de stock crítico o inventario rezagado con propuesta de acción inmediata.
+   - Ofrece una recomendación de alta rentabilidad para hoy.
+4. Voz y Escucha: Eres conciso y elocuente.
 
 Contexto auditado del negocio:
 ${storeContext}`;
@@ -391,11 +435,83 @@ ${storeContext}`;
       conversationPrompt += `ADMIN: ${userMessage}\nFOXBOT:`;
 
       try {
-        const reply = await callGemini(conversationPrompt, systemPrompt);
-        return NextResponse.json({ success: true, reply });
+        const rawReply = await callGemini(conversationPrompt, systemPrompt);
+
+        // Detectar si JARVIS propuso una acción ejecutable en el bloque <<<ACTION_PROPOSAL ... ACTION_PROPOSAL>>>
+        let cleanReply = rawReply;
+        let actionExecution: any = null;
+
+        const actionMatch = rawReply.match(/<<<ACTION_PROPOSAL\s*([\s\S]*?)\s*ACTION_PROPOSAL>>>/);
+        if (actionMatch) {
+          try {
+            const parsedAction = JSON.parse(actionMatch[1]);
+            actionExecution = {
+              ...parsedAction,
+              status: "pending",
+            };
+            cleanReply = rawReply.replace(/<<<ACTION_PROPOSAL[\s\S]*?ACTION_PROPOSAL>>>/, "").trim();
+          } catch (jsonErr) {
+            console.warn("No se pudo parsear ACTION_PROPOSAL JSON:", jsonErr);
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          reply: cleanReply,
+          actionExecution,
+        });
       } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
       }
+    }
+
+    // ── 5. EJECUCIÓN DIRECTA DE ACCIÓN DE JARVIS ──
+    if (action === "execute_agent_action") {
+      const { actionType, payload } = body;
+
+      if (actionType === "update_stock") {
+        const { productId, newStock } = payload;
+        if (!productId || newStock === undefined) {
+          return NextResponse.json({ error: "productId y newStock requeridos" }, { status: 400 });
+        }
+        const { error } = await supabase
+          .from("products")
+          .update({ stock: Number(newStock) })
+          .eq("id", productId);
+
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ success: true, message: `Stock actualizado a ${newStock} unidades.` });
+      }
+
+      if (actionType === "update_price") {
+        const { productId, newPrice } = payload;
+        if (!productId || newPrice === undefined) {
+          return NextResponse.json({ error: "productId y newPrice requeridos" }, { status: 400 });
+        }
+        const { error } = await supabase
+          .from("products")
+          .update({ public_price: Number(newPrice) })
+          .eq("id", productId);
+
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ success: true, message: `Precio actualizado a $${newPrice} MXN con éxito.` });
+      }
+
+      if (actionType === "toggle_product") {
+        const { productId, isActive } = payload;
+        if (!productId) {
+          return NextResponse.json({ error: "productId requerido" }, { status: 400 });
+        }
+        const { error } = await supabase
+          .from("products")
+          .update({ is_active: Boolean(isActive) })
+          .eq("id", productId);
+
+        if (error) throw new Error(error.message);
+        return NextResponse.json({ success: true, message: `Producto ${isActive ? 'activado' : 'pausado'} en catálogo.` });
+      }
+
+      return NextResponse.json({ error: "Tipo de acción no soportada" }, { status: 400 });
     }
 
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });

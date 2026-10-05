@@ -564,7 +564,18 @@ export async function chatWithFoxBot(userMessage: string, history: Array<{ sende
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Error al consultar a FoxBot");
-  return data.reply;
+  return { reply: data.reply as string, actionExecution: data.actionExecution };
+}
+
+export async function executeAgentAction(actionType: string, payload: any) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "execute_agent_action", actionType, payload }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al ejecutar acción");
+  return data;
 }
 
 

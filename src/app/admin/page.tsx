@@ -13,7 +13,7 @@ import {
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
   Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
   Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle,
-  Mic, MicOff, Radio, Play, Pause
+  Mic, MicOff, Radio, Play, Pause, Zap
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -25,7 +25,7 @@ import {
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
   deleteClientFromDb,
-  generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot
+  generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot, executeAgentAction
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -798,6 +798,58 @@ export default function AdminCRM() {
     }
   };
 
+  // Ejecutar acción sugerida por JARVIS en la base de datos
+  const handleExecuteAgentAction = async (msgId: string, actionExecution: any) => {
+    try {
+      if (actionExecution.type === 'order_whatsapp' || actionExecution.type === 'cart_recovery') {
+        const phone = (actionExecution.payload?.phone || '').replace(/\D/g, '');
+        const text = encodeURIComponent(actionExecution.payload?.whatsappText || '');
+        if (phone) {
+          window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        } else {
+          window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
+          ...m,
+          actionExecution: { ...m.actionExecution, status: 'executed' }
+        } : m));
+        return;
+      }
+
+      const res = await executeAgentAction(actionExecution.type, actionExecution.payload);
+      if (res.success) {
+        alert(`✅ ${res.message || 'Acción ejecutada con éxito por JARVIS'}`);
+        // Marcar acción como ejecutada en el chat
+        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
+          ...m,
+          actionExecution: { ...m.actionExecution, status: 'executed' }
+        } : m));
+
+        // Refrescar inventario local si aplica
+        if (actionExecution.type === 'update_stock' && actionExecution.payload?.productId) {
+          setProducts(prev => prev.map(p => p.id === actionExecution.payload.productId ? {
+            ...p,
+            stock: Number(actionExecution.payload.newStock)
+          } : p));
+        } else if (actionExecution.type === 'update_price' && actionExecution.payload?.productId) {
+          setProducts(prev => prev.map(p => p.id === actionExecution.payload.productId ? {
+            ...p,
+            publicPrice: Number(actionExecution.payload.newPrice)
+          } : p));
+        } else if (actionExecution.type === 'toggle_product' && actionExecution.payload?.productId) {
+          setProducts(prev => prev.map(p => p.id === actionExecution.payload.productId ? {
+            ...p,
+            isActive: Boolean(actionExecution.payload.isActive)
+          } : p));
+        }
+      } else {
+        alert(`Error: ${res.error || 'No se pudo ejecutar la acción'}`);
+      }
+    } catch (err: any) {
+      alert(`Error ejecutando acción: ${err.message}`);
+    }
+  };
+
   const handleSendAgentChatMessage = async (msgText?: string) => {
     const textToSend = msgText || agentInputText;
     if (!textToSend.trim() || agentChatLoading) return;
@@ -818,12 +870,13 @@ export default function AdminCRM() {
         sender: m.sender,
         text: m.text,
       }));
-      const reply = await chatWithFoxBot(textToSend.trim(), historyPayload);
+      const { reply, actionExecution } = await chatWithFoxBot(textToSend.trim(), historyPayload);
       const agentMsg: AgentChatMessage = {
         id: `agent_${Date.now()}`,
         sender: 'agent',
         text: reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        actionExecution,
       };
       setAgentChatMessages(prev => [...prev, agentMsg]);
 
@@ -5768,7 +5821,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
 
                   {/* Controles de Voz JARVIS */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Botón Briefing Matutino */}
+                    <button
+                      onClick={() => handleSendAgentChatMessage("Buenos días JARVIS, dame el briefing ejecutivo del día: entregas en Puebla, finanzas y alertas críticas.")}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                      title="Generar y escuchar el resumen operativo de hoy"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>☀️ Briefing Matutino</span>
+                    </button>
+
                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
                       <input
                         type="checkbox"
@@ -5837,6 +5900,52 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </button>
                           )}
                         </div>
+
+                        {/* Tarjeta de Acción Ejecutiva Propuesta por JARVIS */}
+                        {msg.actionExecution && (
+                          <div className={`mt-3 p-3 rounded-2xl border transition-all ${
+                            msg.actionExecution.status === 'executed'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                              : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200 text-orange-950 shadow-xs'
+                          }`}>
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <span className="font-extrabold text-[11px] flex items-center gap-1.5">
+                                {msg.actionExecution.status === 'executed' ? (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                    <span>Acción Ejecutada</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-4 h-4 text-[#E65F2B]" />
+                                    <span>Acción de Negocio Propuesta</span>
+                                  </>
+                                )}
+                              </span>
+                              <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded bg-white/80 border border-slate-200">
+                                {msg.actionExecution.type}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] font-medium text-slate-700 mb-2.5">
+                              {msg.actionExecution.label || 'JARVIS preparó esta operación.'}
+                            </p>
+
+                            {msg.actionExecution.status === 'pending' ? (
+                              <button
+                                onClick={() => handleExecuteAgentAction(msg.id, msg.actionExecution)}
+                                className="w-full py-2 px-3 bg-gradient-to-r from-[#E65F2B] to-[#FF8A00] hover:opacity-95 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
+                              >
+                                <Zap className="w-3.5 h-3.5" />
+                                <span>Confirmar & Ejecutar Ahora</span>
+                              </button>
+                            ) : (
+                              <div className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Aplicado en Base de Datos
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Sugerencias de acción rápida */}
                         {msg.actionSuggestions && msg.actionSuggestions.length > 0 && (

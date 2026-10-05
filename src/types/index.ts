@@ -229,12 +229,20 @@ export interface CheckoutSettings {
   skydropxApiKey?: string;
 }
 
+export interface AgentActionExecution {
+  type: 'update_stock' | 'update_price' | 'toggle_product' | 'create_coupon' | 'order_whatsapp' | 'cart_recovery';
+  label: string;
+  payload: any;
+  status: 'pending' | 'executed' | 'cancelled';
+}
+
 export interface AgentChatMessage {
   id: string;
   sender: 'user' | 'agent';
   text: string;
   timestamp: string;
   actionSuggestions?: string[];
+  actionExecution?: AgentActionExecution;
 }
 
 export interface AgentSocialPost {
