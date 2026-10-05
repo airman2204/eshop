@@ -12,7 +12,8 @@ import {
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
   Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
-  Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle
+  Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle,
+  Mic, MicOff, Radio, Play, Pause
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -216,6 +217,12 @@ export default function AdminCRM() {
   ]);
   const [agentInputText, setAgentInputText] = useState('');
   const [agentChatLoading, setAgentChatLoading] = useState(false);
+
+  // Jarvis Voice & Speech States (Solo Admin)
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
+  const [autoVoiceReplyEnabled, setAutoVoiceReplyEnabled] = useState(true);
+  const recognitionRef = useRef<any>(null);
 
   // Marketing Generator State
   const [agentSelectedProductId, setAgentSelectedProductId] = useState<string>('');
@@ -693,7 +700,104 @@ export default function AdminCRM() {
     }
   };
 
-  // ─── ACCIONES FOXBOT AI AGENT ───────────────────────────────────────────────
+  // ─── ACCIONES FOXBOT AI AGENT & MODO JARVIS DE VOZ ─────────────────────────
+  const speakWithJarvisVoice = (rawText: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    try {
+      window.speechSynthesis.cancel(); // Detener cualquier locución previa
+
+      // Limpiar markdown del texto para que suene natural
+      const cleanText = rawText
+        .replace(/[*_#`~>]/g, '')
+        .replace(/https?:\/\/\S+/g, 'enlace de la tienda')
+        .replace(/👉|📦|⭐|🦊|✨|🔥|🎉|💬|💡/g, '')
+        .trim();
+
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'es-MX'; // Español de México
+      utterance.rate = 1.05; // Cadencia dinámica ejecutiva
+      utterance.pitch = 0.95; // Tono maduro y seguro estilo Jarvis
+
+      // Buscar voz en español preferida
+      const voices = window.speechSynthesis.getVoices();
+      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX')) ||
+                           voices.find(v => v.lang.startsWith('es'));
+      if (spanishVoice) {
+        utterance.voice = spanishVoice;
+      }
+
+      utterance.onstart = () => setIsVoiceSpeaking(true);
+      utterance.onend = () => setIsVoiceSpeaking(false);
+      utterance.onerror = () => setIsVoiceSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Speech synthesis no soportada o bloqueada:', err);
+      setIsVoiceSpeaking(false);
+    }
+  };
+
+  const stopJarvisVoice = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsVoiceSpeaking(false);
+    }
+  };
+
+  const toggleVoiceListening = () => {
+    if (typeof window === 'undefined') return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Tu navegador no soporta reconocimiento de voz nativo (Speech Recognition). Te recomendamos usar Google Chrome o Edge.');
+      return;
+    }
+
+    if (isVoiceListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsVoiceListening(false);
+      return;
+    }
+
+    try {
+      stopJarvisVoice();
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-MX';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsVoiceListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const spokenText = event.results[0][0].transcript;
+        if (spokenText) {
+          setAgentInputText(spokenText);
+          handleSendAgentChatMessage(spokenText);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Error en reconocimiento de voz:', event.error);
+        setIsVoiceListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsVoiceListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('No se pudo inicializar micrófono:', err);
+      setIsVoiceListening(false);
+    }
+  };
+
   const handleSendAgentChatMessage = async (msgText?: string) => {
     const textToSend = msgText || agentInputText;
     if (!textToSend.trim() || agentChatLoading) return;
@@ -722,6 +826,11 @@ export default function AdminCRM() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setAgentChatMessages(prev => [...prev, agentMsg]);
+
+      // Si está activada la voz de Jarvis, responder hablada en tiempo real
+      if (autoVoiceReplyEnabled) {
+        speakWithJarvisVoice(reply);
+      }
     } catch (err: any) {
       const errorMsg: AgentChatMessage = {
         id: `agent_err_${Date.now()}`,
@@ -5648,20 +5757,52 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             {/* VISTA 1: CHAT ESTRATÉGICO CON EL AGENTE */}
             {agentActiveTab === 'chat' && (
               <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col h-[650px] overflow-hidden">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/70">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
-                    <span className="text-xs font-black text-slate-800">Conectado a FoxDrop Database</span>
+                    <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-[#E65F2B] animate-pulse" />
+                      JARVIS FoxDrop • Conectado en Vivo
+                    </span>
                     <span className="text-[10px] text-slate-400">({products.length} productos, {orders.length} pedidos)</span>
                   </div>
-                  <button
-                    onClick={() => {
-                      setAgentChatMessages([agentChatMessages[0]]);
-                    }}
-                    className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold"
-                  >
-                    Limpiar conversación
-                  </button>
+
+                  {/* Controles de Voz JARVIS */}
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
+                      <input
+                        type="checkbox"
+                        checked={autoVoiceReplyEnabled}
+                        onChange={e => {
+                          setAutoVoiceReplyEnabled(e.target.checked);
+                          if (!e.target.checked) stopJarvisVoice();
+                        }}
+                        className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
+                      />
+                      <Volume2 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Respuesta por Voz</span>
+                    </label>
+
+                    {isVoiceSpeaking && (
+                      <button
+                        onClick={stopJarvisVoice}
+                        className="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-rose-100 transition animate-pulse"
+                      >
+                        <VolumeX className="w-3 h-3" />
+                        <span>Silenciar</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        stopJarvisVoice();
+                        setAgentChatMessages([agentChatMessages[0]]);
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
                 </div>
 
                 {/* Mensajes */}
@@ -5672,7 +5813,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       {msg.sender === 'agent' && (
-                        <div className="w-8 h-8 rounded-xl bg-[#E65F2B] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#E65F2B] to-[#FF8A00] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm ring-2 ring-orange-400/20">
                           🦊
                         </div>
                       )}
@@ -5682,22 +5823,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           : 'bg-slate-50 border border-slate-200/80 text-slate-800 rounded-tl-none shadow-2xs'
                       }`}>
                         <div className="whitespace-pre-line font-normal">{msg.text}</div>
-                        <span className={`block text-[9px] mt-2 font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
-                          {msg.timestamp}
-                        </span>
+                        <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-200/40">
+                          <span className={`text-[9px] font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
+                            {msg.timestamp}
+                          </span>
+                          {msg.sender === 'agent' && (
+                            <button
+                              onClick={() => speakWithJarvisVoice(msg.text)}
+                              className="text-slate-400 hover:text-[#E65F2B] transition p-0.5 rounded"
+                              title="Escuchar en voz alta"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
 
                         {/* Sugerencias de acción rápida */}
                         {msg.actionSuggestions && msg.actionSuggestions.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-slate-200/60 space-y-1.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                              Sugerencias rápidas:
+                              Comandos rápidos de negocio:
                             </span>
                             <div className="flex flex-wrap gap-1.5">
                               {msg.actionSuggestions.map((sug, i) => (
                                 <button
                                   key={i}
                                   onClick={() => handleSendAgentChatMessage(sug)}
-                                  className="text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 px-2.5 py-1 rounded-xl transition text-left"
+                                  className="text-[11px] font-semibold bg-white border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 px-2.5 py-1 rounded-xl transition text-left shadow-2xs"
                                 >
                                   💬 {sug}
                                 </button>
@@ -5721,28 +5873,57 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </div>
                       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-500 flex items-center gap-2">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#E65F2B]" />
-                        <span>FoxBot está consultando los datos de la tienda y formulando la mejor respuesta...</span>
+                        <span>JARVIS está analizando inventario, pedidos y finanzas de FoxDrop...</span>
                       </div>
+                    </div>
+                  )}
+
+                  {isVoiceSpeaking && (
+                    <div className="flex gap-2 items-center justify-center py-2 bg-orange-50/70 border border-orange-200/80 rounded-2xl text-xs text-orange-950 font-bold animate-pulse">
+                      <Volume2 className="w-4 h-4 text-[#E65F2B]" />
+                      <span>JARVIS está hablando...</span>
+                      <button
+                        onClick={stopJarvisVoice}
+                        className="ml-2 text-rose-600 underline text-[11px]"
+                      >
+                        Detener voz
+                      </button>
                     </div>
                   )}
                 </div>
 
-                {/* Input del Chat */}
+                {/* Input del Chat con Botón de Voz JARVIS */}
                 <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-200">
                   <form
                     onSubmit={e => {
                       e.preventDefault();
                       handleSendAgentChatMessage();
                     }}
-                    className="flex gap-2"
+                    className="flex items-center gap-2"
                   >
+                    {/* Botón de Micrófono JARVIS */}
+                    <button
+                      type="button"
+                      onClick={toggleVoiceListening}
+                      title={isVoiceListening ? "Detener escucha" : "Hablar con JARVIS por micrófono"}
+                      className={`p-3 rounded-2xl transition flex items-center justify-center shrink-0 border ${
+                        isVoiceListening
+                          ? 'bg-rose-500 text-white border-rose-600 animate-pulse ring-4 ring-rose-400/30'
+                          : 'bg-white hover:bg-orange-50 text-slate-700 hover:text-[#E65F2B] border-slate-200'
+                      }`}
+                    >
+                      {isVoiceListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-[#E65F2B]" />}
+                    </button>
+
                     <input
                       type="text"
                       value={agentInputText}
                       onChange={e => setAgentInputText(e.target.value)}
-                      placeholder="Pregúntale a FoxBot (ej. 'Escribe un post de oferta para TikTok' o '¿Qué productos llevan más días en almacén?')..."
+                      placeholder={isVoiceListening ? "🎙️ Escuchando tu voz... habla ahora" : "Pregúntale a JARVIS o presiona el micrófono para hablar..."}
                       disabled={agentChatLoading}
-                      className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs focus:outline-none focus:border-[#E65F2B] font-medium text-slate-800 disabled:opacity-50"
+                      className={`flex-1 px-4 py-3 bg-white border rounded-2xl text-xs focus:outline-none focus:border-[#E65F2B] font-medium text-slate-800 disabled:opacity-50 transition ${
+                        isVoiceListening ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
+                      }`}
                     />
                     <button
                       type="submit"
@@ -5753,6 +5934,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <span className="hidden sm:inline">Enviar</span>
                     </button>
                   </form>
+                  {isVoiceListening && (
+                    <span className="text-[10px] text-rose-600 font-bold mt-1.5 block animate-pulse text-center">
+                      🔴 Micrófono activo: JARVIS te está escuchando. Al terminar de hablar procesará tu instrucción automáticamente.
+                    </span>
+                  )}
                 </div>
               </div>
             )}

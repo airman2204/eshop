@@ -324,38 +324,60 @@ El mensaje debe ser amigable, recordar que los productos de importación son de 
         return NextResponse.json({ error: "Mensaje requerido" }, { status: 400 });
       }
 
-      // Obtenemos métricas rápidas de la base de datos para darle súper poderes al agente
+      // Obtenemos contexto 360° en tiempo real del negocio para convertirlo en un verdadero JARVIS
       const [
         { count: totalProducts },
         { data: pendingOrders },
         { data: lowStockProducts },
+        { data: agedProducts },
+        { data: highMarginProducts },
         { count: totalClients },
+        { data: recentOrders },
+        { data: loyaltyRows },
       ] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("orders").select("id, status, total, client_name, created_at").eq("status", "pending").limit(5),
-        supabase.from("products").select("title, stock, days_in_stock").lte("stock", 2).limit(5),
+        supabase.from("orders").select("id, status, total, client_name, client_phone, created_at").eq("status", "pending").limit(8),
+        supabase.from("products").select("title, stock, days_in_stock, public_price").lte("stock", 2).limit(6),
+        supabase.from("products").select("title, stock, days_in_stock, public_price, profit_unit").gt("days_in_stock", 30).order("days_in_stock", { ascending: false }).limit(6),
+        supabase.from("products").select("title, public_price, profit_unit, total_cost_mxn").order("profit_unit", { ascending: false }).limit(6),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("orders").select("total, status").neq("status", "cancelled").limit(50),
+        supabase.from("profiles").select("loyalty_points").gt("loyalty_points", 0).limit(20),
       ]);
 
+      const totalRevenueCalculated = (recentOrders || []).reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
+      const totalPointsCirculating = (loyaltyRows || []).reduce((acc: number, p: any) => acc + (Number(p.loyalty_points) || 0), 0);
+
       const storeContext = `
-DATOS ACTUALES DE FOXDROP EN TIEMPO REAL:
-- Total de productos en catálogo: ${totalProducts || 0}
-- Pedidos pendientes de procesar: ${(pendingOrders || []).length}
-- Clientes registrados: ${totalClients || 0}
-- Productos con poco stock (<= 2 unidades): ${(lowStockProducts || []).map((p: any) => `${p.title} (${p.stock} uds, ${p.days_in_stock} días en almacén)`).join(", ") || "Ninguno"}
-- Pedidos pendientes recientes: ${(pendingOrders || []).map((o: any) => `${o.id} - ${o.client_name} ($${o.total})`).join(", ") || "Ninguno"}
+=== AUDITORÍA OPERATIVA & FINANCIERA EN TIEMPO REAL (FOXDROP PUEBLA) ===
+- Catálogo total: ${totalProducts || 0} productos activos.
+- Ventas registradas recientes: $${totalRevenueCalculated.toFixed(2)} MXN (${(recentOrders || []).length} compras analizadas).
+- Pedidos pendientes de entrega o confirmación: ${(pendingOrders || []).length}
+  ${(pendingOrders || []).map((o: any) => `  * Folio ${o.id}: ${o.client_name} ($${o.total} MXN) - Tel: ${o.client_phone || 'N/A'}`).join("\n") || "  (Ninguno)"}
+- Base de clientes: ${totalClients || 0} registrados. Puntos de lealtad en circulación: ${totalPointsCirculating} ⭐.
+- Logística local oficial en Puebla: Puntos de entrega personales en Plaza Dorada, Angelópolis, Zona Zócalo y Central CAPU. Envíos nacionales con cobertura nacional.
+- Productos con mayor margen de ganancia unitaria:
+  ${(highMarginProducts || []).map((p: any) => `  * ${p.title}: Precio $${p.public_price} MXN (Utilidad neta: +$${p.profit_unit || 0} MXN)`).join("\n") || "  (N/A)"}
+- Productos estancados en almacén (>30 días):
+  ${(agedProducts || []).map((p: any) => `  * ${p.title}: ${p.days_in_stock} días en bodega, ${p.stock} uds disponibles (Precio: $${p.public_price} MXN)`).join("\n") || "  (Inventario fresco sin estancamiento)"}
+- Productos con stock crítico (<= 2 unidades):
+  ${(lowStockProducts || []).map((p: any) => `  * ${p.title} (${p.stock} uds restantes)`).join("\n") || "  (Stock saludable)"}
 `;
 
-      const systemPrompt = `Eres "FoxBot AI", el copiloto ejecutivo, comercial y estratega de FoxDrop Puebla.
-Ayudas al administrador de la tienda con:
-1. Ideas para promocionar productos estancados o con alto margen.
-2. Sugerencias de campañas para redes sociales (Instagram, TikTok, Facebook).
-3. Recomendaciones operativas sobre pedidos pendientes y servicio al cliente.
-4. Estrategias de precios, combos o liquidaciones.
+      const systemPrompt = `Eres "JARVIS FoxDrop", la Inteligencia Artificial ejecutiva, estratega de negocios y copiloto comercial de FoxDrop Puebla.
+No eres un bot común de respuestas genéricas. Eres el Director de Operaciones y Crecimiento (Chief Growth Officer) de la tienda. Conoces a fondo las cifras, los costos, las ganancias, el inventario y las entregas en Puebla.
 
-Tono: Proactivo, analítico, directo, optimista y con mentalidad de crecimiento para el e-commerce.
-Usa formato markdown limpio (negritas, listas con viñetas) y emojis acordes.
-Contexto de la tienda:
+PERSONALIDAD & PROTOCOLO JARVIS:
+1. Trato: Educado, perspicaz, sumamente analítico, seguro de ti mismo, ágil y enfocado 100% en maximizar las ganancias y posicionar la marca FoxDrop en Puebla.
+2. Formato: Respuestas claras, directas al grano, estructuradas con viñetas elegantes cuando convenga, sin rodeos innecesarios.
+3. Habilidades que tienes a tu disposición:
+   - Diagnóstico financiero: Sabes qué productos dejan más ganancia para priorizarlos.
+   - Liquidación inteligente: Propones combos o promociones para artículos con muchos días en almacén.
+   - Seguimiento a pedidos: Identificas pedidos pendientes y redactas el mensaje ideal para el cliente por WhatsApp.
+   - Posicionamiento de marca: Propones campañas y ganchos de venta para Facebook, Instagram, TikTok y estados de WhatsApp.
+4. Voz y Escucha: Estás preparado para responder comandos hablados por voz. Si la respuesta es leída en voz alta, sé conciso y elocuente.
+
+Contexto auditado del negocio:
 ${storeContext}`;
 
       let conversationPrompt = "";
