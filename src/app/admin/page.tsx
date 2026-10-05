@@ -700,31 +700,57 @@ export default function AdminCRM() {
     }
   };
 
-  // ─── ACCIONES FOXBOT AI AGENT & MODO JARVIS DE VOZ ─────────────────────────
-  const speakWithJarvisVoice = (rawText: string) => {
+  // ─── ACCIONES FOX AI AGENT & VOZ FOX ─────────────────────────────────────
+  const speakWithFoxVoice = (rawText: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
     try {
       window.speechSynthesis.cancel(); // Detener cualquier locución previa
 
-      // Limpiar markdown del texto para que suene natural
-      const cleanText = rawText
-        .replace(/[*_#`~>]/g, '')
+      // Limpieza exhaustiva de markdown, asteriscos, guiones, corchetes, urls y emojis
+      let cleanText = rawText
+        .replace(/\*\*([^*]+)\*\*/g, '$1') // quitar negritas
+        .replace(/\*([^*]+)\*/g, '$1')     // quitar cursivas
+        .replace(/`([^`]+)`/g, '$1')       // quitar código
+        .replace(/#+\s*/g, '')             // quitar títulos
         .replace(/https?:\/\/\S+/g, 'enlace de la tienda')
-        .replace(/👉|📦|⭐|🦊|✨|🔥|🎉|💬|💡/g, '')
+        .replace(/[•▪\-\*]\s+/g, '. ')     // viñetas a pausas de punto
+        .replace(/[#_~><\[\]()$]/g, '')    // símbolos que provocan chasquidos
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '') // remover emojis
+        .replace(/\s+/g, ' ')
         .trim();
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'es-MX'; // Español de México
-      utterance.rate = 1.05; // Cadencia dinámica ejecutiva
-      utterance.pitch = 0.95; // Tono maduro y seguro estilo Jarvis
+      if (!cleanText) return;
 
-      // Buscar voz en español preferida
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'es-MX';
+      utterance.rate = 1.0;  // Velocidad natural humana (1.0 estándar)
+      utterance.pitch = 1.0; // Tono natural y cálido (no robótico ni grave artificial)
+
+      // Priorizar voces de alta definición (Neural / Natural / Google / Microsoft)
       const voices = window.speechSynthesis.getVoices();
-      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX')) ||
-                           voices.find(v => v.lang.startsWith('es'));
-      if (spanishVoice) {
-        utterance.voice = spanishVoice;
+      
+      // 1. Voces mexicanas de alta calidad (Google español, Microsoft Sabina / Jorge / Dalia / Raul)
+      const highQualityMexicanVoice = voices.find(v => 
+        (v.lang === 'es-MX' || v.lang === 'es_MX') &&
+        (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Paulina') || v.name.includes('Dalia'))
+      );
+
+      // 2. Cualquier voz de México
+      const anyMexicanVoice = voices.find(v => v.lang === 'es-MX' || v.lang === 'es_MX');
+
+      // 3. Cualquier voz en español de alta calidad
+      const highQualitySpanishVoice = voices.find(v =>
+        v.lang.startsWith('es') &&
+        (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google'))
+      );
+
+      // 4. Cualquier voz en español
+      const anySpanishVoice = voices.find(v => v.lang.startsWith('es'));
+
+      const selectedVoice = highQualityMexicanVoice || anyMexicanVoice || highQualitySpanishVoice || anySpanishVoice;
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
 
       utterance.onstart = () => setIsVoiceSpeaking(true);
@@ -738,7 +764,7 @@ export default function AdminCRM() {
     }
   };
 
-  const stopJarvisVoice = () => {
+  const stopFoxVoice = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       setIsVoiceSpeaking(false);
@@ -763,7 +789,7 @@ export default function AdminCRM() {
     }
 
     try {
-      stopJarvisVoice();
+      stopFoxVoice();
       const recognition = new SpeechRecognition();
       recognition.lang = 'es-MX';
       recognition.interimResults = false;
@@ -798,7 +824,7 @@ export default function AdminCRM() {
     }
   };
 
-  // Ejecutar acción sugerida por JARVIS en la base de datos
+  // Ejecutar acción sugerida por Fox en la base de datos
   const handleExecuteAgentAction = async (msgId: string, actionExecution: any) => {
     try {
       if (actionExecution.type === 'order_whatsapp' || actionExecution.type === 'cart_recovery') {
@@ -818,7 +844,7 @@ export default function AdminCRM() {
 
       const res = await executeAgentAction(actionExecution.type, actionExecution.payload);
       if (res.success) {
-        alert(`✅ ${res.message || 'Acción ejecutada con éxito por JARVIS'}`);
+        alert(`✅ ${res.message || 'Acción ejecutada con éxito por Fox'}`);
         // Marcar acción como ejecutada en el chat
         setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
           ...m,
@@ -880,9 +906,9 @@ export default function AdminCRM() {
       };
       setAgentChatMessages(prev => [...prev, agentMsg]);
 
-      // Si está activada la voz de Jarvis, responder hablada en tiempo real
+      // Si está activada la voz de Fox, responder hablada en tiempo real
       if (autoVoiceReplyEnabled) {
-        speakWithJarvisVoice(reply);
+        speakWithFoxVoice(reply);
       }
     } catch (err: any) {
       const errorMsg: AgentChatMessage = {
@@ -5815,16 +5841,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
                     <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
                       <Radio className="w-3.5 h-3.5 text-[#E65F2B] animate-pulse" />
-                      JARVIS FoxDrop • Conectado en Vivo
+                      Fox • Conectado en Vivo
                     </span>
                     <span className="text-[10px] text-slate-400">({products.length} productos, {orders.length} pedidos)</span>
                   </div>
 
-                  {/* Controles de Voz JARVIS */}
+                  {/* Controles de Voz Fox */}
                   <div className="flex items-center gap-2.5 flex-wrap">
                     {/* Botón Briefing Matutino */}
                     <button
-                      onClick={() => handleSendAgentChatMessage("Buenos días JARVIS, dame el briefing ejecutivo del día: entregas en Puebla, finanzas y alertas críticas.")}
+                      onClick={() => handleSendAgentChatMessage("Buenos días Fox, dame el briefing ejecutivo del día: entregas en Puebla, finanzas y alertas críticas.")}
                       className="px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
                       title="Generar y escuchar el resumen operativo de hoy"
                     >
@@ -5838,7 +5864,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         checked={autoVoiceReplyEnabled}
                         onChange={e => {
                           setAutoVoiceReplyEnabled(e.target.checked);
-                          if (!e.target.checked) stopJarvisVoice();
+                          if (!e.target.checked) stopFoxVoice();
                         }}
                         className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
                       />
@@ -5848,7 +5874,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                     {isVoiceSpeaking && (
                       <button
-                        onClick={stopJarvisVoice}
+                        onClick={stopFoxVoice}
                         className="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-rose-100 transition animate-pulse"
                       >
                         <VolumeX className="w-3 h-3" />
@@ -5858,7 +5884,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                     <button
                       onClick={() => {
-                        stopJarvisVoice();
+                        stopFoxVoice();
                         setAgentChatMessages([agentChatMessages[0]]);
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold"
@@ -5892,7 +5918,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </span>
                           {msg.sender === 'agent' && (
                             <button
-                              onClick={() => speakWithJarvisVoice(msg.text)}
+                              onClick={() => speakWithFoxVoice(msg.text)}
                               className="text-slate-400 hover:text-[#E65F2B] transition p-0.5 rounded"
                               title="Escuchar en voz alta"
                             >
@@ -5901,7 +5927,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           )}
                         </div>
 
-                        {/* Tarjeta de Acción Ejecutiva Propuesta por JARVIS */}
+                        {/* Tarjeta de Acción Ejecutiva Propuesta por Fox */}
                         {msg.actionExecution && (
                           <div className={`mt-3 p-3 rounded-2xl border transition-all ${
                             msg.actionExecution.status === 'executed'
@@ -5928,7 +5954,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </div>
 
                             <p className="text-[11px] font-medium text-slate-700 mb-2.5">
-                              {msg.actionExecution.label || 'JARVIS preparó esta operación.'}
+                              {msg.actionExecution.label || 'Fox preparó esta operación.'}
                             </p>
 
                             {msg.actionExecution.status === 'pending' ? (
@@ -5982,7 +6008,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </div>
                       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-500 flex items-center gap-2">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#E65F2B]" />
-                        <span>JARVIS está analizando inventario, pedidos y finanzas de FoxDrop...</span>
+                        <span>Fox está analizando inventario, pedidos y finanzas de FoxDrop...</span>
                       </div>
                     </div>
                   )}
@@ -5990,9 +6016,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {isVoiceSpeaking && (
                     <div className="flex gap-2 items-center justify-center py-2 bg-orange-50/70 border border-orange-200/80 rounded-2xl text-xs text-orange-950 font-bold animate-pulse">
                       <Volume2 className="w-4 h-4 text-[#E65F2B]" />
-                      <span>JARVIS está hablando...</span>
+                      <span>Fox está hablando...</span>
                       <button
-                        onClick={stopJarvisVoice}
+                        onClick={stopFoxVoice}
                         className="ml-2 text-rose-600 underline text-[11px]"
                       >
                         Detener voz
@@ -6001,7 +6027,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   )}
                 </div>
 
-                {/* Input del Chat con Botón de Voz JARVIS */}
+                {/* Input del Chat con Botón de Voz Fox */}
                 <div className="p-3 sm:p-4 bg-slate-50 border-t border-slate-200">
                   <form
                     onSubmit={e => {
@@ -6010,11 +6036,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     }}
                     className="flex items-center gap-2"
                   >
-                    {/* Botón de Micrófono JARVIS */}
+                    {/* Botón de Micrófono Fox */}
                     <button
                       type="button"
                       onClick={toggleVoiceListening}
-                      title={isVoiceListening ? "Detener escucha" : "Hablar con JARVIS por micrófono"}
+                      title={isVoiceListening ? "Detener escucha" : "Hablar con Fox por micrófono"}
                       className={`p-3 rounded-2xl transition flex items-center justify-center shrink-0 border ${
                         isVoiceListening
                           ? 'bg-rose-500 text-white border-rose-600 animate-pulse ring-4 ring-rose-400/30'
@@ -6028,7 +6054,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       type="text"
                       value={agentInputText}
                       onChange={e => setAgentInputText(e.target.value)}
-                      placeholder={isVoiceListening ? "🎙️ Escuchando tu voz... habla ahora" : "Pregúntale a JARVIS o presiona el micrófono para hablar..."}
+                      placeholder={isVoiceListening ? "🎙️ Escuchando tu voz... habla ahora" : "Pregúntale a Fox o presiona el micrófono para hablar..."}
                       disabled={agentChatLoading}
                       className={`flex-1 px-4 py-3 bg-white border rounded-2xl text-xs focus:outline-none focus:border-[#E65F2B] font-medium text-slate-800 disabled:opacity-50 transition ${
                         isVoiceListening ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'
@@ -6045,7 +6071,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </form>
                   {isVoiceListening && (
                     <span className="text-[10px] text-rose-600 font-bold mt-1.5 block animate-pulse text-center">
-                      🔴 Micrófono activo: JARVIS te está escuchando. Al terminar de hablar procesará tu instrucción automáticamente.
+                      🔴 Micrófono activo: Fox te está escuchando. Al terminar de hablar procesará tu instrucción automáticamente.
                     </span>
                   )}
                 </div>
