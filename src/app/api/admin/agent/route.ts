@@ -139,6 +139,87 @@ Devuelve la respuesta en formato JSON con la siguiente estructura exacta:
       }
     }
 
+    // ── 1.B GENERACIÓN DE CALENDARIO SEMANAL CONTINUO (7 DÍAS) ──
+    if (action === "generate_weekly_calendar") {
+      const { availableProducts, focusTheme } = body;
+
+      const productsSummary = (availableProducts || []).slice(0, 15).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        price: p.publicPrice,
+        category: p.category,
+        image: p.images?.[0] || "",
+        stock: p.stock,
+      }));
+
+      const systemPrompt = `Eres FoxBot, el Director Creativo y Estratega de Crecimiento de FoxDrop Puebla (tienda de importación exclusiva, gadgets, cosméticos, coleccionables y tecnología en Puebla, México).
+Tu objetivo primordial es LOGRAR QUE LA TIENDA SEA CONOCIDA Y RECONOCIDA en toda la ciudad de Puebla y alrededores mediante presencia continua, atractiva y profesional.
+
+Debes armar una parrilla estratégica de publicaciones para los 7 días de la semana (Lunes a Domingo) balanceando los 4 pilares:
+1. Lunes - Novedad / Lo Más Nuevo de Importación (despertar deseo por lo recién llegado).
+2. Martes - Educativo / Curiosidad (para qué sirve, problema que soluciona o demostración).
+3. Miércoles - Producto Estrella / Best Seller (el más viral o buscado).
+4. Jueves - Pregunta a la Comunidad / Interacción de Puebla (engagement, votaciones, curiosidades).
+5. Viernes - Oferta Relámpago de Fin de Semana (urgencia, compra inmediata antes de agotar stock).
+6. Sábado - Combo o Regalo Ideal (fomento de ticket promedio alto).
+7. Domingo - Confianza Local & Entregas en Puebla (recordar entregas personales en Plaza Dorada, Angelópolis, Zócalo, CAPU, envíos seguros y Club de Estrellas FoxDrop).
+
+IMPORTANTE:
+- Usa ganchos de atención virales (hooks) que detengan el scroll.
+- Emojis pertinentes y llamados a la acción claros invitando a escribir al WhatsApp o visitar foxdrop.mx.
+- Hashtags estratégicos locales de Puebla (#Puebla #PueblaDeZaragoza #FoxDrop #Cholula #AngelopolisPuebla #TiendaPuebla #ImportacionesPuebla).`;
+
+      const prompt = `Genera un plan semanal estructurado para FoxDrop.
+Tema o enfoque de la semana: ${focusTheme || "Crecimiento de marca, tendencias de importación y promociones en Puebla"}
+
+Catálogo de productos disponibles para elegir:
+${JSON.stringify(productsSummary, null, 2)}
+
+Devuelve ÚNICAMENTE un JSON válido con la siguiente estructura exacta:
+{
+  "theme": "Título inspirador de la campaña de la semana",
+  "weekLabel": "Semana del Crecimiento FoxDrop Puebla",
+  "days": [
+    {
+      "dayName": "Lunes",
+      "pillar": "novedad",
+      "pillarLabel": "🔥 Novedad de Importación",
+      "productId": "id del producto si aplica",
+      "productTitle": "nombre del producto seleccionado",
+      "productPrice": 299,
+      "productImage": "url de imagen del producto",
+      "suggestedTime": "11:30 AM",
+      "suggestedNetwork": "Instagram & Facebook",
+      "headline": "Gancho principal potente",
+      "caption": "Copy estructurado con emojis y saltos de línea",
+      "callToAction": "¡Mándanos mensaje directo por WhatsApp o entra a foxdrop.mx para apartar el tuyo!",
+      "hashtags": ["#FoxDrop", "#Puebla", "#NovedadesPuebla"]
+    }
+  ]
+} (Asegúrate de incluir exactamente los 7 días de Lunes a Domingo)`;
+
+      try {
+        const aiResponse = await callGemini(prompt, systemPrompt);
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          // Asignar IDs y fullCopy
+          parsed.id = `plan_${Date.now()}`;
+          parsed.createdAt = new Date().toISOString();
+          parsed.days = (parsed.days || []).map((d: any, idx: number) => ({
+            ...d,
+            id: `day_${idx}_${Date.now()}`,
+            fullCopy: `${d.headline}\n\n${d.caption}\n\n👉 ${d.callToAction}\n\n${(d.hashtags || []).join(" ")}`,
+            isCompleted: false,
+          }));
+          return NextResponse.json({ success: true, plan: parsed });
+        }
+        return NextResponse.json({ error: "No se pudo interpretar el formato del plan" }, { status: 500 });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
     // ── 2. SEGUIMIENTO PERSONALIZADO DE PEDIDO ──
     if (action === "generate_order_followup") {
       const { orderNumber, clientName, status, total, daysSinceCreated, trackingNumber } = body;

@@ -511,6 +511,17 @@ export async function generateAgentSocialPost(params: {
   return data.post;
 }
 
+export async function generateAgentWeeklyCalendar(availableProducts: any[], focusTheme?: string) {
+  const res = await fetch("/api/admin/agent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "generate_weekly_calendar", availableProducts, focusTheme }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Error al generar calendario semanal");
+  return data.plan;
+}
+
 export async function generateAgentOrderFollowup(params: {
   orderNumber: string;
   clientName: string;

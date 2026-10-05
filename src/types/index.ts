@@ -246,5 +246,33 @@ export interface AgentSocialPost {
   fullCopy: string;
 }
 
+export interface AgentWeeklyCalendarDay {
+  id: string;
+  dayName: string; // 'Lunes', 'Martes', etc.
+  pillar: 'novedad' | 'educativo' | 'oferta' | 'confianza_local';
+  pillarLabel: string;
+  productId?: string;
+  productTitle: string;
+  productPrice: number;
+  productImage?: string;
+  headline: string;
+  caption: string;
+  callToAction: string;
+  hashtags: string[];
+  fullCopy: string;
+  suggestedTime: string; // '11:00 AM', '07:30 PM'
+  suggestedNetwork: 'Instagram & Facebook' | 'TikTok & Reels' | 'WhatsApp Estados & Grupos';
+  isCompleted?: boolean;
+}
+
+export interface AgentWeeklyPlan {
+  id: string;
+  weekLabel: string;
+  theme: string;
+  createdAt: string;
+  days: AgentWeeklyCalendarDay[];
+}
+
+
 
 

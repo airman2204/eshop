@@ -12,9 +12,9 @@ import {
   Users, Layers, Award, Phone, Mail, History, ExternalLink, QrCode, ShoppingBag, Receipt, Printer, Minus, Camera,
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
   Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
-  Bot, Share2, Flame, Lightbulb, MessageCircle
+  Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle
 } from 'lucide-react';
-import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost } from '@/types';
+import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
@@ -24,7 +24,7 @@ import {
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
   deleteClientFromDb,
-  generateAgentSocialPost, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot
+  generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -200,17 +200,17 @@ export default function AdminCRM() {
   const [audioEnabled, setAudioEnabled] = useState(true);
 
   // ─── ESTADO FOXBOT AI AGENT ─────────────────────────────────────────────────
-  const [agentActiveTab, setAgentActiveTab] = useState<'chat' | 'marketing' | 'sales_radar'>('chat');
+  const [agentActiveTab, setAgentActiveTab] = useState<'chat' | 'marketing' | 'weekly_plan' | 'sales_radar'>('weekly_plan');
   const [agentChatMessages, setAgentChatMessages] = useState<AgentChatMessage[]>([
     {
       id: 'welcome',
       sender: 'agent',
-      text: '¡Hola! 🦊 Soy **FoxBot**, tu copiloto de ventas, marketing y operaciones de FoxDrop Puebla.\n\nPuedo ayudarte a:\n- 📢 **Redactar publicaciones y copys** para Instagram, Facebook, TikTok y estados de WhatsApp.\n- 📦 **Dar seguimiento inteligente a pedidos** pendientes o en camino.\n- 🛒 **Recuperar carritos abandonados** con promociones.\n- 💡 **Sugerirte estrategias** con base en tu inventario en tiempo real.\n\n¿En qué te apoyo hoy?',
+      text: '¡Hola! 🦊 Soy **FoxBot**, tu copiloto de ventas, marketing y operaciones de FoxDrop Puebla.\n\nPuedo ayudarte a:\n- 📅 **Crear tu plan de difusión continua semanal** para que toda Puebla conozca la tienda.\n- 🎨 **Generar flyers visuales HD listos para publicar** con fotos de tus productos y precios.\n- 📢 **Redactar publicaciones y copys** para Instagram, Facebook, TikTok y WhatsApp.\n- 📦 **Dar seguimiento inteligente a pedidos** pendientes o en camino.\n- 💡 **Sugerirte estrategias** con base en tu inventario en tiempo real.\n\n¿En qué te apoyo hoy?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actionSuggestions: [
+        'Genera el plan de difusión continua para esta semana',
         '¿Qué productos tienen poco stock para promocionar?',
         'Escribe un post de Instagram sobre novedades de importación',
-        '¿Hay pedidos pendientes que requieran mi atención hoy?'
       ],
     },
   ]);
@@ -226,6 +226,14 @@ export default function AdminCRM() {
   const [agentGeneratedPost, setAgentGeneratedPost] = useState<AgentSocialPost | null>(null);
   const [agentGeneratingPost, setAgentGeneratingPost] = useState(false);
   const [agentPostCopied, setAgentPostCopied] = useState(false);
+
+  // Weekly Campaign Planner State
+  const [agentWeeklyPlan, setAgentWeeklyPlan] = useState<AgentWeeklyPlan | null>(null);
+  const [agentGeneratingPlan, setAgentGeneratingPlan] = useState(false);
+  const [agentPlanFocusTheme, setAgentPlanFocusTheme] = useState('');
+  const [agentSelectedDayForModal, setAgentSelectedDayForModal] = useState<AgentWeeklyCalendarDay | null>(null);
+  const [downloadingFlyerId, setDownloadingFlyerId] = useState<string | null>(null);
+  const flyerFlyerRef = useRef<HTMLDivElement>(null);
 
   // Followup Generator State
   const [agentFollowupOrderId, setAgentFollowupOrderId] = useState<string | null>(null);
@@ -778,6 +786,47 @@ export default function AdminCRM() {
       setAgentFollowupLoading(false);
     }
   };
+
+  const handleGenerateWeeklyPlan = async () => {
+    if (products.length === 0) {
+      alert('Se requieren productos en el catálogo para armar el calendario de difusión.');
+      return;
+    }
+
+    setAgentGeneratingPlan(true);
+    try {
+      const plan = await generateAgentWeeklyCalendar(products, agentPlanFocusTheme);
+      setAgentWeeklyPlan(plan);
+      localStorage.setItem('foxdrop_agent_weekly_plan', JSON.stringify(plan));
+    } catch (err: any) {
+      alert(err.message || 'Error al generar el plan de difusión semanal');
+    } finally {
+      setAgentGeneratingPlan(false);
+    }
+  };
+
+  const handleDownloadFlyer = async (day: AgentWeeklyCalendarDay) => {
+    setDownloadingFlyerId(day.id);
+    try {
+      // Intentar captura con html-to-image si el flyer está montado
+      const element = document.getElementById(`flyer-card-${day.id}`);
+      if (element) {
+        const dataUrl = await toPng(element, { quality: 0.95, pixelRatio: 2 });
+        const link = document.createElement('a');
+        link.download = `foxdrop-${day.dayName.toLowerCase()}-${day.productTitle.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 20)}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else {
+        alert('Selecciona este día para previsualizar el flyer antes de descargarlo.');
+      }
+    } catch (err) {
+      console.error('Error generando imagen de flyer:', err);
+      alert('No se pudo generar la imagen del flyer. Puedes copiar el texto y usar la foto del producto directamente.');
+    } finally {
+      setDownloadingFlyerId(null);
+    }
+  };
+
 
 
   // ─── ACCIONES ENVÍOS & MÉTODOS DE PAGO ──────────────────────────────────────
@@ -5225,17 +5274,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
 
                 {/* Subtabs del Agente */}
-                <div className="flex bg-slate-800/80 p-1 rounded-2xl border border-slate-700/60 self-start md:self-auto">
+                <div className="flex flex-wrap bg-slate-800/80 p-1 rounded-2xl border border-slate-700/60 self-start md:self-auto gap-1">
                   <button
-                    onClick={() => setAgentActiveTab('chat')}
+                    onClick={() => setAgentActiveTab('weekly_plan')}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                      agentActiveTab === 'chat'
-                        ? 'bg-[#E65F2B] text-white shadow-sm'
+                      agentActiveTab === 'weekly_plan'
+                        ? 'bg-[#E65F2B] text-white shadow-sm ring-2 ring-orange-400/40'
                         : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
                     }`}
                   >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Chat Estratégico</span>
+                    <CalendarDays className="w-3.5 h-3.5 text-amber-300" />
+                    <span>📅 Difusión Continua (7 Días)</span>
                   </button>
                   <button
                     onClick={() => setAgentActiveTab('marketing')}
@@ -5246,7 +5295,18 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Redes & Marketing</span>
+                    <span>Post Individual</span>
+                  </button>
+                  <button
+                    onClick={() => setAgentActiveTab('chat')}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      agentActiveTab === 'chat'
+                        ? 'bg-[#E65F2B] text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Chat con FoxBot</span>
                   </button>
                   <button
                     onClick={() => setAgentActiveTab('sales_radar')}
@@ -5262,6 +5322,328 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
             </div>
+
+            {/* VISTA 0: DIFUSIÓN CONTINUA / PLAN SEMANAL (7 DÍAS) */}
+            {agentActiveTab === 'weekly_plan' && (
+              <div className="space-y-6">
+                {/* Generador de Campaña */}
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 bg-orange-100 text-[#E65F2B] rounded-xl">
+                          <CalendarDays className="w-5 h-5" />
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-slate-900">
+                          Parrilla de Difusión Continua (7 Días)
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                        FoxBot organiza los 4 pilares probados para dar a conocer la tienda en Puebla (Novedad, Curiosidad, Oferta y Confianza Local). Genera con 1 solo clic los 7 copys y flyers publicitarios listos para publicar en Facebook, Instagram y WhatsApp.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+                      <button
+                        onClick={handleGenerateWeeklyPlan}
+                        disabled={agentGeneratingPlan || products.length === 0}
+                        className="px-5 py-2.5 bg-gradient-to-r from-[#E65F2B] to-[#FF8A00] hover:opacity-95 text-white font-bold rounded-2xl text-xs flex items-center gap-2 transition shadow-md disabled:opacity-50"
+                      >
+                        {agentGeneratingPlan ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Diseñando Estrategia con IA...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-4 h-4" />
+                            <span>Generar Plan Semanal con FoxBot</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Input de Enfoque Opcional */}
+                  <div className="flex flex-col sm:flex-row items-center gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-xs">
+                    <span className="font-bold text-slate-700 shrink-0 flex items-center gap-1.5">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                      Enfoque o Temporada (Opcional):
+                    </span>
+                    <input
+                      type="text"
+                      value={agentPlanFocusTheme}
+                      onChange={e => setAgentPlanFocusTheme(e.target.value)}
+                      placeholder="Ej. Quincena de novedades, Especial cuidado de la piel en Puebla, Liquidación de temporada..."
+                      className="flex-1 w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+                </div>
+
+                {/* Parrilla de los 7 Días */}
+                {agentWeeklyPlan && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                          Campaña activa: {agentWeeklyPlan.theme}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          (Generado el {new Date(agentWeeklyPlan.createdAt).toLocaleDateString()})
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        7 publicaciones listas
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {agentWeeklyPlan.days.map((day, idx) => (
+                        <div
+                          key={day.id || idx}
+                          className="bg-white border border-slate-200 rounded-3xl p-5 shadow-2xs hover:shadow-md transition flex flex-col justify-between space-y-3 relative group"
+                        >
+                          <div>
+                            {/* Cabecera del Día */}
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-[#E65F2B]" />
+                                {day.dayName}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-bold">
+                                {day.suggestedTime}
+                              </span>
+                            </div>
+
+                            {/* Pilar de Contenido */}
+                            <div className="mb-2.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-orange-50 text-orange-800 border border-orange-200/60 inline-block">
+                                {day.pillarLabel}
+                              </span>
+                            </div>
+
+                            {/* Tarjeta del Producto */}
+                            <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-2xl border border-slate-100 mb-3">
+                              {day.productImage ? (
+                                <img
+                                  src={day.productImage}
+                                  alt={day.productTitle}
+                                  className="w-11 h-11 rounded-xl object-cover shrink-0 border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xs shrink-0">
+                                  🦊
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="font-bold text-slate-800 text-xs block truncate" title={day.productTitle}>
+                                  {day.productTitle}
+                                </span>
+                                <span className="font-mono font-black text-[#E65F2B] text-xs">
+                                  ${day.productPrice} MXN
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Gancho y Copy Preview */}
+                            <h4 className="font-extrabold text-xs text-slate-900 line-clamp-2 leading-snug mb-1">
+                              {day.headline}
+                            </h4>
+                            <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed whitespace-pre-wrap">
+                              {day.caption}
+                            </p>
+                          </div>
+
+                          {/* Acciones del Día */}
+                          <div className="pt-2 border-t border-slate-100 space-y-2">
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              Canal recomendado: <strong className="text-slate-700">{day.suggestedNetwork}</strong>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1.5 text-xs font-bold">
+                              <button
+                                onClick={() => setAgentSelectedDayForModal(day)}
+                                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition flex items-center justify-center gap-1 text-[11px]"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Ver Copy & Flyer</span>
+                              </button>
+                              <a
+                                href={`https://wa.me/?text=${encodeURIComponent(day.fullCopy)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition flex items-center justify-center gap-1 text-[11px] shadow-2xs"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span>WhatsApp</span>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!agentWeeklyPlan && !agentGeneratingPlan && (
+                  <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-400 space-y-3 shadow-2xs">
+                    <div className="w-16 h-16 rounded-3xl bg-orange-50 text-[#E65F2B] flex items-center justify-center mx-auto">
+                      <CalendarDays className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-sm">Aún no has generado el plan de esta semana</h4>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
+                        Presiona el botón de arriba para que FoxBot organice tus 7 publicaciones semanales automáticas con ganchos virales y hashtags de Puebla.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* MODAL DETALLE DE PUBLICACIÓN & FLYER HD DESCARGABLE */}
+            {agentSelectedDayForModal && (
+              <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                  <button
+                    onClick={() => setAgentSelectedDayForModal(null)}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <span className="text-base font-black text-slate-900">
+                      Publicación de {agentSelectedDayForModal.dayName}
+                    </span>
+                    <span className="text-xs bg-orange-100 text-[#E65F2B] font-black px-2.5 py-0.5 rounded-full">
+                      {agentSelectedDayForModal.pillarLabel}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                    {/* COLUMNA 1: FLYER HD OFICIAL GENERADO (html-to-image) */}
+                    <div className="md:col-span-5 space-y-3">
+                      <span className="text-xs font-bold text-slate-600 block">
+                        Flyer Visual HD Oficial para Redes:
+                      </span>
+
+                      {/* Elemento que se descarga como imagen PNG */}
+                      <div
+                        id={`flyer-card-${agentSelectedDayForModal.id}`}
+                        ref={flyerFlyerRef}
+                        className="w-full aspect-square rounded-3xl bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-slate-950 text-white p-5 flex flex-col justify-between shadow-xl relative overflow-hidden border border-slate-800"
+                      >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl"></div>
+
+                        {/* Top: Branding */}
+                        <div className="flex items-center justify-between z-10">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-lg">🦊</span>
+                            <span className="font-black text-sm tracking-tight text-white">FoxDrop</span>
+                            <span className="text-[10px] text-orange-400 font-bold ml-1">Puebla</span>
+                          </div>
+                          <span className="text-[9px] font-black bg-white/10 px-2 py-0.5 rounded-full text-slate-300">
+                            foxdrop.mx
+                          </span>
+                        </div>
+
+                        {/* Centro: Imagen del Producto */}
+                        <div className="my-auto text-center z-10 flex flex-col items-center">
+                          {agentSelectedDayForModal.productImage ? (
+                            <img
+                              src={agentSelectedDayForModal.productImage}
+                              alt={agentSelectedDayForModal.productTitle}
+                              className="w-36 h-36 object-contain rounded-2xl drop-shadow-2xl mx-auto my-2 bg-white/5 p-1"
+                            />
+                          ) : (
+                            <div className="w-28 h-28 rounded-2xl bg-orange-500/10 flex items-center justify-center text-4xl mx-auto">
+                              📦
+                            </div>
+                          )}
+                          <h3 className="font-black text-sm text-white line-clamp-2 px-2 leading-tight mt-1">
+                            {agentSelectedDayForModal.productTitle}
+                          </h3>
+                        </div>
+
+                        {/* Bottom: Precio & Entregas */}
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-2.5 flex items-center justify-between z-10 border border-white/10">
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-slate-300 block">Precio Especial</span>
+                            <span className="text-base font-black text-orange-400 font-mono">
+                              ${agentSelectedDayForModal.productPrice} MXN
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[9px] font-bold text-emerald-400 block">Entregas en Puebla</span>
+                            <span className="text-[8px] text-slate-300">Plaza Dorada • Angelópolis</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDownloadFlyer(agentSelectedDayForModal)}
+                        disabled={downloadingFlyerId === agentSelectedDayForModal.id}
+                        className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-sm"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>{downloadingFlyerId === agentSelectedDayForModal.id ? 'Descargando...' : 'Descargar Imagen Flyer HD'}</span>
+                      </button>
+                    </div>
+
+                    {/* COLUMNA 2: COPY COMPLETO & BOTONES DE DIFUSIÓN */}
+                    <div className="md:col-span-7 space-y-4 text-xs">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Gancho (Headline):</label>
+                        <div className="p-3 bg-orange-50/70 border border-orange-200/80 rounded-2xl font-black text-slate-900">
+                          {agentSelectedDayForModal.headline}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-slate-700">Texto Completo (Listo para Pegar):</label>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(agentSelectedDayForModal.fullCopy);
+                              alert('¡Texto copiado al portapapeles!');
+                            }}
+                            className="text-[#E65F2B] font-bold hover:underline flex items-center gap-1 text-[11px]"
+                          >
+                            <Copy className="w-3 h-3" /> Copiar Texto
+                          </button>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 font-mono text-slate-800 whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto select-all">
+                          {agentSelectedDayForModal.fullCopy}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent(agentSelectedDayForModal.fullCopy)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 transition shadow-sm"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          <span>Enviar a Grupos / Estados de WhatsApp</span>
+                        </a>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(agentSelectedDayForModal.fullCopy);
+                            alert('¡Copy copiado! Pégalo en tu Facebook o Instagram.');
+                          }}
+                          className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 transition"
+                        >
+                          <Copy className="w-4 h-4" />
+                          <span>Copiar para Facebook / Instagram</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* VISTA 1: CHAT ESTRATÉGICO CON EL AGENTE */}
             {agentActiveTab === 'chat' && (
