@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+// @ts-ignore
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,7 +11,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Texto requerido" }, { status: 400 });
     }
 
-    // Limpiar caracteres extraños, markdown y recortar a longitud segura (Google TTS max ~200 chars por chunk)
+    // Limpieza profunda de markdown, URLs, viñetas y emojis
     const cleanText = text
       .replace(/\*\*([^*]+)\*\*/g, "$1")
       .replace(/\*([^*]+)\*/g, "$1")
@@ -26,74 +28,61 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Texto vacío después de limpiar" }, { status: 400 });
     }
 
-    // Dividir en fragmentos respetando oraciones para evitar cortar palabras
-    const sentences = cleanText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [cleanText];
-    const chunks: string[] = [];
-    let currentChunk = "";
+    // 1. Motor Primario de Alta Fidelidad: Microsoft Neural - Voz de Hombre Mexicano (es-MX-JorgeNeural / es-MX-RaulNeural)
+    try {
+      const tts = new MsEdgeTTS();
+      await tts.setMetadata("es-MX-JorgeNeural", OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+      
+      const { audioStream } = tts.toStream(cleanText);
+      const audioChunks: Buffer[] = [];
 
-    for (const sentence of sentences) {
-      const trimmed = sentence.trim();
-      if (!trimmed) continue;
-
-      if ((currentChunk + " " + trimmed).length <= 180) {
-        currentChunk = currentChunk ? currentChunk + " " + trimmed : trimmed;
-      } else {
-        if (currentChunk) chunks.push(currentChunk);
-        // Si una sola oración excede los 180 caracteres, partirla por comas o palabras
-        if (trimmed.length > 180) {
-          const words = trimmed.split(" ");
-          let subChunk = "";
-          for (const word of words) {
-            if ((subChunk + " " + word).length <= 180) {
-              subChunk = subChunk ? subChunk + " " + word : word;
-            } else {
-              if (subChunk) chunks.push(subChunk);
-              subChunk = word;
-            }
-          }
-          if (subChunk) chunks.push(subChunk);
-          currentChunk = "";
-        } else {
-          currentChunk = trimmed;
-        }
-      }
-    }
-    if (currentChunk) chunks.push(currentChunk);
-
-    // Descargar cada chunk de Google TTS con acento mexicano nativo (es-MX)
-    const audioBuffers: Buffer[] = [];
-    for (const chunk of chunks.slice(0, 15)) { // hasta ~2,500 caracteres
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
-        chunk
-      )}&tl=es-MX&client=tw-ob`;
-
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        },
+      await new Promise((resolve, reject) => {
+        audioStream.on("data", (chunk: Buffer) => audioChunks.push(chunk));
+        audioStream.on("end", resolve);
+        audioStream.on("error", reject);
       });
 
-      if (response.ok) {
-        const arrayBuf = await response.arrayBuffer();
-        audioBuffers.push(Buffer.from(arrayBuf));
+      if (audioChunks.length > 0) {
+        const mergedBuffer = Buffer.concat(audioChunks);
+        return new NextResponse(mergedBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Cache-Control": "public, max-age=86400, s-maxage=86400",
+            "Content-Length": mergedBuffer.length.toString(),
+          },
+        });
       }
+    } catch (edgeErr) {
+      console.warn("Fallo motor neural JorgeNeural, usando fallback Google TTS:", edgeErr);
     }
 
-    if (audioBuffers.length === 0) {
-      return NextResponse.json({ error: "No se pudo generar audio" }, { status: 500 });
-    }
+    // 2. Fallback de respaldo: Google TTS
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
+      cleanText.slice(0, 180)
+    )}&tl=es-MX&client=tw-ob`;
 
-    const mergedBuffer = Buffer.concat(audioBuffers);
-
-    return new NextResponse(mergedBuffer, {
-      status: 200,
+    const resFallback = await fetch(url, {
       headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=86400, s-maxage=86400",
-        "Content-Length": mergedBuffer.length.toString(),
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
+
+    if (resFallback.ok) {
+      const arrayBuf = await resFallback.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "public, max-age=86400",
+          "Content-Length": buffer.length.toString(),
+        },
+      });
+    }
+
+    return NextResponse.json({ error: "No se pudo generar audio" }, { status: 500 });
   } catch (err: any) {
     console.error("Error en /api/admin/agent/tts:", err);
     return NextResponse.json({ error: err.message || "Error al procesar audio" }, { status: 500 });

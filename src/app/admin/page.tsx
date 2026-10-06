@@ -5913,28 +5913,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <span>☀️ Briefing Matutino</span>
                     </button>
 
-                    {/* Selector de Voz Dinámico (Servidor y Navegador) */}
-                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-2xs">
+                    {/* Indicador de Voz Oficial Fija: Hombre Mexicano HD */}
+                    <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 rounded-xl px-2.5 py-1 shadow-2xs select-none">
                       <Volume2 className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
-                      <select
-                        value={selectedVoiceUri}
-                        onChange={e => {
-                          const newUri = e.target.value;
-                          setSelectedVoiceUri(newUri);
-                          localStorage.setItem('foxdrop_agent_voice_uri', newUri);
-                          speakWithFoxVoice("Hola, soy Fox. ¿Cómo escuchas mi voz ahora?");
-                        }}
-                        title="Voz oficial de Fox (funciona en cualquier celular o computadora)"
-                        className="bg-transparent text-[11px] font-bold text-slate-700 outline-none max-w-[140px] sm:max-w-[200px] truncate cursor-pointer"
-                      >
-                        <option value="server_mexican">🇲🇽 Fox Oficial (Mexicana Fluida)</option>
-                        {availableVoices.map(v => (
-                          <option key={v.voiceURI} value={v.voiceURI}>
-                            {v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX') ? '🇲🇽 ' : '🌐 '}
-                            {v.name.replace(/(Microsoft|Google|Desktop|Natural|Online \([^)]+\))/gi, '').trim() || v.name} ({v.lang})
-                          </option>
-                        ))}
-                      </select>
+                      <span className="text-[11px] font-black text-orange-950 flex items-center gap-1">
+                        <span>🇲🇽</span>
+                        <span>Voz Fox (Hombre Mexicano HD)</span>
+                      </span>
                     </div>
 
                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
@@ -8565,9 +8550,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               setAgentActiveTab('chat');
             }}
             title="Abrir asistente Fox"
-            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
+            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative overflow-visible"
           >
-            <span className="text-2xl select-none filter drop-shadow-sm">🦊</span>
+            {/* Carita oficial 3D del logo FoxDrop */}
+            <img
+              src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+              alt="Fox"
+              className="w-9 h-9 object-contain drop-shadow-md transition-transform group-hover:scale-110 select-none pointer-events-none"
+            />
             {/* Indicador de estado en vivo */}
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
