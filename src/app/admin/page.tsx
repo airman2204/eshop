@@ -223,8 +223,9 @@ export default function AdminCRM() {
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
   const [autoVoiceReplyEnabled, setAutoVoiceReplyEnabled] = useState(true);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceUri, setSelectedVoiceUri] = useState<string>('');
+  const [selectedVoiceUri, setSelectedVoiceUri] = useState<string>('server_mexican');
   const recognitionRef = useRef<any>(null);
+  const foxAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Marketing Generator State
   const [agentSelectedProductId, setAgentSelectedProductId] = useState<string>('');
@@ -727,14 +728,14 @@ export default function AdminCRM() {
     }
   };
 
-  // ─── ACCIONES FOX AI AGENT & VOZ FOX ─────────────────────────────────────
+  // ─── ACCIONES FOX AI AGENT & VOZ FOX (SERVIDO DESDE EL SISTEMA ADMIN) ─────
   const speakWithFoxVoice = (rawText: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (typeof window === 'undefined') return;
 
     try {
-      window.speechSynthesis.cancel(); // Detener cualquier locución previa
+      stopFoxVoice(); // Detener cualquier locución previa
 
-      // Limpieza exhaustiva de markdown, asteriscos, guiones, corchetes, urls y emojis
+      // Limpieza exhaustiva de markdown, asteriscos, viñetas, emojis y URLs
       let cleanText = rawText
         .replace(/\*\*([^*]+)\*\*/g, '$1') // quitar negritas
         .replace(/\*([^*]+)\*/g, '$1')     // quitar cursivas
@@ -749,51 +750,80 @@ export default function AdminCRM() {
 
       if (!cleanText) return;
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = 'es-MX';
-      utterance.rate = 1.0;  // Velocidad natural humana (1.0 estándar)
-      utterance.pitch = 1.0; // Tono natural y cálido (no robótico ni grave artificial)
+      // 1. MODO VOZ NATIVA DEL SISTEMA (Google TTS Neural es-MX en Servidor)
+      // Funciona idéntico en Windows, Mac, Android, iOS sin depender del sistema operativo del cliente
+      if (!selectedVoiceUri || selectedVoiceUri === 'server_mexican') {
+        const audioUrl = `/api/admin/agent/tts?text=${encodeURIComponent(cleanText)}`;
+        const audio = new Audio(audioUrl);
+        foxAudioRef.current = audio;
 
-      // Asignar voz seleccionada por el usuario o la mejor voz mexicana detectada
-      const voices = window.speechSynthesis.getVoices();
-      let matchedVoice: SpeechSynthesisVoice | undefined;
+        audio.onplay = () => setIsVoiceSpeaking(true);
+        audio.onended = () => setIsVoiceSpeaking(false);
+        audio.onerror = () => {
+          // Si el audio del servidor fallara por red, fallback a síntesis de navegador
+          setIsVoiceSpeaking(false);
+          fallbackLocalSpeechSynthesis(cleanText);
+        };
 
-      if (selectedVoiceUri) {
-        matchedVoice = voices.find(v => v.voiceURI === selectedVoiceUri);
+        audio.play().catch(err => {
+          console.warn("Audio autoplay bloqueado o error en servidor:", err);
+          fallbackLocalSpeechSynthesis(cleanText);
+        });
+        return;
       }
 
-      if (!matchedVoice) {
-        // Priorizar voces mexicanas naturales (Google, Microsoft Sabina / Jorge / Dalia / Raul / Paulina)
-        matchedVoice = voices.find(v => 
-          (v.lang === 'es-MX' || v.lang === 'es_MX') &&
-          (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Paulina') || v.name.includes('Dalia') || v.name.includes('Jorge') || v.name.includes('Raul'))
-        ) ||
-        voices.find(v => v.lang === 'es-MX' || v.lang === 'es_MX') ||
-        voices.find(v => v.lang.startsWith('es') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google'))) ||
-        voices.find(v => v.lang.startsWith('es'));
-      }
-
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-        utterance.lang = matchedVoice.lang;
-      }
-
-      utterance.onstart = () => setIsVoiceSpeaking(true);
-      utterance.onend = () => setIsVoiceSpeaking(false);
-      utterance.onerror = () => setIsVoiceSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
+      // 2. MODO VOZ LOCAL DEL NAVEGADOR (Si el usuario eligió una específica de su equipo)
+      fallbackLocalSpeechSynthesis(cleanText);
     } catch (err) {
-      console.warn('Speech synthesis no soportada o bloqueada:', err);
+      console.warn('Error iniciando voz de Fox:', err);
       setIsVoiceSpeaking(false);
     }
   };
 
+  const fallbackLocalSpeechSynthesis = (cleanText: string) => {
+    if (!window.speechSynthesis) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'es-MX';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    let matchedVoice: SpeechSynthesisVoice | undefined;
+
+    if (selectedVoiceUri && selectedVoiceUri !== 'server_mexican') {
+      matchedVoice = voices.find(v => v.voiceURI === selectedVoiceUri);
+    }
+
+    if (!matchedVoice) {
+      matchedVoice = voices.find(v => (v.lang === 'es-MX' || v.lang === 'es_MX')) ||
+                     voices.find(v => v.lang.startsWith('es'));
+    }
+
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+      utterance.lang = matchedVoice.lang;
+    }
+
+    utterance.onstart = () => setIsVoiceSpeaking(true);
+    utterance.onend = () => setIsVoiceSpeaking(false);
+    utterance.onerror = () => setIsVoiceSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   const stopFoxVoice = () => {
+    // 1. Detener audio de servidor
+    if (foxAudioRef.current) {
+      foxAudioRef.current.pause();
+      foxAudioRef.current.currentTime = 0;
+      foxAudioRef.current = null;
+    }
+    // 2. Detener SpeechSynthesis del navegador
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      setIsVoiceSpeaking(false);
     }
+    setIsVoiceSpeaking(false);
   };
 
   const toggleVoiceListening = () => {
@@ -5883,33 +5913,29 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <span>☀️ Briefing Matutino</span>
                     </button>
 
-                    {/* Selector de Voz Dinámico */}
-                    {availableVoices.length > 0 && (
-                      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1">
-                        <Volume2 className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
-                        <select
-                          value={selectedVoiceUri}
-                          onChange={e => {
-                            const newUri = e.target.value;
-                            setSelectedVoiceUri(newUri);
-                            localStorage.setItem('foxdrop_agent_voice_uri', newUri);
-                            const matched = availableVoices.find(v => v.voiceURI === newUri);
-                            if (matched) {
-                              speakWithFoxVoice("Hola, soy Fox. ¿Cómo escuchas mi voz ahora?");
-                            }
-                          }}
-                          title="Selecciona la voz para Fox (se guarda tu preferencia)"
-                          className="bg-transparent text-[11px] font-bold text-slate-700 outline-none max-w-[130px] sm:max-w-[180px] truncate cursor-pointer"
-                        >
-                          {availableVoices.map(v => (
-                            <option key={v.voiceURI} value={v.voiceURI}>
-                              {v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX') ? '🇲🇽 ' : '🌐 '}
-                              {v.name.replace(/(Microsoft|Google|Desktop|Natural|Online \([^)]+\))/gi, '').trim() || v.name} ({v.lang})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    {/* Selector de Voz Dinámico (Servidor y Navegador) */}
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-2xs">
+                      <Volume2 className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
+                      <select
+                        value={selectedVoiceUri}
+                        onChange={e => {
+                          const newUri = e.target.value;
+                          setSelectedVoiceUri(newUri);
+                          localStorage.setItem('foxdrop_agent_voice_uri', newUri);
+                          speakWithFoxVoice("Hola, soy Fox. ¿Cómo escuchas mi voz ahora?");
+                        }}
+                        title="Voz oficial de Fox (funciona en cualquier celular o computadora)"
+                        className="bg-transparent text-[11px] font-bold text-slate-700 outline-none max-w-[140px] sm:max-w-[200px] truncate cursor-pointer"
+                      >
+                        <option value="server_mexican">🇲🇽 Fox Oficial (Mexicana Fluida)</option>
+                        {availableVoices.map(v => (
+                          <option key={v.voiceURI} value={v.voiceURI}>
+                            {v.lang.startsWith('es-MX') || v.lang.startsWith('es_MX') ? '🇲🇽 ' : '🌐 '}
+                            {v.name.replace(/(Microsoft|Google|Desktop|Natural|Online \([^)]+\))/gi, '').trim() || v.name} ({v.lang})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
                     <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
                       <input
