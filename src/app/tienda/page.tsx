@@ -1627,30 +1627,22 @@ export default function TiendaFoxDrop() {
             >
               liquidación total
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('all');
-                setSelectedCategory('Tecnología');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
-            >
-              tecnología
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('all');
-                setSelectedCategory('Hogar');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
-            >
-              hogar
-            </button>
+            {/* CATEGORÍAS POPULARES CON STOCK REAL */}
+            {popularCategories.slice(0, 3).map((cat) => (
+              <button
+                key={cat.name}
+                type="button"
+                onClick={() => {
+                  setActiveTab('all');
+                  setSelectedCategory(cat.name);
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer lowercase"
+              >
+                {cat.name}
+              </button>
+            ))}
             <button
               type="button"
               onClick={() => {
@@ -1687,33 +1679,23 @@ export default function TiendaFoxDrop() {
               </p>
             </div>
 
-            {/* 4 BOTONES PILL EN ROJO CÁLIDO / ÁMBAR ESTILO TJ MAXX */}
+            {/* 4 BOTONES PILL EN ROJO CÁLIDO / ÁMBAR ESTILO TJ MAXX (SOLO CATEGORÍAS CON PRODUCTOS REALES) */}
             <div className="grid grid-cols-2 gap-3 max-w-sm pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategory('Tecnología');
-                  setActiveTab('all');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
-              >
-                tecnología
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategory('Hogar');
-                  setActiveTab('all');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
-              >
-                hogar & cocina
-              </button>
+              {popularCategories.slice(0, 2).map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.name);
+                    setActiveTab('all');
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer lowercase truncate"
+                >
+                  {cat.name}
+                </button>
+              ))}
 
               <button
                 type="button"
@@ -1723,7 +1705,7 @@ export default function TiendaFoxDrop() {
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+                className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
               >
                 liquidación
               </button>
