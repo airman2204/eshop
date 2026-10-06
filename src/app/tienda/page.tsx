@@ -1258,113 +1258,49 @@ export default function TiendaFoxDrop() {
     <div className="min-h-screen bg-[#F5F2EC] text-[#113B34] flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0">
       
       {/* ======================================================== */}
-      {/* 0. TICKER DE OPORTUNIDADES & VALOR ESTILO TJ MAXX / MARSHALLS */}
+      {/* 0. TICKER SUPERIOR DE ANUNCIOS & ENVÍOS (ESTILO TJ MAXX) */}
       {/* ======================================================== */}
-      <aside aria-label="Aviso de beneficios FoxDrop" className="bg-[#0B332C] text-[#E3B888] text-[11px] font-bold py-1.5 px-3 border-b border-white/10 tracking-wider">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mx-auto sm:mx-0">
-            <span className="inline-flex items-center gap-1.5 text-white">
-              <span className="text-[#DF7F2D] text-xs">⚡</span>
-              <strong className="tracking-widest uppercase text-[10px] text-[#DF7F2D]">HALLAZGOS FOXDROP:</strong>
-              <span className="text-white/90">Inventario limitado con rotación semanal. Si lo ves hoy, ¡aprovéchalo!</span>
-            </span>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-3 shrink-0 text-white/80 text-[10px]">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Garantía de Satisfacción</span>
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Club FoxDrop: Gana Estrellas</span>
-            </span>
-          </div>
+      <aside aria-label="Aviso de beneficios FoxDrop" className="bg-[#FAF6F0] text-[#0F3E36] text-[11px] font-bold py-1.5 px-4 border-b border-[#E8DFC8]/60 tracking-tight text-center">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+          <span className="font-extrabold text-[#0F3E36]">envíos seguros a todo México</span>
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-600 font-medium">entregas personales en Puebla con pago contra entrega</span>
+          <span className="text-gray-400 hidden sm:inline">|</span>
+          <button 
+            type="button" 
+            onClick={() => setInfoModal('envios')}
+            className="text-[#DF7F2D] hover:underline font-bold hidden sm:inline cursor-pointer"
+          >
+            ver detalles ›
+          </button>
         </div>
       </aside>
 
       {/* ======================================================== */}
-      {/* 1. HEADER VERDE BOSQUE (ESTILO PRESENTACIÓN FOXDROP) */}
+      {/* 1. HEADER PRINCIPAL ESTILO TJ MAXX (BLANCO LIMPIO CON DETALLES VERDE BOSQUE & ÁMBAR) */}
       {/* ======================================================== */}
-      <header className="bg-[#0F3E36] sticky top-0 z-40 shadow-md text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 sm:gap-6">
-          
-          {/* LOGO FOXDROP NATIVO Y NÍTIDO */}
-          <div 
-            onClick={() => {
-              setCurrentView('store');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="cursor-pointer shrink-0 flex items-center"
-            title="Ir al inicio de la tienda"
-          >
-            <FoxDropLogo size="md" variant="dark" />
-          </div>
-
-          {/* BUSCADOR PILL BEIGE CON BOTÓN ÁMBAR/NARANJA */}
-          <div className="flex-1 max-w-xl relative">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={e => {
-                const val = e.target.value;
-                setSearchTerm(val);
-                if (val.trim() && selectedCategory !== 'Todas') {
-                  setSelectedCategory('Todas');
-                }
-                if (currentView === 'account') setCurrentView('store');
+      <header className="bg-white sticky top-0 z-40 shadow-xs border-b border-gray-200">
+        
+        {/* FILA SUPERIOR (DESKTOP): UTILIDADES (Tienda física, Sign In, Rewards, Favoritos, Carrito) */}
+        <div className="hidden md:block border-b border-gray-100 bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-end gap-6 text-[11px] font-semibold text-gray-700">
+            {/* UBICACIÓN / PUNTOS DE ENTREGA */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              placeholder="Buscar productos, marcas o categorías..."
-              className="w-full bg-[#FAF6F0] text-[#113B34] placeholder-[#7E9690] pl-4 pr-11 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition duration-200 outline-none shadow-inner border border-transparent focus:border-[#DF7F2D]"
-            />
-            {searchTerm ? (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#0F3E36] p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            ) : (
-              <button 
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#DF7F2D] hover:bg-[#C96E24] text-white p-1.5 rounded-full transition shadow-sm cursor-pointer"
-                title="Buscar"
-              >
-                <Search className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* ACCIONES: INSTALAR PWA + CARRITO + USUARIO */}
-          <div className="flex items-center space-x-2 sm:space-x-4 text-xs font-semibold shrink-0">
-            {/* BOTÓN INSTALAR PWA */}
-            <button
-              onClick={handleInstallApp}
-              title="Instalar FoxDrop en tu dispositivo"
-              className="hidden lg:flex items-center gap-1.5 bg-[#175248] hover:bg-[#1E6357] text-[#FAF6F0] px-3 py-1.5 rounded-full text-xs font-semibold transition border border-white/10"
+              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Instalar App</span>
+              <MapPin className="w-4 h-4 text-[#DF7F2D]" />
+              <span>entregas puebla</span>
             </button>
 
-            {/* CARRITO */}
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-2 rounded-full hover:bg-white/10 text-white transition cursor-pointer flex items-center gap-1.5"
-              title="Ver Carrito"
-            >
-              <ShoppingCart className="w-5 h-5 text-[#FAF6F0]" />
-              <span className="hidden sm:inline text-xs font-medium text-white/90">Carrito</span>
-              {cartItemCount > 0 && (
-                <span className="bg-[#DF7F2D] text-white text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
-                  {cartItemCount}
-                </span>
-              )}
-            </button>
-
-            {/* USUARIO */}
+            {/* MI CUENTA / INICIAR SESIÓN */}
             {user ? (
               <button
+                type="button"
                 onClick={() => {
                   if (currentView === 'account') {
                     setCurrentView('store');
@@ -1373,55 +1309,178 @@ export default function TiendaFoxDrop() {
                     setCurrentView('account');
                   }
                 }}
-                className={`hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full transition border cursor-pointer ${
-                  currentView === 'account' 
-                    ? 'bg-[#DF7F2D] text-white border-[#DF7F2D] shadow-xs' 
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15'
-                }`}
-                title="Mi Cuenta, Rastreo y Tarjetas"
+                className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer text-[#0F3E36] font-bold"
               >
-                <User className="w-3.5 h-3.5 text-amber-300" />
-                <span className="font-bold text-xs truncate max-w-[100px]">
-                  {user.name ? user.name.split(' ')[0] : 'Cuenta'}
-                </span>
+                <User className="w-4 h-4 text-[#0F3E36]" />
+                <span>hola, {user.name ? user.name.split(' ')[0] : 'mi cuenta'}</span>
               </button>
             ) : (
               <button
+                type="button"
                 onClick={openAuthModal}
-                className="hidden sm:flex items-center space-x-1 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full transition border border-white/15 text-xs font-medium cursor-pointer"
+                className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
               >
-                <User className="w-3.5 h-3.5" />
-                <span>Mi Cuenta</span>
+                <User className="w-4 h-4 text-[#DF7F2D]" />
+                <span>iniciar sesión</span>
               </button>
             )}
+
+            {/* REWARDS / CLUB FOXDROP */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!user) {
+                  openAuthModal();
+                } else {
+                  setAccountTab('club');
+                  setCurrentView('account');
+                }
+              }}
+              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
+            >
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>club fox rewards</span>
+            </button>
+
+            {/* FAVORITOS */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('all');
+                if (currentView === 'account') setCurrentView('store');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer relative"
+            >
+              <Heart className="w-4 h-4 text-[#DF7F2D]" />
+              <span>favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
+            </button>
+
+            {/* MI BOLSA / CARRITO */}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="flex items-center gap-1.5 text-[#0F3E36] font-black hover:text-[#DF7F2D] transition cursor-pointer"
+            >
+              <ShoppingCart className="w-4 h-4 text-[#0F3E36]" />
+              <span>mi bolsa</span>
+              {cartItemCount > 0 && (
+                <span className="bg-[#DF7F2D] text-white text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* BARRA DE CATEGORÍAS EN PLECA SUPERIOR (PLANA, TRANSPARENTE Y LIMPIA) */}
-        <div className="border-t border-white/10 bg-transparent">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
-            {/* BOTÓN TODAS */}
+        {/* FILA CENTRAL: LOGO CENTRADO (ESTILO TJ MAXX) + BUSCADOR A LA DERECHA */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+          
+          {/* LADO IZQUIERDO: ACCIONES RÁPIDAS MÓVIL O ESPACIO EN ESCRITORIO */}
+          <div className="md:w-1/4 flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
                 setSelectedCategory('Todas');
-                setActiveTab('all');
+                setActiveTab('new');
                 if (currentView === 'account') setCurrentView('store');
               }}
-              className={`py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer border-b-2 ${
-                selectedCategory === 'Todas'
-                  ? 'border-[#E65F2B] text-white bg-white/5 font-black'
-                  : 'border-transparent text-white/70 hover:text-white hover:border-white/40 hover:bg-white/5'
+              className="hidden lg:inline-flex items-center gap-1 text-[11px] font-black text-[#0F3E36] bg-[#FAF6F0] px-3 py-1.5 rounded-full border border-gray-200 hover:bg-[#F2ECE1] transition cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#DF7F2D]" />
+              <span>Hallazgos del Día</span>
+            </button>
+          </div>
+
+          {/* CENTRO: LOGO DE FOXDROP ELEGANTE Y PROTAGÓNICO */}
+          <div 
+            onClick={() => {
+              setCurrentView('store');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="cursor-pointer flex items-center justify-center transition-transform hover:scale-102"
+            title="Ir al inicio de FoxDrop"
+          >
+            <FoxDropLogo size="lg" variant="light" />
+          </div>
+
+          {/* LADO DERECHO: BUSCADOR PILL CON LUPA ROJA/ÁMBAR (EXACTO A TJ MAXX) */}
+          <div className="flex items-center justify-end gap-3 md:w-1/4">
+            <div className="relative w-full max-w-[240px] sm:max-w-[280px]">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => {
+                  const val = e.target.value;
+                  setSearchTerm(val);
+                  if (val.trim() && selectedCategory !== 'Todas') {
+                    setSelectedCategory('Todas');
+                  }
+                  if (currentView === 'account') setCurrentView('store');
+                }}
+                placeholder="buscar productos..."
+                className="w-full bg-white text-gray-900 placeholder-gray-400 pl-3.5 pr-9 py-2 rounded-full text-xs font-medium border border-gray-300 focus:border-[#0F3E36] focus:ring-1 focus:ring-[#0F3E36] outline-none transition shadow-2xs"
+              />
+              {searchTerm ? (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button 
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#DF7F2D] hover:text-[#0F3E36] transition cursor-pointer"
+                  title="Buscar"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* CARRITO MÓVIL VISIBLE SI ESTÁ EN CELULAR */}
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="md:hidden relative p-1.5 text-[#0F3E36] hover:text-[#DF7F2D] transition cursor-pointer"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#DF7F2D] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN MINÚSCULAS/NEGRITAS CON "LIQUIDACIÓN" EN DESTACADO */}
+        <div className="border-t border-gray-200/90 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight">
+            
+            {/* NUEVOS INGRESOS */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('new');
+                setSelectedCategory('Todas');
+                if (currentView === 'account') setCurrentView('store');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`transition shrink-0 cursor-pointer ${
+                activeTab === 'new' && selectedCategory === 'Todas'
+                  ? 'text-[#0F3E36] underline underline-offset-4 decoration-2 decoration-[#DF7F2D]'
+                  : 'text-gray-800 hover:text-[#0F3E36]'
               }`}
             >
-              <span>🌍</span>
-              <span>Todas</span>
+              lo nuevo
             </button>
 
-            {/* CATEGORÍAS DINÁMICAS (TRANSPARENTES, SIN CONTADOR, CON HOVER Y ACTIVO) */}
+            {/* CATEGORÍAS POPULARES DE FOXDROP EN ESTILO TJ MAXX */}
             {popularCategories.map((cat) => {
               const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
-              const emoji = getCategoryIconEmoji(cat.name);
 
               return (
                 <button
@@ -1434,27 +1493,58 @@ export default function TiendaFoxDrop() {
                     const el = document.getElementById('catalog-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer border-b-2 ${
+                  className={`transition shrink-0 cursor-pointer lowercase ${
                     isSelected
-                      ? 'border-[#E65F2B] text-white bg-white/5 font-black'
-                      : 'border-transparent text-white/70 hover:text-white hover:border-white/40 hover:bg-white/5'
+                      ? 'text-[#0F3E36] underline underline-offset-4 decoration-2 decoration-[#DF7F2D]'
+                      : 'text-gray-800 hover:text-[#0F3E36]'
                   }`}
                 >
-                  <span className="text-sm">{emoji}</span>
-                  <span>{cat.name}</span>
+                  {cat.name}
                 </button>
               );
             })}
 
-            {/* BOTÓN PEDIDOS ESPECIALES */}
+            {/* SECCIÓN TRENDING / MÁS VENDIDO */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('all');
+                setSelectedCategory('Todas');
+                if (currentView === 'account') setCurrentView('store');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-gray-800 hover:text-[#0F3E36] transition shrink-0 cursor-pointer"
+            >
+              tendencias
+            </button>
+
+            {/* SECCIÓN PEDIDOS ESPECIALES */}
             <button
               type="button"
               onClick={() => setShowCustomOrderModal(true)}
-              className="py-2 px-3 text-xs font-bold transition shrink-0 flex items-center gap-1.5 cursor-pointer ml-auto border-b-2 border-transparent text-amber-300/80 hover:text-amber-200 hover:border-amber-400/40 hover:bg-white/5"
-              title="¿Buscas un producto que no ves en el catálogo? Solicítalo aquí"
+              className="text-[#0F3E36] hover:text-[#DF7F2D] transition shrink-0 cursor-pointer flex items-center gap-1"
             >
-              <span>✨</span>
-              <span>Pedidos Especiales</span>
+              <span>encargos especiales</span>
+            </button>
+
+            {/* LIQUIDACIÓN / CLEARANCE ESTILO TJ MAXX (DESTACADO EN COLOR CÁLIDO) */}
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('deals');
+                setSelectedCategory('Todas');
+                if (currentView === 'account') setCurrentView('store');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`transition shrink-0 cursor-pointer font-black ${
+                activeTab === 'deals'
+                  ? 'text-[#DF7F2D] underline underline-offset-4 decoration-2'
+                  : 'text-[#DF7F2D] hover:text-[#B85D14]'
+              }`}
+            >
+              liquidación 🔥
             </button>
           </div>
         </div>
@@ -1508,330 +1598,200 @@ export default function TiendaFoxDrop() {
       {/* 2. HERO BANNER: COMPONENTE DINÁMICO & SINCRONIZADO CON ADMIN */}
       {/* ======================================================== */}
       
-      {/* VERSIÓN MÓVIL (NATIVA 100% NÍTIDA) */}
-      <section className="md:hidden pt-4 pb-2 px-4 w-full">
-        {(() => {
-          const totalHeroSlides = slides.length > 0 ? slides : [
-            {
-              id: 'default-welcome',
-              title: user?.name 
-                ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
-              subtitle: 'TU ATAJO AL MUNDO',
-              image_url: '/fox-mascot-hd-transparent.png',
-              cta_text: 'Ver Catálogo Completo',
-              cta_category: 'Todas',
-              sort_order: 1,
-              is_active: true,
-            }
-          ];
-
-          const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
-          const isDefaultSlide = currentSlide.id === 'default-welcome';
-
-          return (
-            <div>
-              <div className="relative rounded-2xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[190px] flex items-stretch">
-                {/* Curva naranja cálida de fondo en el lado derecho */}
-                <div 
-                  className="absolute right-0 top-0 bottom-0 w-[45%] bg-[#DF7F2D]"
-                  style={{
-                    borderTopLeftRadius: '60% 100%',
-                    borderBottomLeftRadius: '30% 60%',
-                  }}
-                />
-
-                {/* Contenido izquierdo: Tag, Título y Botón */}
-                <div className="relative z-10 w-[62%] p-4 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black tracking-widest text-[#E3B888] uppercase block">
-                      {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                    </span>
-                    <h2 className="text-sm font-black text-white leading-tight">
-                      {currentSlide.title}
-                    </h2>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(currentSlide.cta_category || 'Todas');
-                        setActiveTab('all');
-                        const el = document.getElementById('catalog-section');
-                        el?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white text-[11px] font-black px-3.5 py-1.5 rounded-full shadow-md transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
-                    >
-                      <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Ilustración o Mascota en el lado derecho */}
-                <div className="relative z-10 w-[38%] flex items-end justify-center pr-2 pb-1">
-                  <img
-                    src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
-                    alt={currentSlide.title}
-                    className={`max-h-[175px] w-auto drop-shadow-xl ${isDefaultSlide ? 'object-contain' : 'object-cover rounded-xl my-auto max-h-[140px] border border-white/20'}`}
-                  />
-                </div>
-              </div>
-
-              {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER: Exactamente 1 puntito por slide */}
-              <div className="flex items-center justify-center gap-1.5 pt-2.5">
-                {totalHeroSlides.map((_, dotIdx) => (
-                  <button
-                    key={dotIdx}
-                    type="button"
-                    onClick={() => setActiveSlide(dotIdx)}
-                    className={`transition-all rounded-full cursor-pointer ${
-                      activeSlide % totalHeroSlides.length === dotIdx
-                        ? 'w-5 h-2 bg-[#0F3E36] rounded-full'
-                        : 'w-2 h-2 bg-[#CBD8D4] hover:bg-[#0F3E36]'
-                    }`}
-                    title={`Slide ${dotIdx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </section>
-
-      {/* VERSIÓN ESCRITORIO (NATIVA 100% NÍTIDA & SINCRONIZADA CON ADMIN) */}
-      <section className="hidden md:block pt-6 pb-2 px-6 max-w-7xl mx-auto w-full">
-        {(() => {
-          const totalHeroSlides = slides.length > 0 ? slides : [
-            {
-              id: 'default-welcome',
-              title: user?.name 
-                ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
-              subtitle: 'TU ATAJO AL MUNDO',
-              image_url: '/fox-mascot-hd-transparent.png',
-              cta_text: 'Ver Catálogo Completo',
-              cta_category: 'Todas',
-              sort_order: 1,
-              is_active: true,
-            }
-          ];
-
-          const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
-          const isDefaultSlide = currentSlide.id === 'default-welcome';
-
-          return (
-            <div>
-              <div className="relative rounded-3xl overflow-hidden shadow-sm border border-[#D5E0DD] bg-[#0E3D35] min-h-[300px] lg:min-h-[340px] flex items-stretch">
-                {/* Curva naranja cálida de fondo en el cuadrante derecho */}
-                <div 
-                  className="absolute right-0 top-0 bottom-0 w-[42%] bg-[#DF7F2D]"
-                  style={{
-                    borderTopLeftRadius: '55% 100%',
-                    borderBottomLeftRadius: '25% 50%',
-                  }}
-                />
-
-                {/* Columna Izquierda: Tipografía nítida y botón CTA */}
-                <div className="relative z-10 w-[60%] lg:w-[58%] p-8 lg:p-12 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <span className="text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase block">
-                      {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                    </span>
-                    <h2 className="text-2xl lg:text-4xl font-black text-white leading-tight max-w-xl">
-                      {currentSlide.title}
-                    </h2>
-                  </div>
-
-                  <div className="pt-4">
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(currentSlide.cta_category || 'Todas');
-                        setActiveTab('all');
-                        const el = document.getElementById('catalog-section');
-                        el?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white font-black px-6 py-2.5 rounded-full text-xs lg:text-sm shadow-md transition transform hover:scale-105 flex items-center gap-2 cursor-pointer w-fit"
-                    >
-                      <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Columna Derecha: Imagen o Mascota FoxDrop 3D HD en gran detalle */}
-                <div className="relative z-10 w-[40%] lg:w-[42%] flex items-end justify-center pr-6 pb-2">
-                  <img
-                    src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
-                    alt={currentSlide.title}
-                    className={`drop-shadow-2xl transition-transform duration-300 hover:scale-105 ${
-                      isDefaultSlide 
-                        ? 'max-h-[290px] lg:max-h-[330px] w-auto object-contain' 
-                        : 'max-h-[260px] lg:max-h-[290px] w-auto object-cover rounded-2xl my-auto border-2 border-white/20 shadow-xl'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER: Exactamente 1 puntito por slide */}
-              <div className="flex items-center justify-center gap-2 pt-3.5">
-                {totalHeroSlides.map((_, dotIdx) => (
-                  <button
-                    key={dotIdx}
-                    type="button"
-                    onClick={() => setActiveSlide(dotIdx)}
-                    className={`transition-all rounded-full cursor-pointer ${
-                      activeSlide % totalHeroSlides.length === dotIdx
-                        ? 'w-7 h-2.5 bg-[#0F3E36] rounded-full shadow-xs'
-                        : 'w-2.5 h-2.5 bg-[#CBD8D4] hover:bg-[#0F3E36]'
-                    }`}
-                    title={`Slide ${dotIdx + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </section>
-
-
-
       {/* ======================================================== */}
-      {/* 3. EXPERIENCIA TJ MAXX / MARSHALLS: HUB DE DESCUBRIMIENTO POR DEPARTAMENTO */}
+      {/* 2. TJ MAXX BANNER: MAJOR BRAND MARKDOWNS UP TO 70% LESS (ESTILO CUERO / TEXTURA ROJO-ÁMBAR) */}
       {/* ======================================================== */}
-      <section aria-label="Explorar departamentos FoxDrop" className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 pb-2">
-        <div className="flex items-center justify-between mb-3.5">
-          <div>
-            <span className="text-[10px] font-black tracking-widest uppercase text-[#DF7F2D] block">
-              EXPERIENCIA DE COMPRA
-            </span>
-            <h3 className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
-              Explora por Departamento & Hallazgos
-            </h3>
+      <section className="w-full bg-[#A83820] text-white shadow-inner overflow-hidden border-y border-[#7D2613]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+          {/* TITULAR DE MARCA Y DESCUENTOS */}
+          <div className="space-y-0.5">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-xs">
+              liquidación de importación <span className="underline decoration-[#FFDF00] decoration-wavy decoration-1">hasta 70% menos</span>
+            </h2>
+            <p className="text-[11px] sm:text-xs text-white/80 font-medium">
+              en comparación con precios de tiendas departamentales y marketplaces
+            </p>
           </div>
-          <span className="text-[11px] font-bold text-gray-400 hidden sm:inline">
-            Descuentos directos en mercancía seleccionada
-          </span>
+
+          {/* ACCESOS DIRECTOS DE LIQUIDACIÓN ESTILO TJ MAXX */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-1 text-xs sm:text-[13px] font-bold text-white/95">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('deals');
+                setSelectedCategory('Todas');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
+            >
+              liquidación total
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('all');
+                setSelectedCategory('Tecnología');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
+            >
+              tecnología
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('all');
+                setSelectedCategory('Hogar');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
+            >
+              hogar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('new');
+                setSelectedCategory('Todas');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer font-black"
+            >
+              nuevas rebajas
+            </button>
+          </div>
         </div>
+      </section>
 
-        {/* CÁPSULAS DE ACCESO RÁPIDO Y OFERTAS EXCLUSIVAS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
-          {/* Card 1: Lo Más Nuevo / Recién Llegado */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('new');
-              setSelectedCategory('Todas');
-              const el = document.getElementById('catalog-section');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className={`p-3 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group shadow-2xs ${
-              activeTab === 'new' && selectedCategory === 'Todas'
-                ? 'bg-[#0F3E36] text-white border-[#0F3E36] shadow-sm'
-                : 'bg-white hover:border-[#0F3E36]/30 text-gray-800 border-gray-200/80 hover:shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-xl">✨</span>
-              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                activeTab === 'new' && selectedCategory === 'Todas' ? 'bg-[#DF7F2D] text-white' : 'bg-emerald-50 text-emerald-800'
-              }`}>
-                Esta Semana
+      {/* ======================================================== */}
+      {/* 3. HERO SECTION MOSAICO ESTILO TJ MAXX: "JUST ARRIVED OVERNIGHT" */}
+      {/* ======================================================== */}
+      <section className="w-full bg-[#E4ECE8] border-b border-gray-200">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch">
+          
+          {/* LADO IZQUIERDO: TEXTO TITULAR + SUBTÍTULO + 4 BOTONES ROJOS/VERDES CURVOS */}
+          <div className="w-full lg:w-[45%] p-6 sm:p-10 lg:p-14 flex flex-col justify-center space-y-6">
+            <div className="space-y-3">
+              <span className="text-[11px] font-black tracking-widest uppercase text-[#DF7F2D] block">
+                NUEVA MERCANCÍA DIARIA
               </span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0F3E36] leading-[1.05] tracking-tight">
+                recién llegado a foxdrop
+              </h1>
+              <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed max-w-md">
+                Nuevos tesoros y productos exclusivos llegan continuamente. Descúbrelos antes de que se agoten.
+              </p>
             </div>
-            <div>
-              <span className="text-xs sm:text-sm font-black block group-hover:text-[#DF7F2D] transition">
-                Recién Llegados
-              </span>
-              <span className={`text-[10px] block mt-0.5 ${
-                activeTab === 'new' && selectedCategory === 'Todas' ? 'text-white/80' : 'text-gray-400'
-              }`}>
-                Novedades y gadgets
-              </span>
-            </div>
-          </button>
 
-          {/* Card 2: Las Mejores Ofertas */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('deals');
-              setSelectedCategory('Todas');
-              const el = document.getElementById('catalog-section');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className={`p-3 sm:p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group shadow-2xs ${
-              activeTab === 'deals'
-                ? 'bg-[#0F3E36] text-white border-[#0F3E36] shadow-sm'
-                : 'bg-white hover:border-[#0F3E36]/30 text-gray-800 border-gray-200/80 hover:shadow-xs'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-xl">🏷️</span>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-red-50 text-red-600">
-                Oportunidades
-              </span>
-            </div>
-            <div>
-              <span className="text-xs sm:text-sm font-black block group-hover:text-[#DF7F2D] transition">
-                Liquidaciones & Deals
-              </span>
-              <span className={`text-[10px] block mt-0.5 ${
-                activeTab === 'deals' ? 'text-white/80' : 'text-gray-400'
-              }`}>
-                Precios insuperables
-              </span>
-            </div>
-          </button>
+            {/* 4 BOTONES PILL EN ROJO CÁLIDO / ÁMBAR ESTILO TJ MAXX */}
+            <div className="grid grid-cols-2 gap-3 max-w-sm pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('Tecnología');
+                  setActiveTab('all');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+              >
+                tecnología
+              </button>
 
-          {/* Card 3: Combos Ahorro */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('all');
-              setSearchTerm('Combo');
-              const el = document.getElementById('catalog-section');
-              el?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="p-3 sm:p-4 rounded-2xl border border-gray-200/80 bg-white hover:border-[#DF7F2D]/50 text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-xs"
-          >
-            <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-xl">🎁</span>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-800">
-                Ahorro Max
-              </span>
-            </div>
-            <div>
-              <span className="text-xs sm:text-sm font-black text-gray-800 block group-hover:text-[#DF7F2D] transition">
-                Packs y Combos
-              </span>
-              <span className="text-[10px] text-gray-400 block mt-0.5">
-                Artículos combinados
-              </span>
-            </div>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('Hogar');
+                  setActiveTab('all');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+              >
+                hogar & cocina
+              </button>
 
-          {/* Card 4: Encargo Personalizado */}
-          <button
-            type="button"
-            onClick={() => setShowCustomOrderModal(true)}
-            className="p-3 sm:p-4 rounded-2xl border border-[#DF7F2D]/30 bg-gradient-to-br from-[#FFF8F2] to-white hover:border-[#DF7F2D] text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group shadow-2xs hover:shadow-xs"
-          >
-            <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-xl">✈️</span>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#DF7F2D] text-white">
-                Personal
-              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('deals');
+                  setSelectedCategory('Todas');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+              >
+                liquidación
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('all');
+                  setSelectedCategory('Todas');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-[#0F3E36] hover:bg-[#154E45] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+              >
+                ver todo el stock
+              </button>
             </div>
-            <div>
-              <span className="text-xs sm:text-sm font-black text-gray-900 block group-hover:text-[#DF7F2D] transition">
-                ¿No lo encuentras?
-              </span>
-              <span className="text-[10px] text-[#DF7F2D] font-bold block mt-0.5">
-                Lo importamos para ti →
-              </span>
-            </div>
-          </button>
+          </div>
+
+          {/* LADO DERECHO: MOSAICO GRID DE PRODUCTOS / ESTILO TJ MAXX */}
+          <div className="w-full lg:w-[55%] grid grid-cols-3 sm:grid-cols-4 gap-1 p-2 bg-white/40">
+            {(() => {
+              // Obtenemos los primeros productos con fotos o fallbacks
+              const displayProducts = products.length > 0 
+                ? products.slice(0, 8) 
+                : [
+                    { id: '1', title: 'Smart Gadget Fox', images: ['/card-laptop.png'] },
+                    { id: '2', title: 'Cosmética Premium', images: ['/card-cosmetic.png'] },
+                    { id: '3', title: 'Accesorio Cuero', images: ['/card-leather.png'] },
+                    { id: '4', title: 'Zorrito FoxDrop', images: ['/fox-head-3d.png'] },
+                    { id: '5', title: 'Tech Pro Deals', images: ['/fox-deals-card.png'] },
+                    { id: '6', title: 'Lifestyle Import', images: ['/fox-mascot-bag.png'] },
+                    { id: '7', title: 'Gadget Edición Especial', images: ['/fox-mascot-suitcase.png'] },
+                    { id: '8', title: 'Colección Tesoros', images: ['/fox-mascot-hd-transparent.png'] },
+                  ];
+
+              return displayProducts.map((p, idx) => (
+                <div
+                  key={p.id || idx}
+                  onClick={() => {
+                    const found = products.find(prod => prod.id === p.id);
+                    if (found) {
+                      setSelectedProduct(found);
+                    } else {
+                      setActiveTab('all');
+                      const el = document.getElementById('catalog-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="aspect-square bg-white relative overflow-hidden group cursor-pointer border border-gray-100 flex items-center justify-center p-2 hover:shadow-md transition duration-200"
+                  title={p.title}
+                >
+                  <img
+                    src={p.images?.[0] || '/fox-logo-head-3d.png'}
+                    alt={p.title}
+                    className="w-full h-full object-contain group-hover:scale-108 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-[#0F3E36]/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                    <span className="text-[10px] font-bold text-gray-900 bg-white/95 px-1.5 py-0.5 rounded shadow-xs line-clamp-1">
+                      {p.title}
+                    </span>
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+
         </div>
       </section>
 
