@@ -1268,10 +1268,6 @@ export default function TiendaFoxDrop() {
               <strong className="tracking-widest uppercase text-[10px] text-[#DF7F2D]">HALLAZGOS FOXDROP:</strong>
               <span className="text-white/90">Inventario limitado con rotación semanal. Si lo ves hoy, ¡aprovéchalo!</span>
             </span>
-            <span className="hidden md:inline text-white/30">•</span>
-            <span className="hidden md:inline text-[#E3B888]">
-              📍 Entregas personales hoy en Puebla (Plaza Dorada / Angelópolis)
-            </span>
           </div>
 
           <div className="hidden lg:flex items-center gap-3 shrink-0 text-white/80 text-[10px]">
@@ -3546,121 +3542,6 @@ export default function TiendaFoxDrop() {
         </div>
       ) : null}
 
-      {/* ======================================================== */}
-      {/* SECCIÓN SEMÁNTICA SEO, CONFIANZA & VALOR FOXDROP PUEBLA (>500 PALABRAS) */}
-      {/* ======================================================== */}
-      <section className="bg-gradient-to-b from-white to-[#FAF6F0] py-16 px-4 sm:px-6 border-t border-gray-100 text-gray-800">
-        <div className="max-w-6xl mx-auto space-y-12">
-          
-          {/* ENCABEZADO PRINCIPAL DE AUTORIDAD */}
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-2 bg-[#0F3E36]/10 text-[#0F3E36] font-black text-xs px-3.5 py-1.5 rounded-full uppercase tracking-wider">
-              🦊 Tu Tienda de Confianza en Puebla y México
-            </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#0F3E36] tracking-tight">
-              FoxDrop México: Calidad Garantizada, Importaciones Directas y Entregas Personales
-            </h2>
-            <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-              En FoxDrop transformamos la experiencia de comprar artículos exclusivos y gadgets internacionales en México. Eliminamos los largos tiempos de espera, las comisiones ocultas y la incertidumbre del comercio electrónico tradicional, brindándote atención personalizada, productos inspeccionados a mano y entregas inmediatas en la ciudad de Puebla o envíos exprés certificados a cualquier estado de la República Mexicana.
-            </p>
-          </div>
-
-          {/* CUADRICULA DE PILARES */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Pilar 1: Entregas Personales Puebla */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#DF7F2D] flex items-center justify-center text-2xl font-bold">
-                📍
-              </div>
-              <h3 className="font-black text-lg text-gray-900">
-                Puntos de Entrega en Puebla y Pago Contra Entrega
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Sabemos que la confianza es lo primero. Por eso, si te encuentras en la zona metropolitana de Puebla o Cholula, puedes acordar tu entrega personal en puntos clave y plazas reconocidas: <strong>Plaza Dorada, Centro Comercial Angelópolis, Zócalo de Puebla, CAPU o Cruz del Sur</strong>. Revisa tu producto físicamente antes de pagar. Aceptamos efectivo al momento o transferencia electrónica SPEI directa sin comisiones añadidas.
-              </p>
-            </div>
-
-            {/* Pilar 2: Importación Directa & Garantía */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0F3E36] flex items-center justify-center text-2xl font-bold">
-                🛡️
-              </div>
-              <h3 className="font-black text-lg text-gray-900">
-                Calidad Certificada e Importación Directa
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Cada artículo en nuestro catálogo pasa por un riguroso proceso de control de calidad. Importamos directamente con fabricantes certificados en Asia y Estados Unidos para asegurar que recibas gadgets tecnológicos, accesorios para el hogar, herramientas y productos de estilo de vida auténticos, duraderos y 100% funcionales. Cuentas con garantía de satisfacción y soporte posventa directo vía WhatsApp en español.
-              </p>
-            </div>
-
-            {/* Pilar 3: Club FoxDrop y Recompensas */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#E65F2B] flex items-center justify-center text-2xl font-bold">
-                ⭐
-              </div>
-              <h3 className="font-black text-lg text-gray-900">
-                Club FoxDrop: Recompensas y Encargos a Medida
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                Premia tu lealtad en cada compra. Al registrarte con tu número de teléfono o correo obtienes acceso al <strong>Club FoxDrop</strong>, donde acumulas estrellas canjeables por descuentos, regalos y promociones exclusivas. ¿Buscas un producto específico que no está en el catálogo? Con nuestro servicio de <em>Encargos Especiales</em> lo rastreamos, cotizamos y traemos hasta tus manos con precio preferencial.
-              </p>
-            </div>
-
-          </div>
-
-          {/* PREGUNTAS FRECUENTES (FAQ ESTRUCTURADO) */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-sm space-y-6">
-            <div className="text-center space-y-1">
-              <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36]">
-                Preguntas Frecuentes sobre Compras en FoxDrop
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Resolvemos tus dudas para que compres con total tranquilidad y rapidez.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-gray-200/60 space-y-1.5">
-                <h4 className="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-2">
-                  <span className="text-[#DF7F2D]">●</span> ¿Cómo funcionan las entregas en Puebla?
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Al completar tu pedido seleccionas Entrega Personal. Nuestro equipo te contactará por WhatsApp para coordinar día, hora y el punto más conveniente (Plaza Dorada, Angelópolis, CAPU, Zócalo, etc.). Pagas en efectivo al recibir o por SPEI.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-gray-200/60 space-y-1.5">
-                <h4 className="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-2">
-                  <span className="text-[#DF7F2D]">●</span> ¿Hacen envíos a otros estados de la República Mexicana?
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Sí, enviamos a todo México mediante paqueterías certificadas como DHL, FedEx y Estafeta. Todos los paquetes viajan con número de rastreo en tiempo real y seguro de transporte para tu total protección.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-gray-200/60 space-y-1.5">
-                <h4 className="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-2">
-                  <span className="text-[#DF7F2D]">●</span> ¿Cuáles son las formas de pago aceptadas?
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Aceptamos Efectivo contra entrega (exclusivo Puebla), Transferencia Bancaria Directa (SPEI sin ninguna comisión) y tarjeta de crédito/débito. En compras mayores a montos de promoción, ofrecemos beneficios adicionales de envío.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-gray-200/60 space-y-1.5">
-                <h4 className="font-black text-xs sm:text-sm text-gray-900 flex items-center gap-2">
-                  <span className="text-[#DF7F2D]">●</span> ¿Qué garantía tienen los productos de FoxDrop?
-                </h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Todos nuestros productos cuentan con garantía directa contra defectos de fábrica. Si algo no funciona correctamente, te asesoramos y gestionamos el reemplazo o solución inmediata a través de nuestro canal de soporte técnico en WhatsApp.
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
 
       {/* ======================================================== */}
       {/* 5. FOOTER UNIFICADO EN COLOR VERDE BOSQUE (#0F3E36) */}
