@@ -1277,13 +1277,13 @@ export default function TiendaFoxDrop() {
       </aside>
 
       {/* ======================================================== */}
-      {/* 1. HEADER PRINCIPAL ESTILO TJ MAXX (BLANCO LIMPIO CON DETALLES VERDE BOSQUE & ÁMBAR) */}
+      {/* 1. HEADER PRINCIPAL ESTILO TJ MAXX (CON FONDO VERDE BOSQUE EMBLEMÁTICO DE FOXDROP) */}
       {/* ======================================================== */}
-      <header className="bg-white sticky top-0 z-40 shadow-xs border-b border-gray-200">
+      <header className="bg-[#0F3E36] sticky top-0 z-40 shadow-md text-white border-b border-[#0B332C]">
         
         {/* FILA SUPERIOR (DESKTOP): UTILIDADES (Tienda física, Sign In, Rewards, Favoritos, Carrito) */}
-        <div className="hidden md:block border-b border-gray-100 bg-white">
-          <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-end gap-6 text-[11px] font-semibold text-gray-700">
+        <div className="hidden md:block border-b border-white/10 bg-[#0B332C]/70">
+          <div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-end gap-6 text-[11px] font-semibold text-white/80">
             {/* UBICACIÓN / PUNTOS DE ENTREGA */}
             <button
               type="button"
@@ -1291,9 +1291,9 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
+              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
             >
-              <MapPin className="w-4 h-4 text-[#DF7F2D]" />
+              <MapPin className="w-3.5 h-3.5 text-[#DF7F2D]" />
               <span>entregas puebla</span>
             </button>
 
@@ -1309,18 +1309,18 @@ export default function TiendaFoxDrop() {
                     setCurrentView('account');
                   }
                 }}
-                className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer text-[#0F3E36] font-bold"
+                className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-amber-300 font-bold"
               >
-                <User className="w-4 h-4 text-[#0F3E36]" />
+                <User className="w-3.5 h-3.5 text-amber-300" />
                 <span>hola, {user.name ? user.name.split(' ')[0] : 'mi cuenta'}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={openAuthModal}
-                className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
+                className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
               >
-                <User className="w-4 h-4 text-[#DF7F2D]" />
+                <User className="w-3.5 h-3.5 text-[#DF7F2D]" />
                 <span>iniciar sesión</span>
               </button>
             )}
@@ -1336,9 +1336,9 @@ export default function TiendaFoxDrop() {
                   setCurrentView('account');
                 }
               }}
-              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer"
+              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
             >
-              <Award className="w-4 h-4 text-amber-500" />
+              <Award className="w-3.5 h-3.5 text-amber-400" />
               <span>club fox rewards</span>
             </button>
 
@@ -1351,9 +1351,9 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="flex items-center gap-1.5 hover:text-[#0F3E36] transition cursor-pointer relative"
+              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer relative text-white/80"
             >
-              <Heart className="w-4 h-4 text-[#DF7F2D]" />
+              <Heart className="w-3.5 h-3.5 text-[#DF7F2D]" />
               <span>favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
             </button>
 
@@ -1361,9 +1361,9 @@ export default function TiendaFoxDrop() {
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-1.5 text-[#0F3E36] font-black hover:text-[#DF7F2D] transition cursor-pointer"
+              className="flex items-center gap-1.5 text-white font-black hover:text-[#DF7F2D] transition cursor-pointer"
             >
-              <ShoppingCart className="w-4 h-4 text-[#0F3E36]" />
+              <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
               <span>mi bolsa</span>
               {cartItemCount > 0 && (
                 <span className="bg-[#DF7F2D] text-white text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">
@@ -1375,9 +1375,9 @@ export default function TiendaFoxDrop() {
         </div>
 
         {/* FILA CENTRAL: LOGO CENTRADO (ESTILO TJ MAXX) + BUSCADOR A LA DERECHA */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           
-          {/* LADO IZQUIERDO: ACCIONES RÁPIDAS MÓVIL O ESPACIO EN ESCRITORIO */}
+          {/* LADO IZQUIERDO: ACCIONES RÁPIDAS O ESPACIO EN ESCRITORIO */}
           <div className="md:w-1/4 flex items-center gap-2">
             <button
               type="button"
@@ -1386,7 +1386,7 @@ export default function TiendaFoxDrop() {
                 setActiveTab('new');
                 if (currentView === 'account') setCurrentView('store');
               }}
-              className="hidden lg:inline-flex items-center gap-1 text-[11px] font-black text-[#0F3E36] bg-[#FAF6F0] px-3 py-1.5 rounded-full border border-gray-200 hover:bg-[#F2ECE1] transition cursor-pointer"
+              className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-black text-amber-200 bg-white/10 px-3 py-1.5 rounded-full border border-white/15 hover:bg-white/20 transition cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-[#DF7F2D]" />
               <span>Hallazgos del Día</span>
@@ -1402,10 +1402,10 @@ export default function TiendaFoxDrop() {
             className="cursor-pointer flex items-center justify-center transition-transform hover:scale-102"
             title="Ir al inicio de FoxDrop"
           >
-            <FoxDropLogo size="lg" variant="light" />
+            <FoxDropLogo size="lg" variant="dark" />
           </div>
 
-          {/* LADO DERECHO: BUSCADOR PILL CON LUPA ROJA/ÁMBAR (EXACTO A TJ MAXX) */}
+          {/* LADO DERECHO: BUSCADOR PILL BEIGE CON LUPA ÁMBAR */}
           <div className="flex items-center justify-end gap-3 md:w-1/4">
             <div className="relative w-full max-w-[240px] sm:max-w-[280px]">
               <input
@@ -1420,18 +1420,18 @@ export default function TiendaFoxDrop() {
                   if (currentView === 'account') setCurrentView('store');
                 }}
                 placeholder="buscar productos..."
-                className="w-full bg-white text-gray-900 placeholder-gray-400 pl-3.5 pr-9 py-2 rounded-full text-xs font-medium border border-gray-300 focus:border-[#0F3E36] focus:ring-1 focus:ring-[#0F3E36] outline-none transition shadow-2xs"
+                className="w-full bg-[#FAF6F0] text-[#113B34] placeholder-[#7E9690] pl-3.5 pr-9 py-2 rounded-full text-xs font-medium outline-none transition shadow-inner border border-transparent focus:border-[#DF7F2D]"
               />
               {searchTerm ? (
                 <button 
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#0F3E36] p-0.5"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <button 
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#DF7F2D] hover:text-[#0F3E36] transition cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#DF7F2D] hover:text-[#C96E24] transition cursor-pointer"
                   title="Buscar"
                 >
                   <Search className="w-4 h-4" />
@@ -1439,11 +1439,11 @@ export default function TiendaFoxDrop() {
               )}
             </div>
 
-            {/* CARRITO MÓVIL VISIBLE SI ESTÁ EN CELULAR */}
+            {/* CARRITO MÓVIL VISIBLE EN CELULAR */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="md:hidden relative p-1.5 text-[#0F3E36] hover:text-[#DF7F2D] transition cursor-pointer"
+              className="md:hidden relative p-1.5 text-white hover:text-amber-300 transition cursor-pointer"
             >
               <ShoppingCart className="w-6 h-6" />
               {cartItemCount > 0 && (
@@ -1455,9 +1455,9 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN MINÚSCULAS/NEGRITAS CON "LIQUIDACIÓN" EN DESTACADO */}
-        <div className="border-t border-gray-200/90 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight">
+        {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN PLECA TRANSPARENTE CON HOVER Y ACTIVO */}
+        <div className="border-t border-white/10 bg-[#0B332C]/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2 text-xs sm:text-[13px] font-extrabold tracking-tight">
             
             {/* NUEVOS INGRESOS */}
             <button
@@ -1471,8 +1471,8 @@ export default function TiendaFoxDrop() {
               }}
               className={`transition shrink-0 cursor-pointer ${
                 activeTab === 'new' && selectedCategory === 'Todas'
-                  ? 'text-[#0F3E36] underline underline-offset-4 decoration-2 decoration-[#DF7F2D]'
-                  : 'text-gray-800 hover:text-[#0F3E36]'
+                  ? 'text-white underline underline-offset-4 decoration-2 decoration-[#DF7F2D] font-black'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               lo nuevo
@@ -1495,8 +1495,8 @@ export default function TiendaFoxDrop() {
                   }}
                   className={`transition shrink-0 cursor-pointer lowercase ${
                     isSelected
-                      ? 'text-[#0F3E36] underline underline-offset-4 decoration-2 decoration-[#DF7F2D]'
-                      : 'text-gray-800 hover:text-[#0F3E36]'
+                      ? 'text-white underline underline-offset-4 decoration-2 decoration-[#DF7F2D] font-black'
+                      : 'text-white/80 hover:text-white'
                   }`}
                 >
                   {cat.name}
@@ -1514,7 +1514,7 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-gray-800 hover:text-[#0F3E36] transition shrink-0 cursor-pointer"
+              className="text-white/80 hover:text-white transition shrink-0 cursor-pointer"
             >
               tendencias
             </button>
@@ -1523,12 +1523,12 @@ export default function TiendaFoxDrop() {
             <button
               type="button"
               onClick={() => setShowCustomOrderModal(true)}
-              className="text-[#0F3E36] hover:text-[#DF7F2D] transition shrink-0 cursor-pointer flex items-center gap-1"
+              className="text-[#E3B888] hover:text-white transition shrink-0 cursor-pointer flex items-center gap-1"
             >
               <span>encargos especiales</span>
             </button>
 
-            {/* LIQUIDACIÓN / CLEARANCE ESTILO TJ MAXX (DESTACADO EN COLOR CÁLIDO) */}
+            {/* LIQUIDACIÓN / CLEARANCE ESTILO TJ MAXX (DESTACADO EN COLOR CÁLIDO ÁMBAR) */}
             <button
               type="button"
               onClick={() => {
@@ -1541,7 +1541,7 @@ export default function TiendaFoxDrop() {
               className={`transition shrink-0 cursor-pointer font-black ${
                 activeTab === 'deals'
                   ? 'text-[#DF7F2D] underline underline-offset-4 decoration-2'
-                  : 'text-[#DF7F2D] hover:text-[#B85D14]'
+                  : 'text-[#DF7F2D] hover:text-amber-300'
               }`}
             >
               liquidación 🔥
