@@ -10,6 +10,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const { createClient } = require('@supabase/supabase-js');
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ylflbastmupjknruqvpc.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsZmxiYXN0bXVwamtucnVxdnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NTk3NzYsImV4cCI6MjEwNjEzNTc3Nn0.ep6kmm7Q_O1gzSbyPjhThegVKqaOkeYZF8e1oqv9yNw';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const PORT = process.env.PORT || 3001;
 const WEBHOOK_URL = process.env.WEBHOOK_URL || ''; // URL de tu tienda: https://tudominio.com/api/whatsapp/webhook
 const API_KEY = process.env.API_KEY || 'foxdrop_secret_2026';
@@ -18,13 +24,76 @@ let qrCodeData = null;
 let connectionStatus = 'connecting'; // 'connecting', 'qr_ready', 'connected', 'disconnected'
 let sock = null;
 
-// Carpeta donde se guarda la sesión para no pedir QR en cada reinicio
+// Carpeta local donde Baileys lee y escribe los archivos de sesión
 const authDir = path.join(__dirname, 'auth_info_baileys');
 if (!fs.existsSync(authDir)) {
   fs.mkdirSync(authDir, { recursive: true });
 }
 
+// 1. Restaurar sesión desde Supabase hacia el disco local al arrancar el contenedor
+async function restoreSessionFromCloud() {
+  try {
+    const { data, error } = await supabase
+      .from('whatsapp_chats')
+      .select('notes')
+      .eq('phone', '_system_baileys_auth')
+      .maybeSingle();
+
+    if (!error && data && data.notes) {
+      const files = JSON.parse(data.notes);
+      let count = 0;
+      for (const [filename, contentBase64] of Object.entries(files)) {
+        const filePath = path.join(authDir, filename);
+        fs.writeFileSync(filePath, Buffer.from(contentBase64, 'base64'));
+        count++;
+      }
+      console.log(`📦 ¡Sesión de WhatsApp restaurada desde Supabase con éxito (${count} llaves)!`);
+    } else {
+      console.log('ℹ️ No hay sesión previa guardada en Supabase o es la primera vinculación.');
+    }
+  } catch (err) {
+    console.warn('Advertencia restaurando sesión desde Supabase:', err.message);
+  }
+}
+
+// 2. Guardar sesión desde el disco local hacia Supabase para sobrevivir reinicios de Render
+let syncTimeout = null;
+function scheduleCloudBackup() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      if (!fs.existsSync(authDir)) return;
+      const fileNames = fs.readdirSync(authDir);
+      if (fileNames.length === 0) return;
+
+      const filesObj = {};
+      for (const f of fileNames) {
+        const fullPath = path.join(authDir, f);
+        if (fs.statSync(fullPath).isFile()) {
+          filesObj[f] = fs.readFileSync(fullPath).toString('base64');
+        }
+      }
+
+      await supabase
+        .from('whatsapp_chats')
+        .upsert({
+          phone: '_system_baileys_auth',
+          client_name: 'WhatsApp Session Backup',
+          notes: JSON.stringify(filesObj),
+          status: 'archived',
+          updated_at: new Date().toISOString(),
+        });
+      console.log(`☁️ Respaldo de sesión de WhatsApp guardado en Supabase (${fileNames.length} archivos).`);
+    } catch (err) {
+      console.warn('Error respaldando sesión en Supabase:', err.message);
+    }
+  }, 2000);
+}
+
 async function startWhatsApp() {
+  // Primero restaurar sesión guardada si el disco de Render está recién formateado
+  await restoreSessionFromCloud();
+
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
   sock = makeWASocket({
@@ -38,7 +107,10 @@ async function startWhatsApp() {
     syncFullHistory: false, // No sobrecargar memoria de Render con chats antiguos
   });
 
-  sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('creds.update', async () => {
+    await saveCreds();
+    scheduleCloudBackup();
+  });
 
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -56,6 +128,14 @@ async function startWhatsApp() {
       connectionStatus = 'disconnected';
       qrCodeData = null;
 
+      if (statusCode === DisconnectReason.loggedOut) {
+        console.log('🚪 Sesión cerrada desde el celular. Limpiando respaldo...');
+        try {
+          await supabase.from('whatsapp_chats').delete().eq('phone', '_system_baileys_auth');
+          if (fs.existsSync(authDir)) fs.rmSync(authDir, { recursive: true, force: true });
+        } catch {}
+      }
+
       if (shouldReconnect) {
         setTimeout(startWhatsApp, 3000);
       }
@@ -63,6 +143,7 @@ async function startWhatsApp() {
       console.log('✅ ¡WhatsApp Conectado exitosamente con FoxDrop!');
       connectionStatus = 'connected';
       qrCodeData = null;
+      scheduleCloudBackup();
     }
   });
 
