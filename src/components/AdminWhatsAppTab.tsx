@@ -14,14 +14,17 @@ import {
 } from '@/lib/whatsappChat';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { soundManager } from '@/lib/sounds';
+import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 
 interface AdminWhatsAppTabProps {
   orders: Order[];
   clients: ClientProfile[];
   adminSessionName?: string; // Nombre del socio actual (ej: 'Mario' o 'Nydia')
+  initialPhone?: string;
+  initialMessage?: string;
 }
 
-export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: AdminWhatsAppTabProps) {
+export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage }: AdminWhatsAppTabProps) {
   const [chats, setChats] = useState<WhatsAppChat[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
   const [activeChat, setActiveChat] = useState<WhatsAppChat | null>(null);
@@ -210,23 +213,74 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     }
   };
 
+  // Cargar perfil propio de FoxDrop al montar para mostrar logo y nombre
+  useEffect(() => {
+    fetchMyProfile();
+  }, []);
+
+  // Si llega initialMessage pre-llenar la caja de texto
+  useEffect(() => {
+    if (initialMessage) {
+      setInputText(initialMessage);
+    }
+  }, [initialMessage]);
+
   // Cargar lista de chats inicial o en background
   const loadChats = async (showSpinner = false) => {
     if (showSpinner) setLoadingChats(true);
     const data = await getWhatsAppChats();
     setChats(data);
     
-    // Si no hay chat seleccionado y hay chats disponibles en desktop, auto-seleccionar el primero
-    // En móviles (pantallas pequeñas), dejamos que el usuario vea la lista primero
-    if (!activeChatRef.current && data.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 768) {
+    // Si viene initialPhone, buscar o seleccionar ese chat específicamente
+    if (initialPhone) {
+      const cleanTarget = initialPhone.replace(/\D/g, '');
+      const matched = data.find(c => c.phone.replace(/\D/g, '').endsWith(cleanTarget.slice(-10)));
+      if (matched) {
+        handleSelectChat(matched);
+      } else {
+        // Si aún no existe conversación en la base de datos para ese teléfono, armar un chat temporal activo
+        const matchingClient = clients.find(cl => cl.phone.replace(/\D/g, '').endsWith(cleanTarget.slice(-10)));
+        const matchingOrder = orders.find(o => o.clientPhone.replace(/\D/g, '').endsWith(cleanTarget.slice(-10)));
+        const fallbackName = matchingClient?.name || matchingOrder?.clientName || 'Cliente';
+        const tempChat: WhatsAppChat = {
+          id: `temp-${cleanTarget}`,
+          phone: cleanTarget,
+          clientName: fallbackName,
+          unreadCount: 0,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setActiveChat(tempChat);
+        setMessages([]);
+      }
+    } else if (!activeChatRef.current && data.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 768) {
+      // Si no hay chat seleccionado y hay chats disponibles en desktop, auto-seleccionar el primero
       handleSelectChat(data[0]);
     }
+
     if (showSpinner) setLoadingChats(false);
+
+    // Enriquecer en segundo plano los chats que aún no tengan avatarUrl
+    data.forEach(async (c) => {
+      if (!c.avatarUrl) {
+        try {
+          const res = await fetch(`/api/whatsapp/contact-avatar?phone=${c.phone}`);
+          const resData = await res.json();
+          if (resData.success && resData.avatarUrl) {
+            setChats(prev => prev.map(item => item.id === c.id ? { ...item, avatarUrl: resData.avatarUrl } : item));
+            if (activeChatRef.current?.id === c.id) {
+              setActiveChat(prev => prev ? { ...prev, avatarUrl: resData.avatarUrl } : prev);
+            }
+          }
+        } catch {}
+      }
+    });
   };
 
   useEffect(() => {
     loadChats(true);
-  }, []);
+  }, [initialPhone]);
 
   // Suscripción Realtime a Supabase para actualizar mensajes en vivo para ambos socios
   useEffect(() => {
@@ -374,16 +428,40 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
         {/* Cabecera de Bandeja */}
         <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                <MessageSquare className="w-5 h-5" />
+            <div className="flex items-center gap-2.5">
+              {/* Logo oficial FoxDrop (foto vinculada en WhatsApp o logo corporativo Fox) */}
+              <div 
+                onClick={() => {
+                  setShowProfileModal(true);
+                  fetchMyProfile();
+                }}
+                className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#0F3E36] to-emerald-900 text-white flex items-center justify-center shadow-sm overflow-hidden shrink-0 border border-emerald-700/50 cursor-pointer hover:opacity-90 transition relative group"
+                title="Ver/cambiar perfil de WhatsApp Foxdrop"
+              >
+                {myProfile?.avatarUrl ? (
+                  <img
+                    src={myProfile.avatarUrl}
+                    alt="Foxdrop"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                    alt="Foxdrop"
+                    className="w-7 h-7 object-contain drop-shadow"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                  <Camera className="w-3.5 h-3.5 text-white" />
+                </div>
               </div>
+
               <div>
-                <h3 className="font-extrabold text-slate-900 text-sm leading-tight flex items-center gap-1.5">
-                  <span>WhatsApp FoxDrop</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Conectado y sincronizado"></span>
+                <h3 className="font-black text-slate-900 text-base leading-tight flex items-center gap-1.5">
+                  <span>Foxdrop</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="WhatsApp Conectado"></span>
                 </h3>
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider block">
                   Bandeja Mario & Nydia
                 </span>
               </div>
@@ -738,8 +816,24 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                 return (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
+                    className={`flex items-end gap-2 ${isAdmin ? 'justify-end' : 'justify-start'}`}
                   >
+                    {/* Avatar del cliente a la izquierda si el mensaje es del cliente */}
+                    {!isAdmin && (
+                      <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[11px] shrink-0 overflow-hidden mb-1 border border-slate-300">
+                        {activeChat.avatarUrl ? (
+                          <img
+                            src={activeChat.avatarUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <span>{activeChat.clientName.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                    )}
+
                     <div
                       className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 shadow-xs relative text-xs leading-relaxed ${
                         isAdmin
@@ -750,7 +844,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                       {/* Remitente interno si es del equipo */}
                       {isAdmin && msg.senderName && (
                         <span className="block text-[10px] font-black text-emerald-800 mb-0.5">
-                          ✍️ {msg.senderName} (FoxDrop)
+                          ✍️ {msg.senderName} (Foxdrop)
                         </span>
                       )}
 
@@ -763,6 +857,25 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                         )}
                       </div>
                     </div>
+
+                    {/* Avatar de FoxDrop a la derecha si el mensaje es de FoxDrop */}
+                    {isAdmin && (
+                      <div className="w-7 h-7 rounded-full bg-[#0F3E36] text-white flex items-center justify-center font-bold text-[11px] shrink-0 overflow-hidden mb-1 border border-emerald-600 shadow-2xs">
+                        {myProfile?.avatarUrl ? (
+                          <img
+                            src={myProfile.avatarUrl}
+                            alt="Foxdrop"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                            alt="Foxdrop"
+                            className="w-5 h-5 object-contain"
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })

@@ -169,6 +169,14 @@ export default function AdminCRM() {
   const [viewingTicketOrder, setViewingTicketOrder] = useState<Order | null>(null);
   const ticketReceiptRef = useRef<HTMLDivElement>(null);
 
+  // Transferencia rápida desde Clientes / Pedidos al WhatsApp central interno
+  const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; message: string } | null>(null);
+
+  // Posición movible / arrastrable para las burbujas flotantes (WhatsApp y Fox)
+  const [bubblePos, setBubblePos] = useState({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ mouseX: 0, mouseY: 0, initialX: 0, initialY: 0 });
+
   // Modal Marcar Producto como Ya Vendido (Venta previa o fuera de sistema)
   const [showSoldModal, setShowSoldModal] = useState(false);
   const [soldProduct, setSoldProduct] = useState<Product | null>(null);
@@ -2269,8 +2277,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
   };
 
   const sendWhatsAppNotification = (phone: string, text: string) => {
-    const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encoded}`, '_blank');
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    setWhatsappTarget({ phone: cleanPhone, message: text });
+    setCrmSubTab('whatsapp');
   };
 
   // Pedidos activos (Exclusivamente pedidos en línea en proceso: pendiente, preparación o en camino.
@@ -6496,6 +6505,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               orders={orders}
               clients={clients}
               adminSessionName={adminSession?.email?.split('@')[0] || 'Mario'}
+              initialPhone={whatsappTarget?.phone}
+              initialMessage={whatsappTarget?.message}
             />
           </div>
         )}
@@ -8594,42 +8605,103 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       </nav>
 
       {/* ======================================================== */}
-      {/* BURBUJA FLOTANTE PARA ACCEDER A FOX DESDE CUALQUIER PESTAÑA */}
+      {/* BURBUJAS FLOTANTES MOVILES: WHATSAPP Y ASISTENTE FOX     */}
       {/* ======================================================== */}
-      {crmSubTab !== 'agent' && (
-        <aside
-          aria-label="Acceso flotante a Fox"
-          className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex items-center gap-2 group animate-in fade-in zoom-in-95 duration-200"
+      <aside
+        aria-label="Accesos directos flotantes"
+        style={{
+          transform: `translate(${bubblePos.x}px, ${bubblePos.y}px)`,
+          touchAction: 'none',
+        }}
+        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex flex-col items-center gap-2.5 animate-in fade-in zoom-in-95 duration-200 select-none"
+      >
+        {/* Manija de arrastre / Grip para mover las burbujas si estorban */}
+        <div
+          onPointerDown={(e) => {
+            isDraggingRef.current = true;
+            dragStartRef.current = {
+              mouseX: e.clientX,
+              mouseY: e.clientY,
+              initialX: bubblePos.x,
+              initialY: bubblePos.y,
+            };
+            (e.target as HTMLElement).setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!isDraggingRef.current) return;
+            const deltaX = e.clientX - dragStartRef.current.mouseX;
+            const deltaY = e.clientY - dragStartRef.current.mouseY;
+            setBubblePos({
+              x: dragStartRef.current.initialX + deltaX,
+              y: dragStartRef.current.initialY + deltaY,
+            });
+          }}
+          onPointerUp={(e) => {
+            isDraggingRef.current = false;
+            try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+          }}
+          className="bg-slate-900/80 backdrop-blur-md text-white/70 hover:text-white px-2 py-0.5 rounded-full text-[9px] font-bold cursor-grab active:cursor-grabbing border border-white/10 shadow-md flex items-center gap-1 transition"
+          title="Arrastra para mover las burbujas a cualquier lugar de la pantalla"
         >
-          {/* Tooltip / Píldora descriptiva al hacer hover */}
-          <div className="hidden sm:flex items-center gap-2 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-orange-500/30 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Hablar con Fox</span>
-          </div>
+          <span>⠿</span>
+          <span className="hidden sm:inline">Mover</span>
+        </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('medium'); } catch {}
-              setCrmSubTab('agent');
-              setAgentActiveTab('chat');
-            }}
-            title="Abrir asistente Fox"
-            className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative overflow-visible"
-          >
-            {/* Carita oficial 3D del logo FoxDrop */}
-            <img
-              src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
-              alt="Fox"
-              className="w-9 h-9 object-contain drop-shadow-md transition-transform group-hover:scale-110 select-none pointer-events-none"
-            />
-            {/* Indicador de estado en vivo */}
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 flex items-center justify-center shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-            </span>
-          </button>
-        </aside>
-      )}
+        {/* 1. Burbuja Flotante de Acceso Directo a WhatsApp Central */}
+        {crmSubTab !== 'whatsapp' && (
+          <div className="relative group flex items-center">
+            <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg border border-emerald-500/30 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute right-16 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Abrir WhatsApp Central</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('medium'); } catch {}
+                setCrmSubTab('whatsapp');
+              }}
+              title="Ir a WhatsApp Central Foxdrop"
+              className="w-13 h-13 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-xl shadow-emerald-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
+            >
+              <MessageSquare className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-900 flex items-center justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              </span>
+            </button>
+          </div>
+        )}
+
+        {/* 2. Burbuja Flotante de Fox (Asistente IA) */}
+        {crmSubTab !== 'agent' && (
+          <div className="relative group flex items-center">
+            <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg border border-orange-500/30 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute right-16 whitespace-nowrap">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              <span>Hablar con Fox</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('medium'); } catch {}
+                setCrmSubTab('agent');
+                setAgentActiveTab('chat');
+              }}
+              title="Abrir asistente Fox"
+              className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 text-white flex items-center justify-center shadow-xl shadow-orange-950/40 border-2 border-white hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer relative"
+            >
+              <img
+                src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                alt="Fox"
+                className="w-8 h-8 object-contain drop-shadow transition-transform group-hover:scale-110 select-none pointer-events-none"
+              />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-slate-900 flex items-center justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              </span>
+            </button>
+          </div>
+        )}
+      </aside>
 
     </div>
   );
