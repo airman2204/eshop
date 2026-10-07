@@ -270,3 +270,40 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.special_orders;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.abandoned_carts;
 
+-- 16. TABLAS DE WHATSAPP MULTI-SOCIO EN TIEMPO REAL
+CREATE TABLE IF NOT EXISTS public.whatsapp_chats (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    phone TEXT UNIQUE NOT NULL,
+    client_name TEXT NOT NULL,
+    last_message TEXT,
+    last_message_time TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+    unread_count INTEGER DEFAULT 0,
+    avatar_url TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+    client_profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.whatsapp_messages (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    chat_id UUID REFERENCES public.whatsapp_chats(id) ON DELETE CASCADE,
+    phone TEXT NOT NULL,
+    sender TEXT NOT NULL CHECK (sender IN ('client', 'admin')),
+    sender_name TEXT, -- Ej. 'Mario', 'Socio B', 'FoxBot', 'Carlos'
+    text TEXT NOT NULL,
+    status TEXT DEFAULT 'sent' CHECK (status IN ('sending', 'sent', 'delivered', 'read', 'failed')),
+    media_url TEXT,
+    media_type TEXT CHECK (media_type IN ('image', 'document', 'audio')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+-- Índices de consulta rápida
+CREATE INDEX IF NOT EXISTS idx_whatsapp_chats_phone ON public.whatsapp_chats(phone);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_chat_id ON public.whatsapp_messages(chat_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_created_at ON public.whatsapp_messages(created_at ASC);
+
+-- Habilitar Realtime para chats y mensajes (ambos socios ven los mensajes al instante)
+ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_chats;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_messages;

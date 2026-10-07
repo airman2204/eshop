@@ -281,6 +281,30 @@ export interface AgentWeeklyPlan {
   days: AgentWeeklyCalendarDay[];
 }
 
+export interface WhatsAppChat {
+  id: string;
+  phone: string;
+  clientName: string;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount: number;
+  avatarUrl?: string;
+  status: 'active' | 'archived';
+  clientProfileId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-
-
+export interface WhatsAppMessage {
+  id: string;
+  chatId: string;
+  phone: string;
+  sender: 'client' | 'admin';
+  senderName?: string; // Ej: 'Mario', 'Socio', 'FoxBot' o nombre del cliente
+  text: string;
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  mediaUrl?: string;
+  mediaType?: 'image' | 'document' | 'audio';
+  createdAt: string;
+}

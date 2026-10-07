@@ -5,6 +5,7 @@ import { toPng } from 'html-to-image';
 import FoxDropLogo from '@/components/FoxDropLogo';
 import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
+import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -55,7 +56,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'whatsapp'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // Datos principales
@@ -2670,6 +2671,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {abandonedCarts.length}
                 </span>
               </button>
+
+              <button
+                onClick={() => { setCrmSubTab('whatsapp'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between border ${
+                  crmSubTab === 'whatsapp' 
+                    ? 'bg-emerald-600 text-white shadow-xs border-emerald-500' 
+                    : 'text-emerald-300 bg-emerald-950/30 hover:bg-emerald-900/40 border-emerald-800/40'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <MessageSquare className="w-4 h-4 text-emerald-400" /> WhatsApp
+                </span>
+                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                  crmSubTab === 'whatsapp' ? 'bg-black/20 text-white' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }`}>
+                  Live
+                </span>
+              </button>
             </div>
           </div>
 
@@ -2787,6 +2806,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
                   {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
                   {crmSubTab === 'shipping_payments' && 'Configuración de Envíos & Pagos (SPEI)'}
+                  {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
                 </h1>
                 <p className="text-xs text-slate-500 hidden sm:block truncate">
                   {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
@@ -2801,6 +2821,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {crmSubTab === 'finance' && 'Rendimiento financiero y márgenes de ganancia'}
                   {crmSubTab === 'carousel' && 'Banners destacados y colecciones visuales'}
                   {crmSubTab === 'shipping_payments' && 'Edita métodos de entrega, costos y datos bancarios para transferencia'}
+                  {crmSubTab === 'whatsapp' && 'Bandeja de entrada compartida en tiempo real para socios con plantillas y confirmaciones de compra'}
                 </p>
               </div>
             </div>
@@ -5641,7 +5662,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {agentWeeklyPlan.days.map((day, idx) => (
+                      {agentWeeklyPlan.days.map((day: AgentWeeklyCalendarDay, idx: number) => (
                         <div
                           key={day.id || idx}
                           className="bg-white border border-slate-200 rounded-3xl p-5 shadow-2xs hover:shadow-md transition flex flex-col justify-between space-y-3 relative group"
@@ -6430,6 +6451,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* 13. SECCIÓN WHATSAPP CENTRAL FOXDROP (MULTI-SOCIO EN TIEMPO REAL) */}
+        {crmSubTab === 'whatsapp' && (
+          <div className="space-y-4">
+            <AdminWhatsAppTab
+              orders={orders}
+              clients={clients}
+              adminSessionName={adminSession?.email?.split('@')[0] || 'Mario'}
+            />
           </div>
         )}
 
