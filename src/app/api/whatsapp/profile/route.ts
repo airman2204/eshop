@@ -13,15 +13,21 @@ export async function GET() {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      return NextResponse.json({ success: false, error: err }, { status: res.status });
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text.includes("<!DOCTYPE") ? "El puente de WhatsApp está despertando o reconectando" : text };
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      return NextResponse.json({ success: false, error: data.error || "WhatsApp no está conectado" }, { status: res.status });
+    }
+
     return NextResponse.json(data);
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || "Error al conectar con WhatsApp" }, { status: 500 });
   }
 }
 
@@ -46,7 +52,9 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ imageBase64 }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { error: text.includes("<!DOCTYPE") ? "Servidor de WhatsApp reiniciando" : text }; }
       return NextResponse.json(data, { status: res.status });
     }
 
@@ -61,7 +69,9 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ status }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { data = { error: text.includes("<!DOCTYPE") ? "Servidor de WhatsApp reiniciando" : text }; }
       return NextResponse.json(data, { status: res.status });
     }
 

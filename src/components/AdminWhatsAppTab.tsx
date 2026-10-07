@@ -61,13 +61,18 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     setProfileMessage(null);
     try {
       const res = await fetch('/api/whatsapp/profile');
-      const data = await res.json();
-      if (data.success) {
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch {}
+
+      if (data && data.success) {
         setMyProfile(data);
         setNewStatusInput(data.status || '');
+      } else if (data && data.error) {
+        setProfileMessage({ text: data.error, type: 'error' });
       }
-    } catch (err) {
-      console.error('Error cargando perfil propio de WhatsApp:', err);
+    } catch (err: any) {
+      console.warn('Error cargando perfil propio de WhatsApp:', err.message);
     } finally {
       setLoadingProfile(false);
     }
@@ -94,12 +99,15 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'picture', imageBase64: base64 }),
         });
-        const data = await res.json();
-        if (data.success) {
+        const text = await res.text();
+        let data: any = {};
+        try { data = JSON.parse(text); } catch { data = { error: 'El servidor de WhatsApp está reconectando' }; }
+
+        if (data && data.success) {
           setMyProfile(prev => prev ? { ...prev, avatarUrl: data.avatarUrl || base64 } : prev);
           setProfileMessage({ text: '¡Foto de perfil actualizada en WhatsApp!', type: 'success' });
         } else {
-          setProfileMessage({ text: data.error || 'No se pudo actualizar la foto', type: 'error' });
+          setProfileMessage({ text: data.error || 'No se pudo actualizar la foto en WhatsApp', type: 'error' });
         }
       } catch (err: any) {
         setProfileMessage({ text: err.message || 'Error al subir imagen', type: 'error' });
@@ -995,17 +1003,30 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               </div>
             ) : (
               <div className="space-y-5">
-                {/* Alerta de Éxito o Error */}
+                {/* Alerta de Éxito o Error con opción de reconectar QR */}
                 {profileMessage && (
                   <div
-                    className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+                    className={`p-3 rounded-2xl text-xs font-bold flex flex-col gap-1.5 ${
                       profileMessage.type === 'success'
                         ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : 'bg-red-50 text-red-800 border border-red-200'
+                        : 'bg-amber-50 text-amber-900 border border-amber-200'
                     }`}
                   >
-                    <span>{profileMessage.type === 'success' ? '✅' : '⚠️'}</span>
-                    <span>{profileMessage.text}</span>
+                    <div className="flex items-center gap-2">
+                      <span>{profileMessage.type === 'success' ? '✅' : '📱'}</span>
+                      <span>{profileMessage.text}</span>
+                    </div>
+                    {profileMessage.type === 'error' && (
+                      <a
+                        href="https://foxdrop-whatsapp-bridge.onrender.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#E65F2B] hover:underline self-start mt-0.5"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Abrir y escanear Código QR en el puente de WhatsApp</span>
+                      </a>
+                    )}
                   </div>
                 )}
 
