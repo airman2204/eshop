@@ -57,6 +57,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     loadChats(true);
   }, []);
 
+  const activeChatRef = useRef<WhatsAppChat | null>(null);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+
   // Suscripción Realtime a Supabase para actualizar mensajes en vivo para ambos socios
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
@@ -69,9 +74,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const newMsg = payload.new as any;
+            const currentActive = activeChatRef.current;
             
             // Si el mensaje es del chat actualmente abierto, anexarlo
-            if (activeChat && newMsg.chat_id === activeChat.id) {
+            if (currentActive && (newMsg.chat_id === currentActive.id || newMsg.phone === currentActive.phone)) {
               setMessages(prev => {
                 if (prev.some(m => m.id === newMsg.id)) return prev;
                 return [...prev, {
@@ -93,7 +99,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
             }
 
             // Recargar la lista de chats para actualizar el último mensaje y contadores
-            loadChats();
+            loadChats(false);
           }
         }
       )
@@ -101,7 +107,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
         'postgres_changes',
         { event: '*', schema: 'public', table: 'whatsapp_chats' },
         () => {
-          loadChats();
+          loadChats(false);
         }
       )
       .subscribe();
@@ -109,7 +115,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [activeChat]);
+  }, []);
 
   // Cargar mensajes cuando se selecciona un chat
   const handleSelectChat = async (chat: WhatsAppChat) => {
