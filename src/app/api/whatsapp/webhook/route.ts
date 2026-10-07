@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
 
     const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
 
+    let chatId = chat?.id;
+
     if (!chatId) {
       const { data: newChat, error: newChatErr } = await supabase
         .from("whatsapp_chats")
