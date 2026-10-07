@@ -24,6 +24,15 @@ interface AdminWhatsAppTabProps {
   initialMessage?: string;
 }
 
+// Helper para evitar bloqueos de referrer o CDN en fotos de WhatsApp
+function getSafeAvatarUrl(url?: string): string {
+  if (!url) return '';
+  if (url.includes('pps.whatsapp.net') || url.includes('fbcdn.net')) {
+    return `/api/whatsapp/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage }: AdminWhatsAppTabProps) {
   const [chats, setChats] = useState<WhatsAppChat[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
@@ -457,9 +466,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               >
                 {myProfile?.avatarUrl ? (
                   <img
-                    src={myProfile.avatarUrl}
+                    src={getSafeAvatarUrl(myProfile.avatarUrl)}
                     alt="Foxdrop"
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = FOX_LOGO_BASE64 || "/fox-logo-head-3d.png";
+                    }}
                   />
                 ) : (
                   <img
@@ -658,11 +672,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   <div className="w-11 h-11 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-black text-sm shrink-0 border border-slate-300 relative overflow-hidden">
                     {chat.avatarUrl ? (
                       <img 
-                        src={chat.avatarUrl} 
+                        src={getSafeAvatarUrl(chat.avatarUrl)} 
                         alt={chat.clientName} 
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover rounded-full"
                         onError={(e) => {
-                          // Fallback si la imagen no carga
                           e.currentTarget.style.display = 'none';
                         }}
                       />
@@ -730,8 +744,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs overflow-hidden">
                 {activeChat.avatarUrl ? (
                   <img 
-                    src={activeChat.avatarUrl} 
+                    src={getSafeAvatarUrl(activeChat.avatarUrl)} 
                     alt={activeChat.clientName} 
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
@@ -823,10 +838,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[11px] shrink-0 overflow-hidden mb-1 border border-slate-300">
                         {activeChat.avatarUrl ? (
                           <img
-                            src={activeChat.avatarUrl}
+                            src={getSafeAvatarUrl(activeChat.avatarUrl)}
                             alt=""
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         ) : (
                           <span>{activeChat.clientName.charAt(0).toUpperCase()}</span>
@@ -863,9 +882,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       <div className="w-7 h-7 rounded-full bg-[#0F3E36] text-white flex items-center justify-center font-bold text-[11px] shrink-0 overflow-hidden mb-1 border border-emerald-600 shadow-2xs">
                         {myProfile?.avatarUrl ? (
                           <img
-                            src={myProfile.avatarUrl}
+                            src={getSafeAvatarUrl(myProfile.avatarUrl)}
                             alt="Foxdrop"
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = FOX_LOGO_BASE64 || "/fox-logo-head-3d.png";
+                            }}
                           />
                         ) : (
                           <img
@@ -1028,11 +1052,13 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-emerald-100 shadow-md overflow-hidden flex items-center justify-center text-slate-600 font-black text-2xl">
                       {myProfile?.avatarUrl ? (
                         <img
-                          src={myProfile.avatarUrl}
+                          src={getSafeAvatarUrl(myProfile.avatarUrl)}
                           alt="Foxdrop"
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = FOX_LOGO_BASE64 || "/fox-logo-head-3d.png";
                           }}
                         />
                       ) : (
