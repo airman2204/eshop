@@ -169,6 +169,11 @@ export default function AdminCRM() {
   const [viewingTicketOrder, setViewingTicketOrder] = useState<Order | null>(null);
   const ticketReceiptRef = useRef<HTMLDivElement>(null);
 
+  // Estados de Ventanas Flotantes (WhatsApp y Fox IA accesibles desde cualquier pestaña)
+  const [showFloatingWhatsApp, setShowFloatingWhatsApp] = useState(false);
+  const [showFloatingFox, setShowFloatingFox] = useState(false);
+  const [floatingFoxMinimised, setFloatingFoxMinimised] = useState(false);
+
   // Transferencia rápida desde Clientes / Pedidos al WhatsApp central interno
   const [whatsappTarget, setWhatsappTarget] = useState<{ phone: string; message: string } | null>(null);
 
@@ -2299,7 +2304,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
   const sendWhatsAppNotification = (phone: string, text: string) => {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     setWhatsappTarget({ phone: cleanPhone, message: text });
-    setCrmSubTab('whatsapp');
+    // Si no está ya en la pestaña fija de WhatsApp, abrir ventana flotante para no sacarlo de su trabajo actual
+    if (crmSubTab !== 'whatsapp') {
+      setShowFloatingWhatsApp(true);
+    }
   };
 
   // Pedidos activos (Exclusivamente pedidos en línea en proceso: pendiente, preparación o en camino.
@@ -8625,19 +8633,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         <div className="relative group flex items-center">
           <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-xl border border-emerald-500/40 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute right-16 whitespace-nowrap">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>{crmSubTab === 'whatsapp' ? 'WhatsApp Activo' : 'Abrir WhatsApp Central'}</span>
+            <span>{showFloatingWhatsApp ? 'Cerrar WhatsApp Flotante' : 'Abrir WhatsApp Flotante'}</span>
           </div>
 
           <button
             type="button"
             onClick={() => {
               try { soundManager.triggerHaptic('medium'); } catch {}
-              setCrmSubTab('whatsapp');
+              setShowFloatingWhatsApp(!showFloatingWhatsApp);
             }}
-            title="Ir a WhatsApp Central Foxdrop"
+            title="Abrir WhatsApp en ventana flotante"
             className={`w-13 h-13 rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
-              crmSubTab === 'whatsapp'
-                ? 'bg-gradient-to-tr from-emerald-700 to-teal-600 border-emerald-300 ring-2 ring-emerald-400/50'
+              showFloatingWhatsApp
+                ? 'bg-gradient-to-tr from-emerald-700 to-teal-600 border-emerald-300 ring-4 ring-emerald-400/50 scale-105'
                 : 'bg-gradient-to-tr from-emerald-600 to-teal-500 border-white hover:scale-105'
             }`}
           >
@@ -8652,20 +8660,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         <div className="relative group flex items-center">
           <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/95 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-xl border border-orange-500/40 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none absolute right-16 whitespace-nowrap">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-            <span>{crmSubTab === 'agent' ? 'Foxbot Activo' : 'Hablar con Fox'}</span>
+            <span>{showFloatingFox ? 'Cerrar Fox Flotante' : 'Hablar con Fox (Ventana)'}</span>
           </div>
 
           <button
             type="button"
             onClick={() => {
               try { soundManager.triggerHaptic('medium'); } catch {}
-              setCrmSubTab('agent');
-              setAgentActiveTab('chat');
+              setShowFloatingFox(!showFloatingFox);
+              setFloatingFoxMinimised(false);
             }}
-            title="Abrir asistente Fox"
+            title="Abrir asistente Fox en ventana flotante"
             className={`w-13 h-13 rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
-              crmSubTab === 'agent'
-                ? 'bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 border-amber-300 ring-2 ring-orange-400/50'
+              showFloatingFox
+                ? 'bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 border-amber-300 ring-4 ring-orange-400/50 scale-105'
                 : 'bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 border-white hover:scale-105'
             }`}
           >
@@ -8680,6 +8688,213 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </button>
         </div>
       </aside>
+
+      {/* ======================================================== */}
+      {/* VENTANA FLOTANTE 1: WHATSAPP CENTRAL (SIN SALIR DE TU PESTAÑA) */}
+      {/* ======================================================== */}
+      {showFloatingWhatsApp && (
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-24 z-50 w-full sm:w-[540px] md:w-[620px] lg:w-[720px] h-full sm:h-[620px] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+          {/* Barra de título de la ventana flotante */}
+          <div className="bg-[#0F3E36] text-white px-4 py-2.5 flex items-center justify-between shadow-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-extrabold text-xs tracking-wide">WhatsApp Central • FoxDrop</span>
+              <span className="text-[10px] text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full font-bold">
+                Ventana Flotante
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFloatingWhatsApp(false);
+                  setCrmSubTab('whatsapp');
+                }}
+                className="text-xs text-emerald-200 hover:text-white px-2 py-0.5 rounded-lg hover:bg-emerald-800/60 transition cursor-pointer"
+                title="Maximizar a sección completa"
+              >
+                Abrir en Grande ↗
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFloatingWhatsApp(false)}
+                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                title="Cerrar ventana"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden">
+            <AdminWhatsAppTab
+              orders={orders}
+              clients={clients}
+              adminSessionName={(adminSession?.email || '').toLowerCase().includes('nydia') ? 'Nydia' : 'Mario'}
+              initialPhone={whatsappTarget?.phone}
+              initialMessage={whatsappTarget?.message}
+              onClose={() => setShowFloatingWhatsApp(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* VENTANA FLOTANTE 2: ASISTENTE FOX AI (CHAT SIN SALIR DE TU PESTAÑA) */}
+      {/* ======================================================== */}
+      {showFloatingFox && (
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-24 z-50 w-full sm:w-[480px] md:w-[540px] h-full sm:h-[620px] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+          {/* Cabecera de la Ventana Fox */}
+          <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white px-4 py-3 flex items-center justify-between border-b border-indigo-900/40 select-none">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#E65F2B] to-[#FF8A00] flex items-center justify-center text-white shadow-md">
+                <img
+                  src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                  alt="Fox"
+                  className="w-5 h-5 object-contain"
+                />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-xs text-white leading-tight flex items-center gap-1.5">
+                  <span>Fox Copilot AI</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                </h4>
+                <p className="text-[10px] text-orange-200/80">Pregúntale stock, ventas o crea posts</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFloatingFox(false);
+                  setCrmSubTab('agent');
+                  setAgentActiveTab('chat');
+                }}
+                className="text-xs text-orange-200 hover:text-white px-2 py-0.5 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                title="Maximizar a sección completa"
+              >
+                Abrir en Grande ↗
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFloatingFox(false)}
+                className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                title="Cerrar ventana"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cuerpo del Chat con Fox */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60">
+            {agentChatMessages.map(msg => (
+              <div
+                key={msg.id}
+                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.sender === 'agent' && (
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-[#E65F2B] to-[#FF8A00] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                    🦊
+                  </div>
+                )}
+                <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+                  msg.sender === 'user'
+                    ? 'bg-[#2D4A58] text-white rounded-tr-none shadow-2xs'
+                    : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-2xs'
+                }`}>
+                  <div className="whitespace-pre-line font-normal">{msg.text}</div>
+                  <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-slate-200/40">
+                    <span className={`text-[9px] font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
+                      {msg.timestamp}
+                    </span>
+                    {msg.sender === 'agent' && (
+                      <button
+                        onClick={() => speakWithFoxVoice(msg.text)}
+                        className="text-slate-400 hover:text-[#E65F2B] transition p-0.5 rounded"
+                        title="Escuchar en voz alta"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Acciones sugeridas de Fox */}
+                  {msg.actionSuggestions && msg.actionSuggestions.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200/60 space-y-1">
+                      <div className="flex flex-wrap gap-1">
+                        {msg.actionSuggestions.map((sug, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleSendAgentChatMessage(sug)}
+                            className="text-[10px] font-semibold bg-slate-50 border border-slate-200 text-slate-700 hover:border-orange-400 hover:text-orange-600 px-2 py-0.5 rounded-lg transition text-left"
+                          >
+                            💬 {sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {agentChatLoading && (
+              <div className="flex gap-2 justify-start items-center">
+                <div className="w-7 h-7 rounded-xl bg-[#E65F2B] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  🦊
+                </div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-2.5 text-xs text-slate-500 flex items-center gap-2">
+                  <RefreshCw className="w-3 h-3 animate-spin text-[#E65F2B]" />
+                  <span>Fox está pensando...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Formulario de Input en la ventana flotante */}
+          <div className="p-3 bg-white border-t border-slate-200">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleSendAgentChatMessage();
+              }}
+              className="flex items-center gap-2"
+            >
+              <button
+                type="button"
+                onClick={toggleVoiceListening}
+                title={isVoiceListening ? "Detener micrófono" : "Hablar con Fox"}
+                className={`p-2.5 rounded-xl transition flex items-center justify-center shrink-0 border ${
+                  isVoiceListening
+                    ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
+                    : 'bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-[#E65F2B] border-slate-200'
+                }`}
+              >
+                {isVoiceListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-[#E65F2B]" />}
+              </button>
+
+              <input
+                type="text"
+                value={agentInputText}
+                onChange={e => setAgentInputText(e.target.value)}
+                placeholder={isVoiceListening ? "🎙️ Escuchando..." : "Pregúntale a Fox..."}
+                disabled={agentChatLoading}
+                className="flex-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#E65F2B] text-slate-800"
+              />
+
+              <button
+                type="submit"
+                disabled={agentChatLoading || !agentInputText.trim()}
+                className="p-2.5 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs flex items-center justify-center transition shadow-xs disabled:opacity-40 shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

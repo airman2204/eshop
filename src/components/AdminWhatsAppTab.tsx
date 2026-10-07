@@ -22,6 +22,7 @@ interface AdminWhatsAppTabProps {
   adminSessionName?: string; // Nombre del socio actual (ej: 'Mario' o 'Nydia')
   initialPhone?: string;
   initialMessage?: string;
+  onClose?: () => void;
 }
 
 // Helper para evitar bloqueos de referrer o CDN en fotos de WhatsApp
@@ -33,7 +34,7 @@ function getSafeAvatarUrl(url?: string): string {
   return url;
 }
 
-export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage }: AdminWhatsAppTabProps) {
+export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage, onClose }: AdminWhatsAppTabProps) {
   const [chats, setChats] = useState<WhatsAppChat[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
   const [activeChat, setActiveChat] = useState<WhatsAppChat | null>(null);
@@ -572,6 +573,18 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   <Maximize2 className="w-4 h-4" />
                 )}
               </button>
+
+              {/* Botón Cerrar Ventana Flotante */}
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                  title="Cerrar ventana flotante"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -808,6 +821,17 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Abrir en App</span>
               </a>
+
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                  title="Cerrar ventana flotante"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
