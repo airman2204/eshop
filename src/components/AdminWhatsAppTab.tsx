@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   MessageSquare, Send, Search, Phone, User, Check, CheckCheck, 
   Clock, RefreshCw, ShoppingBag, AlertCircle, ArrowLeft,
-  Sparkles, ExternalLink, ShieldCheck, Flame, Tag, Truck
+  Sparkles, ExternalLink, ShieldCheck, Flame, Tag, Truck,
+  Maximize2, Minimize2, Bell, BellRing, Volume2, X
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile } from '@/types';
 import { 
@@ -17,7 +18,7 @@ import { soundManager } from '@/lib/sounds';
 interface AdminWhatsAppTabProps {
   orders: Order[];
   clients: ClientProfile[];
-  adminSessionName?: string; // Nombre del socio actual (ej: 'Mario' o 'Socio')
+  adminSessionName?: string; // Nombre del socio actual (ej: 'Mario' o 'Nydia')
 }
 
 export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: AdminWhatsAppTabProps) {
@@ -29,12 +30,71 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [partnerName, setPartnerName] = useState(adminSessionName || 'Mario');
+  
+  // Soporte de Socios: Mario y Nydia
+  const initialPartner = adminSessionName?.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
+  const [partnerName, setPartnerName] = useState<'Mario' | 'Nydia'>(initialPartner);
+
+  // Modo Pantalla Completa
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Notificaciones de Sistema / Push en Navegador
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
   // Filtros rápidos
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'with_orders'>('all');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Solicitar permiso de notificaciones nativas del navegador / celular
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setNotificationPermission(perm);
+        if (perm === 'granted') {
+          try {
+            new Notification('FoxDrop WhatsApp', {
+              body: '¡Notificaciones activadas! Te avisaremos de cada mensaje entrante aunque estés en otra pestaña.',
+              icon: '/favicon.ico',
+            });
+            soundManager.playStatusUpdated();
+          } catch {}
+        }
+      } catch (err) {
+        console.error('Error solicitando permisos de notificación:', err);
+      }
+    }
+  };
+
+  // Disparar notificación nativa y sonido fuerte
+  const triggerClientMessageNotification = (senderName: string, text: string) => {
+    // 1. Sonido y vibración háptica
+    try {
+      soundManager.playStatusUpdated();
+      soundManager.triggerHaptic('heavy');
+    } catch {}
+
+    // 2. Notificación en pantalla del sistema / celular
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const notif = new Notification(`💬 WhatsApp: ${senderName}`, {
+          body: text || 'Nuevo mensaje recibido en FoxDrop',
+          icon: '/favicon.ico',
+          tag: 'whatsapp-message',
+        });
+        notif.onclick = () => {
+          window.focus();
+        };
+      } catch {}
+    }
+  };
 
   // Auto scroll al final del chat
   const scrollToBottom = () => {
@@ -70,8 +130,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     const data = await getWhatsAppChats();
     setChats(data);
     
-    // Si no hay chat seleccionado y hay chats disponibles, auto-seleccionar el primero
-    if (!activeChatRef.current && data.length > 0) {
+    // Si no hay chat seleccionado y hay chats disponibles en desktop, auto-seleccionar el primero
+    // En móviles (pantallas pequeñas), dejamos que el usuario vea la lista primero
+    if (!activeChatRef.current && data.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 768) {
       handleSelectChat(data[0]);
     }
     if (showSpinner) setLoadingChats(false);
@@ -112,9 +173,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
               });
             }
 
-            // Si es un mensaje entrante de un cliente, reproducir sonido de alerta
+            // Si es un mensaje entrante de un cliente, disparar sonido + notificación del sistema
             if (newMsg.sender === 'client') {
-              try { soundManager.playStatusUpdated(); } catch {}
+              triggerClientMessageNotification(newMsg.sender_name || 'Cliente', newMsg.text);
             }
 
             // Recargar la lista de chats para actualizar el último mensaje y contadores
@@ -197,16 +258,20 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
   });
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col md:flex-row h-[750px] max-h-[82vh] relative">
+    <div className={`bg-white transition-all duration-300 flex flex-col md:flex-row relative ${
+      isFullscreen 
+        ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' 
+        : 'rounded-3xl border border-slate-200 shadow-xl overflow-hidden h-[82vh] min-h-[580px] max-h-[920px]'
+    }`}>
       
       {/* ======================================================== */}
       {/* 1. PANEL IZQUIERDO: LISTA DE CHATS & BANDEJA */}
       {/* ======================================================== */}
       <div className={`w-full md:w-80 lg:w-96 border-r border-slate-200 flex flex-col bg-slate-50 shrink-0 ${
-        activeChat ? 'hidden md:flex' : 'flex'
+        activeChat ? 'hidden md:flex' : 'flex h-full'
       }`}>
         {/* Cabecera de Bandeja */}
-        <div className="p-4 border-b border-slate-200 bg-white space-y-3">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
@@ -218,29 +283,83 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Conectado y sincronizado"></span>
                 </h3>
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                  Bandeja Multi-Socio
+                  Bandeja Mario & Nydia
                 </span>
               </div>
             </div>
 
-            <button
-              onClick={() => loadChats(true)}
-              disabled={loadingChats}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
-              title="Recargar conversaciones"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingChats ? 'animate-spin text-[#E65F2B]' : ''}`} />
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Botón de Activar Notificaciones de Navegador/Celular */}
+              <button
+                type="button"
+                onClick={requestNotificationPermission}
+                className={`p-2 rounded-xl transition ${
+                  notificationPermission === 'granted'
+                    ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100 animate-pulse'
+                }`}
+                title={notificationPermission === 'granted' ? 'Notificaciones sonoras y push activas' : 'Toca para permitir alertas sonoras al recibir mensajes'}
+              >
+                {notificationPermission === 'granted' ? (
+                  <Bell className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <BellRing className="w-4 h-4 text-amber-600" />
+                )}
+              </button>
+
+              {/* Botón Recargar */}
+              <button
+                type="button"
+                onClick={() => loadChats(true)}
+                disabled={loadingChats}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
+                title="Recargar conversaciones"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingChats ? 'animate-spin text-[#E65F2B]' : ''}`} />
+              </button>
+
+              {/* Botón Pantalla Completa */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+                title={isFullscreen ? 'Salir de pantalla completa' : 'Expandir a pantalla completa'}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4 text-[#E65F2B]" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Selector de Socio que responde */}
+          {/* Banner de permiso de notificación si aún no lo ha otorgado */}
+          {notificationPermission !== 'granted' && (
+            <div 
+              onClick={requestNotificationPermission}
+              className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between gap-2 cursor-pointer hover:bg-amber-100/70 transition"
+            >
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-amber-700 shrink-0" />
+                <span className="text-[11px] font-bold text-amber-900 leading-tight">
+                  Toca aquí para que suene tu cel al entrar mensajes
+                </span>
+              </div>
+              <span className="text-[10px] bg-amber-700 text-white font-extrabold px-2 py-0.5 rounded-lg shrink-0">
+                Activar
+              </span>
+            </div>
+          )}
+
+          {/* Selector de Socio que responde: MARIO o NYDIA */}
           <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl text-xs font-bold text-slate-700">
             <span className="text-[10px] text-slate-400 px-1">Atendiendo como:</span>
             <div className="flex gap-1 flex-1">
               <button
                 type="button"
                 onClick={() => setPartnerName('Mario')}
-                className={`flex-1 py-1 rounded-lg text-center transition ${
+                className={`flex-1 py-1.5 rounded-lg text-center font-extrabold transition ${
                   partnerName === 'Mario' 
                     ? 'bg-[#E65F2B] text-white shadow-xs' 
                     : 'bg-white text-slate-600 hover:text-slate-900'
@@ -250,14 +369,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
               </button>
               <button
                 type="button"
-                onClick={() => setPartnerName('Socio')}
-                className={`flex-1 py-1 rounded-lg text-center transition ${
-                  partnerName === 'Socio' 
+                onClick={() => setPartnerName('Nydia')}
+                className={`flex-1 py-1.5 rounded-lg text-center font-extrabold transition ${
+                  partnerName === 'Nydia' 
                     ? 'bg-[#E65F2B] text-white shadow-xs' 
                     : 'bg-white text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Socio
+                Nydia
               </button>
             </div>
           </div>
@@ -417,7 +536,20 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
             </div>
 
             {/* Acciones de la cabecera */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+                title={isFullscreen ? 'Salir de pantalla completa' : 'Expandir a pantalla completa'}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="w-4 h-4 text-[#E65F2B]" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+              </button>
+
               <a
                 href={`https://wa.me/${activeChat.phone}`}
                 target="_blank"

@@ -7343,18 +7343,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </button>
 
         <button
-          onClick={() => { setCrmSubTab('carts'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          onClick={() => { setCrmSubTab('whatsapp'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
           className={`flex flex-col items-center gap-1 transition relative ${
-            crmSubTab === 'carts' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
+            crmSubTab === 'whatsapp' ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <AlertTriangle className="w-5 h-5 text-amber-400" />
-          {abandonedCarts.length > 0 && (
-            <span className="absolute -top-1 right-1 bg-amber-500 text-slate-950 text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-black">
-              {abandonedCarts.length}
-            </span>
-          )}
-          <span className="text-[10px]">Carritos</span>
+          <div className="relative">
+            <MessageSquare className="w-5 h-5" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-1 animate-pulse"></span>
+          </div>
+          <span className="text-[10px]">WhatsApp</span>
         </button>
 
         <button
