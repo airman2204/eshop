@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
+    const incomingAvatarUrl = body.avatarUrl || body.avatar_url || undefined;
 
     let chatId = chat?.id;
 
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
           last_message_time: new Date().toISOString(),
           unread_count: 1,
           status: "active",
+          ...(incomingAvatarUrl ? { avatar_url: incomingAvatarUrl } : {}),
           ...(incomingLid ? { notes: JSON.stringify({ lid: incomingLid }) } : {}),
         })
         .select("id")
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
       if (newChatErr) throw newChatErr;
       chatId = newChat.id;
     } else {
-      // Incrementar contador de no leídos y actualizar LID si vino uno nuevo
+      // Incrementar contador de no leídos y actualizar LID o avatar si vino uno nuevo
       const updateData: any = {
         client_name: clientName,
         last_message: text,
@@ -78,6 +80,9 @@ export async function POST(req: NextRequest) {
       };
       if (incomingLid) {
         updateData.notes = JSON.stringify({ lid: incomingLid });
+      }
+      if (incomingAvatarUrl) {
+        updateData.avatar_url = incomingAvatarUrl;
       }
 
       await supabase

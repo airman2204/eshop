@@ -98,6 +98,13 @@ async function startWhatsApp() {
 
       const pushName = msg.pushName || 'Cliente WhatsApp';
 
+      // Consultar foto de perfil real del contacto en WhatsApp
+      let avatarUrl = '';
+      try {
+        const jidToFetch = rawLid ? `${rawLid}@lid` : `${cleanPhone}@s.whatsapp.net`;
+        avatarUrl = await sock.profilePictureUrl(jidToFetch, 'image').catch(() => '');
+      } catch {}
+
       console.log(`📩 Mensaje recibido de ${cleanPhone} (LID: ${rawLid}) (${pushName}): ${text}`);
 
       if (WEBHOOK_URL && text) {
@@ -110,6 +117,7 @@ async function startWhatsApp() {
               lid: rawLid || undefined,
               text: text,
               clientName: pushName,
+              avatarUrl: avatarUrl || undefined,
             }),
           });
         } catch (err) {
@@ -243,6 +251,110 @@ app.post('/message/sendText', async (req, res) => {
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint GET para obtener la información de perfil propia de la cuenta de FoxDrop
+app.get('/profile/myInfo', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no está conectado' });
+  }
+
+  try {
+    const myJid = sock.user?.id || '';
+    let avatarUrl = '';
+    try {
+      avatarUrl = await sock.profilePictureUrl(myJid, 'image').catch(() => '');
+    } catch {}
+
+    let statusText = '';
+    try {
+      const statusRes = await sock.fetchStatus(myJid).catch(() => null);
+      statusText = statusRes?.status || '';
+    } catch {}
+
+    res.json({
+      success: true,
+      id: myJid,
+      name: sock.user?.name || 'FoxDrop',
+      phone: myJid.replace(/@.+/, '').replace(/:.+/, ''),
+      avatarUrl,
+      status: statusText,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint POST para actualizar la foto de perfil de la cuenta de FoxDrop
+app.post('/profile/updatePicture', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no está conectado' });
+  }
+
+  const { imageBase64 } = req.body;
+  if (!imageBase64) {
+    return res.status(400).json({ error: 'imageBase64 requerida' });
+  }
+
+  try {
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const myJid = sock.user?.id;
+
+    await sock.updateProfilePicture(myJid, buffer);
+    console.log('✅ Foto de perfil de WhatsApp FoxDrop actualizada con éxito.');
+
+    let newAvatarUrl = '';
+    try {
+      newAvatarUrl = await sock.profilePictureUrl(myJid, 'image').catch(() => '');
+    } catch {}
+
+    res.json({ success: true, avatarUrl: newAvatarUrl });
+  } catch (err) {
+    console.error('Error actualizando foto de perfil en WhatsApp:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint POST para actualizar el estado/info de la cuenta de FoxDrop
+app.post('/profile/updateStatus', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no está conectado' });
+  }
+
+  const { status } = req.body;
+  if (!status) {
+    return res.status(400).json({ error: 'Texto de estado requerido' });
+  }
+
+  try {
+    await sock.updateProfileStatus(status);
+    console.log(`✅ Estado de WhatsApp FoxDrop actualizado: "${status}"`);
+    res.json({ success: true, status });
+  } catch (err) {
+    console.error('Error actualizando estado en WhatsApp:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint GET para consultar bajo demanda el avatar de un contacto específico
+app.get('/contact/avatar', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no está conectado' });
+  }
+
+  const { phone, lid } = req.query;
+  if (!phone && !lid) {
+    return res.status(400).json({ error: 'phone o lid requerido' });
+  }
+
+  try {
+    const targetJid = lid ? `${lid}@lid` : `${phone}@s.whatsapp.net`;
+    const avatarUrl = await sock.profilePictureUrl(targetJid, 'image').catch(() => '');
+    res.json({ success: true, avatarUrl });
+  } catch (err) {
+    res.json({ success: false, avatarUrl: '' });
   }
 });
 

@@ -5,7 +5,7 @@ import {
   MessageSquare, Send, Search, Phone, User, Check, CheckCheck, 
   Clock, RefreshCw, ShoppingBag, AlertCircle, ArrowLeft,
   Sparkles, ExternalLink, ShieldCheck, Flame, Tag, Truck,
-  Maximize2, Minimize2, Bell, BellRing, Volume2, X
+  Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile } from '@/types';
 import { 
@@ -43,6 +43,93 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
 
   // Filtros rápidos
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'with_orders'>('all');
+
+  // Perfil de la cuenta propia de WhatsApp FoxDrop
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [myProfile, setMyProfile] = useState<{ id?: string; name?: string; phone?: string; avatarUrl?: string; status?: string } | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [newStatusInput, setNewStatusInput] = useState('');
+  const [profileMessage, setProfileMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchMyProfile = async () => {
+    setLoadingProfile(true);
+    setProfileMessage(null);
+    try {
+      const res = await fetch('/api/whatsapp/profile');
+      const data = await res.json();
+      if (data.success) {
+        setMyProfile(data);
+        setNewStatusInput(data.status || '');
+      }
+    } catch (err) {
+      console.error('Error cargando perfil propio de WhatsApp:', err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleUploadProfilePicture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileMessage({ text: 'La imagen no debe pesar más de 5MB', type: 'error' });
+      return;
+    }
+
+    setSavingProfile(true);
+    setProfileMessage(null);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result as string;
+        const res = await fetch('/api/whatsapp/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'picture', imageBase64: base64 }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMyProfile(prev => prev ? { ...prev, avatarUrl: data.avatarUrl || base64 } : prev);
+          setProfileMessage({ text: '¡Foto de perfil actualizada en WhatsApp!', type: 'success' });
+        } else {
+          setProfileMessage({ text: data.error || 'No se pudo actualizar la foto', type: 'error' });
+        }
+      } catch (err: any) {
+        setProfileMessage({ text: err.message || 'Error al subir imagen', type: 'error' });
+      } finally {
+        setSavingProfile(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!newStatusInput.trim()) return;
+    setSavingProfile(true);
+    setProfileMessage(null);
+    try {
+      const res = await fetch('/api/whatsapp/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status', status: newStatusInput.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMyProfile(prev => prev ? { ...prev, status: data.status } : prev);
+        setProfileMessage({ text: '¡Estado de WhatsApp actualizado!', type: 'success' });
+      } else {
+        setProfileMessage({ text: data.error || 'Error al guardar estado', type: 'error' });
+      }
+    } catch (err: any) {
+      setProfileMessage({ text: err.message || 'Error de red', type: 'error' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -344,6 +431,19 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                 <RefreshCw className={`w-4 h-4 ${loadingChats ? 'animate-spin text-[#E65F2B]' : ''}`} />
               </button>
 
+              {/* Botón Perfil de WhatsApp FoxDrop */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileModal(true);
+                  fetchMyProfile();
+                }}
+                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+                title="Configurar Perfil de WhatsApp (Foto y Estado)"
+              >
+                <Settings className="w-4 h-4 text-emerald-700" />
+              </button>
+
               {/* Botón Pantalla Completa */}
               <button
                 type="button"
@@ -477,10 +577,22 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                   }`}
                 >
                   {/* Avatar con inicial o foto */}
-                  <div className="w-11 h-11 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-black text-sm shrink-0 border border-slate-300 relative">
-                    {chat.clientName.charAt(0).toUpperCase()}
+                  <div className="w-11 h-11 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-black text-sm shrink-0 border border-slate-300 relative overflow-hidden">
+                    {chat.avatarUrl ? (
+                      <img 
+                        src={chat.avatarUrl} 
+                        alt={chat.clientName} 
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          // Fallback si la imagen no carga
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span>{chat.clientName.charAt(0).toUpperCase()}</span>
+                    )}
                     {hasOrder && (
-                      <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#DF7F2D] text-white rounded-full flex items-center justify-center text-[9px]" title="Tiene pedidos en FoxDrop">
+                      <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#DF7F2D] text-white rounded-full flex items-center justify-center text-[9px] z-10" title="Tiene pedidos en FoxDrop">
                         🛍️
                       </span>
                     )}
@@ -537,8 +649,19 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
-              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
-                {activeChat.clientName.charAt(0).toUpperCase()}
+              <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs overflow-hidden">
+                {activeChat.avatarUrl ? (
+                  <img 
+                    src={activeChat.avatarUrl} 
+                    alt={activeChat.clientName} 
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <span>{activeChat.clientName.charAt(0).toUpperCase()}</span>
+                )}
               </div>
 
               <div>
@@ -722,6 +845,135 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
           <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-2xl text-xs font-bold">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
             <span>Sincronizado en tiempo real con Supabase Realtime</span>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. MODAL: CONFIGURACIÓN DE PERFIL DE WHATSAPP FOXDROP    */}
+      {/* ======================================================== */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-5">
+            {/* Cabecera del Modal */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
+                  🦊
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">Perfil de WhatsApp FoxDrop</h3>
+                  <p className="text-[11px] text-slate-400">Personaliza la foto y estado visible para tus clientes</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {loadingProfile ? (
+              <div className="py-12 text-center text-slate-400 space-y-2">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#E65F2B]" />
+                <p className="text-xs font-bold">Consultando perfil con WhatsApp...</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {/* Alerta de Éxito o Error */}
+                {profileMessage && (
+                  <div
+                    className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+                      profileMessage.type === 'success'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}
+                  >
+                    <span>{profileMessage.type === 'success' ? '✅' : '⚠️'}</span>
+                    <span>{profileMessage.text}</span>
+                  </div>
+                )}
+
+                {/* Foto de Perfil Actual y Botón Cambiar */}
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full bg-slate-200 border-4 border-emerald-100 shadow-md overflow-hidden flex items-center justify-center text-slate-600 font-black text-2xl">
+                      {myProfile?.avatarUrl ? (
+                        <img
+                          src={myProfile.avatarUrl}
+                          alt="Foto de Perfil FoxDrop"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>🦊</span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={savingProfile}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 p-2 bg-[#E65F2B] hover:bg-[#d45322] text-white rounded-full shadow-lg transition transform hover:scale-105 active:scale-95 cursor-pointer"
+                      title="Cambiar foto de perfil"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
+                    
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/webp"
+                      className="hidden"
+                      onChange={handleUploadProfilePicture}
+                    />
+                  </div>
+
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm">
+                      {myProfile?.name || 'FoxDrop Oficial'}
+                    </h4>
+                    <p className="text-[11px] font-mono text-slate-400">
+                      +{myProfile?.phone || 'WhatsApp Vinculado'}
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400">
+                    Toca el icono de la cámara para seleccionar una imagen desde tu computadora o celular.
+                  </p>
+                </div>
+
+                {/* Editar Estado / Info de WhatsApp */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    Info / Estado de WhatsApp (Bio)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={139}
+                      value={newStatusInput}
+                      onChange={e => setNewStatusInput(e.target.value)}
+                      placeholder="Ej: Tienda en línea oficial • Envíos a todo México"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600 focus:bg-white transition"
+                    />
+                    <button
+                      type="button"
+                      disabled={savingProfile || !newStatusInput.trim()}
+                      onClick={handleUpdateStatus}
+                      className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
+                    >
+                      {savingProfile ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-3 text-[11px] text-slate-500 leading-relaxed border border-slate-100">
+                  💡 <strong>Tip:</strong> Los cambios se sincronizan al instante en la red oficial de WhatsApp y serán visibles para todos tus clientes.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
