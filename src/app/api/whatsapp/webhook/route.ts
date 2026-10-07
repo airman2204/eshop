@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    let chatId = chat?.id;
+    const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
 
     if (!chatId) {
       const { data: newChat, error: newChatErr } = await supabase
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
           last_message_time: new Date().toISOString(),
           unread_count: 1,
           status: "active",
+          ...(incomingLid ? { notes: JSON.stringify({ lid: incomingLid }) } : {}),
         })
         .select("id")
         .single();
@@ -65,16 +66,21 @@ export async function POST(req: NextRequest) {
       if (newChatErr) throw newChatErr;
       chatId = newChat.id;
     } else {
-      // Incrementar contador de no leídos
+      // Incrementar contador de no leídos y actualizar LID si vino uno nuevo
+      const updateData: any = {
+        client_name: clientName,
+        last_message: text,
+        last_message_time: new Date().toISOString(),
+        unread_count: (chat?.unread_count || 0) + 1,
+        updated_at: new Date().toISOString(),
+      };
+      if (incomingLid) {
+        updateData.notes = JSON.stringify({ lid: incomingLid });
+      }
+
       await supabase
         .from("whatsapp_chats")
-        .update({
-          client_name: clientName,
-          last_message: text,
-          last_message_time: new Date().toISOString(),
-          unread_count: (chat?.unread_count || 0) + 1,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", chatId);
     }
 

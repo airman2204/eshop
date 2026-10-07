@@ -22,6 +22,27 @@ export async function POST(req: NextRequest) {
     // Si hay un bridge configurado en .env.local, le despachamos la orden de envío
     if (bridgeUrl) {
       try {
+        const supabase = createServerClient();
+        let targetNumber = cleanPhone;
+
+        // Si tenemos chatId o phone, verificar si el chat tiene un LID registrado
+        let query = supabase.from("whatsapp_chats").select("notes");
+        if (body.chatId) {
+          query = query.eq("id", body.chatId);
+        } else {
+          query = query.eq("phone", cleanPhone);
+        }
+        const { data: chatData } = await query.maybeSingle();
+
+        if (chatData?.notes) {
+          try {
+            const parsedNotes = JSON.parse(chatData.notes);
+            if (parsedNotes.lid) {
+              targetNumber = parsedNotes.lid;
+            }
+          } catch {}
+        }
+
         const bridgeRes = await fetch(`${bridgeUrl}/message/sendText`, {
           method: "POST",
           headers: {
@@ -29,7 +50,7 @@ export async function POST(req: NextRequest) {
             ...(bridgeApiKey ? { "apikey": bridgeApiKey, "Authorization": `Bearer ${bridgeApiKey}` } : {})
           },
           body: JSON.stringify({
-            number: cleanPhone,
+            number: targetNumber,
             text: text,
           }),
         });
