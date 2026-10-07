@@ -258,10 +258,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
   });
 
   return (
-    <div className={`bg-white transition-all duration-300 flex flex-col md:flex-row relative ${
+    <div className={`bg-white transition-all duration-300 flex flex-col md:flex-row relative w-full ${
       isFullscreen 
         ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' 
-        : 'rounded-3xl border border-slate-200 shadow-xl overflow-hidden h-[82vh] min-h-[580px] max-h-[920px]'
+        : 'rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xl overflow-hidden h-[calc(100vh-130px)] min-h-[620px]'
     }`}>
       
       {/* ======================================================== */}

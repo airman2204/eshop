@@ -55,9 +55,40 @@ export default function AdminCRM() {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Navegación CRM
+  // Navegación CRM (Persistente en recarga)
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'whatsapp'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Leer pestaña persistida al cargar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab') as any;
+    const tabFromStorage = localStorage.getItem('foxdrop_admin_active_tab') as any;
+    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp'];
+
+    const targetTab = validTabs.includes(tabFromUrl) ? tabFromUrl : (validTabs.includes(tabFromStorage) ? tabFromStorage : null);
+    if (targetTab) {
+      setCrmSubTab(targetTab);
+    }
+  }, []);
+
+  // Sincronizar automáticamente en localStorage y URL cada vez que cambia crmSubTab
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('foxdrop_admin_active_tab', crmSubTab);
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('tab') !== crmSubTab) {
+        url.searchParams.set('tab', crmSubTab);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {}
+  }, [crmSubTab]);
+
+  const handleSwitchTab = (tab: typeof crmSubTab) => {
+    setCrmSubTab(tab);
+  };
   
   // Datos principales
   const [products, setProducts] = useState<Product[]>([]);
@@ -2928,7 +2959,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </header>
 
         {/* CONTENIDO PRINCIPAL */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-36 md:pb-8 space-y-6">
+        <main className={`flex-1 w-full mx-auto space-y-6 ${
+          crmSubTab === 'whatsapp' 
+            ? 'max-w-none p-2 sm:p-4 pb-20 md:pb-4' 
+            : 'max-w-7xl p-4 sm:p-6 pb-36 md:pb-8'
+        }`}>
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
         {crmSubTab === 'inventory' && (
