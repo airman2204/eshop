@@ -32,6 +32,10 @@ async function startWhatsApp() {
     printQRInTerminal: true,
     logger: pino({ level: 'silent' }), // Silenciar logs excesivos
     browser: ['FoxDrop CRM', 'Chrome', '1.0.0'],
+    keepAliveIntervalMs: 25000, // Enviar keep-alive a WhatsApp cada 25s
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000,
+    syncFullHistory: false, // No sobrecargar memoria de Render con chats antiguos
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -53,7 +57,7 @@ async function startWhatsApp() {
       qrCodeData = null;
 
       if (shouldReconnect) {
-        setTimeout(startWhatsApp, 4000);
+        setTimeout(startWhatsApp, 3000);
       }
     } else if (connection === 'open') {
       console.log('✅ ¡WhatsApp Conectado exitosamente con FoxDrop!');
@@ -244,4 +248,13 @@ app.post('/message/sendText', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 FoxDrop WhatsApp Bridge activo en el puerto ${PORT}`);
+
+  // Mantener vivo el servicio en Render Free (auto-ping cada 5 minutos)
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || 'https://foxdrop-whatsapp-bridge.onrender.com';
+  setInterval(() => {
+    fetch(`${SELF_URL}/status`)
+      .then(r => r.json())
+      .then(d => console.log(`💓 Auto-KeepAlive Bridge: ${d.status}`))
+      .catch(() => {});
+  }, 1000 * 60 * 5);
 });

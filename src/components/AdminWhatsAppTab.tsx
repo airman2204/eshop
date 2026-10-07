@@ -64,7 +64,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
               body: '¡Notificaciones activadas! Te avisaremos de cada mensaje entrante aunque estés en otra pestaña.',
               icon: '/favicon.ico',
             });
-            soundManager.playStatusUpdated();
+            soundManager.playWhatsAppPop();
           } catch {}
         }
       } catch (err) {
@@ -75,10 +75,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
 
   // Disparar notificación nativa y sonido fuerte
   const triggerClientMessageNotification = (senderName: string, text: string) => {
-    // 1. Sonido y vibración háptica
+    // 1. Sonido estilo WhatsApp y vibración
     try {
-      soundManager.playStatusUpdated();
-      soundManager.triggerHaptic('heavy');
+      soundManager.playWhatsAppPop();
     } catch {}
 
     // 2. Notificación en pantalla del sistema / celular
@@ -192,7 +191,22 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
       )
       .subscribe();
 
+    // Polling ligero cada 8 segundos para asegurar sincronización en celulares si el WebSocket se pausa en background
+    const pollInterval = setInterval(() => {
+      loadChats(false);
+      const currentActive = activeChatRef.current;
+      if (currentActive) {
+        getWhatsAppMessages(currentActive.id).then(msgs => {
+          setMessages(prev => {
+            if (msgs.length > prev.length) return msgs;
+            return prev;
+          });
+        });
+      }
+    }, 8000);
+
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -289,16 +303,28 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
             </div>
 
             <div className="flex items-center gap-1">
-              {/* Botón de Activar Notificaciones de Navegador/Celular */}
+              {/* Botón de Activar / Probar Notificaciones de Navegador/Celular */}
               <button
                 type="button"
-                onClick={requestNotificationPermission}
+                onClick={() => {
+                  if (notificationPermission === 'granted') {
+                    soundManager.playWhatsAppPop();
+                    try {
+                      new Notification('🦊 Prueba de Alerta FoxDrop', {
+                        body: '¡El sonido y la alerta en vivo funcionan correctamente!',
+                        icon: '/favicon.ico',
+                      });
+                    } catch {}
+                  } else {
+                    requestNotificationPermission();
+                  }
+                }}
                 className={`p-2 rounded-xl transition ${
                   notificationPermission === 'granted'
                     ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
                     : 'text-amber-700 bg-amber-50 hover:bg-amber-100 animate-pulse'
                 }`}
-                title={notificationPermission === 'granted' ? 'Notificaciones sonoras y push activas' : 'Toca para permitir alertas sonoras al recibir mensajes'}
+                title={notificationPermission === 'granted' ? 'Notificaciones activas (clic para probar sonido)' : 'Toca para permitir alertas sonoras al recibir mensajes'}
               >
                 {notificationPermission === 'granted' ? (
                   <Bell className="w-4 h-4 text-emerald-600" />
