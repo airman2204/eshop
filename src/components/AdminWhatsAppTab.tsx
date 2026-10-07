@@ -155,7 +155,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
       });
 
       if (result.success && result.message) {
-        setMessages(prev => [...prev, result.message!]);
+        setMessages(prev => {
+          if (prev.some(m => m.id === result.message!.id)) return prev;
+          return [...prev, result.message!];
+        });
         try { soundManager.triggerHaptic('light'); } catch {}
       } else {
         alert(result.error || 'Error al enviar mensaje');
