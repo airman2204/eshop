@@ -153,6 +153,24 @@ export async function sendWhatsAppMessageFromAdmin(params: {
       .eq('id', chatId);
 
     // 4. Despachar al bridge de WhatsApp
+    let deliveredToPhone = false;
+    let targetToSend = cleanPhone;
+
+    // Buscar si el chat tiene LID guardado en Supabase
+    try {
+      const { data: chatData }: any = await (supabase as any)
+        .from('whatsapp_chats')
+        .select('notes')
+        .eq('id', chatId)
+        .maybeSingle();
+
+      if (chatData?.notes) {
+        const parsed = JSON.parse(chatData.notes);
+        if (parsed.lid) targetToSend = parsed.lid;
+      }
+    } catch {}
+
+    // Intento 1: A través de la API route interna
     try {
       const bridgeRes = await fetch('/api/whatsapp/send', {
         method: 'POST',
@@ -165,19 +183,33 @@ export async function sendWhatsAppMessageFromAdmin(params: {
         }),
       });
       const bridgeResult = await bridgeRes.json();
-      if (!bridgeRes.ok || bridgeResult.error) {
-        console.warn('Advertencia del bridge:', bridgeResult);
-        return {
-          success: false,
-          error: `El mensaje se guardó en el panel pero WhatsApp Bridge devolvió: ${bridgeResult.error || bridgeRes.statusText}`,
-        };
+      if (bridgeRes.ok && (bridgeResult.success || bridgeResult.bridgeData?.success)) {
+        if (bridgeResult.bridgeData?.success) {
+          deliveredToPhone = true;
+        }
       }
-    } catch (bridgeErr: any) {
-      console.warn('Error contactando endpoint de envío:', bridgeErr);
-      return {
-        success: false,
-        error: `No se pudo conectar con el servidor de WhatsApp: ${bridgeErr.message}`,
-      };
+    } catch (bridgeErr) {
+      console.warn('Fallo ruta interna /api/whatsapp/send:', bridgeErr);
+    }
+
+    // Intento 2: Si el servidor de Next.js no despachó al bridge físico, despachar directamente desde el navegador al bridge en Render
+    if (!deliveredToPhone) {
+      try {
+        const directBridgeRes = await fetch('https://foxdrop-whatsapp-bridge.onrender.com/message/sendText', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            number: targetToSend,
+            text: params.text,
+          }),
+        });
+        const directData = await directBridgeRes.json();
+        if (directData.success) {
+          deliveredToPhone = true;
+        }
+      } catch (directErr: any) {
+        console.warn('Fallo envío directo al bridge:', directErr.message);
+      }
     }
 
     return {

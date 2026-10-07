@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co",
+              "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },
