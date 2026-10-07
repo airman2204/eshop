@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "whatsapp:bridge": "node ../whatsapp-bridge/server.js",
     "lint": "eslint"
   },
   "dependencies": {
