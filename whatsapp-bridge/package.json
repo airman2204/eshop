@@ -4,6 +4,7 @@
   "description": "Microservicio autónomo de WhatsApp para FoxDrop en Render (Sin Meta)",
   "main": "server.js",
   "scripts": {
+    "build": "echo 'No build step required'",
     "start": "node server.js"
   },
   "dependencies": {
