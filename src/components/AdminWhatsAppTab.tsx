@@ -406,6 +406,8 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Filtrado de chats
   const filteredChats = chats.filter(chat => {
+    if (chat.phone.startsWith('_system_') || chat.status === 'archived') return false;
+
     const matchesSearch = 
       chat.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chat.phone.includes(searchTerm) ||
@@ -1037,11 +1039,18 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       {myProfile?.avatarUrl ? (
                         <img
                           src={myProfile.avatarUrl}
-                          alt="Foto de Perfil FoxDrop"
+                          alt="Foxdrop"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
                         />
                       ) : (
-                        <span>🦊</span>
+                        <img
+                          src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                          alt="Foxdrop"
+                          className="w-14 h-14 object-contain"
+                        />
                       )}
                     </div>
 

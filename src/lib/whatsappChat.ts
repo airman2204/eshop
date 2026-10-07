@@ -20,6 +20,8 @@ export async function getWhatsAppChats(): Promise<WhatsAppChat[]> {
     const { data, error }: any = await (supabase as any)
       .from('whatsapp_chats')
       .select('*')
+      .neq('status', 'archived')
+      .not('phone', 'like', '_system_%')
       .order('last_message_time', { ascending: false });
 
     if (error) {
