@@ -45,22 +45,41 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     scrollToBottom();
   }, [messages]);
 
+  const activeChatRef = useRef<WhatsAppChat | null>(null);
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
+
+  // Cargar mensajes cuando se selecciona un chat
+  const handleSelectChat = async (chat: WhatsAppChat) => {
+    setActiveChat(chat);
+    setLoadingMessages(true);
+    const msgs = await getWhatsAppMessages(chat.id);
+    setMessages(msgs);
+    setLoadingMessages(false);
+
+    if (chat.unreadCount > 0) {
+      markChatAsRead(chat.id);
+      setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
+    }
+  };
+
   // Cargar lista de chats inicial o en background
   const loadChats = async (showSpinner = false) => {
     if (showSpinner) setLoadingChats(true);
     const data = await getWhatsAppChats();
     setChats(data);
+    
+    // Si no hay chat seleccionado y hay chats disponibles, auto-seleccionar el primero
+    if (!activeChatRef.current && data.length > 0) {
+      handleSelectChat(data[0]);
+    }
     if (showSpinner) setLoadingChats(false);
   };
 
   useEffect(() => {
     loadChats(true);
   }, []);
-
-  const activeChatRef = useRef<WhatsAppChat | null>(null);
-  useEffect(() => {
-    activeChatRef.current = activeChat;
-  }, [activeChat]);
 
   // Suscripción Realtime a Supabase para actualizar mensajes en vivo para ambos socios
   useEffect(() => {
@@ -116,20 +135,6 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Cargar mensajes cuando se selecciona un chat
-  const handleSelectChat = async (chat: WhatsAppChat) => {
-    setActiveChat(chat);
-    setLoadingMessages(true);
-    const msgs = await getWhatsAppMessages(chat.id);
-    setMessages(msgs);
-    setLoadingMessages(false);
-
-    if (chat.unreadCount > 0) {
-      markChatAsRead(chat.id);
-      setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
-    }
-  };
 
   // Enviar mensaje
   const handleSendMessage = async (e?: React.FormEvent) => {
