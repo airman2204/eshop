@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanPhone = formatPhoneNumber(phone);
-    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL; // Ej: http://localhost:8080 o https://mi-bridge.railway.app
-    const bridgeApiKey = process.env.WHATSAPP_BRIDGE_API_KEY;
+    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
+    const bridgeApiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
 
-    // Si hay un bridge configurado en .env.local, le despachamos la orden de envío
+    // Despachar la orden de envío al bridge de WhatsApp
     if (bridgeUrl) {
       try {
         const supabase = createServerClient();
