@@ -6499,17 +6499,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         )}
 
         {/* 13. SECCIÓN WHATSAPP CENTRAL FOXDROP (MULTI-SOCIO EN TIEMPO REAL) */}
-        {crmSubTab === 'whatsapp' && (
-          <div className="space-y-4">
-            <AdminWhatsAppTab
-              orders={orders}
-              clients={clients}
-              adminSessionName={adminSession?.email?.split('@')[0] || 'Mario'}
-              initialPhone={whatsappTarget?.phone}
-              initialMessage={whatsappTarget?.message}
-            />
-          </div>
-        )}
+        {crmSubTab === 'whatsapp' && (() => {
+          const emailLower = (adminSession?.email || '').toLowerCase();
+          const currentPartner = emailLower.includes('nydia') ? 'Nydia' : 'Mario';
+
+          return (
+            <div className="space-y-4">
+              <AdminWhatsAppTab
+                orders={orders}
+                clients={clients}
+                adminSessionName={currentPartner}
+                initialPhone={whatsappTarget?.phone}
+                initialMessage={whatsappTarget?.message}
+              />
+            </div>
+          );
+        })()}
 
         {/* MODAL REGISTRAR PRODUCTOS YA VENDIDOS PREVIAMENTE */}
         {showSoldModal && soldProduct && (

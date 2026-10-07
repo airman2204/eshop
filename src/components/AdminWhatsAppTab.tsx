@@ -34,9 +34,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Soporte de Socios: Mario y Nydia
-  const initialPartner = adminSessionName?.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
-  const [partnerName, setPartnerName] = useState<'Mario' | 'Nydia'>(initialPartner);
+  // Socio automático según sesión activa (Mario o Nydia)
+  const resolvedPartner = adminSessionName?.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
+  const [partnerName, setPartnerName] = useState<'Mario' | 'Nydia'>(resolvedPartner);
+
+  useEffect(() => {
+    if (adminSessionName) {
+      const p = adminSessionName.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
+      setPartnerName(p);
+    }
+  }, [adminSessionName]);
 
   // Modo Pantalla Completa
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -566,33 +573,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
             </div>
           )}
 
-          {/* Selector de Socio que responde: MARIO o NYDIA */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl text-xs font-bold text-slate-700">
-            <span className="text-[10px] text-slate-400 px-1">Atendiendo como:</span>
-            <div className="flex gap-1 flex-1">
-              <button
-                type="button"
-                onClick={() => setPartnerName('Mario')}
-                className={`flex-1 py-1.5 rounded-lg text-center font-extrabold transition ${
-                  partnerName === 'Mario' 
-                    ? 'bg-[#E65F2B] text-white shadow-xs' 
-                    : 'bg-white text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Mario
-              </button>
-              <button
-                type="button"
-                onClick={() => setPartnerName('Nydia')}
-                className={`flex-1 py-1.5 rounded-lg text-center font-extrabold transition ${
-                  partnerName === 'Nydia' 
-                    ? 'bg-[#E65F2B] text-white shadow-xs' 
-                    : 'bg-white text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Nydia
-              </button>
-            </div>
+          {/* Indicador de Socio que responde: Automático según la sesión activa */}
+          <div className="flex items-center justify-between bg-slate-100/90 border border-slate-200/80 px-3 py-2 rounded-xl text-xs font-bold text-slate-700">
+            <span className="text-[11px] text-slate-500 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Respondiendo como:</span>
+            </span>
+            <span className="bg-[#E65F2B] text-white px-2.5 py-0.5 rounded-lg text-xs font-black shadow-2xs flex items-center gap-1">
+              <span>👤</span>
+              <span>{partnerName}</span>
+            </span>
           </div>
 
           {/* Buscador */}
