@@ -153,7 +153,6 @@ export async function sendWhatsAppMessageFromAdmin(params: {
       .eq('id', chatId);
 
     // 4. Despachar al bridge de WhatsApp
-    let bridgeResult: any = null;
     try {
       const bridgeRes = await fetch('/api/whatsapp/send', {
         method: 'POST',
@@ -165,12 +164,20 @@ export async function sendWhatsAppMessageFromAdmin(params: {
           chatId,
         }),
       });
-      bridgeResult = await bridgeRes.json();
+      const bridgeResult = await bridgeRes.json();
       if (!bridgeRes.ok || bridgeResult.error) {
         console.warn('Advertencia del bridge:', bridgeResult);
+        return {
+          success: false,
+          error: `El mensaje se guardó en el panel pero WhatsApp Bridge devolvió: ${bridgeResult.error || bridgeRes.statusText}`,
+        };
       }
-    } catch (bridgeErr) {
+    } catch (bridgeErr: any) {
       console.warn('Error contactando endpoint de envío:', bridgeErr);
+      return {
+        success: false,
+        error: `No se pudo conectar con el servidor de WhatsApp: ${bridgeErr.message}`,
+      };
     }
 
     return {
