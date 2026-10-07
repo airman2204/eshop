@@ -74,8 +74,15 @@ async function startWhatsApp() {
       // Filtrar mensajes de grupos
       if (senderJid.includes('@g.us')) continue;
 
+      let rawLid = '';
       if (senderJid.endsWith('@lid')) {
-        senderJid = msg.key.participant || msg.participant || senderJid;
+        rawLid = senderJid.replace(/@.+/, '');
+        // Baileys expone a veces el JID alternativo en remoteJidAlt o participant
+        if (msg.key.remoteJidAlt && !msg.key.remoteJidAlt.endsWith('@lid')) {
+          senderJid = msg.key.remoteJidAlt;
+        } else if (msg.key.participant && !msg.key.participant.endsWith('@lid')) {
+          senderJid = msg.key.participant;
+        }
       }
 
       const cleanPhone = senderJid.replace(/@.+/, '');
@@ -87,7 +94,7 @@ async function startWhatsApp() {
 
       const pushName = msg.pushName || 'Cliente WhatsApp';
 
-      console.log(`📩 Mensaje recibido de ${cleanPhone} (${pushName}): ${text}`);
+      console.log(`📩 Mensaje recibido de ${cleanPhone} (LID: ${rawLid}) (${pushName}): ${text}`);
 
       if (WEBHOOK_URL && text) {
         try {
@@ -96,6 +103,7 @@ async function startWhatsApp() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               phone: cleanPhone,
+              lid: rawLid || undefined,
               text: text,
               clientName: pushName,
             }),
@@ -201,21 +209,33 @@ app.post('/message/sendText', async (req, res) => {
   }
 
   try {
-    let digits = number.replace(/\D/g, '');
+    let targetJid = '';
     
-    // Si es un número mexicano de 10 dígitos, anteponer 52
-    if (digits.length === 10) {
-      digits = `52${digits}`;
-    }
-    // WhatsApp Baileys usa formato 52XXXXXXXXXX@s.whatsapp.net (sin el 1 móvil)
-    if (digits.startsWith('521') && digits.length === 13) {
-      digits = `52${digits.slice(3)}`;
+    if (number.includes('@lid')) {
+      targetJid = number;
+    } else if (number.includes('@s.whatsapp.net')) {
+      targetJid = number;
+    } else {
+      let digits = number.replace(/\D/g, '');
+      
+      // Si parece ser un LID (14+ dígitos y comienza con 64 u similar)
+      if (digits.length >= 14 && digits.startsWith('64')) {
+        targetJid = `${digits}@lid`;
+      } else {
+        // Formato número de teléfono estándar
+        if (digits.length === 10) {
+          digits = `52${digits}`;
+        }
+        if (digits.startsWith('521') && digits.length === 13) {
+          digits = `52${digits.slice(3)}`;
+        }
+        targetJid = `${digits}@s.whatsapp.net`;
+      }
     }
 
-    const formattedJid = `${digits}@s.whatsapp.net`;
-    const sent = await sock.sendMessage(formattedJid, { text });
-    console.log(`📤 Mensaje enviado con éxito a ${formattedJid}: ${text}`);
-    res.json({ success: true, messageId: sent.key.id, jid: formattedJid });
+    const sent = await sock.sendMessage(targetJid, { text });
+    console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
+    res.json({ success: true, messageId: sent.key.id, jid: targetJid });
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
     res.status(500).json({ error: err.message });

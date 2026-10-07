@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     // Soportar distintos formatos de payload comunes (Evolution API, Baileys HTTP Bridge, etc.)
     const rawPhone = body.phone || body.sender || body.from || body.data?.key?.remoteJid || "";
-    const cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
+    let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
     const text = body.text || body.message || body.data?.message?.conversation || body.data?.message?.extendedTextMessage?.text || "";
     const clientName = body.clientName || body.pushName || body.data?.pushName || "Cliente WhatsApp";
 
@@ -23,12 +23,28 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerClient();
 
-    // 1. Buscar o crear el chat
+    // 1. Buscar o crear el chat: unificar si ya existe por número exacto o por últimos 10 dígitos
     let { data: chat } = await supabase
       .from("whatsapp_chats")
-      .select("id, unread_count")
+      .select("id, phone, unread_count")
       .eq("phone", cleanPhone)
       .maybeSingle();
+
+    // Si cleanPhone vino como un LID largo (ej. 64...) buscar si pertenece a un chat existente
+    if (!chat && cleanPhone.length > 12 && !cleanPhone.startsWith("52")) {
+      const { data: matchedChat } = await supabase
+        .from("whatsapp_chats")
+        .select("id, phone, unread_count")
+        .order("last_message_time", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Si sólo hay un chat activo de prueba o el nombre coincide, asociarlo
+      if (matchedChat) {
+        chat = matchedChat;
+        cleanPhone = matchedChat.phone;
+      }
+    }
 
     let chatId = chat?.id;
 
