@@ -15,14 +15,13 @@ interface SendWhatsAppTemplateParams {
  */
 export function formatPhoneNumber(phone: string): string {
   const digits = phone.replace(/\D/g, "");
+  // Si empieza con 521 y tiene 13 dígitos, convertir al formato nativo 52 + 10 dígitos (12 dígitos)
   if (digits.startsWith("521") && digits.length === 13) {
-    return digits;
+    return `52${digits.slice(3)}`;
   }
-  if (digits.startsWith("52") && digits.length === 12) {
-    return `521${digits.slice(2)}`;
-  }
+  // Si es número mexicano de 10 dígitos, anteponer 52
   if (digits.length === 10) {
-    return `521${digits}`;
+    return `52${digits}`;
   }
   return digits;
 }

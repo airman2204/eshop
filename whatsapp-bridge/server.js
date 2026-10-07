@@ -69,9 +69,14 @@ async function startWhatsApp() {
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
 
-      const senderJid = msg.key.remoteJid || '';
+      // Extraer JID real: si remoteJid es un @lid, buscar el JID real en participant o remoteJidAlt
+      let senderJid = msg.key.remoteJid || '';
       // Filtrar mensajes de grupos
       if (senderJid.includes('@g.us')) continue;
+
+      if (senderJid.endsWith('@lid')) {
+        senderJid = msg.key.participant || msg.participant || senderJid;
+      }
 
       const cleanPhone = senderJid.replace(/@.+/, '');
       const text = 
