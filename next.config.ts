@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "**.whatsapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
     ],
   },
   async headers() {
@@ -62,7 +70,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co",
+              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net",
               "font-src 'self'",
               "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com",
               "frame-ancestors 'none'",
