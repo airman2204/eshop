@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         sender: "client",
         sender_name: clientName,
         text: text,
-        status: "received",
+        status: "delivered",
       });
 
     if (msgErr) throw msgErr;
