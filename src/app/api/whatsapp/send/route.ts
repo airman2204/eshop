@@ -35,9 +35,16 @@ export async function POST(req: NextRequest) {
         });
 
         const bridgeData = await bridgeRes.json();
+        
+        if (!bridgeRes.ok) {
+          console.error("Bridge devolvió error:", bridgeData);
+          return NextResponse.json({ error: bridgeData.error || "Error en bridge" }, { status: bridgeRes.status });
+        }
+
         return NextResponse.json({ success: true, bridgeData });
       } catch (err: any) {
         console.warn("Fallo conectando con WHATSAPP_BRIDGE_URL:", err.message);
+        return NextResponse.json({ error: "No se pudo contactar al bridge de WhatsApp: " + err.message }, { status: 502 });
       }
     }
 

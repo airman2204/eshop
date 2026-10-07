@@ -196,10 +196,21 @@ app.post('/message/sendText', async (req, res) => {
   }
 
   try {
-    const formattedJid = `${number.replace(/\D/g, '')}@s.whatsapp.net`;
+    let digits = number.replace(/\D/g, '');
+    
+    // Si es un número mexicano de 10 dígitos, anteponer 52
+    if (digits.length === 10) {
+      digits = `52${digits}`;
+    }
+    // WhatsApp Baileys usa formato 52XXXXXXXXXX@s.whatsapp.net (sin el 1 móvil)
+    if (digits.startsWith('521') && digits.length === 13) {
+      digits = `52${digits.slice(3)}`;
+    }
+
+    const formattedJid = `${digits}@s.whatsapp.net`;
     const sent = await sock.sendMessage(formattedJid, { text });
-    console.log(`📤 Mensaje enviado a ${number}: ${text}`);
-    res.json({ success: true, messageId: sent.key.id });
+    console.log(`📤 Mensaje enviado con éxito a ${formattedJid}: ${text}`);
+    res.json({ success: true, messageId: sent.key.id, jid: formattedJid });
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
     res.status(500).json({ error: err.message });

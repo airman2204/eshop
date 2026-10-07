@@ -45,16 +45,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
     scrollToBottom();
   }, [messages]);
 
-  // Cargar lista de chats inicial
-  const loadChats = async () => {
-    setLoadingChats(true);
+  // Cargar lista de chats inicial o en background
+  const loadChats = async (showSpinner = false) => {
+    if (showSpinner) setLoadingChats(true);
     const data = await getWhatsAppChats();
     setChats(data);
-    setLoadingChats(false);
+    if (showSpinner) setLoadingChats(false);
   };
 
   useEffect(() => {
-    loadChats();
+    loadChats(true);
   }, []);
 
   // Suscripción Realtime a Supabase para actualizar mensajes en vivo para ambos socios
@@ -210,7 +210,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName }: 
             </div>
 
             <button
-              onClick={loadChats}
+              onClick={() => loadChats(true)}
               disabled={loadingChats}
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
               title="Recargar conversaciones"

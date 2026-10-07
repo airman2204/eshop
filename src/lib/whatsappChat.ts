@@ -152,9 +152,10 @@ export async function sendWhatsAppMessageFromAdmin(params: {
       })
       .eq('id', chatId);
 
-    // 4. Intentar notificar al bridge / webhook externo si está configurado en .env
+    // 4. Despachar al bridge de WhatsApp
+    let bridgeResult: any = null;
     try {
-      await fetch('/api/whatsapp/send', {
+      const bridgeRes = await fetch('/api/whatsapp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,8 +165,12 @@ export async function sendWhatsAppMessageFromAdmin(params: {
           chatId,
         }),
       });
+      bridgeResult = await bridgeRes.json();
+      if (!bridgeRes.ok || bridgeResult.error) {
+        console.warn('Advertencia del bridge:', bridgeResult);
+      }
     } catch (bridgeErr) {
-      console.warn('Bridge no disponible aún (mensaje guardado en Supabase):', bridgeErr);
+      console.warn('Error contactando endpoint de envío:', bridgeErr);
     }
 
     return {
