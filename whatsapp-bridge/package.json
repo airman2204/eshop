@@ -1,0 +1,16 @@
+{
+  "name": "foxdrop-whatsapp-bridge",
+  "version": "1.0.0",
+  "description": "Microservicio autónomo de WhatsApp para FoxDrop en Render (Sin Meta)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "qrcode": "^1.5.3",
+    "pino": "^9.0.0"
+  }
+}
