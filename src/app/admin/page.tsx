@@ -6539,6 +6539,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 adminSessionName={currentPartner}
                 initialPhone={whatsappTarget?.phone}
                 initialMessage={whatsappTarget?.message}
+                onSelectAnyChat={() => {
+                  if (whatsappTarget) setWhatsappTarget(null);
+                }}
               />
             </div>
           );
@@ -8734,6 +8737,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               initialPhone={whatsappTarget?.phone}
               initialMessage={whatsappTarget?.message}
               onClose={() => setShowFloatingWhatsApp(false)}
+              onSelectAnyChat={() => {
+                if (whatsappTarget) setWhatsappTarget(null);
+              }}
             />
           </div>
         </div>

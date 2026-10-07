@@ -23,6 +23,7 @@ interface AdminWhatsAppTabProps {
   initialPhone?: string;
   initialMessage?: string;
   onClose?: () => void;
+  onSelectAnyChat?: () => void;
 }
 
 // Helper para evitar bloqueos de referrer o CDN en fotos de WhatsApp
@@ -34,7 +35,7 @@ function getSafeAvatarUrl(url?: string): string {
   return url;
 }
 
-export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage, onClose }: AdminWhatsAppTabProps) {
+export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage, onClose, onSelectAnyChat }: AdminWhatsAppTabProps) {
   const [chats, setChats] = useState<WhatsAppChat[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
   const [activeChat, setActiveChat] = useState<WhatsAppChat | null>(null);
@@ -226,6 +227,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Cargar mensajes cuando se selecciona un chat
   const handleSelectChat = async (chat: WhatsAppChat) => {
+    if (onSelectAnyChat) onSelectAnyChat();
     setActiveChat(chat);
     setLoadingMessages(true);
     const msgs = await getWhatsAppMessages(chat.id);
@@ -256,8 +258,8 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     const data = await getWhatsAppChats();
     setChats(data);
     
-    // Si viene initialPhone, buscar o seleccionar ese chat específicamente
-    if (initialPhone) {
+    // Si viene initialPhone y no se ha seleccionado aún ese chat, buscar o seleccionar ese chat específicamente
+    if (initialPhone && (!activeChatRef.current || activeChatRef.current.phone.replace(/\D/g, '') !== initialPhone.replace(/\D/g, ''))) {
       const cleanTarget = initialPhone.replace(/\D/g, '');
       const matched = data.find(c => c.phone.replace(/\D/g, '').endsWith(cleanTarget.slice(-10)));
       if (matched) {
