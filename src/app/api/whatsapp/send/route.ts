@@ -25,9 +25,10 @@ export async function POST(req: NextRequest) {
         const supabase = createServerClient();
         let targetNumber = cleanPhone;
 
-        // Si tenemos chatId o phone, verificar si el chat tiene un LID registrado
+        // Si tenemos chatId válido (UUID) o phone, verificar si el chat tiene un LID registrado
         let query = supabase.from("whatsapp_chats").select("notes");
-        if (body.chatId) {
+        const isUUID = body.chatId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.chatId);
+        if (isUUID) {
           query = query.eq("id", body.chatId);
         } else {
           query = query.eq("phone", cleanPhone);

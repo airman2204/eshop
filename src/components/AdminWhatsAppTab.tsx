@@ -395,6 +395,12 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       });
 
       if (result.success && result.message) {
+        // Si el chat era temporal, actualizar el ID con el UUID real creado
+        if (activeChat.id.startsWith('temp-') && result.message.chatId) {
+          setActiveChat(prev => prev ? { ...prev, id: result.message!.chatId } : null);
+          loadChats(false);
+        }
+
         setMessages(prev => {
           if (prev.some(m => m.id === result.message!.id)) return prev;
           return [...prev, result.message!];

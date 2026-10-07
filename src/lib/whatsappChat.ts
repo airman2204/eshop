@@ -100,7 +100,7 @@ export async function sendWhatsAppMessageFromAdmin(params: {
 
     // 1. Obtener o crear el chat
     let chatId = params.chatId;
-    if (!chatId) {
+    if (!chatId || chatId.startsWith('temp-')) {
       const { data: existingChat }: any = await (supabase as any)
         .from('whatsapp_chats')
         .select('id')
