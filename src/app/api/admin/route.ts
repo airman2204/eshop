@@ -1416,8 +1416,52 @@ export async function POST(req: NextRequest) {
           upsert: true,
         });
 
+      return NextResponse.json({ success: true, settings });
+    }
+
+    // ─── CONFIGURACIÓN VISUAL GENERAL DE LA TIENDA (BANNERS & PROMOCIONES) ──
+    if (action === "get_store_settings") {
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/store_settings.json");
+
+        if (fileData) {
+          const rawText = await fileData.text();
+          const parsed = JSON.parse(rawText || "{}");
+          return NextResponse.json({ success: true, settings: parsed });
+        }
+      } catch (err) {
+        console.warn("store_settings.json no encontrado, usando defaults:", err);
+      }
+
+      // Por defecto la liquidación está desactivada hasta que el admin la active
+      const defaultStoreSettings = {
+        showClearanceBanner: false,
+        clearanceTitle: "Liquidación de Importación",
+        clearanceDiscountText: "Hasta 70% Menos",
+        clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
+      };
+
+      return NextResponse.json({ success: true, settings: defaultStoreSettings });
+    }
+
+    if (action === "save_store_settings") {
+      const { settings } = body;
+      if (!settings || typeof settings !== "object") {
+        return NextResponse.json({ error: "Configuración inválida" }, { status: 400 });
+      }
+
+      const buffer = Buffer.from(JSON.stringify(settings, null, 2));
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload("_system/store_settings.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
       if (uploadError) {
-        console.error("Error guardando checkout_settings en Supabase:", uploadError);
+        console.error("Error guardando store_settings en Supabase:", uploadError);
         throw uploadError;
       }
 

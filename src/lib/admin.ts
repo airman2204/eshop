@@ -431,6 +431,51 @@ export async function getClubSettings(): Promise<ClubFoxDropSettings> {
   };
 }
 
+export interface StoreSettings {
+  showClearanceBanner: boolean;
+  clearanceTitle: string;
+  clearanceDiscountText: string;
+  clearanceSubtitle: string;
+}
+
+export const DEFAULT_STORE_SETTINGS: StoreSettings = {
+  showClearanceBanner: false,
+  clearanceTitle: "Liquidación de Importación",
+  clearanceDiscountText: "Hasta 70% Menos",
+  clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
+};
+
+export async function getStoreSettings(): Promise<StoreSettings> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_store_settings" }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.settings) return json.settings;
+    }
+  } catch (err) {
+    console.warn("Fallo cargando configuración de la tienda:", err);
+  }
+  return DEFAULT_STORE_SETTINGS;
+}
+
+export async function saveStoreSettings(settings: StoreSettings): Promise<StoreSettings> {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "save_store_settings", settings }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Error al guardar configuración de la tienda");
+  }
+  const json = await res.json();
+  return json.settings;
+}
+
 export async function saveClubSettings(settings: ClubFoxDropSettings): Promise<boolean> {
   try {
     const res = await fetch("/api/admin", {

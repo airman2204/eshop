@@ -22,7 +22,7 @@ import {
 } from '@/lib/auth';
 import { createOrderInDb, submitSpecialOrder, getClientOrderHistory, trackAbandonedCart, resolveAbandonedCart, cancelOrderAsClient, subscribeToClientOrders } from '@/lib/orders';
 import { getCrossSellRecommendations, calculateEarnedPoints, getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
-import { getCarouselSlides, CarouselSlide, getClubSettings } from '@/lib/admin';
+import { getCarouselSlides, CarouselSlide, getClubSettings, getStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS } from '@/lib/admin';
 import { getCategoryIconEmoji } from '@/lib/constants';
 import { ClubFoxDropSettings } from '@/types';
 import { trackEcommerceEvent } from '@/components/Analytics';
@@ -91,6 +91,7 @@ export default function TiendaFoxDrop() {
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc'>('default');
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
   // Soporte PWA WebApp (Instalación en celular o escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -127,8 +128,12 @@ export default function TiendaFoxDrop() {
   useEffect(() => {
     async function loadData() {
       try {
-        const remoteProducts = await getActiveProducts();
+        const [remoteProducts, settings] = await Promise.all([
+          getActiveProducts(),
+          getStoreSettings(),
+        ]);
         setProducts(remoteProducts ?? []);
+        if (settings) setStoreSettings(settings);
       } catch (err) {
         console.error("Error loading products from Supabase:", err);
       } finally {
@@ -1475,10 +1480,10 @@ export default function TiendaFoxDrop() {
                   : 'text-white/80 hover:text-white'
               }`}
             >
-              lo nuevo
+              Lo Nuevo
             </button>
 
-            {/* CATEGORÍAS POPULARES DE FOXDROP EN ESTILO TJ MAXX */}
+            {/* CATEGORÍAS POPULARES DE FOXDROP */}
             {popularCategories.map((cat) => {
               const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
 
@@ -1493,7 +1498,7 @@ export default function TiendaFoxDrop() {
                     const el = document.getElementById('catalog-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className={`transition shrink-0 cursor-pointer lowercase ${
+                  className={`transition shrink-0 cursor-pointer capitalize ${
                     isSelected
                       ? 'text-white underline underline-offset-4 decoration-2 decoration-[#DF7F2D] font-black'
                       : 'text-white/80 hover:text-white'
@@ -1516,7 +1521,7 @@ export default function TiendaFoxDrop() {
               }}
               className="text-white/80 hover:text-white transition shrink-0 cursor-pointer"
             >
-              tendencias
+              Tendencias
             </button>
 
             {/* SECCIÓN PEDIDOS ESPECIALES */}
@@ -1525,27 +1530,29 @@ export default function TiendaFoxDrop() {
               onClick={() => setShowCustomOrderModal(true)}
               className="text-[#E3B888] hover:text-white transition shrink-0 cursor-pointer flex items-center gap-1"
             >
-              <span>encargos especiales</span>
+              <span>Encargos Especiales</span>
             </button>
 
-            {/* LIQUIDACIÓN / CLEARANCE ESTILO TJ MAXX (DESTACADO EN COLOR CÁLIDO ÁMBAR) */}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('deals');
-                setSelectedCategory('Todas');
-                if (currentView === 'account') setCurrentView('store');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className={`transition shrink-0 cursor-pointer font-black ${
-                activeTab === 'deals'
-                  ? 'text-[#DF7F2D] underline underline-offset-4 decoration-2'
-                  : 'text-[#DF7F2D] hover:text-amber-300'
-              }`}
-            >
-              liquidación 🔥
-            </button>
+            {/* LIQUIDACIÓN CONDICIONAL (SOLO SI ESTÁ ACTIVADA DESDE EL ADMIN) */}
+            {storeSettings.showClearanceBanner && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('deals');
+                  setSelectedCategory('Todas');
+                  if (currentView === 'account') setCurrentView('store');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`transition shrink-0 cursor-pointer font-black ${
+                  activeTab === 'deals'
+                    ? 'text-[#DF7F2D] underline underline-offset-4 decoration-2'
+                    : 'text-[#DF7F2D] hover:text-amber-300'
+                }`}
+              >
+                Liquidación 🔥
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -1599,65 +1606,70 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       
       {/* ======================================================== */}
-      {/* 2. TJ MAXX BANNER: MAJOR BRAND MARKDOWNS UP TO 70% LESS (ESTILO CUERO / TEXTURA ROJO-ÁMBAR) */}
+      {/* 2. TJ MAXX BANNER: MAJOR BRAND MARKDOWNS UP TO 70% LESS (CONDICIONAL DESDE EL ADMIN) */}
       {/* ======================================================== */}
-      <section className="w-full bg-[#A83820] text-white shadow-inner overflow-hidden border-y border-[#7D2613]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
-          {/* TITULAR DE MARCA Y DESCUENTOS */}
-          <div className="space-y-0.5">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-xs">
-              liquidación de importación <span className="underline decoration-[#FFDF00] decoration-wavy decoration-1">hasta 70% menos</span>
-            </h2>
-            <p className="text-[11px] sm:text-xs text-white/80 font-medium">
-              en comparación con precios de tiendas departamentales y marketplaces
-            </p>
-          </div>
+      {storeSettings.showClearanceBanner && (
+        <section className="w-full bg-[#A83820] text-white shadow-inner overflow-hidden border-y border-[#7D2613] animate-in fade-in duration-300">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+            {/* TITULAR DE MARCA Y DESCUENTOS */}
+            <div className="space-y-0.5">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-xs capitalize">
+                {storeSettings.clearanceTitle}{' '}
+                <span className="underline decoration-[#FFDF00] decoration-wavy decoration-1">
+                  {storeSettings.clearanceDiscountText}
+                </span>
+              </h2>
+              <p className="text-[11px] sm:text-xs text-white/80 font-medium">
+                {storeSettings.clearanceSubtitle}
+              </p>
+            </div>
 
-          {/* ACCESOS DIRECTOS DE LIQUIDACIÓN ESTILO TJ MAXX */}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-1 text-xs sm:text-[13px] font-bold text-white/95">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('deals');
-                setSelectedCategory('Todas');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer"
-            >
-              liquidación total
-            </button>
-            {/* CATEGORÍAS POPULARES CON STOCK REAL */}
-            {popularCategories.slice(0, 3).map((cat) => (
+            {/* ACCESOS DIRECTOS DE LIQUIDACIÓN ESTILO TJ MAXX */}
+            <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-1 text-xs sm:text-[13px] font-bold text-white/95">
               <button
-                key={cat.name}
                 type="button"
                 onClick={() => {
-                  setActiveTab('all');
-                  setSelectedCategory(cat.name);
+                  setActiveTab('deals');
+                  setSelectedCategory('Todas');
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer lowercase"
+                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer capitalize"
               >
-                {cat.name}
+                Liquidación Total
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('new');
-                setSelectedCategory('Todas');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer font-black"
-            >
-              nuevas rebajas
-            </button>
+              {/* CATEGORÍAS POPULARES CON STOCK REAL */}
+              {popularCategories.slice(0, 3).map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('all');
+                    setSelectedCategory(cat.name);
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer capitalize"
+                >
+                  {cat.name}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('new');
+                  setSelectedCategory('Todas');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer font-black capitalize"
+              >
+                Nuevas Rebajas
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ======================================================== */}
       {/* 3. HERO SECTION MOSAICO ESTILO TJ MAXX: "JUST ARRIVED OVERNIGHT" */}
@@ -1665,21 +1677,21 @@ export default function TiendaFoxDrop() {
       <section className="w-full bg-[#E4ECE8] border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch">
           
-          {/* LADO IZQUIERDO: TEXTO TITULAR + SUBTÍTULO + 4 BOTONES ROJOS/VERDES CURVOS */}
+          {/* LADO IZQUIERDO: TEXTO TITULAR + SUBTÍTULO + BOTONES CURVOS */}
           <div className="w-full lg:w-[45%] p-6 sm:p-10 lg:p-14 flex flex-col justify-center space-y-6">
             <div className="space-y-3">
               <span className="text-[11px] font-black tracking-widest uppercase text-[#DF7F2D] block">
-                NUEVA MERCANCÍA DIARIA
+                Nueva Mercancía Diaria
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0F3E36] leading-[1.05] tracking-tight">
-                recién llegado a foxdrop
+                Recién llegado a FoxDrop
               </h1>
               <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed max-w-md">
                 Nuevos tesoros y productos exclusivos llegan continuamente. Descúbrelos antes de que se agoten.
               </p>
             </div>
 
-            {/* 4 BOTONES PILL EN ROJO CÁLIDO / ÁMBAR ESTILO TJ MAXX (SOLO CATEGORÍAS CON PRODUCTOS REALES) */}
+            {/* BOTONES PILL EN ROJO CÁLIDO / ÁMBAR CON MAYÚSCULAS/MINÚSCULAS NATURALES */}
             <div className="grid grid-cols-2 gap-3 max-w-sm pt-2">
               {popularCategories.slice(0, 2).map((cat) => (
                 <button
@@ -1691,24 +1703,39 @@ export default function TiendaFoxDrop() {
                     const el = document.getElementById('catalog-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer lowercase truncate"
+                  className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize truncate"
                 >
                   {cat.name}
                 </button>
               ))}
 
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
-              >
-                liquidación
-              </button>
+              {storeSettings.showClearanceBanner ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('deals');
+                    setSelectedCategory('Todas');
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
+                >
+                  Liquidación
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('new');
+                    setSelectedCategory('Todas');
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
+                >
+                  Novedades
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1718,9 +1745,9 @@ export default function TiendaFoxDrop() {
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-[#0F3E36] hover:bg-[#154E45] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer"
+                className="bg-[#0F3E36] hover:bg-[#154E45] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
               >
-                ver todo el stock
+                Ver Todo el Stock
               </button>
             </div>
           </div>

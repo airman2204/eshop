@@ -25,7 +25,7 @@ import {
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
-  deleteClientFromDb,
+  deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS,
   generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot, executeAgentAction
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
@@ -113,6 +113,11 @@ export default function AdminCRM() {
   const [checkoutSettingsSavedNotice, setCheckoutSettingsSavedNotice] = useState(false);
   const [loyaltyMetrics, setLoyaltyMetrics] = useState<LoyaltyMetrics | null>(null);
   const [loadingLoyaltyMetrics, setLoadingLoyaltyMetrics] = useState(false);
+
+  // Configuración de Banners y Liquidación de la Tienda
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+  const [savingStoreSettings, setSavingStoreSettings] = useState(false);
+  const [storeSettingsSavedNotice, setStoreSettingsSavedNotice] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [usdRate, setUsdRate] = useState(20.00);
@@ -500,6 +505,10 @@ export default function AdminCRM() {
       // Configuración de envíos y métodos de pago
       const dbCheckout = await getCheckoutSettings();
       if (dbCheckout) setCheckoutSettings(dbCheckout);
+
+      // Configuración de banners y liquidación
+      const dbStoreSettings = await getStoreSettings();
+      if (dbStoreSettings) setStoreSettings(dbStoreSettings);
     }
     loadData();
 
@@ -4709,9 +4718,123 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           );
         })()}
 
-        {/* 9. SECCIÓN GESTIÓN DEL CARRUSEL HERO */}
+        {/* 9. SECCIÓN GESTIÓN DEL CARRUSEL HERO & BANNERS */}
         {crmSubTab === 'carousel' && (
           <div className="space-y-6">
+            {/* PANEL DE CONTROL DE BARRA DE LIQUIDACIÓN */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-orange-100 text-[#E65F2B] flex items-center justify-center font-black">
+                    🔥
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Barra de Liquidación (Hasta 70% Menos)</h3>
+                    <p className="text-xs text-slate-500">
+                      Controla si la barra roja de liquidación se muestra u oculta en la página principal de la tienda.
+                    </p>
+                  </div>
+                </div>
+
+                {/* TOGGLE ON / OFF */}
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                    storeSettings.showClearanceBanner ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {storeSettings.showClearanceBanner ? '● Activa en Tienda' : '○ Desactivada (Oculta)'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const updated = { ...storeSettings, showClearanceBanner: !storeSettings.showClearanceBanner };
+                      setStoreSettings(updated);
+                      setSavingStoreSettings(true);
+                      try {
+                        await saveStoreSettings(updated);
+                        setStoreSettingsSavedNotice(true);
+                        setTimeout(() => setStoreSettingsSavedNotice(false), 3000);
+                      } catch {
+                        alert('Error al guardar configuración de liquidación');
+                      } finally {
+                        setSavingStoreSettings(false);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                      storeSettings.showClearanceBanner 
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white' 
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                  >
+                    {storeSettings.showClearanceBanner ? 'Desactivar Barra' : 'Activar Barra de Liquidación'}
+                  </button>
+                </div>
+              </div>
+
+              {storeSettingsSavedNotice && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-3 rounded-xl flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>¡Estado de la barra de liquidación actualizado en tiempo real con la tienda!</span>
+                </div>
+              )}
+
+              {/* CAMPOS EDITABLES SI ESTÁ ACTIVA */}
+              {storeSettings.showClearanceBanner && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">Título</label>
+                    <input
+                      type="text"
+                      value={storeSettings.clearanceTitle}
+                      onChange={(e) => setStoreSettings({ ...storeSettings, clearanceTitle: e.target.value })}
+                      placeholder="Liquidación de Importación"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">Texto Destacado</label>
+                    <input
+                      type="text"
+                      value={storeSettings.clearanceDiscountText}
+                      onChange={(e) => setStoreSettings({ ...storeSettings, clearanceDiscountText: e.target.value })}
+                      placeholder="Hasta 70% Menos"
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">Subtítulo</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={storeSettings.clearanceSubtitle}
+                        onChange={(e) => setStoreSettings({ ...storeSettings, clearanceSubtitle: e.target.value })}
+                        placeholder="En comparación con tiendas departamentales..."
+                        className="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setSavingStoreSettings(true);
+                          try {
+                            await saveStoreSettings(storeSettings);
+                            setStoreSettingsSavedNotice(true);
+                            setTimeout(() => setStoreSettingsSavedNotice(false), 3000);
+                          } catch {
+                            alert('Error al guardar textos');
+                          } finally {
+                            setSavingStoreSettings(false);
+                          }
+                        }}
+                        disabled={savingStoreSettings}
+                        className="bg-[#0F3E36] hover:bg-[#154E45] text-white text-xs font-bold px-3 py-2 rounded-xl"
+                      >
+                        {savingStoreSettings ? '...' : 'Guardar'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Carrusel Hero de la Tienda</h2>
