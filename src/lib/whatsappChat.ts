@@ -157,20 +157,10 @@ export async function sendWhatsAppMessageFromAdmin(params: {
     // 4. Despachar al bridge de WhatsApp
     let deliveredToPhone = false;
     let targetToSend = cleanPhone;
-
-    // Buscar si el chat tiene LID guardado en Supabase
-    try {
-      const { data: chatData }: any = await (supabase as any)
-        .from('whatsapp_chats')
-        .select('notes')
-        .eq('id', chatId)
-        .maybeSingle();
-
-      if (chatData?.notes) {
-        const parsed = JSON.parse(chatData.notes);
-        if (parsed.lid) targetToSend = parsed.lid;
-      }
-    } catch {}
+    const digitsOnly = cleanPhone.replace(/\D/g, "");
+    if (digitsOnly.startsWith("52") && digitsOnly.length === 12 && !digitsOnly.startsWith("521")) {
+      targetToSend = `521${digitsOnly.slice(2)}`;
+    }
 
     // Intento 1: A través de la API route interna
     try {
@@ -199,7 +189,11 @@ export async function sendWhatsAppMessageFromAdmin(params: {
       try {
         const directBridgeRes = await fetch('https://foxdrop-whatsapp-bridge.onrender.com/message/sendText', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'apikey': 'foxdrop_secret_2026',
+            'Authorization': 'Bearer foxdrop_secret_2026'
+          },
           body: JSON.stringify({
             number: targetToSend,
             text: params.text,
