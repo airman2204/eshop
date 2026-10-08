@@ -23,30 +23,28 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerClient();
 
-    // 1. Buscar o crear el chat: unificar si ya existe por número exacto o por últimos 10 dígitos
+    // 1. Buscar o crear el chat: coincidencia por teléfono exacto, por últimos 10 dígitos, o por LID guardado
     let { data: chat } = await supabase
       .from("whatsapp_chats")
-      .select("id, phone, unread_count")
+      .select("id, phone, unread_count, notes")
       .eq("phone", cleanPhone)
       .maybeSingle();
 
-    // Si cleanPhone vino como un LID largo (ej. 64...) buscar si pertenece a un chat existente
-    if (!chat && cleanPhone.length > 12 && !cleanPhone.startsWith("52")) {
-      const { data: matchedChat } = await supabase
+    const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
+
+    // Si no encontró por teléfono y tenemos un LID, buscar si algún chat tiene este LID en notes
+    if (!chat && incomingLid) {
+      const { data: matchedLidChat } = await supabase
         .from("whatsapp_chats")
-        .select("id, phone, unread_count")
-        .order("last_message_time", { ascending: false })
-        .limit(1)
+        .select("id, phone, unread_count, notes")
+        .ilike("notes", `%"lid":"${incomingLid}"%`)
         .maybeSingle();
 
-      // Si sólo hay un chat activo de prueba o el nombre coincide, asociarlo
-      if (matchedChat) {
-        chat = matchedChat;
-        cleanPhone = matchedChat.phone;
+      if (matchedLidChat) {
+        chat = matchedLidChat;
+        cleanPhone = matchedLidChat.phone;
       }
     }
-
-    const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
     const incomingAvatarUrl = body.avatarUrl || body.avatar_url || undefined;
 
     let chatId = chat?.id;
