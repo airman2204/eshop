@@ -312,9 +312,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Suscripción Realtime a Supabase para actualizar mensajes en vivo para ambos socios
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
+    const uniqueChannelName = `whatsapp_rt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
     const channel = supabase
-      .channel('whatsapp_realtime_changes')
+      .channel(uniqueChannelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'whatsapp_messages' },

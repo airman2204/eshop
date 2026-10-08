@@ -2741,7 +2741,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </button>
 
               <button
-                onClick={() => { setCrmSubTab('whatsapp'); setMobileSidebarOpen(false); }}
+                onClick={() => {
+                  setShowFloatingWhatsApp(false);
+                  setCrmSubTab('whatsapp');
+                  setMobileSidebarOpen(false);
+                }}
                 className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between border ${
                   crmSubTab === 'whatsapp' 
                     ? 'bg-emerald-600 text-white shadow-xs border-emerald-500' 
@@ -8695,7 +8699,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* ======================================================== */}
       {/* VENTANA FLOTANTE 1: WHATSAPP CENTRAL (SIN SALIR DE TU PESTAÑA) */}
       {/* ======================================================== */}
-      {showFloatingWhatsApp && (
+      {showFloatingWhatsApp && crmSubTab !== 'whatsapp' && (
         <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-24 z-50 w-full sm:w-[540px] md:w-[620px] lg:w-[720px] h-full sm:h-[620px] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
           {/* Barra de título de la ventana flotante */}
           <div className="bg-[#0F3E36] text-white px-4 py-2.5 flex items-center justify-between shadow-xs select-none">
