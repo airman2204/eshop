@@ -128,15 +128,19 @@ async function startWhatsApp() {
       connectionStatus = 'disconnected';
       qrCodeData = null;
 
-      if (statusCode === DisconnectReason.loggedOut) {
-        console.log('🚪 Sesión cerrada desde el celular. Limpiando respaldo...');
+      // Si el código es 401 (Unauthorized / Logged out), 403 o error terminal, purgar llaves dañadas para emitir nuevo QR
+      const isTerminalAuthError = statusCode === DisconnectReason.loggedOut || statusCode === 401 || statusCode === 403 || statusCode === 500;
+      
+      if (isTerminalAuthError) {
+        console.log(`🚪 Sesión inválida o cerrada (status: ${statusCode}). Purgando llaves y forzando nuevo QR...`);
         try {
           await supabase.from('whatsapp_chats').delete().eq('phone', '_system_baileys_auth');
           if (fs.existsSync(authDir)) fs.rmSync(authDir, { recursive: true, force: true });
-        } catch {}
-      }
-
-      if (shouldReconnect) {
+        } catch (e) {
+          console.warn('Error purgando authDir:', e.message);
+        }
+        setTimeout(startWhatsApp, 2000);
+      } else if (shouldReconnect) {
         setTimeout(startWhatsApp, 3000);
       }
     } else if (connection === 'open') {
@@ -282,6 +286,26 @@ app.get('/', (req, res) => {
     </body>
     </html>
   `);
+});
+
+// Endpoint GET o POST para forzar reseteo de sesión y generar QR nuevo
+app.all('/reset', async (req, res) => {
+  try {
+    console.log('🔄 Solicitud de reset de sesión recibida. Purgando credenciales...');
+    if (sock) {
+      try { sock.end(new Error('Reset solicitado')); } catch {}
+    }
+    if (fs.existsSync(authDir)) {
+      fs.rmSync(authDir, { recursive: true, force: true });
+    }
+    await supabase.from('whatsapp_chats').delete().eq('phone', '_system_baileys_auth').catch(() => {});
+    qrCodeData = null;
+    connectionStatus = 'connecting';
+    setTimeout(startWhatsApp, 1500);
+    res.json({ success: true, message: 'Sesión purgada exitosamente. Nuevo QR en camino...' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Endpoint de salud
