@@ -44,12 +44,16 @@ export async function POST(req: NextRequest) {
         chat = matchedLidChat;
         cleanPhone = matchedLidChat.phone;
       } else if (cleanPhone.length > 12 && !cleanPhone.startsWith("52")) {
-        // Es un LID sin número real asociado aún: buscar si hay un chat con el mismo nombre
+        // Es un LID sin número real asociado aún: buscar si hay un chat con el mismo nombre o nombre similar (ej: "Nydia" y "Nydia Villarce")
+        const firstName = clientName.split(' ')[0].trim();
         const { data: nameChat } = await supabase
           .from("whatsapp_chats")
           .select("id, phone, unread_count, notes")
-          .eq("client_name", clientName)
+          .or(`client_name.ilike.%${firstName}%,client_name.ilike.%${clientName}%`)
           .neq("phone", cleanPhone)
+          .neq("phone", "_system_baileys_auth")
+          .order("last_message_time", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (nameChat) {
