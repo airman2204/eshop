@@ -8694,17 +8694,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
           </button>
 
-          {/* ACCIÓN: MENÚ COMPLETO */}
+          {/* ACCIÓN: CHAT DE WHATSAPP */}
           <button
             type="button"
             onClick={() => {
               try { soundManager.triggerHaptic('light'); } catch {}
-              setMobileSidebarOpen(true);
+              setShowFloatingWhatsApp(false);
+              setCrmSubTab('whatsapp');
             }}
-            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-400 hover:text-white"
+            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+              crmSubTab === 'whatsapp' ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-white'
+            }`}
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">Menú</span>
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">WhatsApp</span>
           </button>
         </div>
       </nav>
