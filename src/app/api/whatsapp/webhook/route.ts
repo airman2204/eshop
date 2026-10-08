@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const incomingLid = body.lid || (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) || (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
 
-    // Si no encontró por teléfono y tenemos un LID, buscar si algún chat tiene este LID en notes
+    // Si no encontró por teléfono y tenemos un LID, buscar si algún chat tiene este LID en notes o coincide el cliente
     if (!chat && incomingLid) {
       const { data: matchedLidChat } = await supabase
         .from("whatsapp_chats")
@@ -43,6 +43,19 @@ export async function POST(req: NextRequest) {
       if (matchedLidChat) {
         chat = matchedLidChat;
         cleanPhone = matchedLidChat.phone;
+      } else if (cleanPhone.length > 12 && !cleanPhone.startsWith("52")) {
+        // Es un LID sin número real asociado aún: buscar si hay un chat con el mismo nombre
+        const { data: nameChat } = await supabase
+          .from("whatsapp_chats")
+          .select("id, phone, unread_count, notes")
+          .eq("client_name", clientName)
+          .neq("phone", cleanPhone)
+          .maybeSingle();
+
+        if (nameChat) {
+          chat = nameChat;
+          cleanPhone = nameChat.phone;
+        }
       }
     }
     const incomingAvatarUrl = body.avatarUrl || body.avatar_url || undefined;
