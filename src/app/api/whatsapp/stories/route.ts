@@ -22,21 +22,10 @@ export async function GET() {
       return NextResponse.json({ success: true, stories: dbStories });
     }
 
-    // Fallback: Si no hay tabla dedicada o está vacía, consultar estados recientes
+    // Sin historias ficticias: solo historias 100% reales
     return NextResponse.json({
       success: true,
-      stories: [
-        {
-          id: "story_fox_1",
-          authorName: "Foxdrop Oficial",
-          authorPhone: "522221234567",
-          isMyStatus: true,
-          mediaUrl: "/stickers/sticker-descuentos-globos.webp",
-          caption: "🔥 ¡Nuevo Drop de Gadgets en FoxDrop Puebla! Envíos locales hoy.",
-          createdAt: new Date().toISOString(),
-          viewed: false,
-        },
-      ],
+      stories: [],
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

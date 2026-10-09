@@ -102,37 +102,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Navegación estilo WhatsApp Desktop oficial
   const [navSection, setNavSection] = useState<'chats' | 'calls' | 'status' | 'channels' | 'communities' | 'archived'>('chats');
 
-  // Estados / Historias (Stories)
-  const [stories, setStories] = useState<WhatsAppStatusItem[]>([
-    {
-      id: 'my_story_1',
-      authorName: 'Mi Estado (FoxDrop)',
-      authorPhone: 'Foxdrop',
-      isMyStatus: true,
-      mediaUrl: '/stickers/sticker-descuentos-globos.webp',
-      caption: '🎉 ¡Nuevos drops de gadgets llegaron a bodega Puebla! Pide por WhatsApp o contra entrega.',
-      createdAt: 'Hoy a las 11:20 a.m.',
-      viewed: true,
-    },
-    {
-      id: 'contact_story_1',
-      authorName: 'Chris Lumalee',
-      authorPhone: '2221234567',
-      mediaUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
-      caption: 'Puebla Puebla Puebla 🔥 boletos a la venta',
-      createdAt: 'Hoy a la 1:04 p.m.',
-      viewed: false,
-    },
-    {
-      id: 'contact_story_2',
-      authorName: 'Vero Bm',
-      authorPhone: '2227654321',
-      mediaUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80',
-      caption: 'Excelente viernes ✨',
-      createdAt: 'Hoy a las 12:45 p.m.',
-      viewed: false,
-    },
-  ]);
+  // Estados / Historias (Stories) - 100% Reales (Sin ejemplos falsos)
+  const [stories, setStories] = useState<WhatsAppStatusItem[]>([]);
+  const [loadingStories, setLoadingStories] = useState(false);
   const [activeStoryViewing, setActiveStoryViewing] = useState<WhatsAppStatusItem | null>(null);
   const [showAddStoryModal, setShowAddStoryModal] = useState(false);
   const [newStoryCaption, setNewStoryCaption] = useState('');
@@ -140,36 +112,31 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const [uploadingStory, setUploadingStory] = useState(false);
   const storyFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Registro y Marcador de Llamadas
-  const [callLogs, setCallLogs] = useState<WhatsAppCallRecord[]>([
-    {
-      id: 'call_1',
-      clientName: 'Chris Lumalee',
-      phone: '2221234567',
-      type: 'outgoing',
-      callType: 'voice',
-      timestamp: 'Hoy, 2:15 p.m.',
-      duration: '03:42 min',
-    },
-    {
-      id: 'call_2',
-      clientName: 'Vero Bm',
-      phone: '2227654321',
-      type: 'incoming',
-      callType: 'voice',
-      timestamp: 'Ayer, 6:30 p.m.',
-      duration: '01:15 min',
-    },
-    {
-      id: 'call_3',
-      clientName: 'Nydia',
-      phone: '2229988776',
-      type: 'missed',
-      callType: 'video',
-      timestamp: '08 de Octubre, 11:00 a.m.',
-    },
-  ]);
+  // Registro y Marcador de Llamadas - 100% Reales de los pedidos/clientes atendidos
+  const [callLogs, setCallLogs] = useState<WhatsAppCallRecord[]>([]);
   const [callingModal, setCallingModal] = useState<{ clientName: string; phone: string; callType: 'voice' | 'video' } | null>(null);
+
+  // Cargar historias reales desde el endpoint
+  const fetchRealStories = async () => {
+    setLoadingStories(true);
+    try {
+      const res = await fetch('/api/whatsapp/stories');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.stories)) {
+        setStories(data.stories);
+      }
+    } catch (err) {
+      console.warn('Error cargando historias reales:', err);
+    } finally {
+      setLoadingStories(false);
+    }
+  };
+
+  useEffect(() => {
+    if (navSection === 'status') {
+      fetchRealStories();
+    }
+  }, [navSection]);
 
   // Perfil de la cuenta propia de WhatsApp FoxDrop
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -1140,27 +1107,42 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 Recientes de clientes ({stories.filter(s => !s.isMyStatus).length})
               </span>
 
-              <div className="space-y-1">
-                {stories.filter(s => !s.isMyStatus).map(st => (
-                  <div
-                    key={st.id}
-                    onClick={() => setActiveStoryViewing(st)}
-                    className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#202C33] cursor-pointer transition"
-                  >
-                    <div className={`w-12 h-12 rounded-full p-0.5 border-2 ${st.viewed ? 'border-[#8696A0]' : 'border-[#00A884]'} overflow-hidden`}>
-                      <img
-                        src={st.mediaUrl}
-                        alt={st.authorName}
-                        className="w-full h-full object-cover rounded-full"
-                      />
+              {loadingStories ? (
+                <div className="py-6 text-center text-[#8696A0] text-xs">
+                  <RefreshCw className="w-4 h-4 animate-spin mx-auto text-[#00A884] mb-2" />
+                  <span>Sincronizando estados...</span>
+                </div>
+              ) : stories.filter(s => !s.isMyStatus).length === 0 ? (
+                <div className="py-8 px-4 text-center rounded-2xl bg-[#202C33]/50 border border-[#222E35]/60 space-y-1.5">
+                  <CircleDot className="w-6 h-6 text-[#8696A0] mx-auto" />
+                  <p className="text-xs font-bold text-[#E9EDEF]">No hay actualizaciones recientes</p>
+                  <p className="text-[11px] text-[#8696A0]">
+                    Cuando tus clientes publiquen estados aparecerán aquí en tiempo real.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {stories.filter(s => !s.isMyStatus).map(st => (
+                    <div
+                      key={st.id}
+                      onClick={() => setActiveStoryViewing(st)}
+                      className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#202C33] cursor-pointer transition"
+                    >
+                      <div className={`w-12 h-12 rounded-full p-0.5 border-2 ${st.viewed ? 'border-[#8696A0]' : 'border-[#00A884]'} overflow-hidden`}>
+                        <img
+                          src={st.mediaUrl}
+                          alt={st.authorName}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-[#E9EDEF] truncate">{st.authorName}</h4>
+                        <p className="text-xs text-[#8696A0]">{st.createdAt}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-[#E9EDEF] truncate">{st.authorName}</h4>
-                      <p className="text-xs text-[#8696A0]">{st.createdAt}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Botón Flotante Subir Estado */}
@@ -1191,47 +1173,57 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
             <div className="space-y-1">
               <span className="text-xs font-bold text-[#8696A0] uppercase tracking-wider block mb-2">
-                Historial Reciente
+                Historial de Llamadas ({callLogs.length})
               </span>
 
-              {callLogs.map(log => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#202C33] transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#374248] text-white flex items-center justify-center font-bold text-xs">
-                      {log.clientName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-[#E9EDEF]">{log.clientName}</h4>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#8696A0]">
-                        {log.type === 'outgoing' && <PhoneOutgoing className="w-3 h-3 text-[#00A884]" />}
-                        {log.type === 'incoming' && <PhoneIncoming className="w-3 h-3 text-sky-400" />}
-                        {log.type === 'missed' && <PhoneMissed className="w-3 h-3 text-rose-500" />}
-                        <span>{log.timestamp}</span>
+              {callLogs.length === 0 ? (
+                <div className="py-10 px-4 text-center rounded-2xl bg-[#202C33]/50 border border-[#222E35]/60 space-y-2">
+                  <PhoneCall className="w-7 h-7 text-[#8696A0] mx-auto" />
+                  <p className="text-xs font-bold text-[#E9EDEF]">Sin llamadas registradas</p>
+                  <p className="text-[11px] text-[#8696A0]">
+                    Presiona el botón de llamada dentro de cualquier chat activo para comunicarte con el cliente.
+                  </p>
+                </div>
+              ) : (
+                callLogs.map(log => (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#202C33] transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#374248] text-white flex items-center justify-center font-bold text-xs">
+                        {log.clientName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-[#E9EDEF]">{log.clientName}</h4>
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#8696A0]">
+                          {log.type === 'outgoing' && <PhoneOutgoing className="w-3 h-3 text-[#00A884]" />}
+                          {log.type === 'incoming' && <PhoneIncoming className="w-3 h-3 text-sky-400" />}
+                          {log.type === 'missed' && <PhoneMissed className="w-3 h-3 text-rose-500" />}
+                          <span>{log.timestamp}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'voice')}
-                      className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
-                      title="Llamar"
-                    >
-                      <Phone className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'video')}
-                      className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
-                      title="Videollamada"
-                    >
-                      <Video className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'voice')}
+                        className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
+                        title="Llamar"
+                      >
+                        <Phone className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'video')}
+                        className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
+                        title="Videollamada"
+                      >
+                        <Video className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
