@@ -192,6 +192,7 @@ async function startWhatsApp() {
         mediaType = 'image';
       }
 
+      const cleanPhone = senderJid.replace(/@.+/, '');
       const pushName = msg.pushName || 'Cliente WhatsApp';
 
       // Consultar foto de perfil real del contacto en WhatsApp
