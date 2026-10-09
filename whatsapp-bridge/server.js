@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
@@ -184,12 +184,39 @@ async function startWhatsApp() {
         '';
 
       let mediaType = undefined;
+      let mediaDataUrl = undefined;
+
       if (msg.message.stickerMessage) {
         text = text || '👾 [Sticker]';
         mediaType = 'sticker';
+        try {
+          const buffer = await downloadMediaMessage(
+            msg,
+            'buffer',
+            {},
+            { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
+          );
+          if (buffer && buffer.length > 0) {
+            mediaDataUrl = `data:image/webp;base64,${buffer.toString('base64')}`;
+            console.log(`🖼️ Sticker entrante descargado con éxito (${buffer.length} bytes)`);
+          }
+        } catch (mediaErr) {
+          console.warn('No se pudo descargar buffer del sticker:', mediaErr.message);
+        }
       } else if (msg.message.imageMessage) {
         text = text || '📷 [Foto]';
         mediaType = 'image';
+        try {
+          const buffer = await downloadMediaMessage(
+            msg,
+            'buffer',
+            {},
+            { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
+          );
+          if (buffer && buffer.length > 0) {
+            mediaDataUrl = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+          }
+        } catch {}
       }
 
       const cleanPhone = senderJid.replace(/@.+/, '');
@@ -223,6 +250,7 @@ async function startWhatsApp() {
               lid: rawLid || undefined,
               text: text,
               mediaType: mediaType,
+              mediaUrl: mediaDataUrl || undefined,
               clientName: pushName,
               avatarUrl: avatarUrl || undefined,
             }),
