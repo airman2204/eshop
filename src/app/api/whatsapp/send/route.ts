@@ -23,12 +23,33 @@ export async function POST(req: NextRequest) {
     if (bridgeUrl) {
       try {
         const supabase = createServerClient();
-        // Preparar número destino: en México WhatsApp suele usar 521 + 10 dígitos o 52 + 10 dígitos.
-        // Si cleanPhone tiene 12 dígitos (52XXXXXXXXXX), enviamos con 521 si es número móvil mexicano para Baileys
+        
         let targetNumber = cleanPhone;
-        const digits = cleanPhone.replace(/\D/g, "");
-        if (digits.startsWith("52") && digits.length === 12 && !digits.startsWith("521")) {
-          targetNumber = `521${digits.slice(2)}`;
+
+        // Si tenemos chatId o teléfono, verificar si el chat tiene un LID registrado para despachar sin error de cifrado
+        if (body.chatId) {
+          const { data: chatRow } = await supabase
+            .from("whatsapp_chats")
+            .select("notes")
+            .eq("id", body.chatId)
+            .maybeSingle();
+
+          if (chatRow?.notes) {
+            try {
+              const parsed = typeof chatRow.notes === "string" ? JSON.parse(chatRow.notes) : chatRow.notes;
+              if (parsed?.lid) {
+                targetNumber = `${parsed.lid}@lid`;
+              }
+            } catch {}
+          }
+        }
+
+        // Si no se usó LID, formatear número estándar para Baileys
+        if (!targetNumber.includes("@lid")) {
+          const digits = cleanPhone.replace(/\D/g, "");
+          if (digits.startsWith("52") && digits.length === 12 && !digits.startsWith("521")) {
+            targetNumber = `521${digits.slice(2)}`;
+          }
         }
 
         const bridgeRes = await fetch(`${bridgeUrl}/message/sendText`, {

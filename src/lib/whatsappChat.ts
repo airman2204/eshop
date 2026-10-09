@@ -157,9 +157,29 @@ export async function sendWhatsAppMessageFromAdmin(params: {
     // 4. Despachar al bridge de WhatsApp
     let deliveredToPhone = false;
     let targetToSend = cleanPhone;
-    const digitsOnly = cleanPhone.replace(/\D/g, "");
-    if (digitsOnly.startsWith("52") && digitsOnly.length === 12 && !digitsOnly.startsWith("521")) {
-      targetToSend = `521${digitsOnly.slice(2)}`;
+
+    // Verificar si el chat tiene un LID registrado para despachar sin error de cifrado
+    try {
+      const { data: chatRow }: any = await (supabase as any)
+        .from('whatsapp_chats')
+        .select('notes')
+        .eq('id', chatId)
+        .maybeSingle();
+
+      if (chatRow?.notes) {
+        const parsed = typeof chatRow.notes === 'string' ? JSON.parse(chatRow.notes) : chatRow.notes;
+        if (parsed?.lid) {
+          targetToSend = `${parsed.lid}@lid`;
+        }
+      }
+    } catch {}
+
+    // Si no es LID, formatear para México
+    if (!targetToSend.includes('@lid')) {
+      const digitsOnly = cleanPhone.replace(/\D/g, "");
+      if (digitsOnly.startsWith("52") && digitsOnly.length === 12 && !digitsOnly.startsWith("521")) {
+        targetToSend = `521${digitsOnly.slice(2)}`;
+      }
     }
 
     // Intento 1: A través de la API route interna
