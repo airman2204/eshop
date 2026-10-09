@@ -161,6 +161,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insertar mensaje en la conversación
+    const incomingMediaType = body.mediaType || undefined;
+    const incomingMediaUrl = body.mediaUrl || undefined;
+
     const { error: msgErr } = await supabase
       .from("whatsapp_messages")
       .insert({
@@ -170,6 +173,8 @@ export async function POST(req: NextRequest) {
         sender_name: clientName,
         text: text,
         status: "delivered",
+        media_type: incomingMediaType,
+        media_url: incomingMediaUrl,
       });
 
     if (msgErr) throw msgErr;

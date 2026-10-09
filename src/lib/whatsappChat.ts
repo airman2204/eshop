@@ -93,6 +93,8 @@ export async function sendWhatsAppMessageFromAdmin(params: {
   clientName?: string;
   senderName: string; // Ej: 'Mario' o 'Socio'
   text: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'sticker' | 'document' | 'audio';
 }): Promise<{ success: boolean; message?: WhatsAppMessage; error?: string }> {
   try {
     const cleanPhone = formatPhoneNumber(params.phone);
@@ -137,6 +139,8 @@ export async function sendWhatsAppMessageFromAdmin(params: {
         sender: 'admin',
         sender_name: params.senderName,
         text: params.text,
+        media_url: params.mediaUrl,
+        media_type: params.mediaType,
         status: 'sent',
       })
       .select('*')
@@ -192,6 +196,8 @@ export async function sendWhatsAppMessageFromAdmin(params: {
           text: params.text,
           senderName: params.senderName,
           chatId,
+          mediaUrl: params.mediaUrl,
+          mediaType: params.mediaType,
         }),
       });
       const bridgeResult = await bridgeRes.json();
@@ -217,6 +223,8 @@ export async function sendWhatsAppMessageFromAdmin(params: {
           body: JSON.stringify({
             number: targetToSend,
             text: params.text,
+            type: params.mediaType,
+            imageUrl: params.mediaUrl,
           }),
         });
         const directData = await directBridgeRes.json();

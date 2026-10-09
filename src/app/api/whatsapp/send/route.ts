@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             number: targetNumber,
             text: text,
+            type: body.mediaType || body.type,
+            imageUrl: body.mediaUrl || body.imageUrl,
           }),
         });
 

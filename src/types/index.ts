@@ -305,6 +305,6 @@ export interface WhatsAppMessage {
   text: string;
   status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   mediaUrl?: string;
-  mediaType?: 'image' | 'document' | 'audio';
+  mediaType?: 'image' | 'sticker' | 'document' | 'audio';
   createdAt: string;
 }

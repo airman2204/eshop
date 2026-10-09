@@ -5,7 +5,8 @@ import {
   MessageSquare, Send, Search, Phone, User, Check, CheckCheck, 
   Clock, RefreshCw, ShoppingBag, AlertCircle, ArrowLeft,
   Sparkles, ExternalLink, ShieldCheck, Flame, Tag, Truck,
-  Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings
+  Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings,
+  Smile, Image as ImageIcon
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile } from '@/types';
 import { 
@@ -64,6 +65,27 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Filtros rápidos
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'with_orders'>('all');
+
+  // Selector de Emojis y Stickers de Marca FoxDrop
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+
+  // Stickers oficiales de la marca FoxDrop
+  const brandStickers = [
+    { id: 'fox_head', title: 'Fox Cabeza 3D', url: '/fox-logo-head-3d.png', desc: 'Logo 3D Fox' },
+    { id: 'fox_mascot_bag', title: 'Fox con Bolsa', url: '/fox-mascot-bag.png', desc: 'Entregando pedido' },
+    { id: 'fox_mascot_suitcase', title: 'Fox Maleta', url: '/fox-mascot-suitcase.png', desc: 'Importación USA' },
+    { id: 'fox_deals', title: 'Fox Ofertas', url: '/fox-mascot-deals-clean.png', desc: 'Oferta exclusiva' },
+    { id: 'fox_head_clean', title: 'Fox Oficial', url: '/fox-head-3d-clean.png', desc: 'Sello oficial' },
+    { id: 'fox_icon', title: 'FoxDrop Icon', url: '/foxdrop-icon-transparent.png', desc: 'Emblema Fox' },
+  ];
+
+  // Colección de emojis más utilizados para ventas y atención al cliente
+  const commonEmojis = [
+    '🦊', '📦', '🚚', '✨', '🔥', '🎉', '🛍️', '💯', 
+    '🙌', '👍', '😊', '👋', '❤️', '✅', '⭐', '💵', 
+    '🏷️', '📍', '📲', '⏰', '⚡', '💪', '🚀', '😍'
+  ];
 
   // Perfil de la cuenta propia de WhatsApp FoxDrop
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -437,6 +459,55 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Enviar plantilla rápida con 1 clic
   const handleSendQuickTemplate = (textTemplate: string) => {
     setInputText(textTemplate);
+  };
+
+  // Insertar Emoji en el campo de texto
+  const handleInsertEmoji = (emoji: string) => {
+    setInputText(prev => prev + emoji);
+  };
+
+  // Enviar Sticker oficial de la marca FoxDrop
+  const handleSendSticker = async (sticker: { id: string; title: string; url: string }) => {
+    if (!activeChat || sending) return;
+
+    setSending(true);
+    setShowStickerPicker(false);
+
+    try {
+      // Usar URL absoluta para que el bridge de WhatsApp pueda descargar la imagen/sticker
+      const fullStickerUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}${sticker.url}`
+        : `https://foxdrop.mx${sticker.url}`;
+
+      const result = await sendWhatsAppMessageFromAdmin({
+        chatId: activeChat.id,
+        phone: activeChat.phone,
+        clientName: activeChat.clientName,
+        senderName: partnerName,
+        text: `[Sticker: ${sticker.title}]`,
+        mediaUrl: fullStickerUrl,
+        mediaType: 'sticker',
+      });
+
+      if (result.success && result.message) {
+        if (activeChat.id.startsWith('temp-') && result.message.chatId) {
+          setActiveChat(prev => prev ? { ...prev, id: result.message!.chatId } : null);
+          loadChats(false);
+        }
+
+        setMessages(prev => {
+          if (prev.some(m => m.id === result.message!.id)) return prev;
+          return [...prev, result.message!];
+        });
+        try { soundManager.triggerHaptic('light'); } catch {}
+      } else {
+        alert(result.error || 'Error al enviar sticker');
+      }
+    } catch (err: any) {
+      alert('Error de red al enviar sticker: ' + err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   // Pedidos relacionados con este número de teléfono
@@ -962,7 +1033,25 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                         </span>
                       )}
 
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {/* Si es un Sticker oficial o imagen */}
+                      {msg.mediaType === 'sticker' || msg.mediaUrl ? (
+                        <div className="py-1">
+                          <img 
+                            src={msg.mediaUrl || '/fox-logo-head-3d.png'} 
+                            alt="Sticker FoxDrop" 
+                            className="w-28 h-28 object-contain drop-shadow-md rounded-xl mx-auto hover:scale-105 transition"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = '/fox-logo-head-3d.png';
+                            }}
+                          />
+                          {msg.text && !msg.text.startsWith('[Sticker:') && (
+                            <p className="whitespace-pre-wrap mt-1 text-center font-bold text-slate-800">{msg.text}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      )}
 
                       <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
                         <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -1053,11 +1142,125 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
             </button>
           </div>
 
+          {/* Popover Selector de Emojis */}
+          {showEmojiPicker && (
+            <div className="bg-white border-t border-slate-200 p-3 shadow-lg z-20 animate-in slide-in-from-bottom-2 duration-150">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-extrabold text-slate-700 flex items-center gap-1.5">
+                  😊 Emojis Populares FoxDrop
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-8 sm:grid-cols-12 gap-2 text-xl">
+                {commonEmojis.map((emoji, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleInsertEmoji(emoji)}
+                    className="p-2 hover:bg-slate-100 rounded-xl transition hover:scale-125 flex items-center justify-center cursor-pointer"
+                    title={`Insertar ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Popover Selector de Stickers Oficiales FoxDrop */}
+          {showStickerPicker && (
+            <div className="bg-white border-t border-slate-200 p-4 shadow-xl z-20 animate-in slide-in-from-bottom-2 duration-150">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🦊</span>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900 leading-tight">Stickers Oficiales FoxDrop</h4>
+                    <p className="text-[10px] text-slate-400">Toca cualquiera para enviarlo directo a WhatsApp</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowStickerPicker(false)}
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {brandStickers.map((sticker) => (
+                  <button
+                    key={sticker.id}
+                    type="button"
+                    disabled={sending}
+                    onClick={() => handleSendSticker(sticker)}
+                    className="group bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-500/50 p-2.5 rounded-2xl transition flex flex-col items-center gap-1.5 cursor-pointer hover:shadow-md"
+                    title={`Enviar sticker ${sticker.title}`}
+                  >
+                    <div className="w-16 h-16 rounded-xl flex items-center justify-center p-1 group-hover:scale-110 transition">
+                      <img 
+                        src={sticker.url} 
+                        alt={sticker.title} 
+                        className="w-full h-full object-contain drop-shadow-sm" 
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-700 group-hover:text-emerald-700 text-center truncate w-full">
+                      {sticker.title}
+                    </span>
+                    <span className="text-[8px] text-slate-400 text-center truncate w-full">
+                      {sticker.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Input para Escribir y Enviar */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-200 flex items-center gap-1.5 sm:gap-2">
+            {/* Botón Emojis */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowEmojiPicker(!showEmojiPicker);
+                setShowStickerPicker(false);
+              }}
+              className={`p-2.5 rounded-2xl transition border cursor-pointer ${
+                showEmojiPicker 
+                  ? 'bg-amber-100 text-amber-700 border-amber-300' 
+                  : 'text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border-transparent'
+              }`}
+              title="Abrir emojis"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+
+            {/* Botón Stickers de Marca */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowStickerPicker(!showStickerPicker);
+                setShowEmojiPicker(false);
+              }}
+              className={`p-2.5 rounded-2xl transition border cursor-pointer flex items-center gap-1 ${
+                showStickerPicker 
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs' 
+                  : 'text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border-emerald-200/60'
+              }`}
+              title="Stickers oficiales FoxDrop"
+            >
+              <span className="text-sm">🦊</span>
+              <span className="hidden sm:inline text-[11px] font-extrabold">Sticker</span>
+            </button>
+
             <input
               type="text"
-              placeholder={`Escribe un mensaje como ${partnerName}...`}
+              placeholder={`Escribe un mensaje o emoji como ${partnerName}...`}
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               className="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white transition"
