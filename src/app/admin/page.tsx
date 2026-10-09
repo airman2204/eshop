@@ -2819,22 +2819,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={async () => {
-                  const r = await getLiveExchangeRate();
-                  setUsdRate(r);
-                }}
-                title="Actualizar tipo de cambio oficial"
-                className="hidden sm:flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium transition cursor-pointer"
-              >
-                <span className="text-slate-500 text-[11px] font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  USD/MXN:
-                </span>
-                <span className="font-mono font-bold text-slate-900">${usdRate.toFixed(2)}</span>
-                <RefreshCw className="w-3 h-3 text-slate-400 hover:rotate-180 transition-transform duration-300" />
-              </button>
-
               {/* Botón Buscador Global (Cmd/Ctrl + K) */}
               <button
                 type="button"
