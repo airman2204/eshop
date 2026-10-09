@@ -8,7 +8,7 @@ import {
   Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings,
   Smile, Image as ImageIcon, Video, PhoneCall, CircleDot, Radio,
   Users, Archive, MoreVertical, Plus, Info, ChevronDown, PhoneOutgoing,
-  PhoneIncoming, PhoneMissed, Play, Paperclip, Zap
+  PhoneIncoming, PhoneMissed, Play, Paperclip, Zap, PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile, WhatsAppStatusItem, WhatsAppCallRecord } from '@/types';
 import { 
@@ -69,6 +69,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Modo Pantalla Completa
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Colapsar barra de contactos para darle el 100% de espacio al mensaje
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Notificaciones de Sistema / Push en Navegador
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
@@ -747,7 +750,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       {/* ======================================================== */}
       {/* 0. BARRA VERTICAL ULTRA-ESTRECHA (ESTILO WHATSAPP DESKTOP) */}
       {/* ======================================================== */}
-      <div className="hidden sm:flex flex-col items-center justify-between w-16 py-3.5 bg-[#202C33] border-r border-[#222E35] shrink-0 z-30">
+      <div className={`hidden sm:flex flex-col items-center justify-between w-14 py-3.5 bg-[#202C33] border-r border-[#222E35] shrink-0 z-30 ${
+        isSidebarCollapsed && activeChat ? 'hidden' : ''
+      }`}>
         {/* Iconos Superiores de Navegación */}
         <div className="flex flex-col items-center gap-4 w-full">
           {/* Logo FoxDrop Superior */}
@@ -908,8 +913,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       {/* ======================================================== */}
       {/* 1. PANEL IZQUIERDO: BANDEJA DE CHATS / ESTADOS / LLAMADAS */}
       {/* ======================================================== */}
-      <div className={`w-full md:w-80 lg:w-96 border-r border-[#222E35] flex flex-col bg-[#111B21] shrink-0 ${
-        activeChat ? 'hidden md:flex' : 'flex h-full'
+      <div className={`w-full md:w-72 lg:w-80 border-r border-[#222E35] flex flex-col bg-[#111B21] shrink-0 transition-all duration-200 ${
+        activeChat 
+          ? (isSidebarCollapsed ? 'hidden' : 'hidden md:flex')
+          : 'flex h-full'
       }`}>
         
         {/* Cabecera del Panel Izquierdo según sección */}
@@ -1322,13 +1329,29 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
           
           {/* Cabecera del Chat Activo Dark Mode con Safe Area para Notch/Dynamic Island */}
           <div className="p-3 pt-3 md:pt-3 bg-[#202C33] border-b border-[#222E35] flex items-center justify-between shadow-md z-10 safe-area-top">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              {/* Botón Volver / Cerrar conversación activa */}
               <button
+                type="button"
                 onClick={() => setActiveChat(null)}
-                className="md:hidden p-2 -ml-1 text-[#AEBAC1] hover:text-[#E9EDEF] rounded-xl hover:bg-[#2A3942] transition cursor-pointer"
-                title="Regresar a conversaciones"
+                className="p-1.5 sm:p-2 -ml-1 text-[#AEBAC1] hover:text-[#E9EDEF] rounded-xl hover:bg-[#2A3942] transition cursor-pointer shrink-0"
+                title="Volver a lista de chats"
               >
                 <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              {/* Botón Alternar Contactos (Mostrar / Ocultar barra lateral en pantallas de escritorio) */}
+              <button
+                type="button"
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="hidden md:flex p-1.5 text-[#AEBAC1] hover:text-[#00A884] rounded-lg hover:bg-[#2A3942] transition cursor-pointer shrink-0"
+                title={isSidebarCollapsed ? "Mostrar contactos" : "Maximizar área de mensajes (ocultar contactos)"}
+              >
+                {isSidebarCollapsed ? (
+                  <PanelLeft className="w-5 h-5" />
+                ) : (
+                  <PanelLeftClose className="w-5 h-5" />
+                )}
               </button>
 
               <div className="w-10 h-10 rounded-full bg-[#6B7C85] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
@@ -1347,16 +1370,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 )}
               </div>
 
-              <div>
-                <h3 className="font-bold text-[#E9EDEF] text-sm leading-tight flex items-center gap-2">
-                  <span>{activeChat.clientName}</span>
+              <div className="min-w-0">
+                <h3 className="font-bold text-[#E9EDEF] text-sm leading-tight flex items-center gap-1.5 truncate">
+                  <span className="truncate">{activeChat.clientName}</span>
                   {activeChatOrders.length > 0 && (
-                    <span className="bg-[#00A884]/20 text-[#00A884] text-[10px] font-bold px-2 py-0.2 rounded-full border border-[#00A884]/40">
-                      {activeChatOrders.length} pedido(s)
+                    <span className="bg-[#00A884]/20 text-[#00A884] text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-[#00A884]/40 shrink-0">
+                      {activeChatOrders.length} ped
                     </span>
                   )}
                 </h3>
-                <div className="flex items-center gap-2 text-[11px] text-[#8696A0]">
+                <div className="flex items-center gap-2 text-[11px] text-[#8696A0] truncate">
                   <span className="font-mono">+{activeChat.phone}</span>
                   <span>•</span>
                   <span className="text-[#00A884] font-medium">en línea</span>
@@ -1578,7 +1601,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
           )}
 
           {/* Barra de Entrada / Input Dark Mode Compacta para Teclado */}
-          <form onSubmit={handleSendMessage} className="p-2 sm:p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-1.5 sm:gap-2 safe-area-bottom">
+          <form onSubmit={handleSendMessage} className="p-2 sm:p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-1.5 sm:gap-2 safe-area-bottom w-full min-w-0">
             {/* Botón Emojis */}
             <button
               type="button"
@@ -1587,7 +1610,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 setShowStickerPicker(false);
                 setShowTemplatesMenu(false);
               }}
-              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer shrink-0"
               title="Emojis"
             >
               <Smile className="w-5 h-5" />
@@ -1601,7 +1624,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 setShowEmojiPicker(false);
                 setShowTemplatesMenu(false);
               }}
-              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer"
+              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer shrink-0"
               title="Stickers FoxDrop"
             >
               <span className="text-base sm:text-lg">🦊</span>
@@ -1615,7 +1638,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 setShowEmojiPicker(false);
                 setShowStickerPicker(false);
               }}
-              className={`p-1.5 sm:p-2 rounded-full transition cursor-pointer ${
+              className={`p-1.5 sm:p-2 rounded-full transition cursor-pointer shrink-0 ${
                 showTemplatesMenu ? 'text-[#00A884] bg-[#111B21]' : 'text-[#8696A0] hover:text-[#E9EDEF]'
               }`}
               title="Plantillas rápidas de respuesta"
@@ -1637,14 +1660,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 }, 300);
               }}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-[#2A3942] border-none rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
+              className="flex-1 min-w-0 bg-[#2A3942] border-none rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
             />
 
             {/* Botón Enviar */}
             <button
               type="submit"
               disabled={!inputText.trim() || sending}
-              className="p-2 sm:p-2.5 bg-[#00A884] hover:bg-[#008f6f] disabled:opacity-40 text-[#111B21] rounded-full shadow transition cursor-pointer"
+              className="p-2 sm:p-2.5 bg-[#00A884] hover:bg-[#008f6f] disabled:opacity-40 text-[#111B21] rounded-full shadow transition cursor-pointer shrink-0"
               title="Enviar"
             >
               {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

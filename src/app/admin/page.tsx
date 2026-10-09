@@ -9813,7 +9813,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* VENTANA FLOTANTE 1: WHATSAPP CENTRAL (SIN SALIR DE TU PESTAÑA) */}
       {/* ======================================================== */}
       {showFloatingWhatsApp && crmSubTab !== 'whatsapp' && (
-        <div className="fixed inset-0 sm:inset-auto sm:bottom-6 sm:right-24 z-50 w-full sm:w-[540px] md:w-[620px] lg:w-[720px] h-full sm:h-[620px] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-4 sm:right-6 md:right-10 z-50 w-full sm:w-[680px] md:w-[860px] lg:w-[980px] xl:w-[1080px] max-w-[96vw] h-full sm:h-[680px] max-h-[92vh] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
           {/* Barra de título de la ventana flotante */}
           <div className="bg-[#0F3E36] text-white px-4 py-2.5 flex items-center justify-between shadow-xs select-none">
             <div className="flex items-center gap-2">
