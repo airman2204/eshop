@@ -59,7 +59,15 @@ Diseñado para atender los 3 canales de venta de FoxDrop sin intervención manua
   - Las contraseñas administrativas se procesan y almacenan con **hash criptográfico SHA-256**.
   - Se eliminó el almacenamiento inseguro de contraseñas en texto plano en `localStorage`.
 - **Aislamiento de Privilegios:**
-  - Las operaciones de base de datos se ejecutan en endpoints seguros de Next.js (`/api/admin`) que utilizan la `SUPABASE_SERVICE_ROLE_KEY` sin exponerla al navegador cliente.
+### 1.6 Seguridad y Experiencia del Portal del Cliente (`/tienda?tab=cuenta` y `/perfil`)
+- **Visualización Integrada de Tickets POS:**
+  - Los clientes pueden consultar su historial de pedidos tanto online como de mostrador físico.
+  - Si el pedido cuenta con comprobante de compra (`Ticket: https://...`), el portal muestra la vista previa del ticket oficial con opción de descarga y apertura directa.
+- **Cumplimiento Estricto de Seguridad PCI-DSS:**
+  - En la gestión de métodos de pago guardados (`/api/user/profile` acción `save_card`), el backend sanitiza los objetos entrantes eliminando de raíz CVVs y números de tarjeta completos. Solo se guardan los últimos 4 dígitos (`last4`), marca y vigencia.
+- **Cancelación Segura con Notificación en Tiempo Real:**
+  - Los clientes pueden cancelar pedidos en estado `pending` o `processing`.
+  - La cancelación actualiza el inventario y dispara de inmediato un WhatsApp oficial al cliente confirmando la cancelación sin requerir intervención manual.
 
 ---
 

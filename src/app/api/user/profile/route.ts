@@ -188,16 +188,23 @@ export async function POST(req: NextRequest) {
         updatedCards = updatedCards.map((c: any) => ({ ...c, isDefault: false }));
       }
 
-      const existingIndex = updatedCards.findIndex((c: any) => c.id === card.id);
+      // Regla de Seguridad PCI-DSS: NUNCA almacenar números de tarjeta completos ni CVV
+      const sanitizedCard = {
+        id: card.id || `card-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        brand: card.brand || "other",
+        last4: String(card.last4 || card.cardNumber || "").slice(-4) || "0000",
+        holderName: String(card.holderName || "").trim().slice(0, 50),
+        expMonth: String(card.expMonth || "").slice(0, 2),
+        expYear: String(card.expYear || "").slice(0, 4),
+        isDefault: Boolean(card.isDefault),
+      };
+
+      const existingIndex = updatedCards.findIndex((c: any) => c.id === sanitizedCard.id);
       if (existingIndex >= 0) {
-        updatedCards[existingIndex] = { ...updatedCards[existingIndex], ...card };
+        updatedCards[existingIndex] = { ...updatedCards[existingIndex], ...sanitizedCard };
       } else {
-        const newCard = {
-          ...card,
-          id: card.id || `card-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-          isDefault: updatedCards.length === 0 ? true : Boolean(card.isDefault),
-        };
-        updatedCards.push(newCard);
+        sanitizedCard.isDefault = updatedCards.length === 0 ? true : sanitizedCard.isDefault;
+        updatedCards.push(sanitizedCard);
       }
 
       await supabase.auth.admin.updateUserById(targetUser.id, {
@@ -352,6 +359,20 @@ export async function POST(req: NextRequest) {
       if (updateErr) {
         console.error("Error al cancelar orden:", updateErr);
         return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
+
+      // Notificar automáticamente por WhatsApp sobre la cancelación del pedido
+      if (orderData.client_phone) {
+        try {
+          const { dispatchOrderStatusNotification } = await import("@/lib/orderNotifications");
+          dispatchOrderStatusNotification({
+            orderId: orderData.order_number || orderData.id,
+            clientName: orderData.client_name || "Cliente",
+            clientPhone: orderData.client_phone,
+            newStatus: "cancelled",
+            notes: cancelReason,
+          }).catch(() => {});
+        } catch {}
       }
 
       return NextResponse.json({ 
