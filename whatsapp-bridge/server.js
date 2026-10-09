@@ -204,6 +204,14 @@ async function startWhatsApp() {
 
       console.log(`📩 Mensaje recibido de ${cleanPhone} (LID: ${rawLid}) (${pushName}): ${text}`);
 
+      // Suscribirse inmediatamente a presencia de este usuario para recibir cuando esté escribiendo
+      try {
+        const jidToSub = rawLid ? `${rawLid}@lid` : `${cleanPhone}@s.whatsapp.net`;
+        await sock.presenceSubscribe(jidToSub);
+      } catch (subErr) {
+        console.warn('Error en presenceSubscribe:', subErr.message);
+      }
+
       if (WEBHOOK_URL && text) {
         try {
           await fetch(WEBHOOK_URL, {
@@ -233,6 +241,8 @@ async function startWhatsApp() {
     const presenceData = presences[id] || Object.values(presences)[0];
     const isTyping = presenceData?.lastKnownPresence === 'composing';
 
+    console.log(`👁️ Presence update para ${cleanPhone}: isTyping=${isTyping}, status=${presenceData?.lastKnownPresence}`);
+
     if (WEBHOOK_URL) {
       try {
         await fetch(WEBHOOK_URL, {
@@ -245,7 +255,9 @@ async function startWhatsApp() {
             lastKnownPresence: presenceData?.lastKnownPresence || 'available',
           }),
         });
-      } catch (err) {}
+      } catch (err) {
+        console.warn('Error enviando presence al webhook:', err.message);
+      }
     }
   });
 
@@ -469,9 +481,33 @@ app.post('/message/sendText', async (req, res) => {
       console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
     }
 
+    // Suscribirse a presencia del destinatario para que WhatsApp nos notifique cuando esté escribiendo
+    try {
+      await sock.presenceSubscribe(targetJid);
+    } catch {}
+
     res.json({ success: true, messageId: sent.key.id, jid: targetJid });
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint POST para suscribirse a la presencia de un chat (cuando el usuario entra al chat en el admin)
+app.post('/chat/subscribePresence', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no está conectado' });
+  }
+  const { phone, lid } = req.body;
+  if (!phone && !lid) {
+    return res.status(400).json({ error: 'phone o lid requerido' });
+  }
+  try {
+    const targetJid = lid ? `${lid}@lid` : (phone.length === 10 ? `521${phone}@s.whatsapp.net` : `${phone}@s.whatsapp.net`);
+    await sock.presenceSubscribe(targetJid);
+    console.log(`🔔 Suscrito a presencia de ${targetJid}`);
+    res.json({ success: true, jid: targetJid });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

@@ -73,6 +73,16 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: bridgeData.error || "Error en bridge" }, { status: bridgeRes.status });
         }
 
+        if (bridgeData?.success && body.chatId) {
+          // Confirmar entrega al servidor de WhatsApp inmediatamente (2 palomitas grises)
+          await (supabase as any)
+            .from("whatsapp_messages")
+            .update({ status: "delivered" })
+            .eq("chat_id", body.chatId)
+            .eq("sender", "admin")
+            .eq("status", "sent");
+        }
+
         return NextResponse.json({ success: true, bridgeData });
       } catch (err: any) {
         console.warn("Fallo conectando con WHATSAPP_BRIDGE_URL:", err.message);

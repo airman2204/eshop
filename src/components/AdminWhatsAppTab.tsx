@@ -262,6 +262,22 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       markChatAsRead(chat.id);
       setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
     }
+
+    // Suscribir al bridge para escuchar eventos de presence (escribiendo...) de este contacto
+    try {
+      let lidVal: string | undefined;
+      if (chat.notes) {
+        try {
+          const parsed = typeof chat.notes === 'string' ? JSON.parse(chat.notes) : chat.notes;
+          lidVal = parsed?.lid;
+        } catch {}
+      }
+      fetch('https://foxdrop-whatsapp-bridge.onrender.com/chat/subscribePresence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: chat.phone, lid: lidVal })
+      }).catch(() => {});
+    } catch {}
   };
 
   // Cargar perfil propio de FoxDrop al montar para mostrar logo y nombre
@@ -359,6 +375,8 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   sender: newMsg.sender,
                   senderName: newMsg.sender_name,
                   text: newMsg.text,
+                  mediaUrl: newMsg.media_url,
+                  mediaType: newMsg.media_type,
                   status: newMsg.status,
                   createdAt: newMsg.created_at,
                 }];
@@ -1035,18 +1053,25 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       )}
 
                       {/* Si es un Sticker oficial o imagen */}
-                      {msg.mediaType === 'sticker' || msg.mediaUrl ? (
-                        <div className="py-1">
-                          <img 
-                            src={msg.mediaUrl || '/fox-logo-head-3d.png'} 
-                            alt="Sticker FoxDrop" 
-                            className="w-28 h-28 object-contain drop-shadow-md rounded-xl mx-auto hover:scale-105 transition"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = '/fox-logo-head-3d.png';
-                            }}
-                          />
-                          {msg.text && !msg.text.startsWith('[Sticker:') && (
+                      {(msg.mediaType === 'sticker' || msg.mediaUrl || msg.text?.includes('[Sticker')) ? (
+                        <div className="py-1 flex flex-col items-center">
+                          {msg.mediaUrl ? (
+                            <img 
+                              src={msg.mediaUrl} 
+                              alt="Sticker FoxDrop" 
+                              className="w-28 h-28 object-contain drop-shadow-md rounded-xl mx-auto hover:scale-105 transition"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/stickers/sticker-gracias-compra.png';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-emerald-50 rounded-2xl border border-emerald-200 flex flex-col items-center justify-center p-2 text-center shadow-xs">
+                              <span className="text-3xl mb-1">👾</span>
+                              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">Sticker</span>
+                            </div>
+                          )}
+                          {msg.text && !msg.text.startsWith('[Sticker:') && msg.text !== '👾 [Sticker]' && (
                             <p className="whitespace-pre-wrap mt-1 text-center font-bold text-slate-800">{msg.text}</p>
                           )}
                         </div>
