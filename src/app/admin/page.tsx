@@ -260,6 +260,33 @@ export default function AdminCRM() {
   const [orderHistoryChannelFilter, setOrderHistoryChannelFilter] = useState<'all' | 'pos' | 'online'>('all');
   const [orderHistoryStatusFilter, setOrderHistoryStatusFilter] = useState<'all' | 'delivered' | 'cancelled' | 'pending' | 'processing' | 'shipped'>('all');
 
+  // 1. Buscador Global Inteligente (Cmd/Ctrl + K)
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+
+  // 2. Generador de Etiquetas de Envío / Guías
+  const [shippingLabelOrder, setShippingLabelOrder] = useState<Order | null>(null);
+
+  // 3. Corte de Caja Diario (Z-Report)
+  const [showZReportModal, setShowZReportModal] = useState(false);
+  const [zReportDate, setZReportDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // Listener para Cmd/Ctrl + K en teclado
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      } else if (e.key === 'Escape') {
+        setShowCommandPalette(false);
+        setShippingLabelOrder(null);
+        setShowZReportModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Notificaciones en Tiempo Real (Admin)
   const [adminRealtimeToast, setAdminRealtimeToast] = useState<{
     id: string;
@@ -2808,6 +2835,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <RefreshCw className="w-3 h-3 text-slate-400 hover:rotate-180 transition-transform duration-300" />
               </button>
 
+              {/* Botón Buscador Global (Cmd/Ctrl + K) */}
+              <button
+                type="button"
+                onClick={() => setShowCommandPalette(true)}
+                title="Buscador global rápido (Ctrl + K)"
+                className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5 text-slate-400" />
+                <span className="hidden sm:inline text-slate-500">Buscar...</span>
+                <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-mono px-1.5 py-0.2 rounded-md shadow-2xs">
+                  ⌘K
+                </kbd>
+              </button>
+
               {/* Indicador Realtime y Sonido de Alertas */}
               <button
                 onClick={() => setAudioEnabled(!audioEnabled)}
@@ -2898,6 +2939,70 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             ? 'max-w-none p-0 md:p-4 pb-0 md:pb-4 space-y-0' 
             : 'max-w-7xl p-4 sm:p-6 pb-36 md:pb-8 space-y-6'
         }`}>
+
+        {/* 🚨 CENTRO DE ATENCIÓN OPERATIVA DEL DÍA (Acciones Pendientes) */}
+        {crmSubTab !== 'whatsapp' && (activeOrders.length > 0 || countLowStock > 0 || countOutOfStock > 0 || abandonedCarts.filter(c => !c.followedUp).length > 0) && (
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#E65F2B] flex items-center justify-center font-bold shrink-0">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xs sm:text-sm text-slate-900 leading-tight">Centro de Atención Operativa</h3>
+                  <p className="text-[11px] text-slate-500">Métricas prioritarias que requieren tu acción hoy en tienda</p>
+                </div>
+              </div>
+
+              {/* Chips de Atención Rápida */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {activeOrders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCrmSubTab('orders')}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{activeOrders.length} por empacar</span>
+                  </button>
+                )}
+
+                {countOutOfStock > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setCrmSubTab('inventory'); setStockFilter('out_of_stock'); }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200/80 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{countOutOfStock} agotados</span>
+                  </button>
+                )}
+
+                {countLowStock > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setCrmSubTab('inventory'); setStockFilter('low_stock'); }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <Package className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{countLowStock} bajo stock</span>
+                  </button>
+                )}
+
+                {abandonedCarts.filter(c => !c.followedUp).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCrmSubTab('carts')}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200/80 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{abandonedCarts.filter(c => !c.followedUp).length} carritos pendientes</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
         {crmSubTab === 'inventory' && (
@@ -3739,6 +3844,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <option value="delivered">Entregado</option>
                       </select>
 
+                      {/* Botón Imprimir Guía de Envío / Remisión */}
+                      <button
+                        type="button"
+                        onClick={() => setShippingLabelOrder(order)}
+                        title="Imprimir Guía de Envío / Remisión de Empaque"
+                        className="bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold px-2.5 py-2 rounded-xl flex items-center gap-1.5 transition text-xs border border-slate-200 cursor-pointer shadow-2xs"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="hidden sm:inline">Guía / Remisión</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           setCancellingOrderId(order.id);
@@ -3746,7 +3862,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           setShowCancelModal(true);
                         }}
                         title="Cancelar pedido"
-                        className="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-medium px-2.5 py-2 rounded-xl flex items-center gap-1 transition text-xs border border-slate-200"
+                        className="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-medium px-2.5 py-2 rounded-xl flex items-center gap-1 transition text-xs border border-slate-200 cursor-pointer"
                       >
                         <Ban className="w-3.5 h-3.5" />
                         <span>Cancelar</span>
@@ -4563,9 +4679,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {/* 7. SECCIÓN FINANZAS */}
         {crmSubTab === 'finance' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Balance Financiero & Utilidades Reales</h2>
-              <p className="text-xs text-slate-500">Métricas calculadas directamente de tus pedidos en curso y stock activo (arrancan en 0 si no hay operaciones).</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Balance Financiero & Utilidades Reales</h2>
+                <p className="text-xs text-slate-500">Métricas calculadas directamente de tus pedidos en curso y stock activo (arrancan en 0 si no hay operaciones).</p>
+              </div>
+
+              {/* Botón Corte de Caja Diario (Z-Report) */}
+              <button
+                type="button"
+                onClick={() => setShowZReportModal(true)}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer self-start sm:self-auto"
+              >
+                <Receipt className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Corte de Caja Diario</span>
+              </button>
             </div>
 
             {/* Bloque 1: Ventas y Utilidades Concretadas */}
@@ -9318,6 +9446,517 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* 1. MODAL BUSCADOR GLOBAL INTELIGENTE (CMD / CTRL + K)    */}
+      {/* ======================================================== */}
+      {showCommandPalette && (
+        <div 
+          onClick={() => setShowCommandPalette(false)}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150"
+          >
+            {/* Input Barra de Búsqueda */}
+            <div className="p-3.5 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+              <Search className="w-5 h-5 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                autoFocus
+                value={commandQuery}
+                onChange={e => setCommandQuery(e.target.value)}
+                placeholder="Busca productos, pedidos, clientes por nombre, teléfono o SKU..."
+                className="w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              />
+              {commandQuery && (
+                <button
+                  type="button"
+                  onClick={() => setCommandQuery('')}
+                  className="text-slate-400 hover:text-slate-600 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded shadow-2xs">
+                ESC
+              </kbd>
+            </div>
+
+            {/* Resultados Dinámicos */}
+            <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4 text-xs">
+              {(() => {
+                const q = commandQuery.trim().toLowerCase();
+
+                const matchedProducts = products.filter(p => 
+                  !q || p.title.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)) || (p.category && p.category.toLowerCase().includes(q))
+                ).slice(0, 5);
+
+                const matchedOrders = orders.filter(o => 
+                  !q || o.id.toLowerCase().includes(q) || o.clientName?.toLowerCase().includes(q) || o.clientPhone?.includes(q)
+                ).slice(0, 4);
+
+                const matchedClients = clients.filter(c => 
+                  !q || c.name.toLowerCase().includes(q) || c.phone?.includes(q)
+                ).slice(0, 4);
+
+                const hasResults = matchedProducts.length > 0 || matchedOrders.length > 0 || matchedClients.length > 0;
+
+                if (!hasResults) {
+                  return (
+                    <div className="py-12 text-center text-slate-400">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="font-semibold text-slate-600">No se encontraron resultados para &quot;{commandQuery}&quot;</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Prueba con un SKU, folio de orden o número de teléfono.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {/* Productos */}
+                    {matchedProducts.length > 0 && (
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 block mb-1">
+                          Productos en Catálogo ({matchedProducts.length})
+                        </span>
+                        <div className="space-y-1">
+                          {matchedProducts.map(p => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => {
+                                setCrmSubTab('inventory');
+                                setSearchTerm(p.sku || p.title);
+                                setShowCommandPalette(false);
+                              }}
+                              className="w-full p-2.5 rounded-xl hover:bg-slate-50 transition flex items-center justify-between text-left group"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-500 overflow-hidden shrink-0 border border-slate-200/60">
+                                  {p.images?.[0] ? (
+                                    <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <Package className="w-4 h-4 text-slate-400" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 group-hover:text-[#E65F2B] truncate">{p.title}</p>
+                                  <p className="text-[11px] text-slate-400 font-mono">SKU: {p.sku || 'Sin SKU'} • Stock: {p.stock} pzas</p>
+                                </div>
+                              </div>
+                              <span className="font-bold font-mono text-slate-900">${p.publicPrice.toFixed(2)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pedidos */}
+                    {matchedOrders.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 block mb-1">
+                          Pedidos & Ventas ({matchedOrders.length})
+                        </span>
+                        <div className="space-y-1">
+                          {matchedOrders.map(o => (
+                            <button
+                              key={o.id}
+                              type="button"
+                              onClick={() => {
+                                setCrmSubTab(o.status === 'delivered' || o.id.startsWith('FX-POS') ? 'order_history' : 'orders');
+                                setShowCommandPalette(false);
+                              }}
+                              className="w-full p-2.5 rounded-xl hover:bg-slate-50 transition flex items-center justify-between text-left group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 group-hover:text-[#E65F2B] font-mono">{o.id}</p>
+                                  <p className="text-[11px] text-slate-400 truncate">{o.clientName} • {o.clientPhone}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-bold font-mono text-slate-900 block">${o.total.toFixed(2)}</span>
+                                <span className="text-[10px] text-slate-400 capitalize">{o.status}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Clientes */}
+                    {matchedClients.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 block mb-1">
+                          Clientes Registrados ({matchedClients.length})
+                        </span>
+                        <div className="space-y-1">
+                          {matchedClients.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                setCrmSubTab('clients');
+                                setSelectedClientForModal(c);
+                                setShowCommandPalette(false);
+                              }}
+                              className="w-full p-2.5 rounded-xl hover:bg-slate-50 transition flex items-center justify-between text-left group"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-full bg-[#2D4A58] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                                  {c.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 group-hover:text-[#E65F2B]">{c.name}</p>
+                                  <p className="text-[11px] text-slate-400 font-mono">{c.phone}</p>
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
+                                {c.loyaltyPoints || 0} pts
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Footer Atajos */}
+            <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between px-4">
+              <span>Navegación instantánea en FoxDrop</span>
+              <span>Presiona <strong>ESC</strong> para salir</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. MODAL GENERADOR DE GUÍA DE ENVÍO / REMISIÓN IMPRIMIBLE */}
+      {/* ======================================================== */}
+      {shippingLabelOrder && (
+        <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Printer className="w-5 h-5 text-[#E65F2B]" />
+                <h3 className="font-bold text-sm">Etiqueta de Envío & Remisión de Empaque</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShippingLabelOrder(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido Imprimible (Guía / Packing Slip) */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700 bg-white" id="printable-shipping-slip">
+              {/* Encabezado FoxDrop */}
+              <div className="flex items-start justify-between border-b-2 border-slate-900 pb-4">
+                <div>
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight">FOXDROP PUEBLA</h1>
+                  <p className="text-[11px] text-slate-500">Comercializadora & Envíos Directos</p>
+                  <p className="text-[10px] text-slate-400">Puebla, Pue. • WhatsApp: 221 216 4504</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Folio de Pedido</span>
+                  <span className="text-base font-black font-mono text-slate-900 block">{shippingLabelOrder.id}</span>
+                  <span className="text-[10px] text-slate-500">{new Date(shippingLabelOrder.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              {/* Datos de Entrega / Destinatario */}
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Destinatario
+                  </span>
+                  <p className="font-bold text-sm text-slate-900">{shippingLabelOrder.clientName}</p>
+                  <p className="font-mono text-xs text-slate-700 mt-0.5">{shippingLabelOrder.clientPhone}</p>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Tipo de Entrega
+                  </span>
+                  <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-900 text-white">
+                    {shippingLabelOrder.shippingType === 'puebla_local' ? '📍 Entrega Local (Puebla)' : '📦 Paquetería Nacional'}
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-1 capitalize">
+                    Método de Pago: <strong>{shippingLabelOrder.paymentMethod}</strong>
+                  </p>
+                </div>
+
+                {/* Dirección o Referencias del Pedido */}
+                {(() => {
+                  const o = shippingLabelOrder as any;
+                  const addr = o.shippingAddress || o.address;
+                  if (addr) {
+                    return (
+                      <div className="col-span-2 pt-2 border-t border-slate-200">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          Dirección de Entrega
+                        </span>
+                        <p className="text-slate-800 font-medium">
+                          {addr.street || ''} {addr.number || ''}, Col. {addr.colonia || ''}, C.P. {addr.postalCode || addr.zip || ''}, {addr.city || 'Puebla'}, {addr.state || 'Puebla'}
+                        </p>
+                        {addr.references && (
+                          <p className="text-[10px] text-slate-500 italic mt-0.5">Ref: {addr.references}</p>
+                        )}
+                      </div>
+                    );
+                  }
+                  if (shippingLabelOrder.pickupPoint) {
+                    return (
+                      <div className="col-span-2 pt-2 border-t border-slate-200">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          Punto de Entrega Acordado
+                        </span>
+                        <p className="text-slate-800 font-medium">📍 {shippingLabelOrder.pickupPoint}</p>
+                      </div>
+                    );
+                  }
+                  if (shippingLabelOrder.notes) {
+                    return (
+                      <div className="col-span-2 pt-2 border-t border-slate-200">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                          Notas del Pedido / Entrega
+                        </span>
+                        <p className="text-slate-800 font-medium italic">{shippingLabelOrder.notes}</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+
+              {/* Lista de Empaque (Picking List) */}
+              <div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                  Artículos a Empacar (Picking List)
+                </span>
+                <table className="w-full text-left border border-slate-200 rounded-xl overflow-hidden">
+                  <thead className="bg-slate-100 text-slate-600 font-bold text-[10px] uppercase">
+                    <tr>
+                      <th className="py-2 px-3">Cant</th>
+                      <th className="py-2 px-3">Descripción</th>
+                      <th className="py-2 px-3 text-right">P. Unit</th>
+                      <th className="py-2 px-3 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-mono">
+                    {shippingLabelOrder.order_items?.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="py-2 px-3 font-bold text-slate-900">{item.quantity}x</td>
+                        <td className="py-2 px-3 font-sans text-slate-800">{item.product_title}</td>
+                        <td className="py-2 px-3 text-right">${item.price_at_sale?.toFixed(2) || '0.00'}</td>
+                        <td className="py-2 px-3 text-right font-bold">${((item.price_at_sale || 0) * item.quantity).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-50 font-bold">
+                      <td colSpan={3} className="py-2.5 px-3 text-right font-sans">Total del Pedido:</td>
+                      <td className="py-2.5 px-3 text-right font-mono text-sm text-[#E65F2B]">${shippingLabelOrder.total.toFixed(2)} MXN</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Notas de Empaque */}
+              <div className="border-t border-dashed border-slate-300 pt-3 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Inspeccionado y empacado por FoxDrop Team</span>
+                <span>¡Gracias por tu compra!</span>
+              </div>
+            </div>
+
+            {/* Footer con Botón Imprimir */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShippingLabelOrder(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-5 py-2.5 bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimir Etiqueta / Guardar PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. MODAL CORTE DE CAJA DIARIO (Z-REPORT)                 */}
+      {/* ======================================================== */}
+      {showZReportModal && (() => {
+        const selectedDateOrders = orders.filter(o => {
+          if (o.status === 'cancelled') return false;
+          if (!o.createdAt) return false;
+          const orderDate = new Date(o.createdAt).toISOString().split('T')[0];
+          return orderDate === zReportDate;
+        });
+
+        const posOrders = selectedDateOrders.filter(o => o.id.startsWith('FX-POS'));
+        const onlineOrders = selectedDateOrders.filter(o => !o.id.startsWith('FX-POS'));
+
+        const totalCash = posOrders.filter(o => o.paymentMethod === 'cash').reduce((acc, o) => acc + o.total, 0);
+        const totalCard = posOrders.filter(o => o.paymentMethod === 'card').reduce((acc, o) => acc + o.total, 0);
+        const totalSpei = selectedDateOrders.filter(o => o.paymentMethod === 'spei').reduce((acc, o) => acc + o.total, 0);
+
+        const totalDayRevenue = selectedDateOrders.reduce((acc, o) => acc + o.total, 0);
+        const totalDayCost = selectedDateOrders.reduce((acc, o) => {
+          const orderCost = o.order_items?.reduce((cAcc, it) => cAcc + ((it.product_cost || 0) * it.quantity), 0) || 0;
+          return acc + orderCost;
+        }, 0);
+        const totalDayProfit = totalDayRevenue - totalDayCost;
+
+        return (
+          <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              {/* Header */}
+              <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Receipt className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-bold text-sm">Corte de Caja Diario (Z-Report)</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowZReportModal(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Selector de Fecha */}
+              <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Fecha del Corte:</span>
+                <input
+                  type="date"
+                  value={zReportDate}
+                  onChange={e => setZReportDate(e.target.value)}
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:border-slate-400"
+                />
+              </div>
+
+              {/* Métricas del Día */}
+              <div className="p-6 overflow-y-auto space-y-5 text-xs">
+                {/* Resumen Principal */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Ventas del Día</span>
+                    <span className="text-xl font-black text-slate-900 font-mono">${totalDayRevenue.toFixed(2)}</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">{selectedDateOrders.length} transacciones</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Costo Estimado</span>
+                    <span className="text-xl font-black text-slate-600 font-mono">${totalDayCost.toFixed(2)}</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">Base + flete</span>
+                  </div>
+
+                  <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase block mb-1">Utilidad Neta</span>
+                    <span className="text-xl font-black text-emerald-700 font-mono">+${totalDayProfit.toFixed(2)}</span>
+                    <span className="text-[10px] text-emerald-600 block mt-0.5 font-bold">
+                      {totalDayRevenue > 0 ? `${((totalDayProfit / totalDayRevenue) * 100).toFixed(1)}% margen` : '0%'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Desglose por Método de Pago */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Desglose por Método de Cobro
+                  </span>
+                  <div className="space-y-1.5 font-mono">
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="font-sans text-slate-700 font-medium flex items-center gap-2">
+                        💵 Efectivo en Mostrador (POS):
+                      </span>
+                      <span className="font-bold text-slate-900">${totalCash.toFixed(2)} MXN</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="font-sans text-slate-700 font-medium flex items-center gap-2">
+                        💳 Tarjeta (Terminal POS):
+                      </span>
+                      <span className="font-bold text-slate-900">${totalCard.toFixed(2)} MXN</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <span className="font-sans text-slate-700 font-medium flex items-center gap-2">
+                        🏦 Transferencia SPEI (Web / Directo):
+                      </span>
+                      <span className="font-bold text-slate-900">${totalSpei.toFixed(2)} MXN</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Listado de Pedidos de la fecha */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Pedidos Registrados en {zReportDate} ({selectedDateOrders.length})
+                  </span>
+                  {selectedDateOrders.length === 0 ? (
+                    <div className="py-6 text-center text-slate-400 bg-slate-50 rounded-xl">
+                      No hay transacciones registradas en esta fecha.
+                    </div>
+                  ) : (
+                    <div className="max-h-44 overflow-y-auto space-y-1 divide-y divide-slate-100 border border-slate-200 rounded-xl p-2 bg-slate-50/50">
+                      {selectedDateOrders.map(o => (
+                        <div key={o.id} className="pt-1.5 first:pt-0 flex items-center justify-between text-[11px]">
+                          <div>
+                            <span className="font-mono font-bold text-slate-900">{o.id}</span>
+                            <span className="text-slate-500 font-sans ml-2">{o.clientName}</span>
+                          </div>
+                          <span className="font-mono font-bold text-slate-900">${o.total.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowZReportModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                >
+                  Cerrar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-emerald-400" />
+                  <span>Imprimir Corte de Caja</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
