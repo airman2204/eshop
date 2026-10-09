@@ -176,12 +176,21 @@ async function startWhatsApp() {
         }
       }
 
-      const cleanPhone = senderJid.replace(/@.+/, '');
-      const text = 
+      // Extraer texto o detectar stickers / imágenes
+      let text = 
         msg.message.conversation || 
         msg.message.extendedTextMessage?.text || 
         msg.message.imageMessage?.caption || 
         '';
+
+      let mediaType = undefined;
+      if (msg.message.stickerMessage) {
+        text = text || '👾 [Sticker]';
+        mediaType = 'sticker';
+      } else if (msg.message.imageMessage) {
+        text = text || '📷 [Foto]';
+        mediaType = 'image';
+      }
 
       const pushName = msg.pushName || 'Cliente WhatsApp';
 
@@ -200,15 +209,71 @@ async function startWhatsApp() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              type: 'message',
               phone: cleanPhone,
               lid: rawLid || undefined,
               text: text,
+              mediaType: mediaType,
               clientName: pushName,
               avatarUrl: avatarUrl || undefined,
             }),
           });
         } catch (err) {
           console.error('Error enviando mensaje al webhook de FoxDrop:', err.message);
+        }
+      }
+    }
+  });
+
+  // Escuchar cuando el contacto está escribiendo o en línea (presence.update)
+  sock.ev.on('presence.update', async ({ id, presences }) => {
+    if (!id || id.includes('@g.us')) return;
+    const cleanPhone = id.replace(/@.+/, '');
+    const presenceData = presences[id] || Object.values(presences)[0];
+    const isTyping = presenceData?.lastKnownPresence === 'composing';
+
+    if (WEBHOOK_URL) {
+      try {
+        await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'presence',
+            phone: cleanPhone,
+            isTyping: !!isTyping,
+            lastKnownPresence: presenceData?.lastKnownPresence || 'available',
+          }),
+        });
+      } catch (err) {}
+    }
+  });
+
+  // Escuchar confirmaciones de entrega y lectura (messages.update)
+  sock.ev.on('messages.update', async (updates) => {
+    for (const update of updates) {
+      if (update.update?.status) {
+        const jid = update.key?.remoteJid || '';
+        if (jid.includes('@g.us')) continue;
+        const cleanPhone = jid.replace(/@.+/, '');
+        const rawStatus = update.update.status; // 2=PENDING, 3=SERVER_ACK, 4=DELIVERY_ACK, 5=READ
+        
+        let statusString = 'sent';
+        if (rawStatus === 4 || rawStatus === 'DELIVERY_ACK') statusString = 'delivered';
+        if (rawStatus === 5 || rawStatus === 'READ') statusString = 'read';
+
+        if (WEBHOOK_URL) {
+          try {
+            await fetch(WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'receipt',
+                phone: cleanPhone,
+                status: statusString,
+                messageId: update.key?.id,
+              }),
+            });
+          } catch (err) {}
         }
       }
     }
@@ -375,8 +440,34 @@ app.post('/message/sendText', async (req, res) => {
       }
     }
 
-    const sent = await sock.sendMessage(targetJid, { text });
-    console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
+    let sent;
+    const isSticker = req.body.type === 'sticker' || (req.body.imageUrl && req.body.imageUrl.includes('sticker'));
+    if (isSticker && (req.body.imageUrl || req.body.url)) {
+      const stickerUrl = req.body.imageUrl || req.body.url;
+      try {
+        sent = await sock.sendMessage(targetJid, {
+          sticker: { url: stickerUrl }
+        });
+        console.log(`👾 Sticker enviado con éxito a ${targetJid}: ${stickerUrl}`);
+      } catch (stkErr) {
+        console.warn('Fallo enviando como sticker nativo, enviando como imagen:', stkErr.message);
+        sent = await sock.sendMessage(targetJid, {
+          image: { url: stickerUrl },
+          caption: text && !text.startsWith('[Sticker:') ? text : 'FoxDrop 🦊'
+        });
+      }
+    } else if (req.body.type === 'image' && (req.body.imageUrl || req.body.url)) {
+      const imgUrl = req.body.imageUrl || req.body.url;
+      sent = await sock.sendMessage(targetJid, {
+        image: { url: imgUrl },
+        caption: text || ''
+      });
+      console.log(`📷 Imagen enviada con éxito a ${targetJid}: ${imgUrl}`);
+    } else {
+      sent = await sock.sendMessage(targetJid, { text });
+      console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
+    }
+
     res.json({ success: true, messageId: sent.key.id, jid: targetJid });
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
