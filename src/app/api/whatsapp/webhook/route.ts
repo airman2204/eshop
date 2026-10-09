@@ -161,7 +161,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insertar mensaje en la conversación
-    const incomingMediaType = body.mediaType || undefined;
+    // La BD tiene CHECK (media_type IN ('image', 'document', 'audio')).
+    const incomingMediaType = body.mediaType === 'sticker' ? 'image' : (body.mediaType || undefined);
     const incomingMediaUrl = body.mediaUrl || undefined;
 
     const { error: msgErr } = await supabase

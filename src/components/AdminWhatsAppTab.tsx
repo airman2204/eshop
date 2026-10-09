@@ -70,14 +70,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
 
-  // Stickers oficiales de la marca FoxDrop
+  // Stickers oficiales de la marca FoxDrop (Colección Fox Ilustrado)
   const brandStickers = [
-    { id: 'fox_head', title: 'Fox Cabeza 3D', url: '/fox-logo-head-3d.png', desc: 'Logo 3D Fox' },
-    { id: 'fox_mascot_bag', title: 'Fox con Bolsa', url: '/fox-mascot-bag.png', desc: 'Entregando pedido' },
-    { id: 'fox_mascot_suitcase', title: 'Fox Maleta', url: '/fox-mascot-suitcase.png', desc: 'Importación USA' },
-    { id: 'fox_deals', title: 'Fox Ofertas', url: '/fox-mascot-deals-clean.png', desc: 'Oferta exclusiva' },
-    { id: 'fox_head_clean', title: 'Fox Oficial', url: '/fox-head-3d-clean.png', desc: 'Sello oficial' },
-    { id: 'fox_icon', title: 'FoxDrop Icon', url: '/foxdrop-icon-transparent.png', desc: 'Emblema Fox' },
+    { id: 'sticker_gracias_compra', title: '¡Gracias por tu compra!', url: '/stickers/sticker-gracias-compra.png', desc: 'Agradecimiento' },
+    { id: 'sticker_pedido_enviado', title: '¡Pedido enviado!', url: '/stickers/sticker-pedido-enviado.png', desc: 'Con amor y corazón' },
+    { id: 'sticker_pedido_camino', title: '¡Tu pedido va en camino!', url: '/stickers/sticker-pedido-camino-1.png', desc: 'Fox en moto rápida' },
+    { id: 'sticker_pago_recibido', title: '¡Pago recibido!', url: '/stickers/sticker-pago-recibido.png', desc: 'Confirmación de pago' },
+    { id: 'sticker_pago_caja', title: '¡Caja FoxDrop lista!', url: '/stickers/sticker-pago-caja.png', desc: 'Empaquetado FoxDrop' },
+    { id: 'sticker_descuento_etiqueta', title: '¡Descuento especial!', url: '/stickers/sticker-descuento-etiqueta.png', desc: 'Etiqueta % off' },
+    { id: 'sticker_descuentos_globos', title: '¡Descuentos en camino!', url: '/stickers/sticker-descuentos-globos.png', desc: 'Fiesta y globos' },
+    { id: 'sticker_gracias_porc', title: '¡Gracias & Promoción!', url: '/stickers/sticker-gracias-porc.png', desc: 'Fox guiño %' },
   ];
 
   // Colección de emojis más utilizados para ventas y atención al cliente

@@ -131,6 +131,10 @@ export async function sendWhatsAppMessageFromAdmin(params: {
     }
 
     // 2. Insertar el mensaje
+    // Nota: La base de datos tiene CHECK (media_type IN ('image', 'document', 'audio')).
+    // Si es un sticker, guardamos 'image' en media_type para no violar el check constraint.
+    const dbMediaType = params.mediaType === 'sticker' ? 'image' : params.mediaType;
+
     const { data: insertedMsg, error: msgErr }: any = await (supabase as any)
       .from('whatsapp_messages')
       .insert({
@@ -140,7 +144,7 @@ export async function sendWhatsAppMessageFromAdmin(params: {
         sender_name: params.senderName,
         text: params.text,
         media_url: params.mediaUrl,
-        media_type: params.mediaType,
+        media_type: dbMediaType,
         status: 'sent',
       })
       .select('*')
