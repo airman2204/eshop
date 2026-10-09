@@ -187,7 +187,12 @@ export default function AdminCRM() {
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, initialX: 0, initialY: 0 });
 
-  // Cargar y persistir posición de burbujas en localStorage
+  // Tamaño configurable de la ventana flotante de WhatsApp ('compact' | 'normal' | 'expanded' | 'custom')
+  const [floatingWhatsAppSize, setFloatingWhatsAppSize] = useState<'compact' | 'normal' | 'expanded'>('expanded');
+  // Tamaño configurable de la burbuja ('sm' | 'md' | 'lg')
+  const [bubbleSize, setBubbleSize] = useState<'sm' | 'md' | 'lg'>('md');
+
+  // Cargar y persistir posición y tamaños en localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('foxdrop_admin_bubble_pos');
@@ -197,6 +202,14 @@ export default function AdminCRM() {
           setBubblePos(parsed);
         }
       }
+      const savedWaSize = localStorage.getItem('foxdrop_wa_window_size') as any;
+      if (savedWaSize && ['compact', 'normal', 'expanded'].includes(savedWaSize)) {
+        setFloatingWhatsAppSize(savedWaSize);
+      }
+      const savedBubbleSize = localStorage.getItem('foxdrop_bubble_size') as any;
+      if (savedBubbleSize && ['sm', 'md', 'lg'].includes(savedBubbleSize)) {
+        setBubbleSize(savedBubbleSize);
+      }
     } catch {}
   }, []);
 
@@ -204,6 +217,20 @@ export default function AdminCRM() {
     setBubblePos(newPos);
     try {
       localStorage.setItem('foxdrop_admin_bubble_pos', JSON.stringify(newPos));
+    } catch {}
+  };
+
+  const updateFloatingWhatsAppSize = (size: 'compact' | 'normal' | 'expanded') => {
+    setFloatingWhatsAppSize(size);
+    try {
+      localStorage.setItem('foxdrop_wa_window_size', size);
+    } catch {}
+  };
+
+  const updateBubbleSize = (size: 'sm' | 'md' | 'lg') => {
+    setBubbleSize(size);
+    try {
+      localStorage.setItem('foxdrop_bubble_size', size);
     } catch {}
   };
 
@@ -9741,11 +9768,25 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             // Doble clic para restablecer al rincón original
             updateBubblePosition({ x: 0, y: 0 });
           }}
-          className="bg-slate-900/90 text-white/80 hover:text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold cursor-grab active:cursor-grabbing border border-white/20 shadow-lg flex items-center gap-1.5 transition active:scale-95 touch-none"
+          className="bg-slate-900/90 text-white/80 hover:text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold cursor-grab active:cursor-grabbing border border-white/20 shadow-lg flex items-center gap-1.5 transition active:scale-95 touch-none"
           title="Arrastra para mover o doble clic para restablecer posición"
         >
           <span>⠿</span>
-          <span>Mover</span>
+          <span className="hidden sm:inline">Mover</span>
+          <div className="flex items-center gap-0.5 ml-1 border-l border-white/20 pl-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const nextSize = bubbleSize === 'sm' ? 'md' : bubbleSize === 'md' ? 'lg' : 'sm';
+                updateBubbleSize(nextSize);
+              }}
+              className="text-[9px] text-emerald-400 hover:text-emerald-300 font-mono px-1 rounded hover:bg-white/10"
+              title={`Tamaño burbuja actual: ${bubbleSize.toUpperCase()}. Clic para cambiar.`}
+            >
+              {bubbleSize === 'sm' ? 'S' : bubbleSize === 'md' ? 'M' : 'G'}
+            </button>
+          </div>
         </div>
 
         {/* 1. Burbuja Flotante de Acceso Directo a WhatsApp Central */}
@@ -9762,13 +9803,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               setShowFloatingWhatsApp(!showFloatingWhatsApp);
             }}
             title="Abrir WhatsApp en ventana flotante"
-            className={`w-13 h-13 rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
+            className={`rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
+              bubbleSize === 'sm'
+                ? 'w-10 h-10'
+                : bubbleSize === 'lg'
+                ? 'w-16 h-16'
+                : 'w-13 h-13'
+            } ${
               showFloatingWhatsApp
                 ? 'bg-gradient-to-tr from-emerald-700 to-teal-600 border-emerald-300 ring-4 ring-emerald-400/50 scale-105'
                 : 'bg-gradient-to-tr from-emerald-600 to-teal-500 border-white hover:scale-105'
             }`}
           >
-            <MessageSquare className="w-6 h-6 drop-shadow" />
+            <MessageSquare className={`drop-shadow ${
+              bubbleSize === 'sm' ? 'w-4 h-4' : bubbleSize === 'lg' ? 'w-7 h-7' : 'w-6 h-6'
+            }`} />
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-900 flex items-center justify-center">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
             </span>
@@ -9790,7 +9839,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               setFloatingFoxMinimised(false);
             }}
             title="Abrir asistente Fox en ventana flotante"
-            className={`w-13 h-13 rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
+            className={`rounded-full text-white flex items-center justify-center shadow-2xl border-2 transition-all duration-200 cursor-pointer relative active:scale-95 ${
+              bubbleSize === 'sm'
+                ? 'w-10 h-10'
+                : bubbleSize === 'lg'
+                ? 'w-16 h-16'
+                : 'w-13 h-13'
+            } ${
               showFloatingFox
                 ? 'bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 border-amber-300 ring-4 ring-orange-400/50 scale-105'
                 : 'bg-gradient-to-tr from-[#E65F2B] via-[#FF8A00] to-amber-500 border-white hover:scale-105'
@@ -9799,7 +9854,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <img
               src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
               alt="Fox"
-              className="w-8 h-8 object-contain drop-shadow select-none pointer-events-none"
+              className={`object-contain drop-shadow select-none pointer-events-none ${
+                bubbleSize === 'sm' ? 'w-5 h-5' : bubbleSize === 'lg' ? 'w-10 h-10' : 'w-8 h-8'
+              }`}
             />
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-slate-900 flex items-center justify-center">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
@@ -9813,17 +9870,63 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* VENTANA FLOTANTE 1: WHATSAPP CENTRAL (SIN SALIR DE TU PESTAÑA) */}
       {/* ======================================================== */}
       {showFloatingWhatsApp && crmSubTab !== 'whatsapp' && (
-        <div className="fixed inset-0 sm:inset-auto sm:bottom-4 sm:right-6 md:right-10 z-50 w-full sm:w-[680px] md:w-[860px] lg:w-[980px] xl:w-[1080px] max-w-[96vw] h-full sm:h-[680px] max-h-[92vh] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+        <div className={`fixed inset-0 sm:inset-auto sm:bottom-4 sm:right-6 md:right-10 z-50 max-w-[98vw] max-h-[95vh] bg-white sm:rounded-3xl shadow-2xl sm:border border-slate-300 flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200 transition-all ${
+          floatingWhatsAppSize === 'compact'
+            ? 'w-full sm:w-[500px] md:w-[580px] h-full sm:h-[540px]'
+            : floatingWhatsAppSize === 'normal'
+            ? 'w-full sm:w-[680px] md:w-[780px] h-full sm:h-[640px]'
+            : 'w-full sm:w-[780px] md:w-[940px] lg:w-[1100px] h-full sm:h-[720px]'
+        }`}>
           {/* Barra de título de la ventana flotante */}
-          <div className="bg-[#0F3E36] text-white px-4 py-2.5 flex items-center justify-between shadow-xs select-none">
+          <div className="bg-[#0F3E36] text-white px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between shadow-xs select-none">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
               <span className="font-extrabold text-xs tracking-wide">WhatsApp Central • FoxDrop</span>
-              <span className="text-[10px] text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full font-bold">
+              <span className="hidden sm:inline-block text-[10px] text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full font-bold">
                 Ventana Flotante
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              {/* Selector de tamaño de ventana: Compacto (S), Mediano (M), Grande (G) */}
+              <div className="hidden sm:flex items-center bg-emerald-950/60 rounded-lg p-0.5 border border-emerald-800/60 mr-1">
+                <button
+                  type="button"
+                  onClick={() => updateFloatingWhatsAppSize('compact')}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
+                    floatingWhatsAppSize === 'compact'
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                  title="Tamaño Compacto (más pequeño para multitarea)"
+                >
+                  Chico
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateFloatingWhatsAppSize('normal')}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
+                    floatingWhatsAppSize === 'normal'
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                  title="Tamaño Mediano"
+                >
+                  Medio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateFloatingWhatsAppSize('expanded')}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
+                    floatingWhatsAppSize === 'expanded'
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                      : 'text-emerald-300 hover:text-white'
+                  }`}
+                  title="Tamaño Grande (máxima amplitud para leer y redactar mensajes)"
+                >
+                  Grande
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -9831,7 +9934,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   setCrmSubTab('whatsapp');
                 }}
                 className="text-xs text-emerald-200 hover:text-white px-2 py-0.5 rounded-lg hover:bg-emerald-800/60 transition cursor-pointer"
-                title="Maximizar a sección completa"
+                title="Maximizar a pantalla completa de CRM"
               >
                 Abrir en Grande ↗
               </button>
