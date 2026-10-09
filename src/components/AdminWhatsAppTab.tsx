@@ -398,19 +398,18 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       )
       .subscribe();
 
-    // Polling ligero cada 8 segundos para asegurar sincronización en celulares si el WebSocket se pausa en background
+    // Polling cada 4 segundos para asegurar sincronización instantánea de palomitas y mensajes en vivo
     const pollInterval = setInterval(() => {
       loadChats(false);
       const currentActive = activeChatRef.current;
       if (currentActive) {
         getWhatsAppMessages(currentActive.id).then(msgs => {
-          setMessages(prev => {
-            if (msgs.length > prev.length) return msgs;
-            return prev;
-          });
+          if (msgs && msgs.length > 0) {
+            setMessages(msgs);
+          }
         });
       }
-    }, 8000);
+    }, 4000);
 
     return () => {
       clearInterval(pollInterval);
