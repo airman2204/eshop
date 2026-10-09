@@ -70,16 +70,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
 
-  // Stickers oficiales de la marca FoxDrop (Colección Fox Ilustrado)
+  // Stickers oficiales de la marca FoxDrop (Colección Fox Ilustrado en formato nativo WebP 512x512)
   const brandStickers = [
-    { id: 'sticker_gracias_compra', title: '¡Gracias por tu compra!', url: '/stickers/sticker-gracias-compra.png', desc: 'Agradecimiento' },
-    { id: 'sticker_pedido_enviado', title: '¡Pedido enviado!', url: '/stickers/sticker-pedido-enviado.png', desc: 'Con amor y corazón' },
-    { id: 'sticker_pedido_camino', title: '¡Tu pedido va en camino!', url: '/stickers/sticker-pedido-camino-1.png', desc: 'Fox en moto rápida' },
-    { id: 'sticker_pago_recibido', title: '¡Pago recibido!', url: '/stickers/sticker-pago-recibido.png', desc: 'Confirmación de pago' },
-    { id: 'sticker_pago_caja', title: '¡Caja FoxDrop lista!', url: '/stickers/sticker-pago-caja.png', desc: 'Empaquetado FoxDrop' },
-    { id: 'sticker_descuento_etiqueta', title: '¡Descuento especial!', url: '/stickers/sticker-descuento-etiqueta.png', desc: 'Etiqueta % off' },
-    { id: 'sticker_descuentos_globos', title: '¡Descuentos en camino!', url: '/stickers/sticker-descuentos-globos.png', desc: 'Fiesta y globos' },
-    { id: 'sticker_gracias_porc', title: '¡Gracias & Promoción!', url: '/stickers/sticker-gracias-porc.png', desc: 'Fox guiño %' },
+    { id: 'sticker_gracias_compra', title: '¡Gracias por tu compra!', url: '/stickers/sticker-gracias-compra.webp', desc: 'Agradecimiento' },
+    { id: 'sticker_pedido_enviado', title: '¡Pedido enviado!', url: '/stickers/sticker-pedido-enviado.webp', desc: 'Con amor y corazón' },
+    { id: 'sticker_pedido_camino', title: '¡Tu pedido va en camino!', url: '/stickers/sticker-pedido-camino-1.webp', desc: 'Fox en moto rápida' },
+    { id: 'sticker_pago_recibido', title: '¡Pago recibido!', url: '/stickers/sticker-pago-recibido.webp', desc: 'Confirmación de pago' },
+    { id: 'sticker_pago_caja', title: '¡Caja FoxDrop lista!', url: '/stickers/sticker-pago-caja.webp', desc: 'Empaquetado FoxDrop' },
+    { id: 'sticker_descuento_etiqueta', title: '¡Descuento especial!', url: '/stickers/sticker-descuento-etiqueta.webp', desc: 'Etiqueta % off' },
+    { id: 'sticker_descuentos_globos', title: '¡Descuentos en camino!', url: '/stickers/sticker-descuentos-globos.webp', desc: 'Fiesta y globos' },
+    { id: 'sticker_gracias_porc', title: '¡Gracias & Promoción!', url: '/stickers/sticker-gracias-porc.webp', desc: 'Fox guiño %' },
   ];
 
   // Colección de emojis más utilizados para ventas y atención al cliente

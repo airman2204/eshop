@@ -484,18 +484,30 @@ app.post('/message/sendText', async (req, res) => {
     let sent;
     const isSticker = req.body.type === 'sticker' || (req.body.imageUrl && req.body.imageUrl.includes('sticker'));
     if (isSticker && (req.body.imageUrl || req.body.url)) {
-      const stickerUrl = req.body.imageUrl || req.body.url;
+      const stickerUrl = (req.body.imageUrl || req.body.url).replace('.png', '.webp');
       try {
+        // Descargar buffer del WebP para entregárselo directamente a Baileys sin depender de fetch interno
+        const imgRes = await fetch(stickerUrl);
+        if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status} al descargar sticker`);
+        const arrayBuf = await imgRes.arrayBuffer();
+        const stickerBuffer = Buffer.from(arrayBuf);
+
         sent = await sock.sendMessage(targetJid, {
-          sticker: { url: stickerUrl }
+          sticker: stickerBuffer
         });
-        console.log(`👾 Sticker enviado con éxito a ${targetJid}: ${stickerUrl}`);
+        console.log(`👾 Sticker enviado con éxito a ${targetJid} (${stickerBuffer.length} bytes): ${stickerUrl}`);
       } catch (stkErr) {
-        console.warn('Fallo enviando como sticker nativo, enviando como imagen:', stkErr.message);
-        sent = await sock.sendMessage(targetJid, {
-          image: { url: stickerUrl },
-          caption: text && !text.startsWith('[Sticker:') ? text : 'FoxDrop 🦊'
-        });
+        console.warn('Fallo enviando como buffer de sticker, reintentando con url o imagen:', stkErr.message);
+        try {
+          sent = await sock.sendMessage(targetJid, {
+            sticker: { url: stickerUrl }
+          });
+        } catch {
+          sent = await sock.sendMessage(targetJid, {
+            image: { url: (req.body.imageUrl || req.body.url) },
+            caption: text && !text.startsWith('[Sticker:') ? text : 'FoxDrop 🦊'
+          });
+        }
       }
     } else if (req.body.type === 'image' && (req.body.imageUrl || req.body.url)) {
       const imgUrl = req.body.imageUrl || req.body.url;
