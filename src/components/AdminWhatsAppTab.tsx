@@ -50,6 +50,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const resolvedPartner = adminSessionName?.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
   const [partnerName, setPartnerName] = useState<'Mario' | 'Nydia'>(resolvedPartner);
 
+  // Modo Agente Híbrido ('agent' = responde IA, 'manual' = control de Mario/Nydia)
+  const [chatAgentMode, setChatAgentMode] = useState<'agent' | 'manual'>('agent');
+  const [togglingAgent, setTogglingAgent] = useState(false);
+
+  // Sugerencias de respuesta rápida del Agente (copiloto 1-clic)
+  const [quickSuggestions, setQuickSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
   useEffect(() => {
     if (adminSessionName) {
       const p = adminSessionName.toLowerCase().includes('nydia') ? 'Nydia' : 'Mario';
@@ -263,15 +271,42 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       setChats(prev => prev.map(c => c.id === chat.id ? { ...c, unreadCount: 0 } : c));
     }
 
+    // Leer modo actual del chat (Agente o Manual)
+    let parsedNotes: any = {};
+    if (chat.notes) {
+      try {
+        parsedNotes = typeof chat.notes === 'string' ? JSON.parse(chat.notes) : chat.notes;
+      } catch {}
+    }
+    const currentMode = parsedNotes?.agentMode === 'manual' ? 'manual' : 'agent';
+    setChatAgentMode(currentMode);
+
+    // Cargar sugerencias de respuesta rápida del Agente si hay un último mensaje
+    if (chat.lastMessage) {
+      setLoadingSuggestions(true);
+      fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'quick_reply_suggestions',
+          phone: chat.phone,
+          clientName: chat.clientName,
+          lastMessage: chat.lastMessage,
+        }),
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d?.suggestions) setQuickSuggestions(d.suggestions);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingSuggestions(false));
+    } else {
+      setQuickSuggestions([]);
+    }
+
     // Suscribir al bridge para escuchar eventos de presence (escribiendo...) de este contacto
     try {
-      let lidVal: string | undefined;
-      if (chat.notes) {
-        try {
-          const parsed = typeof chat.notes === 'string' ? JSON.parse(chat.notes) : chat.notes;
-          lidVal = parsed?.lid;
-        } catch {}
-      }
+      const lidVal = parsedNotes?.lid;
       fetch('https://foxdrop-whatsapp-bridge.onrender.com/chat/subscribePresence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -953,6 +988,58 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
             {/* Acciones de la cabecera */}
             <div className="flex items-center gap-1.5">
+              {/* Botón Interruptor Híbrido: Agente / Modo Manual */}
+              <button
+                type="button"
+                disabled={togglingAgent}
+                onClick={async () => {
+                  if (!activeChat) return;
+                  const newMode = chatAgentMode === 'agent' ? 'manual' : 'agent';
+                  setTogglingAgent(true);
+                  try {
+                    const res = await fetch('/api/admin/agent', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        action: 'toggle_chat_agent_mode',
+                        chatId: activeChat.id,
+                        agentMode: newMode,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setChatAgentMode(newMode);
+                      try { soundManager.triggerHaptic('light'); } catch {}
+                    }
+                  } catch (err) {
+                    console.error('Error cambiando modo del agente:', err);
+                  } finally {
+                    setTogglingAgent(false);
+                  }
+                }}
+                className={`text-xs font-black px-2.5 sm:px-3 py-1.5 rounded-xl border transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                  chatAgentMode === 'agent'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white border-emerald-500 hover:brightness-110'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                }`}
+                title={
+                  chatAgentMode === 'agent'
+                    ? 'Agente FoxBot Activo: Responde automáticamente 24/7. Clic para pasar a Modo Manual.'
+                    : 'Modo Manual Activo: El Agente está en pausa para que atiendas personalmente. Clic para reactivar Agente.'
+                }
+              >
+                {chatAgentMode === 'agent' ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-200 animate-pulse"></span>
+                    <span>🤖 Agente Activo</span>
+                  </>
+                ) : (
+                  <>
+                    <span>👤 Modo Manual</span>
+                  </>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setIsFullscreen(!isFullscreen)}
@@ -1244,6 +1331,30 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Barra de Sugerencias Rápidas del Agente (Copiloto en 1 Clic) */}
+          {quickSuggestions.length > 0 && (
+            <div className="px-3 pt-2 pb-1 bg-slate-50 border-t border-slate-200/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <span>🤖</span>
+                <span className="hidden sm:inline">Sugerencias:</span>
+              </span>
+              {quickSuggestions.map((sug, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setInputText(sug);
+                    try { soundManager.triggerHaptic('light'); } catch {}
+                  }}
+                  className="bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-900 border border-slate-200 hover:border-emerald-300 text-[11px] font-semibold px-2.5 py-1 rounded-xl transition shrink-0 max-w-xs truncate shadow-2xs cursor-pointer"
+                  title="Clic para pegar esta respuesta"
+                >
+                  {sug}
+                </button>
+              ))}
             </div>
           )}
 

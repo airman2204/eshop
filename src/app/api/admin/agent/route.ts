@@ -523,6 +523,53 @@ ${storeContext}`;
       return NextResponse.json({ error: "Tipo de acción no soportada" }, { status: 400 });
     }
 
+    // ── 6. SUGERENCIAS DE RESPUESTA RÁPIDA (COPILOTO DE WHATSAPP) ──
+    if (action === "quick_reply_suggestions") {
+      const { phone, clientName, lastMessage } = body;
+      const { generateQuickReplySuggestions } = await import("@/lib/whatsappAgent");
+      const suggestions = await generateQuickReplySuggestions({
+        phone: phone || "",
+        clientName: clientName || "Cliente",
+        lastMessage: lastMessage || "",
+      });
+      return NextResponse.json({ success: true, suggestions });
+    }
+
+    // ── 7. CAMBIAR MODO DEL AGENTE EN UN CHAT (HÍBRIDO / MANUAL) ──
+    if (action === "toggle_chat_agent_mode") {
+      const { chatId, agentMode } = body; // 'agent' | 'manual'
+      if (!chatId) return NextResponse.json({ error: "chatId requerido" }, { status: 400 });
+
+      const { data: chatRow } = await supabase
+        .from("whatsapp_chats")
+        .select("notes")
+        .eq("id", chatId)
+        .maybeSingle();
+
+      let notesObj: any = {};
+      try {
+        notesObj = typeof chatRow?.notes === "string" ? JSON.parse(chatRow.notes) : (chatRow?.notes || {});
+      } catch {}
+
+      notesObj.agentMode = agentMode;
+      if (agentMode === "manual") {
+        // Pausar agente por 2 horas o hasta que el admin decida reactivar
+        notesObj.manualUntil = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+      } else {
+        delete notesObj.manualUntil;
+      }
+
+      await supabase
+        .from("whatsapp_chats")
+        .update({
+          notes: JSON.stringify(notesObj),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", chatId);
+
+      return NextResponse.json({ success: true, agentMode });
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (error: any) {
     console.error("Error en /api/admin/agent:", error);

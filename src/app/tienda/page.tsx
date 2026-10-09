@@ -1196,6 +1196,8 @@ export default function TiendaFoxDrop() {
             clientName: user?.name || "Cliente",
             clientPhone: user?.phone,
             total: cartTotal,
+            shippingType: isPersonalDelivery ? "agreed_pickup" : "puebla_local",
+            pickupPoint: isPersonalDelivery ? "Entrega personal / Acordar punto" : `${shippingAddress.street}, ${shippingAddress.city}`,
           }),
         }).catch(err => console.warn("WhatsApp notification error:", err));
       }

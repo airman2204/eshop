@@ -182,6 +182,111 @@ export async function POST(req: NextRequest) {
 
     if (msgErr) throw msgErr;
 
+    // 3. AGENTE HÍBRIDO DE WHATSAPP:
+    // Si el chat tiene activado el modo 'agent' (o por defecto si no está pausado por un humano en los últimos 30 min)
+    try {
+      let chatNotes: any = {};
+      try {
+        chatNotes = typeof chat?.notes === "string" ? JSON.parse(chat?.notes) : (chat?.notes || {});
+      } catch {}
+
+      const agentMode = chatNotes.agentMode !== false && chatNotes.agentMode !== "manual";
+      const manualUntil = chatNotes.manualUntil ? new Date(chatNotes.manualUntil).getTime() : 0;
+      const isManualPaused = Date.now() < manualUntil;
+
+      // Si el agente está activo y no hay pausa manual activa
+      if (agentMode && !isManualPaused && !text.startsWith("[Sticker")) {
+        // Ejecutar en background para no demorar la respuesta HTTP al webhook
+        (async () => {
+          try {
+            const { generateAgentWhatsAppReply } = await import("@/lib/whatsappAgent");
+            const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
+            const bridgeApiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
+
+            // Simular presencia "composing" (escribiendo) en WhatsApp para realismo
+            try {
+              let targetForPresence = cleanPhone;
+              if (chatNotes.lid) targetForPresence = `${chatNotes.lid}@lid`;
+              await fetch(`${bridgeUrl}/chat/subscribePresence`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: targetForPresence }),
+              }).catch(() => {});
+            } catch {}
+
+            // Pequeña espera de 1.5s para simular lectura y digitación humana
+            await new Promise((r) => setTimeout(r, 1500));
+
+            const agentRes = await generateAgentWhatsAppReply({
+              phone: cleanPhone,
+              clientName,
+              incomingMessage: text,
+            });
+
+            if (agentRes?.reply) {
+              // 1. Guardar mensaje del agente en Supabase
+              await (supabase as any).from("whatsapp_messages").insert({
+                chat_id: chatId,
+                phone: cleanPhone,
+                sender: "admin",
+                sender_name: "FoxBot 🦊 (Agente)",
+                text: agentRes.reply,
+                status: "delivered",
+              });
+
+              await (supabase as any).from("whatsapp_chats").update({
+                last_message: agentRes.reply,
+                last_message_time: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }).eq("id", chatId);
+
+              // 2. Enviar por el bridge
+              let targetToSend = cleanPhone;
+              if (chatNotes.lid) targetToSend = `${chatNotes.lid}@lid`;
+              if (!targetToSend.includes("@lid")) {
+                const digits = cleanPhone.replace(/\D/g, "");
+                if (digits.startsWith("52") && digits.length === 12 && !digits.startsWith("521")) {
+                  targetToSend = `521${digits.slice(2)}`;
+                }
+              }
+
+              await fetch(`${bridgeUrl}/message/sendText`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(bridgeApiKey ? { apikey: bridgeApiKey, Authorization: `Bearer ${bridgeApiKey}` } : {}),
+                },
+                body: JSON.stringify({
+                  number: targetToSend,
+                  text: agentRes.reply,
+                }),
+              });
+
+              // 3. Si sugirió sticker, enviarlo
+              if (agentRes.suggestedSticker) {
+                await fetch(`${bridgeUrl}/message/sendText`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(bridgeApiKey ? { apikey: bridgeApiKey, Authorization: `Bearer ${bridgeApiKey}` } : {}),
+                  },
+                  body: JSON.stringify({
+                    number: targetToSend,
+                    type: "sticker",
+                    imageUrl: agentRes.suggestedSticker,
+                  }),
+                });
+              }
+            }
+          } catch (agentErr) {
+            console.error("Error en ejecución del Agente de WhatsApp:", agentErr);
+          }
+        })();
+      }
+    } catch (agentCheckErr) {
+      console.warn("Aviso en verificación de Agente:", agentCheckErr);
+    }
+
     return NextResponse.json({ success: true, chatId });
   } catch (error: any) {
     console.error("Error en webhook de WhatsApp:", error);

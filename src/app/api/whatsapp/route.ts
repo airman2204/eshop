@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { notifyOrderConfirmed, notifyOrderStatusUpdate, notifyAbandonedCartRecovery } from "@/lib/whatsapp";
+import { notifyAbandonedCartRecovery } from "@/lib/whatsapp";
+import { dispatchOrderStatusNotification } from "@/lib/orderNotifications";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,9 +13,30 @@ export async function POST(req: NextRequest) {
 
     let result;
     if (action === "order_confirmed") {
-      result = await notifyOrderConfirmed(orderNumber, clientName || "Cliente", clientPhone, total || 0);
+      result = await dispatchOrderStatusNotification({
+        orderId: orderNumber,
+        clientName: clientName || "Cliente",
+        clientPhone,
+        newStatus: "pending",
+        shippingType: body.shippingType || "puebla_local",
+        pickupPoint: body.pickupPoint,
+        total: total || 0,
+        notes: body.notes,
+      });
     } else if (action === "status_update") {
-      result = await notifyOrderStatusUpdate(orderNumber, clientName || "Cliente", clientPhone, newStatus);
+      result = await dispatchOrderStatusNotification({
+        orderId: orderNumber,
+        clientName: clientName || "Cliente",
+        clientPhone,
+        newStatus,
+        shippingType: body.shippingType,
+        pickupPoint: body.pickupPoint,
+        total: total || 0,
+        trackingNumber: body.trackingNumber,
+        shippingCompany: body.shippingCompany,
+        notes: body.notes,
+        loyaltyStars: body.loyaltyStars,
+      });
     } else if (action === "cart_recovery") {
       result = await notifyAbandonedCartRecovery(clientName || "Cliente", clientPhone, discountCode);
     } else {

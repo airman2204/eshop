@@ -1960,6 +1960,11 @@ export default function AdminCRM() {
             clientName: targetOrder.clientName,
             clientPhone: targetOrder.clientPhone,
             newStatus,
+            shippingType: targetOrder.shippingType,
+            pickupPoint: targetOrder.pickupPoint,
+            total: targetOrder.total,
+            trackingNumber: targetOrder.trackingNumber,
+            notes: notes || targetOrder.notes,
           }),
         }).catch(e => console.warn("WhatsApp status update error:", e));
       }
