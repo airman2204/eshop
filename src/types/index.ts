@@ -308,3 +308,27 @@ export interface WhatsAppMessage {
   mediaType?: 'image' | 'sticker' | 'document' | 'audio';
   createdAt: string;
 }
+
+export interface WhatsAppStatusItem {
+  id: string;
+  authorName: string;
+  authorPhone: string;
+  authorAvatar?: string;
+  isMyStatus?: boolean;
+  mediaUrl: string;
+  caption?: string;
+  createdAt: string;
+  viewed?: boolean;
+}
+
+export interface WhatsAppCallRecord {
+  id: string;
+  clientName: string;
+  phone: string;
+  avatarUrl?: string;
+  type: 'incoming' | 'outgoing' | 'missed';
+  callType: 'voice' | 'video';
+  timestamp: string;
+  duration?: string;
+}
+
