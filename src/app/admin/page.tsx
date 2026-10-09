@@ -9698,9 +9698,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       )}
 
       {/* ======================================================== */}
-      {/* BURBUJAS FLOTANTES MOVILES: WHATSAPP Y ASISTENTE FOX     */}
-      {/* Ocultas dentro de la pestaña de WhatsApp para evitar colisiones visuales */}
-      {/* ======================================================== */}
+      {/* BURBUJAS FLOTANTES: WHATSAPP Y ASISTENTE FOX */}
+      {/* Ocultas en móvil (<768px) para no tapar texto ni botones táctiles */}
       {crmSubTab !== 'whatsapp' && (
         <aside
           aria-label="Accesos directos flotantes"
@@ -9708,7 +9707,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             transform: `translate3d(${bubblePos.x}px, ${bubblePos.y}px, 0)`,
             touchAction: 'none',
           }}
-          className="fixed bottom-20 md:bottom-8 right-3 sm:right-6 z-50 flex flex-col items-center gap-2 select-none"
+          className="hidden md:flex fixed bottom-8 right-6 z-50 flex-col items-center gap-2 select-none"
         >
         {/* Manija de arrastre / Grip superior táctil */}
         <div

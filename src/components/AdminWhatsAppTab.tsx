@@ -8,7 +8,7 @@ import {
   Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings,
   Smile, Image as ImageIcon, Video, PhoneCall, CircleDot, Radio,
   Users, Archive, MoreVertical, Plus, Info, ChevronDown, PhoneOutgoing,
-  PhoneIncoming, PhoneMissed, Play, Paperclip
+  PhoneIncoming, PhoneMissed, Play, Paperclip, Zap
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile, WhatsAppStatusItem, WhatsAppCallRecord } from '@/types';
 import { 
@@ -76,9 +76,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Filtros rápidos
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'with_orders'>('all');
 
-  // Selector de Emojis y Stickers de Marca FoxDrop
+  // Selector de Emojis, Stickers de Marca FoxDrop y Plantillas Rápidas
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [showTemplatesMenu, setShowTemplatesMenu] = useState(false);
+  const [previewMediaModal, setPreviewMediaModal] = useState<string | null>(null);
 
   // Stickers oficiales de la marca FoxDrop (Colección Fox Ilustrado en formato nativo WebP 512x512)
   const brandStickers = [
@@ -1318,12 +1320,13 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       {activeChat ? (
         <div className="flex-1 flex flex-col bg-[#0B141A] relative overflow-hidden">
           
-          {/* Cabecera del Chat Activo Dark Mode */}
-          <div className="p-3 bg-[#202C33] border-b border-[#222E35] flex items-center justify-between shadow-md z-10">
+          {/* Cabecera del Chat Activo Dark Mode con Safe Area para Notch/Dynamic Island */}
+          <div className="p-3 pt-3 md:pt-3 bg-[#202C33] border-b border-[#222E35] flex items-center justify-between shadow-md z-10 safe-area-top">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setActiveChat(null)}
-                className="md:hidden p-1.5 text-[#AEBAC1] hover:text-[#E9EDEF] rounded-lg"
+                className="md:hidden p-2 -ml-1 text-[#AEBAC1] hover:text-[#E9EDEF] rounded-xl hover:bg-[#2A3942] transition cursor-pointer"
+                title="Regresar a conversaciones"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -1437,7 +1440,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
           {/* Área de Mensajes con Fondo Doodles Oscuro Oficial WhatsApp */}
           <div 
-            className="flex-1 overflow-y-auto p-4 space-y-3 relative"
+            className="flex-1 overflow-y-auto p-4 space-y-3 relative overscroll-contain"
             style={{
               backgroundImage: `radial-gradient(#202C33 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
@@ -1490,7 +1493,9 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                             <img 
                               src={msg.mediaUrl} 
                               alt="Media WhatsApp" 
-                              className="w-48 max-h-64 object-contain rounded-xl mx-auto"
+                              onClick={() => setPreviewMediaModal(msg.mediaUrl!)}
+                              className="w-48 max-h-64 object-contain rounded-xl mx-auto cursor-pointer hover:opacity-95 transition shadow-sm active:scale-98"
+                              title="Toca para ver en pantalla completa"
                             />
                           ) : (
                             <div className="p-3 text-center">👾 [Sticker]</div>
@@ -1525,70 +1530,121 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Plantillas Rápidas Dark */}
-          <div className="bg-[#202C33] border-t border-[#222E35] px-4 py-2 flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold text-[#E9EDEF] no-scrollbar">
-            <span className="text-[#8696A0] shrink-0 text-[10px] uppercase">Plantillas:</span>
-            <button
-              type="button"
-              onClick={() => handleSendQuickTemplate(`¡Hola ${activeChat.clientName}! 🦊 Te confirmamos que tu pedido en FoxDrop ya está preparado. ¡Gracias por tu compra!`)}
-              className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF]"
-            >
-              📦 Confirmar Pedido
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSendQuickTemplate(`¡Hola ${activeChat.clientName}! Tu paquete ya va en camino con el repartidor. Te contactará al llegar a tu dirección 🚚`)}
-              className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF]"
-            >
-              🚚 En Camino
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSendQuickTemplate(`¡Hola! Con gusto te apoyamos. ¿En qué podemos ayudarte el día de hoy en FoxDrop?`)}
-              className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF]"
-            >
-              👋 Saludo Soporte
-            </button>
-          </div>
+          {/* Menú Flotante de Plantillas Rápidas (Desplegable en Móvil para no robar espacio de pantalla) */}
+          {showTemplatesMenu && (
+            <div className="bg-[#202C33] border-t border-[#222E35] p-2.5 px-3 flex items-center gap-1.5 overflow-x-auto text-[11px] font-bold text-[#E9EDEF] no-scrollbar animate-in slide-in-from-bottom-2 duration-150">
+              <span className="text-[#8696A0] shrink-0 text-[10px] uppercase flex items-center gap-1">
+                <Zap className="w-3 h-3 text-[#00A884]" /> Respuestas:
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSendQuickTemplate(`¡Hola ${activeChat.clientName}! 🦊 Te confirmamos que tu pedido en FoxDrop ya está preparado. ¡Gracias por tu compra!`);
+                  setShowTemplatesMenu(false);
+                }}
+                className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF] cursor-pointer"
+              >
+                📦 Confirmar Pedido
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSendQuickTemplate(`¡Hola ${activeChat.clientName}! Tu paquete ya va en camino con el repartidor. Te contactará al llegar a tu dirección 🚚`);
+                  setShowTemplatesMenu(false);
+                }}
+                className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF] cursor-pointer"
+              >
+                🚚 En Camino
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleSendQuickTemplate(`¡Hola! Con gusto te apoyamos. ¿En qué podemos ayudarte el día de hoy en FoxDrop?`);
+                  setShowTemplatesMenu(false);
+                }}
+                className="bg-[#111B21] hover:bg-[#2A3942] border border-[#222E35] px-2.5 py-1 rounded-lg shrink-0 transition text-[#E9EDEF] cursor-pointer"
+              >
+                👋 Saludo Soporte
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowTemplatesMenu(false)}
+                className="p-1 text-[#8696A0] hover:text-[#E9EDEF] rounded-md shrink-0 ml-auto"
+                title="Cerrar plantillas"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
-          {/* Barra de Entrada / Input Dark Mode */}
-          <form onSubmit={handleSendMessage} className="p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-2">
+          {/* Barra de Entrada / Input Dark Mode Compacta para Teclado */}
+          <form onSubmit={handleSendMessage} className="p-2 sm:p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-1.5 sm:gap-2 safe-area-bottom">
+            {/* Botón Emojis */}
             <button
               type="button"
               onClick={() => {
                 setShowEmojiPicker(!showEmojiPicker);
                 setShowStickerPicker(false);
+                setShowTemplatesMenu(false);
               }}
-              className="p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition"
+              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer"
               title="Emojis"
             >
               <Smile className="w-5 h-5" />
             </button>
 
+            {/* Botón Stickers */}
             <button
               type="button"
               onClick={() => {
                 setShowStickerPicker(!showStickerPicker);
                 setShowEmojiPicker(false);
+                setShowTemplatesMenu(false);
               }}
-              className="p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition"
+              className="p-1.5 sm:p-2 text-[#8696A0] hover:text-[#E9EDEF] rounded-full transition cursor-pointer"
               title="Stickers FoxDrop"
             >
-              <span className="text-lg">🦊</span>
+              <span className="text-base sm:text-lg">🦊</span>
             </button>
 
+            {/* Botón Plantillas Rápidas (Rayo ⚡) */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowTemplatesMenu(!showTemplatesMenu);
+                setShowEmojiPicker(false);
+                setShowStickerPicker(false);
+              }}
+              className={`p-1.5 sm:p-2 rounded-full transition cursor-pointer ${
+                showTemplatesMenu ? 'text-[#00A884] bg-[#111B21]' : 'text-[#8696A0] hover:text-[#E9EDEF]'
+              }`}
+              title="Plantillas rápidas de respuesta"
+            >
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+
+            {/* Input de Mensaje */}
             <input
               type="text"
-              placeholder={`Escribe un mensaje como ${partnerName}...`}
+              placeholder={`Escribe como ${partnerName}...`}
               value={inputText}
+              onFocus={() => {
+                setShowTemplatesMenu(false);
+                setShowEmojiPicker(false);
+                setShowStickerPicker(false);
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+              }}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-[#2A3942] border-none rounded-xl px-4 py-2.5 text-base sm:text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
+              className="flex-1 bg-[#2A3942] border-none rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
             />
 
+            {/* Botón Enviar */}
             <button
               type="submit"
               disabled={!inputText.trim() || sending}
-              className="p-2.5 bg-[#00A884] hover:bg-[#008f6f] disabled:opacity-40 text-[#111B21] rounded-full shadow transition"
+              className="p-2 sm:p-2.5 bg-[#00A884] hover:bg-[#008f6f] disabled:opacity-40 text-[#111B21] rounded-full shadow transition cursor-pointer"
               title="Enviar"
             >
               {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -1925,6 +1981,51 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 5. MODAL VISOR DE FOTO EN PANTALLA COMPLETA (LIGHTBOX)   */}
+      {/* ======================================================== */}
+      {previewMediaModal && (
+        <div 
+          onClick={() => setPreviewMediaModal(null)}
+          className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <a
+              href={previewMediaModal}
+              download="whatsapp-media"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition cursor-pointer"
+              title="Abrir imagen original"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setPreviewMediaModal(null)}
+              className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full transition cursor-pointer"
+              title="Cerrar visor"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="max-w-4xl max-h-[85vh] w-full flex items-center justify-center p-2"
+          >
+            <img 
+              src={previewMediaModal} 
+              alt="Vista ampliada de WhatsApp" 
+              className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10 select-none"
+            />
+          </div>
+
+          <span className="text-white/60 text-xs mt-2 font-medium">Toca en cualquier parte para cerrar</span>
         </div>
       )}
 
