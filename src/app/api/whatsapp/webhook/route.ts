@@ -15,14 +15,15 @@ export async function POST(req: NextRequest) {
 
     // Evento A: Actualización de estado de mensaje (1 paloma, 2 palomas, leídos)
     if (body.type === 'receipt' && body.phone && body.status) {
+      const rawDigits = String(body.phone).replace(/\D/g, '');
       const cleanPhone = formatPhoneNumber(String(body.phone).replace(/@.+/, ''));
       const status = body.status; // 'delivered' o 'read'
       
-      // Buscar chat correspondiente
+      // Buscar chat correspondiente por teléfono, últimos 10 dígitos o LID en notes
       let { data: chatRow } = await supabase
         .from('whatsapp_chats')
         .select('id')
-        .or(`phone.eq.${cleanPhone},notes.ilike.%"lid":"${cleanPhone}"%`)
+        .or(`phone.eq.${cleanPhone},phone.ilike.%${rawDigits.slice(-10)}%,notes.ilike.%"lid":"${rawDigits}"%`)
         .maybeSingle();
 
       if (chatRow?.id) {
@@ -39,11 +40,12 @@ export async function POST(req: NextRequest) {
 
     // Evento B: El contacto está escribiendo o en línea (presence)
     if (body.type === 'presence' && body.phone) {
+      const rawDigits = String(body.phone).replace(/\D/g, '');
       const cleanPhone = formatPhoneNumber(String(body.phone).replace(/@.+/, ''));
       let { data: chatRow } = await supabase
         .from('whatsapp_chats')
         .select('id, notes')
-        .or(`phone.eq.${cleanPhone},notes.ilike.%"lid":"${cleanPhone}"%`)
+        .or(`phone.eq.${cleanPhone},phone.ilike.%${rawDigits.slice(-10)}%,notes.ilike.%"lid":"${rawDigits}"%`)
         .maybeSingle();
 
       if (chatRow?.id) {
