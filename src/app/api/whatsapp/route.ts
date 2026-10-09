@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
         shippingCompany: body.shippingCompany,
         notes: body.notes,
         loyaltyStars: body.loyaltyStars,
+        ticketImageUrl: body.ticketImageUrl,
       });
     } else if (action === "cart_recovery") {
       result = await notifyAbandonedCartRecovery(clientName || "Cliente", clientPhone, discountCode);

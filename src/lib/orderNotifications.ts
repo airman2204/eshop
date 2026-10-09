@@ -14,6 +14,7 @@ export interface OrderNotificationParams {
   itemsSummary?: string;
   notes?: string;
   loyaltyStars?: number;
+  ticketImageUrl?: string;
 }
 
 /**
@@ -25,6 +26,7 @@ async function sendWhatsAppNotification(params: {
   clientName: string;
   text: string;
   stickerUrl?: string;
+  ticketImageUrl?: string;
 }) {
   try {
     const supabase = createServerClient() as any;
@@ -141,6 +143,36 @@ async function sendWhatsAppNotification(params: {
       });
     }
 
+    // 5. Si incluye imagen oficial de Ticket POS, registrarla y despacharla como imagen
+    if (params.ticketImageUrl) {
+      if (chatId) {
+        await supabase.from("whatsapp_messages").insert({
+          chat_id: chatId,
+          phone: cleanPhone,
+          sender: "admin",
+          sender_name: "FoxDrop (Notificación)",
+          text: "🧾 Comprobante Oficial de Compra (Ticket)",
+          media_type: "image",
+          media_url: params.ticketImageUrl,
+          status: "delivered",
+        });
+      }
+
+      await fetch(`${bridgeUrl}/message/sendText`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(bridgeApiKey ? { apikey: bridgeApiKey, Authorization: `Bearer ${bridgeApiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          number: targetToSend,
+          type: "image",
+          imageUrl: params.ticketImageUrl,
+          text: "🧾 Comprobante Oficial de Compra (Ticket FoxDrop)",
+        }),
+      });
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error("Error despachando notificación de pedido por WhatsApp:", err);
@@ -185,7 +217,8 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
         `🧾 *Folio de Venta:* #${orderId}\n` +
         (totalFormatted ? `💵 *Total Liquidado:* ${totalFormatted}\n` : "") +
         (starsCount > 0 ? `⭐ *Estrellas acumuladas en Club FoxDrop:* +${starsCount} estrellas\n\n` : "\n") +
-        `¡Fue un placer atenderte hoy! Si necesitas factura o asistencia adicional, sólo responde a este mensaje.`;
+        (params.ticketImageUrl ? `🧾 *Comprobante oficial digital emitido con éxito.*\n\n` : "") +
+        `¡Fue un placer atenderte hoy! Si necesitas asistencia o seguimiento, sólo responde a este mensaje.`;
       
       stickerUrl = `${baseUrl}/stickers/sticker-gracias-compra.webp`;
     }
@@ -290,5 +323,6 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
     clientName,
     text: messageText,
     stickerUrl,
+    ticketImageUrl: params.ticketImageUrl,
   });
 }

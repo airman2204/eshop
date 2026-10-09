@@ -2189,6 +2189,25 @@ export default function AdminCRM() {
             } catch (saveNoteErr) {
               console.warn("No se pudo actualizar nota de ticket en la orden:", saveNoteErr);
             }
+
+            // DISPARO 100% AUTOMÁTICO DEL TICKET POR WHATSAPP OFICIAL DE FOXDROP
+            if (cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.replace(/\D/g, '').length >= 10) {
+              fetch("/api/whatsapp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "status_update",
+                  orderNumber: saleResult.orderNumber,
+                  clientName: cleanName,
+                  clientPhone: cleanPhone,
+                  newStatus: "delivered",
+                  shippingType: "pos_in_store",
+                  total: posTotal,
+                  ticketImageUrl: finalImgUrl,
+                  loyaltyStars: posPointsEarned,
+                }),
+              }).catch(autoPosErr => console.warn("Aviso: error despachando ticket automático por WhatsApp:", autoPosErr));
+            }
           }
         } catch (genErr) {
           console.warn("Error capturando o generando ticket:", genErr);
