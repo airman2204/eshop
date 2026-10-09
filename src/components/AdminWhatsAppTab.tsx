@@ -739,7 +739,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     <div className={`bg-[#111B21] text-[#E9EDEF] transition-all duration-300 flex flex-col md:flex-row relative w-full overflow-hidden select-none font-sans ${
       isFullscreen 
         ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' 
-        : 'rounded-2xl sm:rounded-3xl border border-[#222E35] shadow-2xl overflow-hidden h-[calc(100vh-130px)] min-h-[640px]'
+        : 'rounded-none md:rounded-3xl border-0 md:border border-[#222E35] shadow-2xl overflow-hidden h-[100dvh] md:h-[calc(100vh-130px)] md:min-h-[640px]'
     }`}>
       
       {/* ======================================================== */}
@@ -1361,26 +1361,26 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               </div>
             </div>
 
-            {/* Acciones de Cabecera: Video, Llamada, Buscar, Modo Agente */}
-            <div className="flex items-center gap-2">
+            {/* Acciones de Cabecera: Video, Llamada, Modo Agente */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* Botón Videollamada */}
               <button
                 type="button"
                 onClick={() => handleInitiateCall({ name: activeChat.clientName, phone: activeChat.phone }, 'video')}
-                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition cursor-pointer"
+                className="p-1.5 sm:p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition cursor-pointer"
                 title="Videollamada con el cliente"
               >
-                <Video className="w-5 h-5" />
+                <Video className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Botón Llamada Telefónica */}
               <button
                 type="button"
                 onClick={() => handleInitiateCall({ name: activeChat.clientName, phone: activeChat.phone }, 'voice')}
-                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition cursor-pointer"
+                className="p-1.5 sm:p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition cursor-pointer"
                 title="Llamar al cliente"
               >
-                <Phone className="w-5 h-5" />
+                <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Interruptor Modo Agente / Manual */}
@@ -1412,7 +1412,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     setTogglingAgent(false);
                   }
                 }}
-                className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+                className={`text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded-lg border transition flex items-center gap-1 cursor-pointer ${
                   chatAgentMode === 'agent'
                     ? 'bg-[#00A884]/20 text-[#00A884] border-[#00A884]/40 hover:bg-[#00A884]/30'
                     : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
@@ -1427,7 +1427,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 href={`https://wa.me/${activeChat.phone}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition"
+                className="hidden sm:inline-flex p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248] rounded-full transition"
                 title="Abrir en WhatsApp Web / Desktop"
               >
                 <ExternalLink className="w-4 h-4" />

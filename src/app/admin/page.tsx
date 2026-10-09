@@ -2881,8 +2881,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
       {/* CONTENEDOR DERECHO (HEADER SUPERIOR + MAIN) */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* HEADER SUPERIOR */}
-        <header className="border-b border-gray-200 bg-white sticky top-0 z-40 shadow-2xs">
+        {/* HEADER SUPERIOR (Oculto en móvil si estamos dentro de la pestaña de WhatsApp para que se sienta como App nativa) */}
+        <header className={`border-b border-gray-200 bg-white sticky top-0 z-40 shadow-2xs ${crmSubTab === 'whatsapp' ? 'hidden md:block' : ''}`}>
           <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
@@ -3028,10 +3028,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </header>
 
         {/* CONTENIDO PRINCIPAL */}
-        <main className={`flex-1 w-full mx-auto space-y-6 ${
+        <main className={`flex-1 w-full mx-auto ${
           crmSubTab === 'whatsapp' 
-            ? 'max-w-none p-2 sm:p-4 pb-20 md:pb-4' 
-            : 'max-w-7xl p-4 sm:p-6 pb-36 md:pb-8'
+            ? 'max-w-none p-0 md:p-4 pb-0 md:pb-4 space-y-0' 
+            : 'max-w-7xl p-4 sm:p-6 pb-36 md:pb-8 space-y-6'
         }`}>
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
@@ -6640,7 +6640,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           const currentPartner = emailLower.includes('nydia') ? 'Nydia' : 'Mario';
 
           return (
-            <div className="space-y-4">
+            <div className="w-full h-full min-h-screen md:min-h-0">
               <AdminWhatsAppTab
                 orders={orders}
                 clients={clients}
@@ -8617,93 +8617,96 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
       {/* ======================================================== */}
       {/* BARRA MÓVIL DE ACCIONES RÁPIDAS DEL ADMIN (ESTILO APP) */}
+      {/* Se oculta cuando estamos dentro de la pestaña de WhatsApp para dar experiencia 100% de app */}
       {/* ======================================================== */}
-      <nav 
-        aria-label="Acciones rápidas del administrador"
-        className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 text-white shadow-[0_-4px_20px_rgba(0,0,0,0.35)] md:hidden safe-area-bottom select-none"
-      >
-        <div className="grid grid-cols-4 items-center h-16 px-2">
-          {/* TAB: INVENTARIO */}
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('light'); } catch {}
-              setCrmSubTab('inventory');
-            }}
-            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
-              crmSubTab === 'inventory' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Package className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">Stock</span>
-          </button>
+      {crmSubTab !== 'whatsapp' && (
+        <nav 
+          aria-label="Acciones rápidas del administrador"
+          className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 text-white shadow-[0_-4px_20px_rgba(0,0,0,0.35)] md:hidden safe-area-bottom select-none"
+        >
+          <div className="grid grid-cols-4 items-center h-16 px-2">
+            {/* TAB: INVENTARIO */}
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('light'); } catch {}
+                setCrmSubTab('inventory');
+              }}
+              className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
+                crmSubTab === 'inventory' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Package className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">Stock</span>
+            </button>
 
-          {/* TAB: PEDIDOS ACTIVOS */}
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('light'); } catch {}
-              setCrmSubTab('orders');
-            }}
-            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 relative ${
-              crmSubTab === 'orders' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <div className="relative">
-              <Truck className="w-5 h-5" />
-              {activeOrders.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 bg-emerald-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-sm">
-                  {activeOrders.length}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] tracking-tight">Pedidos</span>
-          </button>
+            {/* TAB: PEDIDOS ACTIVOS */}
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('light'); } catch {}
+                setCrmSubTab('orders');
+              }}
+              className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 relative ${
+                crmSubTab === 'orders' ? 'text-[#E65F2B] font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <div className="relative">
+                <Truck className="w-5 h-5" />
+                {activeOrders.length > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-emerald-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-sm">
+                    {activeOrders.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">Pedidos</span>
+            </button>
 
-          {/* ACCIÓN CENTRAL: BOTÓN QR */}
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('medium'); } catch {}
-              setShowPosModal(true);
-            }}
-            className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-all"
-            title="Escanear Código QR / POS"
-          >
-            <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F18956] text-white flex items-center justify-center shadow-lg shadow-orange-950/40 border-2 border-slate-900 group-hover:scale-105 transition-transform">
-              <QrCode className="w-6 h-6" />
-            </div>
-          </button>
+            {/* ACCIÓN CENTRAL: BOTÓN QR */}
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('medium'); } catch {}
+                setShowPosModal(true);
+              }}
+              className="flex flex-col items-center justify-center -mt-4 group active:scale-95 transition-all"
+              title="Escanear Código QR / POS"
+            >
+              <div className="w-13 h-13 rounded-full bg-gradient-to-tr from-[#E65F2B] to-[#F18956] text-white flex items-center justify-center shadow-lg shadow-orange-950/40 border-2 border-slate-900 group-hover:scale-105 transition-transform">
+                <QrCode className="w-6 h-6" />
+              </div>
+            </button>
 
-          {/* ACCIÓN: CHAT DE WHATSAPP */}
-          <button
-            type="button"
-            onClick={() => {
-              try { soundManager.triggerHaptic('light'); } catch {}
-              setShowFloatingWhatsApp(false);
-              setCrmSubTab('whatsapp');
-            }}
-            className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
-              crmSubTab === 'whatsapp' ? 'text-emerald-400 font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-[10px] tracking-tight">WhatsApp</span>
-          </button>
-        </div>
-      </nav>
+            {/* ACCIÓN: CHAT DE WHATSAPP */}
+            <button
+              type="button"
+              onClick={() => {
+                try { soundManager.triggerHaptic('light'); } catch {}
+                setShowFloatingWhatsApp(false);
+                setCrmSubTab('whatsapp');
+              }}
+              className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-400 hover:text-white"
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">WhatsApp</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* ======================================================== */}
       {/* BURBUJAS FLOTANTES MOVILES: WHATSAPP Y ASISTENTE FOX     */}
+      {/* Ocultas dentro de la pestaña de WhatsApp para evitar colisiones visuales */}
       {/* ======================================================== */}
-      <aside
-        aria-label="Accesos directos flotantes"
-        style={{
-          transform: `translate3d(${bubblePos.x}px, ${bubblePos.y}px, 0)`,
-          touchAction: 'none',
-        }}
-        className="fixed bottom-20 md:bottom-8 right-3 sm:right-6 z-50 flex flex-col items-center gap-2 select-none"
-      >
+      {crmSubTab !== 'whatsapp' && (
+        <aside
+          aria-label="Accesos directos flotantes"
+          style={{
+            transform: `translate3d(${bubblePos.x}px, ${bubblePos.y}px, 0)`,
+            touchAction: 'none',
+          }}
+          className="fixed bottom-20 md:bottom-8 right-3 sm:right-6 z-50 flex flex-col items-center gap-2 select-none"
+        >
         {/* Manija de arrastre / Grip superior táctil */}
         <div
           onPointerDown={(e) => {
@@ -8802,6 +8805,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </button>
         </div>
       </aside>
+      )}
 
       {/* ======================================================== */}
       {/* VENTANA FLOTANTE 1: WHATSAPP CENTRAL (SIN SALIR DE TU PESTAÑA) */}
