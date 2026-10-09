@@ -260,6 +260,26 @@ export default function AdminCRM() {
   const [orderHistoryChannelFilter, setOrderHistoryChannelFilter] = useState<'all' | 'pos' | 'online'>('all');
   const [orderHistoryStatusFilter, setOrderHistoryStatusFilter] = useState<'all' | 'delivered' | 'cancelled' | 'pending' | 'processing' | 'shipped'>('all');
 
+  // Filtro de canal en Pedidos Activos (Local Puebla vs Envío Nacional)
+  const [activeOrderShippingFilter, setActiveOrderShippingFilter] = useState<'all' | 'puebla_local' | 'national_shipping'>('all');
+
+  // Modal de Confirmación Segura de Eliminación (Sin window.confirm)
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+  });
+
+  // Modal Producto: Costo en Pesos MXN directo (con toggle opcional a USD)
+  const [costInputMode, setCostInputMode] = useState<'mxn' | 'usd'>('mxn');
+  const [newCostMxnDirect, setNewCostMxnDirect] = useState<number>(100.0);
+
   // 1. Buscador Global Inteligente (Cmd/Ctrl + K)
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
@@ -1413,7 +1433,8 @@ export default function AdminCRM() {
     costPerUnit: 20.0
   };
 
-  const costMxn = newCostUsd * usdRate;
+  const costMxn = costInputMode === 'mxn' ? newCostMxnDirect : (newCostUsd * usdRate);
+  const calculatedCostUsd = costInputMode === 'mxn' ? (usdRate > 0 ? (newCostMxnDirect / usdRate) : 0) : newCostUsd;
   const shippingPerUnit = currentBatch.costPerUnit || 20.0;
   const totalCostUnitMxn = costMxn + shippingPerUnit;
   const profitUnit = newPublicPrice - totalCostUnitMxn;
@@ -1488,6 +1509,8 @@ export default function AdminCRM() {
     setNewSku(prod.sku || '');
     setNewCategory(prod.category || 'Electrónica');
     setNewCostUsd(prod.baseCostUsd || 5.0);
+    setNewCostMxnDirect(prod.baseCostMxn || (prod.baseCostUsd ? prod.baseCostUsd * usdRate : 100.0));
+    setCostInputMode('mxn');
     setNewPublicPrice(prod.publicPrice);
     setNewStock(prod.stock);
     setNewImageUrl(prod.images[0] || '');
@@ -1506,6 +1529,8 @@ export default function AdminCRM() {
     setNewSku('');
     setNewCategory('Electrónica');
     setNewCostUsd(5.00);
+    setNewCostMxnDirect(100.00);
+    setCostInputMode('mxn');
     setNewPublicPrice(230.00);
     setNewStock(15);
     setNewImageUrl('');
@@ -1532,7 +1557,7 @@ export default function AdminCRM() {
           title: newTitle,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
-          baseCostUsd: newCostUsd,
+          baseCostUsd: calculatedCostUsd,
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
@@ -1551,7 +1576,7 @@ export default function AdminCRM() {
               title: newTitle,
               sku: newSku.trim() || p.sku,
               category: newCategory,
-              baseCostUsd: newCostUsd,
+              baseCostUsd: calculatedCostUsd,
               baseCostMxn: costMxn,
               shippingCostAllocated: shippingPerUnit,
               totalCostMxn: totalCostUnitMxn,
@@ -1575,7 +1600,7 @@ export default function AdminCRM() {
           title: newTitle,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
-          baseCostUsd: newCostUsd,
+          baseCostUsd: calculatedCostUsd,
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
@@ -1685,17 +1710,24 @@ export default function AdminCRM() {
     }
   };
 
-  // Eliminar Producto
-  const handleDeleteProduct = async (id: string, title: string) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar "${title}" del catálogo permanentemente?`)) return;
-
-    try {
-      await deleteProductInDb(id);
-      setProducts(prev => prev.filter(p => p.id !== id));
-    } catch (err: any) {
-      console.error("Fallo al eliminar producto:", err);
-      alert(`Error al eliminar de la base de datos: ${err.message || 'Intente nuevamente'}`);
-    }
+  // Eliminar Producto con Modal Estilizado Seguro
+  const handleDeleteProduct = (id: string, title: string) => {
+    setConfirmDeleteModal({
+      isOpen: true,
+      title: `Eliminar "${title}"`,
+      description: 'Esta acción borrará definitivamente este artículo del catálogo e inventario. No se puede deshacer.',
+      onConfirm: async () => {
+        try {
+          await deleteProductInDb(id);
+          setProducts(prev => prev.filter(p => p.id !== id));
+        } catch (err: any) {
+          console.error("Fallo al eliminar producto:", err);
+          alert(`Error al eliminar de la base de datos: ${err.message || 'Intente nuevamente'}`);
+        } finally {
+          setConfirmDeleteModal(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
   };
 
   // 1. AJUSTE RÁPIDO DE STOCK (+ / - o directo)
@@ -1972,7 +2004,7 @@ export default function AdminCRM() {
 
     try {
       await updateOrderStatusInDb(orderId, newStatus, notes);
-      if (targetOrder?.clientPhone) {
+      if (targetOrder?.clientPhone && targetOrder.clientPhone !== 'Mostrador / Histórica') {
         fetch("/api/whatsapp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1988,6 +2020,17 @@ export default function AdminCRM() {
             trackingNumber: targetOrder.trackingNumber,
             notes: notes || targetOrder.notes,
           }),
+        }).then(res => {
+          if (res.ok) {
+            setAdminRealtimeToast({
+              id: Date.now().toString(),
+              type: 'status_update',
+              title: `WhatsApp Enviado a ${targetOrder.clientName || 'Cliente'}`,
+              message: `Notificación automática enviada: Pedido ${targetOrder.id} ahora está "${newStatus}".`,
+              orderId: targetOrder.id,
+            });
+            setTimeout(() => setAdminRealtimeToast(null), 6000);
+          }
         }).catch(e => console.warn("WhatsApp status update error:", e));
       }
     } catch (err) {
@@ -2014,17 +2057,24 @@ export default function AdminCRM() {
     }
   };
 
-  // Eliminar Pedido Definitivamente de la Base de Datos
-  const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm(`¿Eliminar definitivamente el pedido ${orderId}? Esta acción borrará el pedido de la base de datos de inmediato.`)) return;
-
-    setOrders(prev => prev.filter(o => o.id !== orderId));
-    try {
-      await deleteOrderInDb(orderId);
-    } catch (err) {
-      console.error("Error al eliminar pedido:", err);
-      alert("No se pudo eliminar el pedido en la base de datos.");
-    }
+  // Eliminar Pedido Definitivamente con Modal Estilizado Seguro
+  const handleDeleteOrder = (orderId: string) => {
+    setConfirmDeleteModal({
+      isOpen: true,
+      title: `Eliminar Pedido ${orderId}`,
+      description: 'Esta acción borrará definitivamente este pedido del sistema y la base de datos.',
+      onConfirm: async () => {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        try {
+          await deleteOrderInDb(orderId);
+        } catch (err) {
+          console.error("Error al eliminar pedido:", err);
+          alert("No se pudo eliminar el pedido en la base de datos.");
+        } finally {
+          setConfirmDeleteModal(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
   };
 
   // Actualizar Estado de Encargo Especial
@@ -3767,27 +3817,82 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Seguimiento de Pedidos Activos</h2>
                 <p className="text-xs text-slate-500">Órdenes pendientes de empaque, despacho y entrega.</p>
               </div>
-              <div className="text-xs text-slate-500 font-medium">
-                {activeOrders.length} pedido{activeOrders.length === 1 ? '' : 's'} en proceso
+
+              {/* Filtros rápidos por tipo de entrega */}
+              <div className="flex items-center gap-1.5 overflow-x-auto text-xs pb-1 sm:pb-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveOrderShippingFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition shrink-0 ${
+                    activeOrderShippingFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Todos ({activeOrders.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveOrderShippingFilter('puebla_local')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center gap-1.5 ${
+                    activeOrderShippingFilter === 'puebla_local'
+                      ? 'bg-[#2D4A58] text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>📍 Local Puebla</span>
+                  <span className="font-mono text-[10px] opacity-80">
+                    ({activeOrders.filter(o => o.shippingType === 'puebla_local' || o.shippingType === 'agreed_pickup').length})
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveOrderShippingFilter('national_shipping')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center gap-1.5 ${
+                    activeOrderShippingFilter === 'national_shipping'
+                      ? 'bg-[#E65F2B] text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>📦 Envío Nacional</span>
+                  <span className="font-mono text-[10px] opacity-80">
+                    ({activeOrders.filter(o => o.shippingType === 'national_shipping').length})
+                  </span>
+                </button>
               </div>
             </div>
 
-            {activeOrders.length === 0 ? (
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-xs space-y-2">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                  <Package className="w-5 h-5" />
-                </div>
-                <p className="font-semibold text-slate-700">No hay pedidos activos por procesar</p>
-                <p className="text-slate-400">Todos los pedidos se encuentran entregados o archivados.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {activeOrders.map(order => (
+            {(() => {
+              const displayedActiveOrders = activeOrders.filter(order => {
+                if (activeOrderShippingFilter === 'puebla_local') {
+                  return order.shippingType === 'puebla_local' || order.shippingType === 'agreed_pickup';
+                }
+                if (activeOrderShippingFilter === 'national_shipping') {
+                  return order.shippingType === 'national_shipping';
+                }
+                return true;
+              });
+
+              if (displayedActiveOrders.length === 0) {
+                return (
+                  <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-xs space-y-2">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <p className="font-semibold text-slate-700">No hay pedidos en este canal</p>
+                    <p className="text-slate-400">No se encontraron pedidos activos con el filtro seleccionado.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 gap-3">
+                  {displayedActiveOrders.map(order => (
                   <div key={order.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-xs hover:border-slate-300 transition">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2.5">
@@ -3886,7 +3991,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 ))}
               </div>
-            )}
+            );
+          })()}
           </div>
         )}
 
@@ -7695,24 +7801,64 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-slate-700 font-bold block mb-1">Costo Base Adquisición (USD):</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={newCostUsd}
-                      onChange={e => setNewCostUsd(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
-                    />
-                    <span className="text-[10px] text-slate-400 mt-1 block">Equivalente MXN: ${costMxn.toFixed(2)}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-bold block text-xs">
+                        {costInputMode === 'mxn' ? 'Costo Base (MXN):' : 'Costo Base (USD):'}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setCostInputMode(costInputMode === 'mxn' ? 'usd' : 'mxn')}
+                        className="text-[10px] text-[#E65F2B] hover:underline font-bold"
+                      >
+                        {costInputMode === 'mxn' ? 'Cambiar a USD' : 'Cambiar a MXN'}
+                      </button>
+                    </div>
+
+                    {costInputMode === 'mxn' ? (
+                      <div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                          <input
+                            type="number"
+                            step="1"
+                            value={newCostMxnDirect}
+                            onChange={e => setNewCostMxnDirect(parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1 block font-mono">
+                          Equivale a aprox. ${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD
+                        </span>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={newCostUsd}
+                            onChange={e => setNewCostUsd(parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
+                          />
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1 block font-mono">
+                          Equivale a ${costMxn.toFixed(2)} MXN
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <label className="text-slate-700 font-bold block mb-1">Precio Venta Público:</label>
-                    <input
-                      type="number"
-                      value={newPublicPrice}
-                      onChange={e => setNewPublicPrice(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold"
-                    />
+                    <label className="text-slate-700 font-bold block mb-1 text-xs">Precio Venta Público (MXN):</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                      <input
+                        type="number"
+                        value={newPublicPrice}
+                        onChange={e => setNewPublicPrice(parseFloat(e.target.value) || 0)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -9941,6 +10087,51 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         );
       })()}
+
+      {/* ======================================================== */}
+      {/* 4. MODAL DIÁLOGO DE CONFIRMACIÓN SEGURA (ESTILO SHOPIFY)  */}
+      {/* ======================================================== */}
+      {confirmDeleteModal.isOpen && (
+        <div 
+          onClick={() => setConfirmDeleteModal(prev => ({ ...prev, isOpen: false }))}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 text-center"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-bold text-base text-slate-900 tracking-tight">
+                {confirmDeleteModal.title}
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {confirmDeleteModal.description}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteModal(prev => ({ ...prev, isOpen: false }))}
+                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteModal.onConfirm}
+                className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer"
+              >
+                Sí, Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
