@@ -2553,16 +2553,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       )}
 
       {/* MENÚ LATERAL (SIDEBAR) ELEGANTE & LIMPIO */}
-      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#18252E] text-slate-300 flex flex-col z-50 shrink-0 transition-transform duration-200 ease-in-out border-r border-slate-800 ${
-        mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#0F172A] text-slate-300 flex flex-col z-50 shrink-0 transition-transform duration-200 ease-in-out border-r border-slate-800/80 shadow-xl ${
+        mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
         {/* Cabecera del Menú Lateral */}
-        <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-800/60 flex items-center justify-between">
           <div className="flex flex-col gap-1">
             <FoxDropLogo size="sm" showTagline={true} />
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="inline-block bg-[#E65F2B]/20 text-[#E65F2B] text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-md border border-[#E65F2B]/30">
-                PANEL ADMIN
+              <span className="inline-block bg-[#E65F2B]/15 text-[#E65F2B] text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-md border border-[#E65F2B]/20">
+                PANEL DE CONTROL
               </span>
             </div>
           </div>
@@ -2576,99 +2576,88 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </div>
 
         {/* Listado de Navegación con Categorías */}
-        <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 text-xs scrollbar-thin">
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-4 text-xs scrollbar-thin">
           {/* BOTÓN DESTACADO: AGENTE INTELIGENTE FOXBOT */}
           <div>
             <button
               onClick={() => { setCrmSubTab('agent'); setMobileSidebarOpen(false); }}
-              className={`w-full p-2.5 rounded-2xl font-bold transition flex items-center justify-between border ${
+              className={`w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
                 crmSubTab === 'agent'
-                  ? 'bg-gradient-to-r from-[#E65F2B] to-[#FF8A00] text-white border-orange-400 shadow-md ring-2 ring-orange-400/40'
-                  : 'bg-gradient-to-r from-slate-900 to-indigo-950/80 text-orange-200 border-indigo-800/40 hover:border-orange-500/50 hover:text-white'
+                  ? 'bg-[#E65F2B] text-white border-orange-500 shadow-sm'
+                  : 'bg-slate-900/60 text-slate-200 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60'
               }`}
             >
               <div className="flex items-center gap-2.5 text-left">
-                <div className="w-7 h-7 rounded-xl bg-orange-500/20 text-[#E65F2B] flex items-center justify-center shrink-0 border border-orange-500/30">
-                  <Bot className="w-4 h-4 text-orange-400 animate-pulse" />
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'agent' ? 'bg-white/20 text-white' : 'bg-[#E65F2B]/15 text-[#E65F2B]'}`}>
+                  <Bot className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="block font-black text-xs leading-none">Agente FoxBot</span>
-                  <span className="text-[10px] text-orange-300/80 font-normal">Marketing & Ventas AI</span>
+                  <span className="block font-bold text-xs leading-none">Fox Copilot</span>
+                  <span className={`text-[10px] font-normal ${crmSubTab === 'agent' ? 'text-white/80' : 'text-slate-400'}`}>Marketing & Ventas</span>
                 </div>
               </div>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
-                AI 2.0
+              <span className={`text-[9px] font-semibold uppercase px-2 py-0.5 rounded-md ${crmSubTab === 'agent' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700/60'}`}>
+                AI
               </span>
             </button>
           </div>
 
           {/* GRUPO 1: CATÁLOGO */}
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
-              Catálogo & Logística
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
+              Catálogo & Productos
             </span>
             <div className="space-y-0.5">
               <button
                 onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'inventory' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'inventory' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Package className="w-4 h-4" /> Inventario
+                  <Package className={`w-4 h-4 ${crmSubTab === 'inventory' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Inventario
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'inventory' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {products.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('batches'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'batches' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'batches' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Layers className="w-4 h-4 text-orange-300" /> Lotes de Flete
+                  <Layers className={`w-4 h-4 ${crmSubTab === 'batches' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Lotes de Flete
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'batches' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {batches.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('carousel'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'carousel' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'carousel' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-purple-300" /> Carrusel Hero
+                  <Sparkles className={`w-4 h-4 ${crmSubTab === 'carousel' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Carrusel Hero
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'carousel' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {slides.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('shipping_payments'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'shipping_payments' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'shipping_payments' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Truck className="w-4 h-4 text-emerald-400" /> Envíos & Pagos
-                </span>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                  crmSubTab === 'shipping_payments' ? 'bg-black/20 text-white' : 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
-                }`}>
-                  Config
+                  <Truck className={`w-4 h-4 ${crmSubTab === 'shipping_payments' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Envíos & Pagos
                 </span>
               </button>
             </div>
@@ -2676,25 +2665,25 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
           {/* GRUPO 2: VENTAS & PEDIDOS */}
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
-              Ventas & Pedidos
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
+              Ventas & Canales
             </span>
             <div className="space-y-0.5">
               <button
                 onClick={() => { setCrmSubTab('orders'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'orders' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Truck className="w-4 h-4 text-emerald-400" /> Pedidos Activos
+                  <Truck className={`w-4 h-4 ${crmSubTab === 'orders' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Pedidos Activos
                 </span>
                 {activeOrders.length > 0 ? (
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black animate-pulse">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     {activeOrders.length}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                     0
                   </span>
                 )}
@@ -2702,68 +2691,56 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
               <button
                 onClick={() => { setCrmSubTab('order_history'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'order_history' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'order_history' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <History className="w-4 h-4 text-blue-400" /> Historial de Pedidos
+                  <History className={`w-4 h-4 ${crmSubTab === 'order_history' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Historial General
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'order_history' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {orders.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('cancelled_orders'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'cancelled_orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'cancelled_orders' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Ban className="w-4 h-4 text-red-400" /> Cancelados
+                  <Ban className={`w-4 h-4 ${crmSubTab === 'cancelled_orders' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Cancelados
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'cancelled_orders' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {cancelledOrders.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('special_orders'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'special_orders' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'special_orders' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-amber-300" /> Encargos
+                  <FileText className={`w-4 h-4 ${crmSubTab === 'special_orders' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Encargos
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'special_orders' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {specialOrders.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('carts'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'carts' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'carts' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-400" /> Carritos
+                  <AlertTriangle className={`w-4 h-4 ${crmSubTab === 'carts' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Carritos
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'carts'
-                    ? 'bg-black/20 text-white'
-                    : abandonedCarts.filter(c => !c.followedUp).length > 0
-                    ? 'bg-amber-500 text-slate-950 font-black'
-                    : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {abandonedCarts.length}
                 </span>
               </button>
@@ -2774,76 +2751,64 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   setCrmSubTab('whatsapp');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between border ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between border ${
                   crmSubTab === 'whatsapp' 
-                    ? 'bg-emerald-600 text-white shadow-xs border-emerald-500' 
-                    : 'text-emerald-300 bg-emerald-950/30 hover:bg-emerald-900/40 border-emerald-800/40'
+                    ? 'bg-emerald-500/15 text-emerald-300 font-bold border-emerald-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 border-transparent'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-emerald-400" /> WhatsApp
+                  <MessageSquare className={`w-4 h-4 ${crmSubTab === 'whatsapp' ? 'text-emerald-400' : 'text-slate-400'}`} /> WhatsApp Central
                 </span>
-                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'whatsapp' ? 'bg-black/20 text-white' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                }`}>
+                <span className="text-[9px] font-semibold uppercase px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   Live
                 </span>
               </button>
             </div>
           </div>
 
-          {/* GRUPO 3: CLIENTES & LEALTAD */}
+          {/* GRUPO 3: CLIENTES & FINANZAS */}
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
-              Clientes & Lealtad
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
+              Clientes & Finanzas
             </span>
             <div className="space-y-0.5">
               <button
                 onClick={() => { setCrmSubTab('clients'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'clients' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'clients' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Users className="w-4 h-4 text-emerald-300" /> Clientes
+                  <Users className={`w-4 h-4 ${crmSubTab === 'clients' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Clientes
                 </span>
-                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${
-                  crmSubTab === 'clients' ? 'bg-black/20 text-white' : 'bg-slate-800 text-slate-300'
-                }`}>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {clients.length}
                 </span>
               </button>
 
               <button
                 onClick={() => { setCrmSubTab('loyalty'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'loyalty' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'loyalty' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Award className="w-4 h-4 text-amber-400" /> Club & Fidelidad
+                  <Award className={`w-4 h-4 ${crmSubTab === 'loyalty' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Club & Fidelidad
                 </span>
-                <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold bg-amber-400/15 text-amber-300 px-1.5 py-0.5 rounded">
                   {clubSettings.currencySymbol}
                 </span>
               </button>
-            </div>
-          </div>
 
-          {/* GRUPO 4: FINANZAS */}
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-1.5 block">
-              Finanzas
-            </span>
-            <div className="space-y-0.5">
               <button
                 onClick={() => { setCrmSubTab('finance'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-bold transition flex items-center justify-between ${
-                  crmSubTab === 'finance' ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'finance' ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <BarChart3 className="w-4 h-4" /> Utilidad & Margen
+                  <BarChart3 className={`w-4 h-4 ${crmSubTab === 'finance' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Finanzas & Margen
                 </span>
               </button>
             </div>
@@ -2851,13 +2816,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-900/60 space-y-2.5">
+        <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-950/40 space-y-2">
           <button
             onClick={() => {
               setShowPosModal(true);
               setMobileSidebarOpen(false);
             }}
-            className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
+            className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Punto de Venta POS</span>
@@ -2865,8 +2830,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
           <div className="flex items-center justify-between pt-1 text-slate-400 text-[11px] px-1">
             <div className="truncate max-w-[170px]">
-              <span className="block text-white font-bold truncate">{adminSession?.email?.split('@')[0]}</span>
-              <span className="block text-[10px] text-slate-400 truncate">{adminSession?.email}</span>
+              <span className="block text-white font-semibold truncate">{adminSession?.email?.split('@')[0]}</span>
+              <span className="block text-[10px] text-slate-500 truncate">{adminSession?.email}</span>
             </div>
             <button
               onClick={handleLogout}
@@ -2882,46 +2847,50 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* CONTENEDOR DERECHO (HEADER SUPERIOR + MAIN) */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* HEADER SUPERIOR (Oculto en móvil si estamos dentro de la pestaña de WhatsApp para que se sienta como App nativa) */}
-        <header className={`border-b border-gray-200 bg-white sticky top-0 z-40 shadow-2xs ${crmSubTab === 'whatsapp' ? 'hidden md:block' : ''}`}>
+        <header className={`border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-40 ${crmSubTab === 'whatsapp' ? 'hidden md:block' : ''}`}>
           <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden p-2 -ml-2 rounded-xl text-slate-700 hover:bg-slate-100 transition shrink-0"
+                className="md:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 transition shrink-0"
                 title="Abrir menú lateral"
               >
                 <Menu className="w-5 h-5" />
               </button>
               <div className="min-w-0 flex-1">
-                <h1 className="font-black text-sm xs:text-base sm:text-lg text-slate-900 tracking-tight truncate">
-                  {crmSubTab === 'inventory' && 'Inventario de Productos'}
-                  {crmSubTab === 'batches' && 'Lotes de Importación'}
-                  {crmSubTab === 'orders' && 'Pedidos Activos (En Proceso)'}
-                  {crmSubTab === 'order_history' && 'Historial General de Pedidos & Ventas'}
-                  {crmSubTab === 'cancelled_orders' && 'Pedidos Cancelados'}
-                  {crmSubTab === 'special_orders' && 'Encargos Especiales'}
-                  {crmSubTab === 'carts' && 'Carritos Abandonados'}
-                  {crmSubTab === 'clients' && 'Directorio de Clientes'}
-                  {crmSubTab === 'loyalty' && 'Club FoxDrop & Fidelidad'}
-                  {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
-                  {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
-                  {crmSubTab === 'shipping_payments' && 'Configuración de Envíos & Pagos (SPEI)'}
-                  {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
-                </h1>
-                <p className="text-xs text-slate-500 hidden sm:block truncate">
-                  {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias'}
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-sm xs:text-base sm:text-lg text-slate-900 tracking-tight truncate">
+                    {crmSubTab === 'inventory' && 'Inventario de Productos'}
+                    {crmSubTab === 'batches' && 'Lotes de Importación'}
+                    {crmSubTab === 'orders' && 'Pedidos Activos'}
+                    {crmSubTab === 'order_history' && 'Historial de Pedidos & Ventas'}
+                    {crmSubTab === 'cancelled_orders' && 'Pedidos Cancelados'}
+                    {crmSubTab === 'special_orders' && 'Encargos Especiales'}
+                    {crmSubTab === 'carts' && 'Carritos Abandonados'}
+                    {crmSubTab === 'clients' && 'Directorio de Clientes'}
+                    {crmSubTab === 'loyalty' && 'Club FoxDrop & Fidelidad'}
+                    {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
+                    {crmSubTab === 'carousel' && 'Carrusel Hero de la Tienda'}
+                    {crmSubTab === 'shipping_payments' && 'Configuración de Envíos & Pagos'}
+                    {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
+                    {crmSubTab === 'agent' && 'Fox Copilot AI'}
+                  </h1>
+                </div>
+                <p className="text-xs text-slate-500 hidden sm:block truncate mt-0.5">
+                  {crmSubTab === 'inventory' && 'Catálogo, costos base, precios de venta y existencias en tiempo real'}
                   {crmSubTab === 'batches' && 'Prorrateo de fletes internacionales y costeo unitario'}
-                  {crmSubTab === 'orders' && 'Solo órdenes en línea activas pendientes de empaque y despacho'}
-                  {crmSubTab === 'order_history' && 'Registro histórico consolidado de ventas físicas (Mostrador POS) y pedidos web (Entregados, Cancelados y Activos)'}
+                  {crmSubTab === 'orders' && 'Órdenes activas pendientes de empaque y despacho'}
+                  {crmSubTab === 'order_history' && 'Registro histórico de ventas en punto de venta físico y tienda web'}
                   {crmSubTab === 'cancelled_orders' && 'Historial de cancelaciones y motivos reportados'}
-                  {crmSubTab === 'special_orders' && 'Cotizaciones y solicitudes a medida de clientes'}
-                  {crmSubTab === 'carts' && 'Bolsas pendientes y recuperación directa por WhatsApp'}
-                  {crmSubTab === 'clients' && 'Perfiles, puntos acumulados y compras conectadas'}
-                  {crmSubTab === 'loyalty' && 'Configuración de estrellas por peso, niveles e inversión'}
-                  {crmSubTab === 'finance' && 'Rendimiento financiero y márgenes de ganancia'}
-                  {crmSubTab === 'carousel' && 'Banners destacados y colecciones visuales'}
-                  {crmSubTab === 'shipping_payments' && 'Edita métodos de entrega, costos y datos bancarios para transferencia'}
-                  {crmSubTab === 'whatsapp' && 'Bandeja de entrada compartida en tiempo real para socios con plantillas y confirmaciones de compra'}
+                  {crmSubTab === 'special_orders' && 'Cotizaciones y solicitudes a medida'}
+                  {crmSubTab === 'carts' && 'Recuperación de compras iniciadas'}
+                  {crmSubTab === 'clients' && 'Perfiles, puntos acumulados y fidelidad'}
+                  {crmSubTab === 'loyalty' && 'Configuración de estrellas y recompensas'}
+                  {crmSubTab === 'finance' && 'Rendimiento financiero y balance de margen'}
+                  {crmSubTab === 'carousel' && 'Banners destacados en la página principal'}
+                  {crmSubTab === 'shipping_payments' && 'Zonas de entrega, tarifas y cuentas para transferencia'}
+                  {crmSubTab === 'whatsapp' && 'Bandeja compartida para atención a clientes'}
+                  {crmSubTab === 'agent' && 'Estrategias de contenido y análisis de inventario'}
                 </p>
               </div>
             </div>
@@ -2932,30 +2901,30 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   const r = await getLiveExchangeRate();
                   setUsdRate(r);
                 }}
-                title="Click para actualizar tipo de cambio oficial"
-                className="hidden sm:flex items-center space-x-1.5 bg-orange-50/80 hover:bg-orange-100 border border-orange-200 rounded-lg px-2.5 py-1 text-xs text-orange-950 font-medium transition cursor-pointer"
+                title="Actualizar tipo de cambio oficial"
+                className="hidden sm:flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 font-medium transition cursor-pointer"
               >
-                <span className="text-orange-700 text-[10px] font-bold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-slate-500 text-[11px] font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   USD/MXN:
                 </span>
-                <span className="font-extrabold text-[#E65F2B]">${usdRate.toFixed(2)}</span>
-                <RefreshCw className="w-3 h-3 text-orange-600 hover:rotate-180 transition-transform duration-300" />
+                <span className="font-mono font-bold text-slate-900">${usdRate.toFixed(2)}</span>
+                <RefreshCw className="w-3 h-3 text-slate-400 hover:rotate-180 transition-transform duration-300" />
               </button>
 
               {/* Indicador Realtime y Sonido de Alertas */}
               <button
                 onClick={() => setAudioEnabled(!audioEnabled)}
-                title={audioEnabled ? "Alertas de audio activadas (click para silenciar)" : "Alertas de audio silenciadas (click para activar)"}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition border ${
+                title={audioEnabled ? "Alertas de audio activadas" : "Alertas de audio silenciadas"}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition border ${
                   audioEnabled 
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' 
-                    : 'bg-gray-100 text-gray-500 border-gray-200 hover:bg-gray-200'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80' 
+                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 <div className="relative">
-                  <span className={`w-2 h-2 rounded-full block ${audioEnabled ? 'bg-emerald-500 animate-ping' : 'bg-gray-400'}`} />
-                  <span className={`w-2 h-2 rounded-full block absolute inset-0 ${audioEnabled ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                  <span className={`w-2 h-2 rounded-full block ${audioEnabled ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
+                  <span className={`w-2 h-2 rounded-full block absolute inset-0 ${audioEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                 </div>
                 {audioEnabled ? (
                   <>
@@ -2964,7 +2933,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </>
                 ) : (
                   <>
-                    <VolumeX className="w-3.5 h-3.5 text-gray-500 hidden sm:inline" />
+                    <VolumeX className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
                     <span className="hidden sm:inline">Silenciado</span>
                   </>
                 )}
@@ -2973,20 +2942,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               <button
                 onClick={handleInstallApp}
                 title="Instalar FoxDrop en Celular o Escritorio"
-                className="hidden lg:flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-2xs"
+                className="hidden lg:flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
               >
-                <Download className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Instalar App</span>
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Instalar</span>
               </button>
 
               <a
                 href="/tienda"
                 target="_blank"
-                className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition flex items-center gap-1 shadow-2xs"
+                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs"
               >
                 <span className="hidden sm:inline">Ver Tienda</span>
                 <span className="sm:hidden text-xs">Tienda</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
               </a>
             </div>
           </div>
@@ -3070,137 +3039,109 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 {/* Botón Exportar CSV / Excel */}
                 <button
                   onClick={handleExportInventoryCsv}
-                  title="Exportar inventario completo a archivo Excel / CSV"
-                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
+                  title="Exportar inventario a Excel / CSV"
+                  className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <FileSpreadsheet className="w-4 h-4 text-slate-500" />
                   <span className="hidden sm:inline">Exportar CSV</span>
                 </button>
 
                 <button
                   onClick={handleOpenCreateProduct}
-                  className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                  className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs"
                 >
-                  <Plus className="w-4 h-4" /> Dar de Alta Artículo
+                  <Plus className="w-4 h-4" /> Nuevo Producto
                 </button>
-
-                {products.length > 0 && (
-                  <button
-                    onClick={async () => {
-                      if (!confirm("¿Deseas vaciar TODO el inventario actual de la base de datos para comenzar desde cero? Esta acción no se puede deshacer.")) return;
-                      try {
-                        const res = await fetch("/api/admin", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ action: "delete_all_mock_products" }),
-                        });
-                        if (res.ok) {
-                          setProducts([]);
-                          alert("Inventario vaciado por completo con éxito.");
-                        } else {
-                          const err = await res.json();
-                          alert(`Error: ${err.error}`);
-                        }
-                      } catch (err: any) {
-                        alert(`Error: ${err.message}`);
-                      }
-                    }}
-                    className="bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-200"
-                    title="Vaciar inventario y empezar en blanco"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Vaciar Todo
-                  </button>
-                )}
               </div>
             </div>
 
             {/* BARRA DE FILTROS RÁPIDOS & SEMÁFORO DE STOCK */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
               <button
                 onClick={() => setStockFilter('all')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'all'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 <span>Todos</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
                   {products.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setStockFilter('low_stock')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'low_stock'
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-white border border-amber-200 text-amber-800 hover:bg-amber-50/50'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span className={`w-2 h-2 rounded-full ${stockFilter === 'low_stock' ? 'bg-white' : 'bg-amber-500'}`}></span>
                 <span>Bajo Stock (1 a 3)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800 font-bold'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
                   {countLowStock}
                 </span>
               </button>
 
               <button
                 onClick={() => setStockFilter('out_of_stock')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'out_of_stock'
                     ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white border border-rose-200 text-rose-700 hover:bg-rose-50/50'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <Ban className="w-3.5 h-3.5 text-rose-500" />
-                <span>Agotados (0 pzas)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 font-bold'}`}>
+                <span className={`w-2 h-2 rounded-full ${stockFilter === 'out_of_stock' ? 'bg-white' : 'bg-rose-500'}`}></span>
+                <span>Agotados (0)</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
                   {countOutOfStock}
                 </span>
               </button>
 
               <button
                 onClick={() => setStockFilter('healthy')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'healthy'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50/50'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className={`w-2 h-2 rounded-full ${stockFilter === 'healthy' ? 'bg-white' : 'bg-emerald-500'}`}></span>
                 <span>Stock Óptimo (&gt;3)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800 font-bold'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
                   {countHealthy}
                 </span>
               </button>
 
               <button
                 onClick={() => setStockFilter('combos')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'combos'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-white border border-purple-200 text-purple-800 hover:bg-purple-50/50'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
-                <Layers className="w-3.5 h-3.5 text-purple-600" />
+                <Layers className="w-3.5 h-3.5 text-indigo-500" />
                 <span>Combos</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-800 font-bold'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
                   {countCombos}
                 </span>
               </button>
 
               <button
                 onClick={() => setStockFilter('inactive')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                   stockFilter === 'inactive'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white border border-rose-200 text-rose-700 hover:bg-rose-50/50'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
               >
-                <Power className="w-3.5 h-3.5 text-rose-500" />
-                <span>Apagados</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800 font-bold'}`}>
+                <Power className="w-3.5 h-3.5 text-slate-400" />
+                <span>Inactivos</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
                   {countInactive}
                 </span>
               </button>
@@ -3730,48 +3671,64 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {/* 3. SECCIÓN PEDIDOS ACTIVOS */}
         {crmSubTab === 'orders' && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Seguimiento de Pedidos Activos</h2>
-              <p className="text-xs text-slate-500">Actualiza estados o cancela pedidos para enviarlos al historial de cancelados.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Seguimiento de Pedidos Activos</h2>
+                <p className="text-xs text-slate-500">Órdenes pendientes de empaque, despacho y entrega.</p>
+              </div>
+              <div className="text-xs text-slate-500 font-medium">
+                {activeOrders.length} pedido{activeOrders.length === 1 ? '' : 's'} en proceso
+              </div>
             </div>
 
             {activeOrders.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center text-gray-400 text-xs">
-                No hay pedidos activos pendientes por procesar.
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-xs space-y-2">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                  <Package className="w-5 h-5" />
+                </div>
+                <p className="font-semibold text-slate-700">No hay pedidos activos por procesar</p>
+                <p className="text-slate-400">Todos los pedidos se encuentran entregados o archivados.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {activeOrders.map(order => (
-                  <div key={order.id} className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-sm">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">{order.id}</span>
-                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                          order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                          order.status === 'shipped' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                          'bg-amber-50 text-amber-700 border border-amber-100'
+                  <div key={order.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-xs hover:border-slate-300 transition">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono font-bold text-slate-900 text-sm tracking-tight">{order.id}</span>
+                        <span className={`px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
+                          order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
+                          order.status === 'shipped' ? 'bg-sky-50 text-sky-700 border border-sky-200/60' :
+                          'bg-amber-50 text-amber-700 border border-amber-200/60'
                         }`}>
-                          {order.status === 'delivered' ? '✓ Entregado' : order.status === 'shipped' ? '🚚 En Camino' : '⏳ En Preparación'}
+                          {order.status === 'delivered' ? 'Entregado' : order.status === 'shipped' ? 'En camino' : 'En preparación'}
                         </span>
                       </div>
-                      <p className="text-slate-800 font-medium">{order.clientName} • <span className="text-slate-500">{order.clientPhone}</span></p>
-                      <p className="text-slate-500 text-[11px]">Tipo de envío: {order.shippingType === 'puebla_local' ? 'Local Puebla' : 'Nacional'}</p>
+                      <p className="text-slate-900 font-semibold">{order.clientName} <span className="text-slate-400 font-normal">• {order.clientPhone}</span></p>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-600">
+                          {order.shippingType === 'puebla_local' ? 'Local Puebla' : 'Envío Nacional'}
+                        </span>
+                        {order.createdAt && (
+                          <span>{new Date(order.createdAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                       <div className="text-right">
-                        <span className="text-slate-400 text-[10px] block">Total</span>
-                        <span className="text-base font-black text-slate-900">${order.total.toFixed(2)} MXN</span>
+                        <span className="text-slate-400 text-[10px] block font-medium">Total</span>
+                        <span className="text-base font-bold text-slate-900 font-mono">${order.total.toFixed(2)} MXN</span>
                       </div>
 
                       <select
                         value={order.status}
                         onChange={e => updateOrderStatus(order.id, e.target.value as Order['status'])}
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:border-slate-400"
                       >
                         <option value="pending">Pendiente</option>
-                        <option value="processing">En Preparación</option>
-                        <option value="shipped">En Camino</option>
+                        <option value="processing">En preparación</option>
+                        <option value="shipped">En camino</option>
                         <option value="delivered">Entregado</option>
                       </select>
 
@@ -3781,28 +3738,30 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           setCancellationReason('');
                           setShowCancelModal(true);
                         }}
-                        title="Cancelar pedido y registrar motivo"
-                        className="bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition text-xs border border-red-200"
+                        title="Cancelar pedido"
+                        className="bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-medium px-2.5 py-2 rounded-xl flex items-center gap-1 transition text-xs border border-slate-200"
                       >
-                        <Ban className="w-3.5 h-3.5" /> Cancelar
+                        <Ban className="w-3.5 h-3.5" />
+                        <span>Cancelar</span>
                       </button>
 
                       <button
                         onClick={() => handleDeleteOrder(order.id)}
-                        title="Eliminar pedido permanentemente de la base de datos"
-                        className="bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-700 font-bold p-1.5 rounded-lg flex items-center transition text-xs border border-slate-200"
+                        title="Eliminar pedido"
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition border border-transparent hover:border-rose-100"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
 
                       {/* Si es venta física o tiene ticket registrado, botón para ver y compartir ticket */}
                       {(order.id.startsWith("FX-POS") || (order.notes && order.notes.includes("Ticket:"))) && (
                         <button
                           onClick={() => setViewingTicketOrder(order)}
-                          title="Ver y re-enviar ticket oficial de venta"
-                          className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition text-xs border border-orange-200 shadow-2xs"
+                          title="Ver ticket de compra"
+                          className="bg-orange-50 hover:bg-orange-100/80 text-[#E65F2B] font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition text-xs border border-orange-200/80"
                         >
-                          <Receipt className="w-3.5 h-3.5" /> Ver Ticket
+                          <Receipt className="w-3.5 h-3.5" />
+                          <span>Ticket</span>
                         </button>
                       )}
 
@@ -3811,9 +3770,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           order.clientPhone, 
                           `Hola ${order.clientName}, te informamos que tu pedido ${order.id} se encuentra: ${order.status.toUpperCase()}. Si deseas acordar los detalles de entrega, estamos a tu disposición.`
                         )}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition text-xs shadow-sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition text-xs shadow-xs"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" /> Notificar WA
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Notificar WA</span>
                       </button>
                     </div>
                   </div>
@@ -4399,63 +4359,73 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             {/* Bloque 1: Ventas y Utilidades Concretadas */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                💰 Ventas Realizadas (Pedidos En Preparación, Camino y Entregados)
-              </span>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ingresos Totales</span>
-                  <p className="text-lg sm:text-2xl font-black text-slate-900 mt-1">${realizedRevenue.toFixed(2)} MXN</p>
-                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">{completedOrders.length} pedido(s) activos</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Ventas Realizadas (Órdenes Activas y Entregadas)
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {completedOrders.length} pedido{completedOrders.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Ingresos Totales</span>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${realizedRevenue.toFixed(2)}</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Facturación bruta en MXN</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Costo Mercancía</span>
-                  <p className="text-lg sm:text-2xl font-black text-slate-600 mt-1">${realizedCost.toFixed(2)} MXN</p>
-                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Costo base + importación</span>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Costo de Mercancía</span>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-700 font-mono tracking-tight">${realizedCost.toFixed(2)}</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Base + flete prorrateado</span>
                 </div>
-                <div className="bg-white border border-emerald-100 bg-emerald-50/20 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-emerald-700 text-[11px] sm:text-xs font-semibold">Utilidad Neta Real</span>
-                  <p className="text-lg sm:text-2xl font-black text-emerald-600 mt-1">
-                    {realizedProfit >= 0 ? `+$${realizedProfit.toFixed(2)}` : `-$${Math.abs(realizedProfit).toFixed(2)}`} MXN
+                <div className="bg-white border border-emerald-200/60 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-emerald-700 text-xs font-medium">Utilidad Neta</span>
+                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono tracking-tight">
+                    {realizedProfit >= 0 ? `+$${realizedProfit.toFixed(2)}` : `-$${Math.abs(realizedProfit).toFixed(2)}`}
                   </p>
-                  <span className="text-[10px] text-emerald-600 font-medium mt-0.5 block truncate">Ganancia efectiva</span>
+                  <span className="text-[11px] text-emerald-600 font-medium block truncate">Ganancia efectiva neta</span>
                 </div>
-                <div className="bg-white border border-orange-100 bg-orange-50/20 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-[#E65F2B] text-[11px] sm:text-xs font-semibold">Margen Real</span>
-                  <p className="text-lg sm:text-2xl font-black text-[#E65F2B] mt-1">{realizedMargin.toFixed(1)}%</p>
-                  <span className="text-[10px] text-slate-400 mt-0.5 block truncate">Retorno sobre venta</span>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Margen Real</span>
+                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-mono tracking-tight">{realizedMargin.toFixed(1)}%</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Retorno sobre la venta</span>
                 </div>
               </div>
             </div>
 
             {/* Bloque 2: Proyección de Inventario en Almacén */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                📦 Inventario en Almacén (Proyección del Catálogo Activo)
-              </span>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Inversión en Stock</span>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalInvestment.toFixed(2)} MXN</p>
-                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">{totalInventoryUnits} piezas en bodega</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  Inventario en Almacén (Proyección del Catálogo Activo)
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {totalInventoryUnits} piezas
+                </span>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Inversión en Stock</span>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${totalInvestment.toFixed(2)}</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Capital activo en bodega</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ventas Proyectadas</span>
-                  <p className="text-lg sm:text-2xl font-black text-gray-900 mt-1">${totalExpectedRevenue.toFixed(2)} MXN</p>
-                  <span className="text-[10px] text-emerald-600 flex items-center gap-1 mt-0.5 font-bold truncate">
-                    <ArrowUpRight className="w-3 h-3" /> Al 100% de venta
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Ventas Proyectadas</span>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${totalExpectedRevenue.toFixed(2)}</p>
+                  <span className="text-[11px] text-emerald-600 font-medium block truncate">
+                    Al 100% de venta
                   </span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Ganancia Proyectada</span>
-                  <p className="text-lg sm:text-2xl font-black text-emerald-600 mt-1">+${totalExpectedProfit.toFixed(2)} MXN</p>
-                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Utilidad estimada</span>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Ganancia Proyectada</span>
+                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono tracking-tight">+${totalExpectedProfit.toFixed(2)}</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Utilidad bruta esperada</span>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
-                  <span className="text-gray-500 text-[11px] sm:text-xs font-semibold">Margen Catálogo</span>
-                  <p className="text-lg sm:text-2xl font-black text-[#E65F2B] mt-1">{avgMargin.toFixed(1)}%</p>
-                  <span className="text-[10px] text-gray-400 mt-0.5 block truncate">Rendimiento ponderado</span>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
+                  <span className="text-slate-500 text-xs font-medium">Margen Catálogo</span>
+                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-mono tracking-tight">{avgMargin.toFixed(1)}%</p>
+                  <span className="text-[11px] text-slate-400 block truncate">Margen promedio catálogo</span>
                 </div>
               </div>
             </div>
