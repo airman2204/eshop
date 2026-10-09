@@ -14,7 +14,7 @@ import {
   Clipboard, Globe, Image as ImageIcon, Wand2, Download, Star, HeartHandshake, Save, Percent, Menu, CreditCard,
   Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
   Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle,
-  Mic, MicOff, Radio, Play, Pause, Zap
+  Mic, MicOff, Radio, Play, Pause, Zap, ArrowUpDown, SlidersHorizontal, ArrowLeft, ArrowRight
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -230,6 +230,21 @@ export default function AdminCRM() {
   const [isBulkCustomCategory, setIsBulkCustomCategory] = useState(false);
   const [bulkCustomCategoryName, setBulkCustomCategoryName] = useState('');
   const [savingBulkCategory, setSavingBulkCategory] = useState(false);
+  const [bulkStockDeltaInput, setBulkStockDeltaInput] = useState<number>(5);
+  const [showBulkStockModal, setShowBulkStockModal] = useState(false);
+  const [savingBulkStock, setSavingBulkStock] = useState(false);
+
+  // Edición Rápida de Precio en Línea (Inline Price Edit)
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState<string>('');
+  const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
+
+  // Ordenamiento Dinámico de la Tabla de Inventario
+  const [inventorySortBy, setInventorySortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'stock_asc' | 'stock_desc' | 'margin_desc'>('default');
+
+  // Modal de Impresión de Etiquetas con Código de Barras / QR
+  const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
+  const [barcodePrintProducts, setBarcodePrintProducts] = useState<Product[]>([]);
 
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -1480,6 +1495,13 @@ export default function AdminCRM() {
     }
 
     return true;
+  }).sort((a, b) => {
+    if (inventorySortBy === 'price_asc') return (a.publicPrice || 0) - (b.publicPrice || 0);
+    if (inventorySortBy === 'price_desc') return (b.publicPrice || 0) - (a.publicPrice || 0);
+    if (inventorySortBy === 'stock_asc') return (a.stock || 0) - (b.stock || 0);
+    if (inventorySortBy === 'stock_desc') return (b.stock || 0) - (a.stock || 0);
+    if (inventorySortBy === 'margin_desc') return (b.marginPercent || 0) - (a.marginPercent || 0);
+    return 0; // 'default'
   });
 
   const totalInventoryUnits = products.reduce((acc, p) => acc + (p.stock || 0), 0);
@@ -1900,6 +1922,117 @@ export default function AdminCRM() {
     } finally {
       setSavingBulkCategory(false);
     }
+  };
+
+  // 8. ACTIVAR / PAUSAR EN LOTE
+  const handleBulkToggleActive = async (targetActive: boolean) => {
+    if (selectedProductIds.length === 0) return;
+    const count = selectedProductIds.length;
+    try {
+      // Optimistic update
+      setProducts(prev => prev.map(p => selectedProductIds.includes(p.id) ? { ...p, isActive: targetActive } : p));
+      
+      await Promise.all(
+        selectedProductIds.map(id => updateProductInDb(id, { isActive: targetActive }))
+      );
+
+      setSelectedProductIds([]);
+      alert(`¡Éxito! Se ${targetActive ? 'encendieron' : 'pausaron'} ${count} artículo(s) en la tienda.`);
+    } catch (err: any) {
+      console.error("Error en cambio de estado masivo:", err);
+      alert(`Ocurrió un detalle al actualizar algunos artículos: ${err.message || 'Intenta de nuevo'}`);
+    }
+  };
+
+  // 9. AJUSTE DE STOCK MASIVO (+ o -)
+  const handleApplyBulkStock = async () => {
+    if (selectedProductIds.length === 0 || bulkStockDeltaInput === 0) return;
+    setSavingBulkStock(true);
+    try {
+      const delta = bulkStockDeltaInput;
+      // Optimistic update
+      setProducts(prev => prev.map(p => {
+        if (selectedProductIds.includes(p.id)) {
+          const nextStock = Math.max(0, (p.stock || 0) + delta);
+          return { ...p, stock: nextStock };
+        }
+        return p;
+      }));
+
+      const prodsToUpdate = products.filter(p => selectedProductIds.includes(p.id));
+      await Promise.all(
+        prodsToUpdate.map(p => {
+          const nextStock = Math.max(0, (p.stock || 0) + delta);
+          return updateProductInDb(p.id, { stock: nextStock });
+        })
+      );
+
+      setShowBulkStockModal(false);
+      setSelectedProductIds([]);
+      alert(`¡Stock actualizado! Se ${delta > 0 ? 'sumaron' : 'restaron'} ${Math.abs(delta)} piezas a ${prodsToUpdate.length} artículo(s).`);
+    } catch (err: any) {
+      console.error("Error al ajustar stock en lote:", err);
+      alert(`Error al ajustar stock: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setSavingBulkStock(false);
+    }
+  };
+
+  // 10. GUARDAR PRECIO RÁPIDO EN LÍNEA (INLINE QUICK-EDIT)
+  const handleQuickPriceSave = async (product: Product, newPriceNum: number) => {
+    if (isNaN(newPriceNum) || newPriceNum <= 0 || newPriceNum === product.publicPrice) {
+      setEditingPriceId(null);
+      return;
+    }
+
+    setSavingPriceId(product.id);
+    const prevPrice = product.publicPrice;
+    const profit = newPriceNum - (product.totalCostMxn || 0);
+    const margin = newPriceNum > 0 ? (profit / newPriceNum) * 100 : 0;
+
+    try {
+      // Optimistic update
+      setProducts(prev => prev.map(p => {
+        if (p.id === product.id) {
+          return {
+            ...p,
+            publicPrice: newPriceNum,
+            profitUnit: profit,
+            marginPercent: margin,
+          };
+        }
+        return p;
+      }));
+
+      await updateProductInDb(product.id, { publicPrice: newPriceNum });
+      setEditingPriceId(null);
+    } catch (err: any) {
+      console.error("Error al actualizar precio en línea:", err);
+      // Revert
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, publicPrice: prevPrice } : p));
+      alert(`No se pudo actualizar el precio: ${err.message || 'Error de conexión'}`);
+    } finally {
+      setSavingPriceId(null);
+    }
+  };
+
+  // 11. GENERADOR AUTOMÁTICO DE SKU INTELIGENTE
+  const handleGenerateAutoSku = (catName?: string) => {
+    const categoryPrefix = (catName || newCategory || 'GEN')
+      .trim()
+      .slice(0, 3)
+      .toUpperCase()
+      .replace(/[^A-Z]/g, 'X') || 'FOX';
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const generated = `FX-${categoryPrefix}-${randomSuffix}`;
+    setNewSku(generated);
+  };
+
+  // 12. ABRIR MODAL DE IMPRESIÓN DE ETIQUETAS
+  const handleOpenBarcodePrintModal = (targetProducts: Product[]) => {
+    if (targetProducts.length === 0) return;
+    setBarcodePrintProducts(targetProducts);
+    setShowBarcodePrintModal(true);
   };
 
   // Crear Lote de Importación
@@ -3116,99 +3249,170 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
             </div>
 
-            {/* BARRA DE FILTROS RÁPIDOS & SEMÁFORO DE STOCK */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-              <button
-                onClick={() => setStockFilter('all')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'all'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span>Todos</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                  {products.length}
+            {/* CINTA FINANCIERA DE BODEGA & KPIS DE INVENTARIO */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-700/60">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                  <Package className="w-3 h-3 text-[#E65F2B]" /> Total Unidades
                 </span>
-              </button>
+                <span className="text-lg sm:text-xl font-black font-mono text-white">
+                  {totalInventoryUnits} <span className="text-[11px] font-normal text-slate-400">pzas</span>
+                </span>
+                <span className="text-[10px] text-slate-400 block truncate">
+                  {products.length} artículos únicos
+                </span>
+              </div>
 
-              <button
-                onClick={() => setStockFilter('low_stock')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'low_stock'
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${stockFilter === 'low_stock' ? 'bg-white' : 'bg-amber-500'}`}></span>
-                <span>Bajo Stock (1 a 3)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
-                  {countLowStock}
+              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                  <DollarSign className="w-3 h-3 text-blue-400" /> Capital Invertido
                 </span>
-              </button>
+                <span className="text-lg sm:text-xl font-black font-mono text-blue-300">
+                  ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  Costo de adquisición
+                </span>
+              </div>
 
-              <button
-                onClick={() => setStockFilter('out_of_stock')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'out_of_stock'
-                    ? 'bg-rose-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${stockFilter === 'out_of_stock' ? 'bg-white' : 'bg-rose-500'}`}></span>
-                <span>Agotados (0)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
-                  {countOutOfStock}
+              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-emerald-400" /> Valor en Piso
                 </span>
-              </button>
+                <span className="text-lg sm:text-xl font-black font-mono text-emerald-400">
+                  ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+                <span className="text-[10px] text-emerald-300/80 block">
+                  Venta total proyectada
+                </span>
+              </div>
 
-              <button
-                onClick={() => setStockFilter('healthy')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'healthy'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${stockFilter === 'healthy' ? 'bg-white' : 'bg-emerald-500'}`}></span>
-                <span>Stock Óptimo (&gt;3)</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
-                  {countHealthy}
+              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                  <Percent className="w-3 h-3 text-amber-400" /> Utilidad Estimada
                 </span>
-              </button>
-
-              <button
-                onClick={() => setStockFilter('combos')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'combos'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Combos</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
-                  {countCombos}
+                <span className="text-lg sm:text-xl font-black font-mono text-amber-300">
+                  +${totalExpectedProfit.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
-              </button>
-
-              <button
-                onClick={() => setStockFilter('inactive')}
-                className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
-                  stockFilter === 'inactive'
-                    ? 'bg-slate-700 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                <Power className="w-3.5 h-3.5 text-slate-400" />
-                <span>Inactivos</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
-                  {countInactive}
+                <span className="text-[10px] text-amber-400/80 font-bold block">
+                  Margen prom: {avgMargin.toFixed(0)}%
                 </span>
-              </button>
+              </div>
             </div>
 
-            {/* BARRA FLOTANTE DE ACCIONES EN LOTE (CUANDO HAY ARTÍCULOS SELECCIONADOS) */}
+            {/* BARRA DE FILTROS RÁPIDOS, SEMÁFORO DE STOCK & ORDENAMIENTO */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                <button
+                  onClick={() => setStockFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>Todos</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    {products.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setStockFilter('low_stock')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'low_stock'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'low_stock' ? 'bg-white' : 'bg-amber-500'}`}></span>
+                  <span>Bajo Stock (1 a 3)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
+                    {countLowStock}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setStockFilter('out_of_stock')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'out_of_stock'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'out_of_stock' ? 'bg-white' : 'bg-rose-500'}`}></span>
+                  <span>Agotados (0)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
+                    {countOutOfStock}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setStockFilter('healthy')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'healthy'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'healthy' ? 'bg-white' : 'bg-emerald-500'}`}></span>
+                  <span>Stock Óptimo (&gt;3)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
+                    {countHealthy}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setStockFilter('combos')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'combos'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>Combos</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
+                    {countCombos}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setStockFilter('inactive')}
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
+                    stockFilter === 'inactive'
+                      ? 'bg-slate-700 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <Power className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Inactivos</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
+                    {countInactive}
+                  </span>
+                </button>
+              </div>
+
+              {/* Selector de Ordenamiento */}
+              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] text-slate-500 font-medium">Ordenar:</span>
+                <select
+                  value={inventorySortBy}
+                  onChange={e => setInventorySortBy(e.target.value as any)}
+                  className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-slate-400 shadow-2xs"
+                >
+                  <option value="default">Por defecto (Recientes)</option>
+                  <option value="price_asc">Precio: Menor a Mayor</option>
+                  <option value="price_desc">Precio: Mayor a Menor</option>
+                  <option value="stock_asc">Stock: Menor a Mayor (Agotándose)</option>
+                  <option value="stock_desc">Stock: Mayor a Menor</option>
+                  <option value="margin_desc">Margen: Mayor a Menor (+Rentables)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* BARRA FLOTANTE DE ACCIONES EN LOTE AMPLIADA */}
             {selectedProductIds.length > 0 && (
               <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 border border-slate-800">
                 <div className="flex items-center gap-3">
@@ -3217,19 +3421,64 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span>{selectedProductIds.length} seleccionados</span>
                   </div>
                   <span className="text-xs text-slate-300 hidden sm:inline">
-                    Aplica cambios a todos los artículos seleccionados simultáneamente.
+                    Acciones operativas masivas en un solo clic.
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Encender en tienda masivo */}
+                  <button
+                    onClick={() => handleBulkToggleActive(true)}
+                    className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-emerald-600 shadow-xs cursor-pointer"
+                    title="Activar todos los seleccionados en tienda"
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    <span>Encender ({selectedProductIds.length})</span>
+                  </button>
+
+                  {/* Pausar en tienda masivo */}
+                  <button
+                    onClick={() => handleBulkToggleActive(false)}
+                    className="bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                    title="Pausar / ocultar en tienda"
+                  >
+                    <Power className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Pausar</span>
+                  </button>
+
+                  {/* Ajustar Stock Masivo */}
+                  <button
+                    onClick={() => setShowBulkStockModal(true)}
+                    className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                    title="Sumar o restar piezas a todos"
+                  >
+                    <Package className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Ajustar Stock</span>
+                  </button>
+
+                  {/* Imprimir Etiquetas Código de Barras */}
+                  <button
+                    onClick={() => {
+                      const prods = products.filter(p => selectedProductIds.includes(p.id));
+                      handleOpenBarcodePrintModal(prods);
+                    }}
+                    className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                    title="Imprimir etiquetas de códigos de barras / precios"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Etiquetas ({selectedProductIds.length})</span>
+                  </button>
+
+                  {/* Cambiar Categoría */}
                   <button
                     onClick={handleOpenBulkCategoryModal}
                     className="bg-[#2D4A58] hover:bg-[#3d6072] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2 border border-slate-700 shadow-xs cursor-pointer"
                   >
                     <Tag className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Cambiar Categoría ({selectedProductIds.length})</span>
+                    <span>Categoría</span>
                   </button>
 
+                  {/* Deseleccionar */}
                   <button
                     onClick={handleClearSelectedProducts}
                     className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 cursor-pointer"
@@ -3339,7 +3588,48 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
                           </td>
                           <td className="py-3.5 px-4 font-mono font-black text-slate-900">${p.totalCostMxn.toFixed(2)}</td>
-                          <td className="py-3.5 px-4 font-mono font-black text-emerald-700 bg-emerald-50/50">${p.publicPrice.toFixed(2)}</td>
+                          
+                          {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA */}
+                          <td className="py-3.5 px-4 font-mono font-black bg-emerald-50/40">
+                            {editingPriceId === p.id ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-slate-400 font-bold">$</span>
+                                <input
+                                  type="number"
+                                  autoFocus
+                                  value={editingPriceValue}
+                                  onChange={e => setEditingPriceValue(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      handleQuickPriceSave(p, parseFloat(editingPriceValue));
+                                    } else if (e.key === 'Escape') {
+                                      setEditingPriceId(null);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    handleQuickPriceSave(p, parseFloat(editingPriceValue));
+                                  }}
+                                  className="w-20 px-1.5 py-0.5 bg-white border-2 border-emerald-500 rounded text-xs font-mono font-bold text-slate-900 focus:outline-none shadow-xs"
+                                />
+                              </div>
+                            ) : (
+                              <div 
+                                onClick={() => {
+                                  setEditingPriceId(p.id);
+                                  setEditingPriceValue(p.publicPrice.toString());
+                                }}
+                                title="Clic para editar precio al instante"
+                                className="group/price flex items-center gap-1 cursor-pointer hover:bg-emerald-100/70 px-1.5 py-0.5 rounded transition text-emerald-800"
+                              >
+                                <span>${p.publicPrice.toFixed(2)}</span>
+                                <Edit3 className="w-3 h-3 text-emerald-500 opacity-0 group-hover/price:opacity-100 transition shrink-0" />
+                                {savingPriceId === p.id && (
+                                  <span className="text-[9px] text-emerald-600 font-sans font-bold animate-pulse">...</span>
+                                )}
+                              </div>
+                            )}
+                          </td>
+
                           <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
                             +${p.profitUnit.toFixed(2)} <span className="text-[10px] text-slate-400">({p.marginPercent.toFixed(0)}%)</span>
                           </td>
@@ -3409,6 +3699,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                 <span className="hidden lg:inline">Ya Vendido</span>
+                              </button>
+                              <button
+                                onClick={() => handleOpenBarcodePrintModal([p])}
+                                title="Imprimir etiqueta con código de barras y precio"
+                                className="p-1.5 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                              >
+                                <Printer className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleOpenKardex(p)}
@@ -3593,15 +3890,40 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </div>
                         </div>
 
-                        {/* Métricas financieras del producto */}
-                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center">
+                        {/* Métricas financieras del producto con Edición Rápida de Precio */}
+                        <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center items-center">
                           <div>
                             <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo</span>
                             <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(0)}</span>
                           </div>
-                          <div className="border-x border-slate-200">
-                            <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta</span>
-                            <span className="text-xs font-mono font-black text-emerald-700">${p.publicPrice.toFixed(0)}</span>
+                          <div className="border-x border-slate-200 px-1">
+                            <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta (toca)</span>
+                            {editingPriceId === p.id ? (
+                              <input
+                                type="number"
+                                autoFocus
+                                value={editingPriceValue}
+                                onChange={e => setEditingPriceValue(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleQuickPriceSave(p, parseFloat(editingPriceValue));
+                                  else if (e.key === 'Escape') setEditingPriceId(null);
+                                }}
+                                onBlur={() => handleQuickPriceSave(p, parseFloat(editingPriceValue))}
+                                className="w-full text-center px-1 py-0.5 bg-white border border-emerald-500 rounded text-xs font-mono font-bold text-slate-900"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingPriceId(p.id);
+                                  setEditingPriceValue(p.publicPrice.toString());
+                                }}
+                                className="text-xs font-mono font-black text-emerald-700 hover:bg-emerald-100/60 px-1.5 py-0.5 rounded transition inline-flex items-center gap-0.5"
+                              >
+                                <span>${p.publicPrice.toFixed(0)}</span>
+                                <Edit3 className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
+                              </button>
+                            )}
                           </div>
                           <div>
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Ganancia</span>
@@ -3617,6 +3939,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             <span>Ya Vendido</span>
+                          </button>
+                          <button
+                            onClick={() => handleOpenBarcodePrintModal([p])}
+                            title="Imprimir Etiqueta"
+                            className="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold text-xs p-2 rounded-xl border border-cyan-100 transition"
+                          >
+                            <Printer className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenKardex(p)}
@@ -7336,21 +7665,32 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   />
                 </div>
 
-                {/* Código de Barras / SKU con Escáner Móvil */}
+                {/* Código de Barras / SKU con Escáner Móvil y Generador Automático */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
                     <label className="text-slate-700 font-bold block">Código de Barras / SKU:</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setScannerContext('sku_input');
-                        setShowCameraScanner(true);
-                      }}
-                      className="text-[#E65F2B] hover:text-[#c44f22] font-bold text-[11px] flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200 shadow-xs"
-                    >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>Escanear con Cámara</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateAutoSku()}
+                        className="text-blue-600 hover:text-blue-700 font-bold text-[11px] flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200 shadow-2xs cursor-pointer transition hover:bg-blue-100"
+                        title="Generar un SKU único automáticamente para este producto"
+                      >
+                        <Zap className="w-3 h-3 text-blue-500" />
+                        <span>Generar SKU</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannerContext('sku_input');
+                          setShowCameraScanner(true);
+                        }}
+                        className="text-[#E65F2B] hover:text-[#c44f22] font-bold text-[11px] flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200 shadow-2xs cursor-pointer transition hover:bg-orange-100"
+                      >
+                        <QrCode className="w-3.5 h-3.5" />
+                        <span>Escanear con Cámara</span>
+                      </button>
+                    </div>
                   </div>
                   <div className="relative">
                     <input
@@ -7366,9 +7706,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    Usa la cámara del celular para escanear el código de barras de fábrica (UPC/EAN) del producto.
-                  </p>
+                  {/* Alerta si el SKU ya existe en otro producto */}
+                  {(() => {
+                    const duplicate = products.find(p => p.sku && p.sku.toLowerCase() === newSku.trim().toLowerCase() && p.id !== editingProductId);
+                    if (duplicate && newSku.trim()) {
+                      return (
+                        <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1 bg-rose-50 p-1.5 rounded-lg border border-rose-200">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          <span>Atención: Este SKU ya está asignado a "{duplicate.title}". Verifica antes de guardar.</span>
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Puedes teclearlo, escanear el código de fábrica o pulsar "Generar SKU" si es mercancía genérica.
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Subida de Múltiples Imágenes con Buscador y Portapapeles */}
@@ -7453,33 +7807,89 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {/* Galería de Miniaturas de Fotos */}
                     {newImages.length > 0 && (
                       <div className="space-y-1.5 pt-1">
-                        <span className="text-[10px] font-bold text-slate-600 block">Fotos cargadas (la primera será la portada principal):</span>
-                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                        <span className="text-[10px] font-bold text-slate-600 block">Fotos cargadas (la primera es la portada de la tienda):</span>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                           {newImages.map((imgUrl, idx) => (
-                            <div key={idx} className="relative group rounded-xl overflow-hidden border-2 border-slate-200 bg-white aspect-square shadow-2xs">
+                            <div key={idx} className={`relative group rounded-xl overflow-hidden border-2 bg-white aspect-square shadow-2xs flex flex-col justify-between p-1 ${
+                              idx === 0 ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-slate-200'
+                            }`}>
                               <img
                                 src={imgUrl}
                                 alt={`Foto ${idx + 1}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover rounded-lg absolute inset-0 z-0"
                               />
-                              {idx === 0 && (
-                                <span className="absolute top-1 left-1 bg-[#E65F2B] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
-                                  Portada
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = newImages.filter((_, i) => i !== idx);
-                                  setNewImages(updated);
-                                  if (updated.length > 0) setNewImageUrl(updated[0]);
-                                  else setNewImageUrl('');
-                                }}
-                                className="absolute top-1 right-1 bg-red-600/90 text-white rounded-full p-1 opacity-90 hover:opacity-100 hover:scale-110 transition shadow cursor-pointer"
-                                title="Eliminar foto"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                              <div className="relative z-10 flex items-center justify-between w-full">
+                                {idx === 0 ? (
+                                  <span className="bg-[#E65F2B] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
+                                    ★ Portada
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      // Mover esta foto al inicio (índice 0)
+                                      const updated = [imgUrl, ...newImages.filter((_, i) => i !== idx)];
+                                      setNewImages(updated);
+                                      setNewImageUrl(imgUrl);
+                                    }}
+                                    className="bg-slate-900/80 hover:bg-slate-900 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow cursor-pointer transition opacity-90 hover:opacity-100"
+                                    title="Hacer esta foto la portada principal"
+                                  >
+                                    Hacer Portada
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = newImages.filter((_, i) => i !== idx);
+                                    setNewImages(updated);
+                                    if (updated.length > 0) setNewImageUrl(updated[0]);
+                                    else setNewImageUrl('');
+                                  }}
+                                  className="bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 transition shadow cursor-pointer"
+                                  title="Eliminar foto"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Flechas de reordenamiento */}
+                              <div className="relative z-10 flex items-center justify-end gap-1 mt-auto">
+                                {idx > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...newImages];
+                                      const temp = updated[idx - 1];
+                                      updated[idx - 1] = updated[idx];
+                                      updated[idx] = temp;
+                                      setNewImages(updated);
+                                      if (idx - 1 === 0) setNewImageUrl(updated[0]);
+                                    }}
+                                    className="bg-white/90 hover:bg-white text-slate-800 p-1 rounded-md shadow-xs cursor-pointer"
+                                    title="Mover a la izquierda"
+                                  >
+                                    <ArrowLeft className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                                {idx < newImages.length - 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...newImages];
+                                      const temp = updated[idx + 1];
+                                      updated[idx + 1] = updated[idx];
+                                      updated[idx] = temp;
+                                      setNewImages(updated);
+                                      if (idx === 0) setNewImageUrl(updated[0]);
+                                    }}
+                                    className="bg-white/90 hover:bg-white text-slate-800 p-1 rounded-md shadow-xs cursor-pointer"
+                                    title="Mover a la derecha"
+                                  >
+                                    <ArrowRight className="w-2.5 h-2.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -7858,6 +8268,30 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         onChange={e => setNewPublicPrice(parseFloat(e.target.value) || 0)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
                       />
+                    </div>
+                    {/* Botones de cálculo rápido de margen deseado */}
+                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                      <span className="text-[9px] text-slate-400 font-bold">Margen sugerido:</span>
+                      {[
+                        { label: '+30%', margin: 0.30 },
+                        { label: '+40%', margin: 0.40 },
+                        { label: '+50%', margin: 0.50 },
+                        { label: '+100%', margin: 1.00 },
+                      ].map(preset => {
+                        // Si margen = 40%, precio = costo / (1 - 0.40)
+                        const suggestedPrice = Math.round(totalCostUnitMxn / (1 - (preset.margin === 1.0 ? 0.5 : preset.margin)));
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setNewPublicPrice(suggestedPrice)}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold transition shadow-2xs cursor-pointer"
+                            title={`Fijar precio en $${suggestedPrice} MXN (${preset.label})`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -10127,6 +10561,213 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer"
               >
                 Sí, Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 5. MODAL AJUSTE MASIVO DE STOCK                           */}
+      {/* ======================================================== */}
+      {showBulkStockModal && (
+        <div 
+          onClick={() => setShowBulkStockModal(false)}
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Package className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Ajustar Stock Masivo</h3>
+                  <p className="text-[11px] text-slate-500">{selectedProductIds.length} artículos seleccionados</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowBulkStockModal(false)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-600">
+                Indica cuántas piezas deseas <strong>sumar</strong> o <strong>restar</strong> a cada uno de los artículos marcados:
+              </p>
+
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Cantidad a aplicar (delta):</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={bulkStockDeltaInput}
+                    onChange={e => setBulkStockDeltaInput(parseInt(e.target.value) || 0)}
+                    placeholder="Ej. +5 o -2"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-sm font-bold text-center focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* Botones rápidos */}
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[-5, -1, 5, 10].map(val => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setBulkStockDeltaInput(val)}
+                    className="py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono font-bold text-xs transition"
+                  >
+                    {val > 0 ? `+${val}` : val}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowBulkStockModal(false)}
+                className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingBulkStock || bulkStockDeltaInput === 0}
+                onClick={handleApplyBulkStock}
+                className="py-2.5 px-4 bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition shadow-xs cursor-pointer flex items-center justify-center gap-1"
+              >
+                {savingBulkStock ? 'Aplicando...' : 'Aplicar Stock'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 6. MODAL IMPRESIÓN DE ETIQUETAS DE PRECIO & CÓDIGO BARRAS */}
+      {/* ======================================================== */}
+      {showBarcodePrintModal && (
+        <div 
+          onClick={() => setShowBarcodePrintModal(false)}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Printer className="w-5 h-5 text-cyan-400" />
+                <div>
+                  <h3 className="font-bold text-sm">Etiquetas de Precios y Código de Barras</h3>
+                  <p className="text-[11px] text-slate-400">{barcodePrintProducts.length} artículo(s) listos para impresión</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBarcodePrintModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido Imprimible de Etiquetas */}
+            <div className="p-6 overflow-y-auto space-y-4 print:p-0">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-3 print:gap-2">
+                {barcodePrintProducts.map((p, idx) => {
+                  const displaySku = p.sku || `FX-${p.id.slice(0, 8).toUpperCase()}`;
+                  return (
+                    <div 
+                      key={`${p.id}-${idx}`}
+                      className="border-2 border-dashed border-slate-300 rounded-2xl p-3 flex flex-col justify-between items-center text-center bg-white shadow-2xs space-y-2 page-break-inside-avoid"
+                    >
+                      {/* Logo / Nombre Tienda */}
+                      <div className="w-full flex items-center justify-between border-b border-slate-100 pb-1">
+                        <span className="font-black text-[9px] tracking-wider uppercase text-slate-800">FOXDROP</span>
+                        <span className="text-[9px] font-bold text-slate-400 truncate max-w-[80px]">{p.category}</span>
+                      </div>
+
+                      {/* Título */}
+                      <p className="font-bold text-xs text-slate-900 line-clamp-2 leading-tight">
+                        {p.title}
+                      </p>
+
+                      {/* Código de Barras Visual Estilizado (SVG) */}
+                      <div className="w-full py-1 flex flex-col items-center">
+                        <svg className="w-full h-9" viewBox="0 0 160 36">
+                          {/* Generación de barras simuladas estándar Code128 limpias */}
+                          <rect x="5" y="0" width="3" height="36" fill="#000" />
+                          <rect x="11" y="0" width="2" height="36" fill="#000" />
+                          <rect x="16" y="0" width="4" height="36" fill="#000" />
+                          <rect x="23" y="0" width="2" height="36" fill="#000" />
+                          <rect x="28" y="0" width="5" height="36" fill="#000" />
+                          <rect x="36" y="0" width="2" height="36" fill="#000" />
+                          <rect x="42" y="0" width="3" height="36" fill="#000" />
+                          <rect x="48" y="0" width="4" height="36" fill="#000" />
+                          <rect x="55" y="0" width="2" height="36" fill="#000" />
+                          <rect x="60" y="0" width="5" height="36" fill="#000" />
+                          <rect x="68" y="0" width="3" height="36" fill="#000" />
+                          <rect x="74" y="0" width="2" height="36" fill="#000" />
+                          <rect x="79" y="0" width="4" height="36" fill="#000" />
+                          <rect x="86" y="0" width="2" height="36" fill="#000" />
+                          <rect x="91" y="0" width="5" height="36" fill="#000" />
+                          <rect x="99" y="0" width="2" height="36" fill="#000" />
+                          <rect x="104" y="0" width="4" height="36" fill="#000" />
+                          <rect x="111" y="0" width="2" height="36" fill="#000" />
+                          <rect x="116" y="0" width="5" height="36" fill="#000" />
+                          <rect x="124" y="0" width="3" height="36" fill="#000" />
+                          <rect x="130" y="0" width="2" height="36" fill="#000" />
+                          <rect x="135" y="0" width="4" height="36" fill="#000" />
+                          <rect x="142" y="0" width="2" height="36" fill="#000" />
+                          <rect x="147" y="0" width="4" height="36" fill="#000" />
+                          <rect x="154" y="0" width="2" height="36" fill="#000" />
+                        </svg>
+                        <span className="font-mono text-[9px] font-bold text-slate-600 tracking-widest mt-0.5">
+                          {displaySku}
+                        </span>
+                      </div>
+
+                      {/* Precio */}
+                      <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">PRECIO:</span>
+                        <span className="text-sm font-black text-slate-900 font-mono">
+                          ${p.publicPrice.toFixed(2)} MXN
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer con botón imprimir */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowBarcodePrintModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+              >
+                Cerrar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-5 py-2.5 bg-cyan-700 hover:bg-cyan-800 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimir Etiquetas (Térmica / Carta)</span>
               </button>
             </div>
           </div>
