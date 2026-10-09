@@ -10,6 +10,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCategoryIconEmoji } from "@/lib/constants";
+import crypto from "crypto";
+
+function hashPassword(pass: string): string {
+  return crypto.createHash("sha256").update(pass.trim()).digest("hex");
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -1036,9 +1041,10 @@ export async function POST(req: NextRequest) {
         console.warn("Inicializando nuevo almacén de credenciales admin:", readErr);
       }
 
-      // 2. Actualizar contraseña y quitar flag de cambio obligatorio
+      // 2. Actualizar contraseña (almacenada con hash SHA-256) y quitar flag de cambio obligatorio
+      const hashed = hashPassword(password);
       credsDict[normalizedEmail] = {
-        password: password.trim(),
+        password: hashed,
         mustChangePassword: false,
         updatedAt: new Date().toISOString(),
       };
@@ -1077,7 +1083,21 @@ export async function POST(req: NextRequest) {
           const userCred = credsDict[normalizedEmail];
 
           if (userCred && userCred.password) {
-            if (userCred.password === password.trim()) {
+            const inputHash = hashPassword(password);
+            const matches = userCred.password === inputHash || userCred.password === password.trim();
+            if (matches) {
+              // Si aún estaba en texto plano, migrarla a hash automáticamente
+              if (userCred.password !== inputHash) {
+                userCred.password = inputHash;
+                supabase.storage
+                  .from("product-images")
+                  .upload("_system/admin_passwords.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+                    contentType: "application/json",
+                    upsert: true,
+                  })
+                  .catch(() => {});
+              }
+
               return NextResponse.json({
                 valid: true,
                 mustChangePassword: Boolean(userCred.mustChangePassword),

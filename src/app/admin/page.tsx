@@ -389,12 +389,6 @@ export default function AdminCRM() {
       const stored = localStorage.getItem('foxdrop_admin_session');
       if (stored) {
         const parsed: AdminSession = JSON.parse(stored);
-        // Si el usuario ya había establecido su contraseña (guardada en local o server),
-        // consultamos al servidor para asegurar si de verdad debe o no cambiar contraseña
-        const localSavedPass = localStorage.getItem(`admin_pass_${parsed.email}`);
-        if (localSavedPass && (localSavedPass !== 'FoxDrop2026!' && localSavedPass !== 'Foxdrop2026*')) {
-          parsed.mustChangePassword = false;
-        }
         setAdminSession(parsed);
         if (parsed.mustChangePassword) {
           setShowResetModal(true);

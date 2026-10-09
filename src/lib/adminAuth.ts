@@ -40,9 +40,6 @@ export async function authenticateAdmin(
     if (res.ok) {
       const data = await res.json();
       if (data.valid === true) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(`admin_pass_${normalizedEmail}`, pass);
-        }
         return {
           success: true,
           session: {
@@ -106,12 +103,7 @@ export async function updateAdminPassword(email: string, newPass: string) {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Guardar en localStorage inmediatamente
-  if (typeof window !== "undefined") {
-    localStorage.setItem(`admin_pass_${normalizedEmail}`, newPass);
-  }
-
-  // Persistir en Supabase a través del endpoint seguro del servidor
+  // Persistir de forma segura en Supabase con hash SHA-256 a través del endpoint del servidor
   try {
     const res = await fetch("/api/admin", {
       method: "POST",
