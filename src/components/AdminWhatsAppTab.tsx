@@ -243,18 +243,40 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   }, []);
 
   const requestNotificationPermission = async () => {
+    soundManager.unlockAudio();
+    soundManager.playWhatsAppPop();
+
     if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
         const perm = await Notification.requestPermission();
         setNotificationPermission(perm);
         if (perm === 'granted') {
-          try {
-            new Notification('FoxDrop WhatsApp', {
-              body: '¡Notificaciones activadas! Te avisaremos de cada mensaje entrante aunque estés en otra pestaña.',
-              icon: '/favicon.ico',
+          // Si hay Service Worker, usar showNotification (compatible 100% con celulares Android/iOS PWA)
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification('FoxDrop WhatsApp', {
+                body: '🔔 ¡Alertas y sonido activados en este celular!',
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                tag: 'whatsapp-activation',
+                ...({ vibrate: [200, 100, 200] } as Record<string, unknown>),
+              } as NotificationOptions);
+            }).catch(() => {
+              try {
+                new Notification('FoxDrop WhatsApp', {
+                  body: '🔔 ¡Alertas y sonido activados!',
+                  icon: '/favicon.ico',
+                });
+              } catch {}
             });
-            soundManager.playWhatsAppPop();
-          } catch {}
+          } else {
+            try {
+              new Notification('FoxDrop WhatsApp', {
+                body: '🔔 ¡Alertas y sonido activados!',
+                icon: '/favicon.ico',
+              });
+            } catch {}
+          }
         }
       } catch (err) {
         console.error('Error solicitando permisos de notificación:', err);
@@ -264,23 +286,37 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Disparar notificación nativa y sonido fuerte
   const triggerClientMessageNotification = (senderName: string, text: string) => {
-    // 1. Sonido estilo WhatsApp y vibración
+    // 1. Sonido estilo WhatsApp y vibración física de celular
     try {
       soundManager.playWhatsAppPop();
     } catch {}
 
-    // 2. Notificación en pantalla del sistema / celular
+    // 2. Notificación en pantalla del sistema / celular (usando Service Worker para soporte móvil)
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        const notif = new Notification(`💬 WhatsApp: ${senderName}`, {
-          body: text || 'Nuevo mensaje recibido en FoxDrop',
-          icon: '/favicon.ico',
-          tag: 'whatsapp-message',
+      const title = `💬 WhatsApp: ${senderName}`;
+      const options: NotificationOptions & Record<string, unknown> = {
+        body: text || 'Nuevo mensaje recibido en FoxDrop',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'whatsapp-message',
+        vibrate: [200, 100, 200],
+      };
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(title, options);
+        }).catch(() => {
+          try {
+            const notif = new Notification(title, options);
+            notif.onclick = () => window.focus();
+          } catch {}
         });
-        notif.onclick = () => {
-          window.focus();
-        };
-      } catch {}
+      } else {
+        try {
+          const notif = new Notification(title, options);
+          notif.onclick = () => window.focus();
+        } catch {}
+      }
     }
   };
 
