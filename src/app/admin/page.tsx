@@ -276,22 +276,23 @@ export default function AdminCRM() {
     {
       id: 'welcome',
       sender: 'agent',
-      text: '¡Hola! 🦊 Soy **Fox**, tu Inteligencia Artificial ejecutiva y copiloto de operaciones de FoxDrop Puebla.\n\nEstoy conectado en vivo a tu inventario, finanzas y pedidos. Cuento con protocolos de seguridad para proteger tu catálogo.\n\nPuedes hablarme por micrófono o pedirme:\n- ☀️ **"Briefing matutino"** para el balance de hoy y entregas en Puebla.\n- ⚡ **Ajustar stock o precios** con confirmación en un clic.\n- 📅 **Crear el plan de difusión continua (7 días)** para Instagram y Facebook.\n- 📦 **Redactar seguimientos de pedidos** para enviar por WhatsApp.\n\n¿En qué te apoyo?',
+      text: '¡Hola! 🦊 Soy **Fox**, tu Director de Crecimiento (CMO) y Copiloto de Marketing & Ventas para FoxDrop Puebla.\n\nEstoy conectado en vivo a tu inventario, ventas y clientes. Mi objetivo número 1 es **crear promociones irresistibles, atraer nuevos clientes y multiplicar tus ventas** tanto en tienda física como en línea.\n\n🎯 **¿Qué podemos detonar hoy?**\n- ⚡ **Promoción Flash o Fin de Semana:** Estrategias 2x1, combos ganadores o liquidación de productos estancados.\n- 🧲 **Atracción de Clientes a Tienda:** Campañas para generar visitas a nuestros puntos en Puebla.\n- 📲 **Copys y Ganchos Virales:** Textos listos para WhatsApp, TikTok, Instagram y Facebook Marketplace.\n- 👑 **Reactivación de Clientes VIP:** Ofertas exclusivas para miembros con estrellas Club FoxDrop.\n- ☀️ **Briefing Operativo:** Resumen ejecutivo de entregas, stock y balance del día.\n\n¿Qué producto o campaña quieres que impulsemos hoy?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actionSuggestions: [
-        'Buenos días Fox, dame el briefing ejecutivo de hoy',
-        '¿Cuáles son nuestros productos con mayor margen de ganancia?',
-        'Genera el plan de difusión continua para esta semana',
+        '⚡ Fox, crea una promoción flash para este fin de semana',
+        '🧲 Dame 3 estrategias para atraer más clientes a tienda física en Puebla',
+        '📦 Arma un combo ganador con productos de alta ganancia y stock estancado',
+        '📲 Redacta una campaña de WhatsApp para reactivar clientes inactivos',
       ],
     },
   ]);
   const [agentInputText, setAgentInputText] = useState('');
   const [agentChatLoading, setAgentChatLoading] = useState(false);
 
-  // Fox Voice & Speech States (Solo Admin)
+  // Fox Voice & Speech States (Desactivada por defecto a petición)
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [isVoiceSpeaking, setIsVoiceSpeaking] = useState(false);
-  const [autoVoiceReplyEnabled, setAutoVoiceReplyEnabled] = useState(true);
+  const [autoVoiceReplyEnabled, setAutoVoiceReplyEnabled] = useState(false);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceUri, setSelectedVoiceUri] = useState<string>('server_mexican');
   const recognitionRef = useRef<any>(null);
@@ -1029,7 +1030,7 @@ export default function AdminCRM() {
       };
       setAgentChatMessages(prev => [...prev, agentMsg]);
 
-      // Si está activada la voz de Fox, responder hablada en tiempo real
+      // Voz desactivada por defecto para experiencia silenciosa y ágil
       if (autoVoiceReplyEnabled) {
         speakWithFoxVoice(reply);
       }
@@ -6139,57 +6140,41 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className="text-[10px] text-slate-400">({products.length} productos, {orders.length} pedidos)</span>
                   </div>
 
-                  {/* Controles de Voz Fox */}
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {/* Botón Briefing Matutino */}
+                  {/* Controles de Marketing & Operaciones */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Botón Promoción Flash */}
                     <button
-                      onClick={() => handleSendAgentChatMessage("Buenos días Fox, dame el briefing ejecutivo del día: entregas en Puebla, finanzas y alertas críticas.")}
-                      className="px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-                      title="Generar y escuchar el resumen operativo de hoy"
+                      onClick={() => handleSendAgentChatMessage("Fox, diséñame una promoción flash para detonar ventas este fin de semana en Puebla con combos y gancho irresistible.")}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                      title="Diseñar estrategia de promoción flash"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>☀️ Briefing Matutino</span>
+                      <span>⚡ Promo Flash</span>
                     </button>
 
-                    {/* Indicador de Voz Oficial Fija: Hombre Mexicano HD */}
-                    <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 rounded-xl px-2.5 py-1 shadow-2xs select-none">
-                      <Volume2 className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
+                    {/* Botón Atraer Clientes */}
+                    <button
+                      onClick={() => handleSendAgentChatMessage("Fox, dame un plan estratégico paso a paso para atraer nuevos clientes presenciales y pedidos contra entrega en Puebla esta semana.")}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-[#2D4A58] to-slate-800 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                      title="Estrategias de atracción de clientes"
+                    >
+                      <span>🧲 Atraer Clientes</span>
+                    </button>
+
+                    {/* Indicador de Especialidad de Fox */}
+                    <div className="hidden md:flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 rounded-xl px-2.5 py-1 shadow-2xs select-none">
                       <span className="text-[11px] font-black text-orange-950 flex items-center gap-1">
-                        <span>🇲🇽</span>
-                        <span>Voz Fox (Hombre Mexicano HD)</span>
+                        <span>🚀</span>
+                        <span>Especialista en Marketing & Crecimiento</span>
                       </span>
                     </div>
-
-                    <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-slate-600 select-none">
-                      <input
-                        type="checkbox"
-                        checked={autoVoiceReplyEnabled}
-                        onChange={e => {
-                          setAutoVoiceReplyEnabled(e.target.checked);
-                          if (!e.target.checked) stopFoxVoice();
-                        }}
-                        className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-3.5 h-3.5"
-                      />
-                      <Volume2 className="w-3.5 h-3.5 text-slate-500" />
-                      <span className="hidden sm:inline">Hablar Respuestas</span>
-                    </label>
-
-                    {isVoiceSpeaking && (
-                      <button
-                        onClick={stopFoxVoice}
-                        className="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-rose-100 transition animate-pulse"
-                      >
-                        <VolumeX className="w-3 h-3" />
-                        <span>Silenciar</span>
-                      </button>
-                    )}
 
                     <button
                       onClick={() => {
                         stopFoxVoice();
                         setAgentChatMessages([agentChatMessages[0]]);
                       }}
-                      className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold"
+                      className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold ml-1"
                     >
                       Limpiar
                     </button>
@@ -6218,15 +6203,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           <span className={`text-[9px] font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
                             {msg.timestamp}
                           </span>
-                          {msg.sender === 'agent' && (
-                            <button
-                              onClick={() => speakWithFoxVoice(msg.text)}
-                              className="text-slate-400 hover:text-[#E65F2B] transition p-0.5 rounded"
-                              title="Escuchar en voz alta"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
 
                         {/* Tarjeta de Acción Ejecutiva Propuesta por Fox */}
@@ -6310,21 +6286,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </div>
                       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-500 flex items-center gap-2">
                         <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#E65F2B]" />
-                        <span>Fox está analizando inventario, pedidos y finanzas de FoxDrop...</span>
+                        <span>Fox está analizando inventario, pedidos y métricas de marketing...</span>
                       </div>
-                    </div>
-                  )}
-
-                  {isVoiceSpeaking && (
-                    <div className="flex gap-2 items-center justify-center py-2 bg-orange-50/70 border border-orange-200/80 rounded-2xl text-xs text-orange-950 font-bold animate-pulse">
-                      <Volume2 className="w-4 h-4 text-[#E65F2B]" />
-                      <span>Fox está hablando...</span>
-                      <button
-                        onClick={stopFoxVoice}
-                        className="ml-2 text-rose-600 underline text-[11px]"
-                      >
-                        Detener voz
-                      </button>
                     </div>
                   )}
                 </div>
@@ -8963,15 +8926,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className={`text-[9px] font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
                       {msg.timestamp}
                     </span>
-                    {msg.sender === 'agent' && (
-                      <button
-                        onClick={() => speakWithFoxVoice(msg.text)}
-                        className="text-slate-400 hover:text-[#E65F2B] transition p-0.5 rounded"
-                        title="Escuchar en voz alta"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
                   </div>
 
                   {/* Acciones sugeridas de Fox */}
