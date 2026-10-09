@@ -40,6 +40,13 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Evitar que iOS Safari y navegadores móviles hagan zoom automático al tocar inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Aceleración por hardware para transiciones y modales móviles */
 .will-change-transform {
   will-change: transform;

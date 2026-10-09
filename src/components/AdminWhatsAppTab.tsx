@@ -1582,7 +1582,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               placeholder={`Escribe un mensaje como ${partnerName}...`}
               value={inputText}
               onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-[#2A3942] border-none rounded-xl px-4 py-2.5 text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
+              className="flex-1 bg-[#2A3942] border-none rounded-xl px-4 py-2.5 text-base sm:text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884]"
             />
 
             <button
