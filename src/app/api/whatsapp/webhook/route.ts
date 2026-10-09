@@ -11,6 +11,62 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    const supabase = createServerClient();
+
+    // Evento A: Actualización de estado de mensaje (1 paloma, 2 palomas, leídos)
+    if (body.type === 'receipt' && body.phone && body.status) {
+      const cleanPhone = formatPhoneNumber(String(body.phone).replace(/@.+/, ''));
+      const status = body.status; // 'delivered' o 'read'
+      
+      // Buscar chat correspondiente
+      let { data: chatRow } = await supabase
+        .from('whatsapp_chats')
+        .select('id')
+        .or(`phone.eq.${cleanPhone},notes.ilike.%"lid":"${cleanPhone}"%`)
+        .maybeSingle();
+
+      if (chatRow?.id) {
+        // Actualizar los mensajes enviados por el admin a este estado
+        await (supabase as any)
+          .from('whatsapp_messages')
+          .update({ status: status })
+          .eq('chat_id', chatRow.id)
+          .eq('sender', 'admin')
+          .neq('status', 'read'); // Si ya estaba read, no degradarlo a delivered
+      }
+      return NextResponse.json({ success: true, event: 'receipt_updated' });
+    }
+
+    // Evento B: El contacto está escribiendo o en línea (presence)
+    if (body.type === 'presence' && body.phone) {
+      const cleanPhone = formatPhoneNumber(String(body.phone).replace(/@.+/, ''));
+      let { data: chatRow } = await supabase
+        .from('whatsapp_chats')
+        .select('id, notes')
+        .or(`phone.eq.${cleanPhone},notes.ilike.%"lid":"${cleanPhone}"%`)
+        .maybeSingle();
+
+      if (chatRow?.id) {
+        let existingNotes: any = {};
+        try {
+          existingNotes = typeof chatRow.notes === 'string' ? JSON.parse(chatRow.notes) : (chatRow.notes || {});
+        } catch {}
+
+        existingNotes.isTyping = !!body.isTyping;
+        existingNotes.typingUpdatedAt = new Date().toISOString();
+
+        await (supabase as any)
+          .from('whatsapp_chats')
+          .update({
+            notes: JSON.stringify(existingNotes),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', chatRow.id);
+      }
+      return NextResponse.json({ success: true, event: 'presence_updated' });
+    }
+
+    // Evento C: Mensaje nuevo entrante
     // Soportar distintos formatos de payload comunes (Evolution API, Baileys HTTP Bridge, etc.)
     const rawPhone = body.phone || body.sender || body.from || body.data?.key?.remoteJid || "";
     let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
@@ -20,8 +76,6 @@ export async function POST(req: NextRequest) {
     if (!cleanPhone || !text) {
       return NextResponse.json({ received: true, note: "Mensaje vacío o sin remitente ignorado" });
     }
-
-    const supabase = createServerClient();
 
     // 1. Buscar o crear el chat: coincidencia por teléfono exacto, por últimos 10 dígitos, o por LID guardado
     let { data: chat } = await supabase

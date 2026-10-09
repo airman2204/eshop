@@ -348,13 +348,27 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
             // Recargar la lista de chats para actualizar el último mensaje y contadores
             loadChats(false);
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedMsg = payload.new as any;
+            setMessages(prev => prev.map(m => m.id === updatedMsg.id ? { ...m, status: updatedMsg.status } : m));
           }
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'whatsapp_chats' },
-        () => {
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            const updatedChat = payload.new as any;
+            if (activeChatRef.current && activeChatRef.current.id === updatedChat.id) {
+              setActiveChat(prev => prev ? {
+                ...prev,
+                notes: updatedChat.notes,
+                lastMessage: updatedChat.last_message,
+                lastMessageTime: updatedChat.last_message_time,
+              } : prev);
+            }
+          }
           loadChats(false);
         }
       )
@@ -723,9 +737,28 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-500 truncate mb-1">
-                      {chat.lastMessage || 'Conversación iniciada'}
-                    </p>
+                    {(() => {
+                      let isTyping = false;
+                      if (chat.notes) {
+                        try {
+                          const parsed = typeof chat.notes === 'string' ? JSON.parse(chat.notes) : chat.notes;
+                          if (parsed?.isTyping) {
+                            const updatedAt = parsed.typingUpdatedAt ? new Date(parsed.typingUpdatedAt).getTime() : 0;
+                            if (Date.now() - updatedAt < 20000) isTyping = true;
+                          }
+                        } catch {}
+                      }
+
+                      return isTyping ? (
+                        <p className="text-[11px] text-emerald-600 font-bold truncate mb-1 animate-pulse">
+                          ✍️ escribiendo...
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-500 truncate mb-1">
+                          {chat.lastMessage || 'Conversación iniciada'}
+                        </p>
+                      );
+                    })()}
 
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.2 rounded">
@@ -788,14 +821,43 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     </span>
                   )}
                 </h3>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="font-mono">+{activeChat.phone}</span>
-                  <span>•</span>
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    WhatsApp Activo
-                  </span>
-                </div>
+                {(() => {
+                  let isTyping = false;
+                  if (activeChat.notes) {
+                    try {
+                      const parsed = typeof activeChat.notes === 'string' ? JSON.parse(activeChat.notes) : activeChat.notes;
+                      if (parsed?.isTyping) {
+                        const updatedAt = parsed.typingUpdatedAt ? new Date(parsed.typingUpdatedAt).getTime() : 0;
+                        // Si el evento fue en los últimos 20 segundos
+                        if (Date.now() - updatedAt < 20000) {
+                          isTyping = true;
+                        }
+                      }
+                    } catch {}
+                  }
+
+                  return (
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="font-mono">+{activeChat.phone}</span>
+                      <span>•</span>
+                      {isTyping ? (
+                        <span className="text-emerald-600 font-extrabold flex items-center gap-1.5 animate-pulse">
+                          <span className="flex gap-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.2s]"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.4s]"></span>
+                          </span>
+                          Escribiendo...
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          WhatsApp Activo
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -905,7 +967,25 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
                         <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         {isAdmin && (
-                          <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span title={
+                            msg.status === 'read' ? 'Leído por el cliente (2 palomas azules)' :
+                            msg.status === 'delivered' ? 'Entregado en el celular (2 palomas grises)' :
+                            msg.status === 'sending' ? 'Enviando...' :
+                            msg.status === 'failed' ? 'Error al enviar' :
+                            'Enviado al servidor (1 paloma)'
+                          }>
+                            {msg.status === 'read' ? (
+                              <CheckCheck className="w-3.5 h-3.5 text-sky-500 inline-block stroke-[2.5]" />
+                            ) : msg.status === 'delivered' ? (
+                              <CheckCheck className="w-3.5 h-3.5 text-slate-400 inline-block" />
+                            ) : msg.status === 'sending' ? (
+                              <Clock className="w-3 h-3 text-slate-400 inline-block animate-spin" />
+                            ) : msg.status === 'failed' ? (
+                              <AlertCircle className="w-3.5 h-3.5 text-rose-500 inline-block" />
+                            ) : (
+                              <Check className="w-3.5 h-3.5 text-slate-400 inline-block" />
+                            )}
+                          </span>
                         )}
                       </div>
                     </div>
