@@ -698,7 +698,31 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
           let visionData: any = null;
           const visionModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
+          let rawBase64 = "";
+          let mimeType = "image/jpeg";
+
           if (isBase64) {
+            rawBase64 = base64Data;
+            const mimeMatch = msg.media_url.match(/^data:(image\/[a-zA-Z0-9.+_-]+);base64,/);
+            if (mimeMatch) mimeType = mimeMatch[1];
+          } else if (msg.media_url.startsWith("http")) {
+            // Descargar la imagen de la URL para procesarla con Gemini Vision
+            try {
+              const imgRes = await fetch(msg.media_url);
+              if (imgRes.ok) {
+                const arrayBuf = await imgRes.arrayBuffer();
+                rawBase64 = Buffer.from(arrayBuf).toString("base64");
+                const contentType = imgRes.headers.get("content-type");
+                if (contentType && contentType.startsWith("image/")) {
+                  mimeType = contentType;
+                }
+              }
+            } catch (dlErr) {
+              console.error("[Radar Vision] Error descargando imagen remota:", dlErr);
+            }
+          }
+
+          if (rawBase64) {
             for (const vModel of visionModels) {
               try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${vModel}:generateContent?key=${apiKey}`;
@@ -710,7 +734,7 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
                       role: "user",
                       parts: [
                         { text: promptInstruction },
-                        { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                        { inlineData: { mimeType, data: rawBase64 } }
                       ]
                     }],
                     generationConfig: { responseMimeType: "application/json" }
