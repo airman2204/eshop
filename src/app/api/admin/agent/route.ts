@@ -662,21 +662,36 @@ ${storeContext}`;
           const base64Data = msg.media_url.replace(/^data:image\/[a-z]+;base64,/, "");
           const isBase64 = msg.media_url.startsWith("data:image/");
           
-          let promptInstruction = `Analiza esta imagen enviada por un cliente en WhatsApp solicitando producto o cotización.
+          let promptInstruction = `Analiza esta imagen enviada por un cliente en WhatsApp solicitando producto o cotización de importación.
 Texto que acompañó el mensaje: "${msg.text || ''}".
-Identifica:
+Tipo de cambio USD a MXN: $18.50 MXN por USD.
+Costo logístico de importación promedio estimado por pieza: $25.00 MXN.
+Margen comercial estándar de la tienda para generar excelente ganancia: 50% a 65% de margen sobre el costo total.
+
+Identifica y calcula con precisión:
 1. Nombre claro y comercial del producto en español.
-2. Marca (si es visible en la etiqueta, empaque o producto).
-3. Precio mencionado por el cliente en el mensaje (si hay).
-4. Categoría del producto.
-5. Términos de búsqueda precisos en inglés para encontrarlo en tiendas de Estados Unidos (Amazon US, Walmart US, Target, Bath & Body Works, TJ Maxx, etc.).
+2. Marca (ej. Bath & Body Works, Victoria's Secret, Nike, Coach, etc.).
+3. Precio en tienda de USA (en USD, ej. 8.95 para velas de 1 mecha o 16.95 para cremas/mists, 26.95 para velas de 3 mechas en temporada, o precio real retail).
+4. Tienda física / online de USA recomendada donde es más conveniente comprarlo (ej. "Bath & Body Works USA", "Amazon US", "Walmart US", "Target US", "TJ Maxx / Marshalls").
+5. Precio que el cliente mencionó en su mensaje (si escribió $205, pon "$205").
+6. Cálculo financiero:
+   - Costo total de importación en MXN = (Precio USD * 18.50) + $25 envío unitario.
+   - Precio de venta sugerido al público en MXN (redondeado, manteniendo la ganancia saludable y competitivo contra el mercado de reventa).
+   - Ganancia neta estimada en MXN (Precio de venta sugerido - Costo total).
+7. Términos de búsqueda precisos en inglés para encontrarlo en tiendas de Estados Unidos.
 
 Devuelve exclusivamente un JSON con esta estructura exacta:
 {
   "productName": "Nombre en español",
   "brand": "Marca",
-  "clientPrice": "Texto del precio o N/A",
+  "clientPrice": "${msg.text || 'N/A'}",
   "category": "Categoría",
+  "suggestedStore": "Tienda en USA (ej. Bath & Body Works Oficial o Amazon US)",
+  "storePriceUSD": 8.95,
+  "estimatedCostMXN": 190,
+  "suggestedSalePriceMXN": 320,
+  "estimatedProfitMXN": 130,
+  "profitMarginPct": 41,
   "searchQueryUSA": "Términos en inglés para buscar en tiendas USA"
 }`;
 
@@ -715,12 +730,24 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
           if (responseText) {
             const parsed = JSON.parse(responseText);
             const query = encodeURIComponent(parsed.searchQueryUSA || parsed.productName);
+            const usd = Number(parsed.storePriceUSD || 10);
+            const costMxn = Math.round(Number(parsed.estimatedCostMXN || (usd * 18.5 + 25)));
+            const saleMxn = Math.round(Number(parsed.suggestedSalePriceMXN || Math.round(costMxn * 1.55)));
+            const profitMxn = Math.round(saleMxn - costMxn);
+            const marginPct = costMxn > 0 ? Math.round((profitMxn / costMxn) * 100) : 55;
+
             return {
               id: msg.id,
               productName: parsed.productName || "Artículo solicitado",
               brand: parsed.brand || "Sin marca",
               clientPrice: parsed.clientPrice || msg.text || "N/A",
               category: parsed.category || "General",
+              suggestedStore: parsed.suggestedStore || "Tienda Oficial / Amazon US",
+              storePriceUSD: usd,
+              estimatedCostMXN: costMxn,
+              suggestedSalePriceMXN: saleMxn,
+              estimatedProfitMXN: profitMxn,
+              profitMarginPct: marginPct,
               searchQueryUSA: parsed.searchQueryUSA || parsed.productName,
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
@@ -739,6 +766,12 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               brand: "N/A",
               clientPrice: msg.text || "N/A",
               category: "General",
+              suggestedStore: "Amazon US / Retailer",
+              storePriceUSD: 10,
+              estimatedCostMXN: 210,
+              suggestedSalePriceMXN: 340,
+              estimatedProfitMXN: 130,
+              profitMarginPct: 62,
               searchQueryUSA: msg.text || "usa import",
               imageUrl: msg.media_url,
               timestamp: msg.created_at,

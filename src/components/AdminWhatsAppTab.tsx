@@ -2231,13 +2231,47 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                             {item.productName}
                           </h4>
 
-                          {/* Precio que venía con el mensaje */}
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className="text-[10px] text-[#8696A0]">Precio cliente:</span>
-                            <span className="text-xs font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                              {item.clientPrice}
+                          {/* Tienda Recomendada y Precio Cliente */}
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                            <span className="bg-[#111B21] text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
+                              <span>🏪 {item.suggestedStore || 'Bath & Body Works / Amazon'}</span>
+                              <span className="text-white font-mono font-black">~${item.storePriceUSD} USD</span>
                             </span>
+                            {item.clientPrice && item.clientPrice !== 'N/A' && (
+                              <span className="text-[#8696A0] bg-[#111B21] px-2 py-0.5 rounded-md border border-[#2A3942]">
+                                Ref. cliente: <b className="text-emerald-400 font-mono">{item.clientPrice}</b>
+                              </span>
+                            )}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* MÓDULO FINANCIERO: COSTO DE IMPORTACIÓN, PRECIO SUGERIDO Y GANANCIA */}
+                      <div className="bg-[#111B21] rounded-xl p-2.5 border border-[#2A3942] grid grid-cols-3 gap-2 text-center text-[10px]">
+                        <div className="space-y-0.5 border-r border-[#222E35] pr-1">
+                          <span className="text-[#8696A0] block text-[9px] uppercase font-bold">Costo Puesto Mex</span>
+                          <span className="font-black font-mono text-white text-xs block">
+                            ${item.estimatedCostMXN || Math.round((item.storePriceUSD || 10) * 18.5 + 25)} MXN
+                          </span>
+                          <span className="text-[8px] text-[#8696A0] block">(USD + Envío)</span>
+                        </div>
+
+                        <div className="space-y-0.5 border-r border-[#222E35] px-1">
+                          <span className="text-amber-400 block text-[9px] uppercase font-black">Precio de Venta</span>
+                          <span className="font-black font-mono text-amber-300 text-xs block">
+                            ${item.suggestedSalePriceMXN || Math.round(((item.storePriceUSD || 10) * 18.5 + 25) * 1.55)} MXN
+                          </span>
+                          <span className="text-[8px] text-amber-400/80 block">Recomendado</span>
+                        </div>
+
+                        <div className="space-y-0.5 pl-1">
+                          <span className="text-emerald-400 block text-[9px] uppercase font-black">Tu Ganancia</span>
+                          <span className="font-black font-mono text-emerald-400 text-xs block">
+                            +${item.estimatedProfitMXN || Math.round((item.suggestedSalePriceMXN || 320) - (item.estimatedCostMXN || 190))} MXN
+                          </span>
+                          <span className="text-[8px] text-emerald-300 font-bold block">
+                            +{item.profitMarginPct || 55}% margen
+                          </span>
                         </div>
                       </div>
 
