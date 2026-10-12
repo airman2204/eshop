@@ -1061,6 +1061,38 @@ export default function AdminCRM() {
         return;
       }
 
+      if (actionExecution.type === 'open_flyer_studio') {
+        const prod = products.find(p => p.id === actionExecution.payload?.productId) || products[0];
+        if (prod) {
+          setAgentSelectedDayForModal({
+            id: `flyer_${Date.now()}`,
+            dayName: 'Especial',
+            pillar: 'oferta',
+            pillarLabel: actionExecution.payload?.badge || '🔥 Oferta FoxDrop',
+            productId: prod.id,
+            productTitle: actionExecution.payload?.productTitle || prod.title,
+            productPrice: actionExecution.payload?.productPrice || prod.publicPrice,
+            productImage: prod.images?.[0] || '',
+            suggestedTime: 'Inmediato',
+            suggestedNetwork: 'WhatsApp Estados & Grupos',
+            headline: actionExecution.payload?.headline || `¡Gran Oferta en FoxDrop: ${prod.title}!`,
+            caption: actionExecution.payload?.caption || `Aprovecha esta oportunidad exclusiva con garantía de calidad y envíos seguros a todo México.`,
+            callToAction: 'Visita foxdrop.mx o mándanos mensaje por WhatsApp.',
+            hashtags: ['#FoxDrop', '#TendenciasMexico', '#Ofertas'],
+            fullCopy: `${actionExecution.payload?.headline || prod.title}\n\n${actionExecution.payload?.caption || 'Disponible para entrega inmediata.'}\n\n👉 foxdrop.mx`,
+            isCompleted: false,
+          });
+          if (actionExecution.payload?.badge) {
+            setFlyerCustomBadge(actionExecution.payload.badge);
+          }
+        }
+        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
+          ...m,
+          actionExecution: { ...m.actionExecution, status: 'executed' }
+        } : m));
+        return;
+      }
+
       const res = await executeAgentAction(actionExecution.type, actionExecution.payload);
       if (res.success) {
         alert(`✅ ${res.message || 'Acción ejecutada con éxito por Fox'}`);
@@ -7165,9 +7197,43 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                   {/* Controles de Marketing & Operaciones */}
                   <div className="flex items-center gap-2 flex-wrap">
+                    {/* Botón Crear Flyer Pro */}
+                    <button
+                      onClick={() => {
+                        const firstProd = products[0];
+                        if (firstProd) {
+                          setAgentSelectedDayForModal({
+                            id: `flyer_${Date.now()}`,
+                            dayName: 'Especial',
+                            pillar: 'oferta',
+                            pillarLabel: '🔥 Oferta FoxDrop',
+                            productId: firstProd.id,
+                            productTitle: firstProd.title,
+                            productPrice: firstProd.publicPrice,
+                            productImage: firstProd.images?.[0] || '',
+                            suggestedTime: '12:00 PM',
+                            suggestedNetwork: 'Instagram & Facebook',
+                            headline: `¡Gran Novedad en FoxDrop: ${firstProd.title}!`,
+                            caption: `Disponible para entrega inmediata con garantía y envíos a todo México.`,
+                            callToAction: 'Visita foxdrop.mx o escribe al WhatsApp para pedir el tuyo.',
+                            hashtags: ['#FoxDrop', '#TendenciasMexico', '#Novedades'],
+                            fullCopy: `¡Gran Novedad en FoxDrop: ${firstProd.title}!\n\nDisponible para entrega inmediata con garantía y envíos a todo México.\n\n👉 foxdrop.mx`,
+                            isCompleted: false,
+                          });
+                        } else {
+                          alert('Agrega al menos un producto en el inventario para diseñar su flyer.');
+                        }
+                      }}
+                      className="px-2.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                      title="Abrir el Estudio Visual de Flyers HD"
+                    >
+                      <Palette className="w-3.5 h-3.5" />
+                      <span>🎨 Crear Flyer HD</span>
+                    </button>
+
                     {/* Botón Promoción Flash */}
                     <button
-                      onClick={() => handleSendAgentChatMessage("Fox, diséñame una promoción flash para detonar ventas este fin de semana en Puebla con combos y gancho irresistible.")}
+                      onClick={() => handleSendAgentChatMessage("Fox, diséñame una promoción flash para detonar ventas este fin de semana con combos y gancho irresistible.")}
                       className="px-2.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
                       title="Diseñar estrategia de promoción flash"
                     >
@@ -7177,7 +7243,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                     {/* Botón Atraer Clientes */}
                     <button
-                      onClick={() => handleSendAgentChatMessage("Fox, dame un plan estratégico paso a paso para atraer nuevos clientes presenciales y pedidos contra entrega en Puebla esta semana.")}
+                      onClick={() => handleSendAgentChatMessage("Fox, dame un plan estratégico paso a paso para atraer nuevos clientes y generar las primeras ventas esta semana.")}
                       className="px-2.5 py-1.5 bg-gradient-to-r from-[#2D4A58] to-slate-800 hover:opacity-90 text-white rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
                       title="Estrategias de atracción de clientes"
                     >
