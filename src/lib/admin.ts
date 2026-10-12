@@ -623,4 +623,34 @@ export async function executeAgentAction(actionType: string, payload: any) {
   return data;
 }
 
+export async function getAgentChatHistory(): Promise<any[]> {
+  try {
+    const res = await fetch("/api/admin/agent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_chat_history" }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.messages || [];
+  } catch (err) {
+    console.error("Error al obtener historial en la nube:", err);
+    return [];
+  }
+}
+
+export async function saveAgentChatHistory(messages: any[]): Promise<boolean> {
+  try {
+    const res = await fetch("/api/admin/agent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "save_chat_history", messages }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Error al guardar historial en la nube:", err);
+    return false;
+  }
+}
+
 

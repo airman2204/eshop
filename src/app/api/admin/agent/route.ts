@@ -591,6 +591,49 @@ ${storeContext}`;
       return NextResponse.json({ success: true, agentMode });
     }
 
+    // ── 8. HISTORIAL CENTRALIZADO DE CONVERSACIÓN FOXBOT (SINCRONIZADO EN LA NUBE) ──
+    if (action === "get_chat_history") {
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/foxbot_chat_history.json");
+
+        if (fileData) {
+          const rawText = await fileData.text();
+          const parsed = JSON.parse(rawText || "[]");
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return NextResponse.json({ success: true, messages: parsed });
+          }
+        }
+      } catch (err) {
+        console.warn("foxbot_chat_history.json no existe aún:", err);
+      }
+      return NextResponse.json({ success: true, messages: [] });
+    }
+
+    if (action === "save_chat_history") {
+      const { messages } = body;
+      if (!Array.isArray(messages)) {
+        return NextResponse.json({ error: "messages debe ser un array" }, { status: 400 });
+      }
+
+      // Guardar últimos 100 mensajes para optimizar peso y rapidez
+      const trimmed = messages.slice(-100);
+      const buffer = Buffer.from(JSON.stringify(trimmed, null, 2));
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload("_system/foxbot_chat_history.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (error: any) {
     console.error("Error en /api/admin/agent:", error);

@@ -27,7 +27,8 @@ import {
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
   deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS,
-  generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot, executeAgentAction
+  generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot, executeAgentAction,
+  getAgentChatHistory, saveAgentChatHistory
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
@@ -497,7 +498,7 @@ export default function AdminCRM() {
       setAuthChecked(true);
     }
 
-    // Restaurar historial de conversación con FoxBot desde localStorage
+    // Restaurar historial de conversación con FoxBot desde la nube (Supabase) con fallback a localStorage
     try {
       const savedMessages = localStorage.getItem('foxdrop_agent_chat_history');
       if (savedMessages) {
@@ -506,6 +507,16 @@ export default function AdminCRM() {
           setAgentChatMessages(parsedMsgs);
         }
       }
+
+      // Descargar la versión más reciente compartida en la nube para sincronizar con tu socio
+      getAgentChatHistory().then((cloudMsgs) => {
+        if (Array.isArray(cloudMsgs) && cloudMsgs.length > 0) {
+          setAgentChatMessages(cloudMsgs);
+          try {
+            localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(cloudMsgs));
+          } catch {}
+        }
+      });
 
       // Restaurar plan semanal si existe
       const savedPlan = localStorage.getItem('foxdrop_agent_weekly_plan');
@@ -1198,6 +1209,8 @@ export default function AdminCRM() {
       setAgentChatMessages(prev => {
         const updated = [...prev, agentMsg];
         try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+        // Sincronizar en la nube para que tu socio lo vea
+        saveAgentChatHistory(updated).catch(() => {});
         return updated;
       });
 
@@ -7419,6 +7432,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           try {
                             localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify([defaultAgentWelcomeMessage]));
                           } catch {}
+                          saveAgentChatHistory([defaultAgentWelcomeMessage]).catch(() => {});
                         }
                       }}
                       className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold ml-1 cursor-pointer"
