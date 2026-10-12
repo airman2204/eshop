@@ -639,28 +639,30 @@ ${storeContext}`;
       const { chatId } = body;
       if (!chatId) return NextResponse.json({ error: "chatId requerido" }, { status: 400 });
 
-      // Consultar todos los mensajes de clientes en este chat que tengan fotos o texto de interés
+      // Consultar mensajes con fotos en este chat (la columna en la BD es created_at)
       const { data: messages, error: msgErr } = await supabase
         .from("whatsapp_messages")
-        .select("id, text, media_url, media_type, timestamp, created_at")
+        .select("id, text, media_url, media_type, created_at")
         .eq("chat_id", chatId)
-        .eq("sender", "client")
-        .order("created_at", { ascending: false });
+        .not("media_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
       if (msgErr) throw new Error(msgErr.message);
 
       const photoMessages = (messages || []).filter(
-        (m: any) => m.media_url && (m.media_type === "image" || m.media_url.startsWith("data:image/"))
+        (m: any) => m.media_url && (m.media_type === "image" || m.media_url.startsWith("data:image/") || m.media_url.startsWith("http"))
       );
 
       // Usar Gemini Vision para analizar las fotos enviadas por el cliente
-      const identifiedItems: any[] = [];
       const apiKey = process.env.GEMINI_API_KEY;
 
-      for (const msg of photoMessages) {
+      const analyzeItem = async (msg: any) => {
         try {
           const base64Data = msg.media_url.replace(/^data:image\/[a-z]+;base64,/, "");
-          let promptInstruction = `Analiza esta imagen enviada por un cliente en WhatsApp solicitando cotización o producto.
+          const isBase64 = msg.media_url.startsWith("data:image/");
+          
+          let promptInstruction = `Analiza esta imagen enviada por un cliente en WhatsApp solicitando producto o cotización.
 Texto que acompañó el mensaje: "${msg.text || ''}".
 Identifica:
 1. Nombre claro y comercial del producto en español.
@@ -679,39 +681,41 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
 }`;
 
           let responseText = "";
-          const visionModels = ["gemini-2.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"];
+          const visionModels = ["gemini-2.5-flash-lite", "gemini-3.5-flash"];
 
-          for (const vModel of visionModels) {
-            try {
-              const url = `https://generativelanguage.googleapis.com/v1beta/models/${vModel}:generateContent?key=${apiKey}`;
-              const gRes = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{
-                    role: "user",
-                    parts: [
-                      { text: promptInstruction },
-                      { inlineData: { mimeType: "image/jpeg", data: base64Data } }
-                    ]
-                  }],
-                  generationConfig: { responseMimeType: "application/json" }
-                })
-              });
-              if (!gRes.ok) continue;
-              const gData = await gRes.json();
-              const txt = gData.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (txt) {
-                responseText = txt;
-                break;
-              }
-            } catch {}
+          if (isBase64) {
+            for (const vModel of visionModels) {
+              try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${vModel}:generateContent?key=${apiKey}`;
+                const gRes = await fetch(url, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    contents: [{
+                      role: "user",
+                      parts: [
+                        { text: promptInstruction },
+                        { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                      ]
+                    }],
+                    generationConfig: { responseMimeType: "application/json" }
+                  })
+                });
+                if (!gRes.ok) continue;
+                const gData = await gRes.json();
+                const txt = gData.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (txt) {
+                  responseText = txt;
+                  break;
+                }
+              } catch {}
+            }
           }
 
           if (responseText) {
             const parsed = JSON.parse(responseText);
             const query = encodeURIComponent(parsed.searchQueryUSA || parsed.productName);
-            identifiedItems.push({
+            return {
               id: msg.id,
               productName: parsed.productName || "Artículo solicitado",
               brand: parsed.brand || "Sin marca",
@@ -719,18 +723,17 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               category: parsed.category || "General",
               searchQueryUSA: parsed.searchQueryUSA || parsed.productName,
               imageUrl: msg.media_url,
-              timestamp: msg.timestamp || msg.created_at,
+              timestamp: msg.created_at,
               links: {
                 amazon: `https://www.amazon.com/s?k=${query}`,
                 walmart: `https://www.walmart.com/search?q=${query}`,
                 target: `https://www.target.com/s?searchTerm=${query}`,
                 googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
               }
-            });
+            };
           } else {
-            // Fallback si no hubo respuesta de visión
             const query = encodeURIComponent(msg.text || "articulos importacion usa");
-            identifiedItems.push({
+            return {
               id: msg.id,
               productName: msg.text || "Artículo en foto",
               brand: "N/A",
@@ -738,19 +741,39 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               category: "General",
               searchQueryUSA: msg.text || "usa import",
               imageUrl: msg.media_url,
-              timestamp: msg.timestamp || msg.created_at,
+              timestamp: msg.created_at,
               links: {
                 amazon: `https://www.amazon.com/s?k=${query}`,
                 walmart: `https://www.walmart.com/search?q=${query}`,
                 target: `https://www.target.com/s?searchTerm=${query}`,
                 googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
               }
-            });
+            };
           }
-        } catch (itemErr) {
-          console.error("Error identificando foto individual:", itemErr);
+        } catch {
+          const query = encodeURIComponent(msg.text || "producto importado");
+          return {
+            id: msg.id,
+            productName: msg.text || "Artículo en foto",
+            brand: "N/A",
+            clientPrice: msg.text || "N/A",
+            category: "General",
+            searchQueryUSA: msg.text || "usa import",
+            imageUrl: msg.media_url,
+            timestamp: msg.created_at,
+            links: {
+              amazon: `https://www.amazon.com/s?k=${query}`,
+              walmart: `https://www.walmart.com/search?q=${query}`,
+              target: `https://www.target.com/s?searchTerm=${query}`,
+              googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
+            }
+          };
         }
-      }
+      };
+
+      // Procesar concurrentemente hasta 12 fotos para velocidad instantánea
+      const itemsToProcess = photoMessages.slice(0, 12);
+      const identifiedItems = await Promise.all(itemsToProcess.map(analyzeItem));
 
       return NextResponse.json({ success: true, items: identifiedItems });
     }
