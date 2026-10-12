@@ -6744,7 +6744,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </h3>
                       </div>
                       <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                        FoxBot organiza los 4 pilares probados para dar a conocer la tienda en Puebla (Novedad, Curiosidad, Oferta y Confianza Local). Genera con 1 solo clic los 7 copys y flyers publicitarios listos para publicar en Facebook, Instagram y WhatsApp.
+                        FoxBot organiza los 4 pilares probados para dar a conocer tu tienda (Novedad, Curiosidad, Oferta y Confianza de Compra). Genera con 1 solo clic los 7 copys y flyers publicitarios listos para publicar en Facebook, Instagram y WhatsApp.
                       </p>
                     </div>
 
@@ -6898,7 +6898,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm">Aún no has generado el plan de esta semana</h4>
                       <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
-                        Presiona el botón de arriba para que FoxBot organice tus 7 publicaciones semanales automáticas con ganchos virales y hashtags de Puebla.
+                        Presiona el botón de arriba para que FoxBot organice tus 7 publicaciones semanales automáticas con ganchos virales, copies persuasivos y flyers listos para redes.
                       </p>
                     </div>
                   </div>
@@ -7007,113 +7007,218 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </button>
                       </div>
 
+                      {/* Selector de Insignia de Campaña Rápida */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px]">
+                        <span className="text-slate-400 font-bold shrink-0 text-[10px]">Insignia:</span>
+                        {[
+                          '🔥 OFERTA FLASH',
+                          '⚡ TENDENCIA VIRAL',
+                          '💎 EDICIÓN PREMIUM',
+                          '🚚 ENVÍO GRATIS',
+                          '⭐ MÁS VENDIDO'
+                        ].map((badge) => (
+                          <button
+                            key={badge}
+                            type="button"
+                            onClick={() => setFlyerCustomBadge(badge)}
+                            className={`px-2 py-0.5 rounded-full font-black shrink-0 transition ${
+                              flyerCustomBadge === badge
+                                ? 'bg-orange-500 text-white shadow-2xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {badge}
+                          </button>
+                        ))}
+                      </div>
+
                       {/* Elemento que se descarga como imagen PNG */}
                       <div
                         id={`flyer-card-${agentSelectedDayForModal.id}`}
                         ref={flyerFlyerRef}
-                        className={`w-full rounded-3xl p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-all duration-300 ${
-                          flyerFormat === 'story' ? 'aspect-[9/16] min-h-[460px]' : 'aspect-square'
+                        className={`w-full rounded-3xl p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden transition-all duration-300 select-none ${
+                          flyerFormat === 'story' ? 'aspect-[9/16] min-h-[490px]' : 'aspect-square min-h-[380px]'
                         } ${
                           flyerTheme === 'dark_vip'
-                            ? 'bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-slate-950 text-white border border-slate-800'
+                            ? 'bg-gradient-to-b from-[#090D16] via-[#0F172A] to-[#020617] text-white border-2 border-amber-500/30'
                             : flyerTheme === 'forest_brand'
-                            ? 'bg-gradient-to-br from-[#0F3E36] via-[#164E44] to-[#0A2621] text-white border border-emerald-900/60'
+                            ? 'bg-gradient-to-b from-[#0A2E28] via-[#0F3E36] to-[#041A16] text-white border-2 border-emerald-500/30'
                             : flyerTheme === 'flash_fire'
-                            ? 'bg-gradient-to-br from-[#7C2D12] via-[#9A3412] to-[#431407] text-white border border-amber-500/50'
-                            : 'bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 border border-slate-200 shadow-xl'
+                            ? 'bg-gradient-to-b from-[#7F1D1D] via-[#9A3412] to-[#431407] text-white border-2 border-amber-400/50'
+                            : 'bg-gradient-to-b from-white via-slate-50 to-slate-100 text-slate-900 border-2 border-slate-200 shadow-xl'
                         }`}
                       >
-                        {/* Destello de fondo */}
-                        <div className={`absolute top-0 right-0 w-36 h-36 rounded-full blur-3xl ${
-                          flyerTheme === 'forest_brand' ? 'bg-emerald-400/20' :
-                          flyerTheme === 'flash_fire' ? 'bg-amber-400/30' :
-                          flyerTheme === 'minimal_clean' ? 'bg-orange-400/10' :
-                          'bg-orange-500/20'
-                        }`}></div>
+                        {/* Luces y Efectos de Fondo E-Commerce */}
+                        <div
+                          className={`absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
+                            flyerTheme === 'forest_brand' ? 'bg-emerald-400/30' :
+                            flyerTheme === 'flash_fire' ? 'bg-amber-400/35' :
+                            flyerTheme === 'minimal_clean' ? 'bg-orange-300/20' :
+                            'bg-orange-500/25'
+                          }`}
+                        />
+                        <div
+                          className={`absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
+                            flyerTheme === 'forest_brand' ? 'bg-teal-300/20' :
+                            flyerTheme === 'flash_fire' ? 'bg-rose-500/30' :
+                            flyerTheme === 'minimal_clean' ? 'bg-slate-300/30' :
+                            'bg-indigo-500/20'
+                          }`}
+                        />
 
-                        {/* Top: Branding & Badges */}
-                        <div className="flex items-center justify-between z-10">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xl">🦊</span>
-                            <span className={`font-black text-sm tracking-tight ${
-                              flyerTheme === 'minimal_clean' ? 'text-slate-950' : 'text-white'
+                        {/* Top: Branding de Impacto & Insignia de Oferta */}
+                        <div className="flex items-center justify-between z-10 gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shadow-md ${
+                              flyerTheme === 'minimal_clean'
+                                ? 'bg-slate-900 text-white'
+                                : 'bg-gradient-to-tr from-[#E65F2B] to-[#FF8A00] text-white'
                             }`}>
-                              FoxDrop
-                            </span>
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                              flyerTheme === 'forest_brand' ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/40' :
-                              flyerTheme === 'flash_fire' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' :
-                              flyerTheme === 'minimal_clean' ? 'bg-slate-900 text-white' :
-                              'bg-orange-500/20 text-orange-400 border border-orange-400/40'
-                            }`}>
-                              {flyerCustomBadge}
-                            </span>
+                              🦊
+                            </div>
+                            <div className="leading-none">
+                              <span className={`font-black text-sm tracking-tight block ${
+                                flyerTheme === 'minimal_clean' ? 'text-slate-950 font-black' : 'text-white'
+                              }`}>
+                                FoxDrop<span className="text-[#FF8A00]">.mx</span>
+                              </span>
+                              <span className={`text-[8px] font-bold uppercase tracking-wider ${
+                                flyerTheme === 'minimal_clean' ? 'text-slate-400' : 'text-slate-400'
+                              }`}>
+                                Tienda Online
+                              </span>
+                            </div>
                           </div>
-                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
-                            flyerTheme === 'minimal_clean'
-                              ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                              : 'bg-white/10 text-slate-300'
+
+                          {/* Badge de Campaña */}
+                          <div className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider shadow-sm uppercase flex items-center gap-1 ${
+                            flyerTheme === 'forest_brand'
+                              ? 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/50 backdrop-blur-md'
+                              : flyerTheme === 'flash_fire'
+                              ? 'bg-amber-400 text-slate-950 border border-amber-300 font-extrabold animate-pulse'
+                              : flyerTheme === 'minimal_clean'
+                              ? 'bg-slate-900 text-white'
+                              : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border border-orange-400/50 shadow-orange-500/30'
                           }`}>
-                            foxdrop.mx
-                          </span>
+                            <span>{flyerCustomBadge}</span>
+                          </div>
                         </div>
 
-                        {/* Centro: Imagen del Producto y Título */}
-                        <div className="my-auto text-center z-10 flex flex-col items-center py-2">
-                          {agentSelectedDayForModal.productImage ? (
-                            <img
-                              src={agentSelectedDayForModal.productImage}
-                              alt={agentSelectedDayForModal.productTitle}
-                              className={`object-contain rounded-2xl drop-shadow-2xl mx-auto my-2 p-1.5 transition-all ${
-                                flyerFormat === 'story' ? 'w-48 h-48 max-h-56' : 'w-36 h-36'
-                              } ${
-                                flyerTheme === 'minimal_clean' ? 'bg-white shadow-md' : 'bg-white/5'
-                              }`}
-                            />
-                          ) : (
-                            <div className="w-28 h-28 rounded-2xl bg-orange-500/10 flex items-center justify-center text-4xl mx-auto">
-                              📦
+                        {/* Centro: Escaparate del Producto con Iluminación */}
+                        <div className="my-auto text-center z-10 flex flex-col items-center py-2 relative w-full">
+                          {/* Halo de Resplandor Central */}
+                          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-2xl pointer-events-none ${
+                            flyerFormat === 'story' ? 'w-56 h-56' : 'w-44 h-44'
+                          } ${
+                            flyerTheme === 'forest_brand' ? 'bg-emerald-500/15' :
+                            flyerTheme === 'flash_fire' ? 'bg-orange-500/25' :
+                            flyerTheme === 'minimal_clean' ? 'bg-amber-200/40' :
+                            'bg-orange-500/20'
+                          }`} />
+
+                          {/* Imagen del Producto en Podio 3D */}
+                          <div className="relative group mx-auto">
+                            {agentSelectedDayForModal.productImage ? (
+                              <img
+                                src={agentSelectedDayForModal.productImage}
+                                alt={agentSelectedDayForModal.productTitle}
+                                className={`object-contain rounded-3xl mx-auto transition-transform p-2 ${
+                                  flyerFormat === 'story' ? 'w-52 h-52 max-h-60' : 'w-40 h-40 max-h-44'
+                                } ${
+                                  flyerTheme === 'minimal_clean'
+                                    ? 'bg-white shadow-xl border border-slate-150'
+                                    : 'bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl'
+                                }`}
+                                style={{ filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.35))' }}
+                              />
+                            ) : (
+                              <div className="w-36 h-36 rounded-3xl bg-orange-500/20 border border-orange-400/30 flex items-center justify-center text-5xl mx-auto shadow-2xl">
+                                📦
+                              </div>
+                            )}
+
+                            {/* Badge Flotante "100% Original" */}
+                            <div className={`absolute -bottom-2 -right-2 px-2 py-0.5 rounded-lg text-[9px] font-black shadow-lg flex items-center gap-1 ${
+                              flyerTheme === 'minimal_clean'
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-emerald-500 text-slate-950 font-extrabold'
+                            }`}>
+                              <span>⭐ 4.9/5</span>
                             </div>
-                          )}
-                          <h3 className={`font-black text-sm line-clamp-2 px-2 leading-tight mt-2 ${
-                            flyerTheme === 'minimal_clean' ? 'text-slate-900 font-extrabold' : 'text-white'
+                          </div>
+
+                          {/* Nombre del Producto */}
+                          <h3 className={`font-black text-sm line-clamp-2 px-3 leading-snug mt-3 text-center ${
+                            flyerTheme === 'minimal_clean' ? 'text-slate-900 font-extrabold' : 'text-white drop-shadow-sm'
                           }`}>
                             {agentSelectedDayForModal.productTitle}
                           </h3>
+
+                          {/* Micro Subtítulo de Gancho si es Story */}
+                          {flyerFormat === 'story' && (
+                            <p className={`text-[10px] font-bold px-4 mt-1 line-clamp-2 ${
+                              flyerTheme === 'minimal_clean' ? 'text-slate-600' : 'text-slate-300'
+                            }`}>
+                              {agentSelectedDayForModal.headline}
+                            </p>
+                          )}
                         </div>
 
-                        {/* Bottom: Precio & Garantía */}
-                        <div className={`rounded-2xl p-3 flex items-center justify-between z-10 border backdrop-blur-md ${
-                          flyerTheme === 'minimal_clean'
-                            ? 'bg-white/90 border-slate-200 shadow-sm'
-                            : 'bg-white/10 border-white/10'
-                        }`}>
-                          <div>
-                            <span className={`text-[9px] uppercase font-bold block ${
-                              flyerTheme === 'minimal_clean' ? 'text-slate-500' : 'text-slate-300'
-                            }`}>
-                              Precio Especial
-                            </span>
-                            <span className={`text-lg font-black font-mono leading-none ${
-                              flyerTheme === 'minimal_clean' ? 'text-[#E65F2B]' :
-                              flyerTheme === 'forest_brand' ? 'text-emerald-300' :
-                              flyerTheme === 'flash_fire' ? 'text-amber-300' :
-                              'text-orange-400'
-                            }`}>
-                              ${agentSelectedDayForModal.productPrice} MXN
-                            </span>
+                        {/* Bottom: Precio de Ocasión, Confianza y Call to Action */}
+                        <div className="space-y-2 z-10 w-full">
+                          {/* Banner de Precio de Alto Impacto */}
+                          <div className={`rounded-2xl p-3 flex items-center justify-between border shadow-lg ${
+                            flyerTheme === 'minimal_clean'
+                              ? 'bg-white border-slate-200'
+                              : 'bg-slate-900/80 backdrop-blur-md border-white/15'
+                          }`}>
+                            <div className="text-left">
+                              <span className={`text-[9px] uppercase font-bold block tracking-wider ${
+                                flyerTheme === 'minimal_clean' ? 'text-slate-500' : 'text-slate-400'
+                              }`}>
+                                Precio Exclusivo
+                              </span>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className={`text-xl font-black font-mono leading-none ${
+                                  flyerTheme === 'minimal_clean' ? 'text-[#E65F2B]' :
+                                  flyerTheme === 'forest_brand' ? 'text-emerald-300' :
+                                  flyerTheme === 'flash_fire' ? 'text-amber-300' :
+                                  'text-orange-400'
+                                }`}>
+                                  ${agentSelectedDayForModal.productPrice}
+                                </span>
+                                <span className="text-[10px] font-bold opacity-75">MXN</span>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md inline-block mb-0.5 ${
+                                flyerTheme === 'minimal_clean'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30'
+                              }`}>
+                                🚀 Envío Seguro
+                              </div>
+                              <span className={`text-[8px] block font-bold ${
+                                flyerTheme === 'minimal_clean' ? 'text-slate-500' : 'text-slate-400'
+                              }`}>
+                                Garantía en Todo México
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <span className={`text-[9px] font-black block ${
-                              flyerTheme === 'minimal_clean' ? 'text-emerald-700' : 'text-emerald-300'
-                            }`}>
-                              📦 Envíos Seguros
-                            </span>
-                            <span className={`text-[8px] ${
-                              flyerTheme === 'minimal_clean' ? 'text-slate-500' : 'text-slate-300'
-                            }`}>
-                              Garantía • Todo México
-                            </span>
+
+                          {/* Footer Call to Action (Cintillo de Redes) */}
+                          <div className={`rounded-xl py-1.5 px-3 flex items-center justify-between text-[9px] font-black uppercase tracking-wider ${
+                            flyerTheme === 'minimal_clean'
+                              ? 'bg-slate-900 text-white'
+                              : flyerTheme === 'flash_fire'
+                              ? 'bg-amber-400 text-slate-950'
+                              : flyerTheme === 'forest_brand'
+                              ? 'bg-emerald-400 text-slate-950'
+                              : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white'
+                          }`}>
+                            <span>📲 Pide vía WhatsApp o Web</span>
+                            <span>foxdrop.mx ›</span>
                           </div>
                         </div>
                       </div>
