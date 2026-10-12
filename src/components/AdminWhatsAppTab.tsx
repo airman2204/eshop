@@ -2275,61 +2275,63 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                         </div>
                       </div>
 
-                      {/* Botones de Búsqueda Directa en Tiendas de USA */}
+                      {/* Botones de Compra Directa en USA */}
                       <div className="pt-2 border-t border-[#2A3942] space-y-2">
-                        {/* BOTÓN PRINCIPAL: IR DIRECTO A COMPRAR A LA TIENDA OFICIAL / DONDE SE ENCONTRÓ */}
-                        {item.links?.officialStore && (
-                          <a
-                            href={item.links.officialStore}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition transform active:scale-98"
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5" />
-                            <span>Comprar en {item.suggestedStore || 'Tienda Oficial'}</span>
-                            <ExternalLink className="w-3 h-3 opacity-80" />
-                          </a>
-                        )}
+                        {/* BOTÓN PRINCIPAL 1: GOOGLE SHOPPING (MUESTRA TODAS LAS TIENDAS EN USA CON STOCK DIRECTO) */}
+                        <a
+                          href={item.links?.googleShopping || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.brand + ' ' + item.productName)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition transform active:scale-98"
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5" />
+                          <span>🛍️ Ver Dónde Comprar en USA (Google Shopping)</span>
+                          <ExternalLink className="w-3 h-3 opacity-90" />
+                        </a>
 
-                        <span className="text-[10px] text-[#8696A0] font-bold block">
-                          Otras tiendas de USA para comparar:
-                        </span>
+                        {/* BOTÓN OFICIAL DIRECTO O AMAZON */}
                         <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          {item.links?.officialStore && (
+                            <a
+                              href={item.links.officialStore}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-1.5 px-2 bg-[#111B21] hover:bg-[#202C33] border border-cyan-500/40 text-cyan-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
+                              title="Búsqueda indexada directa en tienda oficial"
+                            >
+                              <span className="truncate">🌐 {item.suggestedStore || 'Tienda Oficial'}</span>
+                              <ExternalLink className="w-3 h-3 text-cyan-400 shrink-0" />
+                            </a>
+                          )}
+
                           <a
-                            href={item.links.amazon}
+                            href={item.links?.amazon || `https://www.amazon.com/s?k=${encodeURIComponent(item.brand + ' ' + item.productName)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="py-1.5 px-2 bg-[#111B21] hover:bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
                           >
                             <span>🛒 Amazon US</span>
-                            <ExternalLink className="w-3 h-3 text-amber-400" />
+                            <ExternalLink className="w-3 h-3 text-amber-400 shrink-0" />
                           </a>
+
                           <a
-                            href={item.links.walmart}
+                            href={item.links?.walmart || `https://www.walmart.com/search?q=${encodeURIComponent(item.brand + ' ' + item.productName)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="py-1.5 px-2 bg-[#111B21] hover:bg-blue-950/60 border border-blue-500/40 text-blue-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
                           >
                             <span>🏬 Walmart US</span>
-                            <ExternalLink className="w-3 h-3 text-blue-400" />
+                            <ExternalLink className="w-3 h-3 text-blue-400 shrink-0" />
                           </a>
+
                           <a
-                            href={item.links.target}
+                            href={item.links?.target || `https://www.target.com/s?searchTerm=${encodeURIComponent(item.brand + ' ' + item.productName)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="py-1.5 px-2 bg-[#111B21] hover:bg-rose-950/60 border border-rose-500/40 text-rose-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
                           >
                             <span>🎯 Target US</span>
-                            <ExternalLink className="w-3 h-3 text-rose-400" />
-                          </a>
-                          <a
-                            href={item.links.googleShopping}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="py-1.5 px-2 bg-[#111B21] hover:bg-slate-800 border border-[#374248] text-white font-bold rounded-xl flex items-center justify-center gap-1 transition"
-                          >
-                            <span>🔍 Google Shop</span>
-                            <ExternalLink className="w-3 h-3 text-[#8696A0]" />
+                            <ExternalLink className="w-3 h-3 text-rose-400 shrink-0" />
                           </a>
                         </div>
                       </div>

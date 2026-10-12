@@ -737,28 +737,31 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
             const profitMxn = Math.round(saleMxn - costMxn);
             const marginPct = costMxn > 0 ? Math.round((profitMxn / costMxn) * 100) : 55;
 
-            // Determinar enlace directo a la tienda oficial de la marca
+            // Generar enlaces directos de compra sin romper en la página de inicio
+            // Para tiendas como Bath & Body Works que no soportan /s?q=, usamos búsqueda directa indexada de Google hacia el dominio del producto, Google Shopping y Amazon USA
             let officialStoreUrl = "";
             let officialStoreName = parsed.suggestedStore || "Tienda Oficial";
             const brandLower = (parsed.brand || "").toLowerCase();
+            const productQueryUSA = parsed.searchQueryUSA || `${parsed.brand || ''} ${parsed.productName || ''}`.trim();
+            const queryExactUSA = encodeURIComponent(productQueryUSA);
 
             if (brandLower.includes("bath") || brandLower.includes("body works")) {
-              officialStoreUrl = `https://www.bathandbodyworks.com/s?q=${query}`;
-              officialStoreName = "Bath & Body Works Oficial";
+              officialStoreUrl = `https://www.google.com/search?q=site%3Abathandbodyworks.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
+              officialStoreName = "Bath & Body Works (Directo)";
             } else if (brandLower.includes("victoria") || brandLower.includes("secret")) {
-              officialStoreUrl = `https://www.victoriassecret.com/us/search?q=${query}`;
-              officialStoreName = "Victoria's Secret Oficial";
+              officialStoreUrl = `https://www.google.com/search?q=site%3Avictoriassecret.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
+              officialStoreName = "Victoria's Secret (Directo)";
             } else if (brandLower.includes("nike")) {
-              officialStoreUrl = `https://www.nike.com/w?q=${query}`;
-              officialStoreName = "Nike Store USA";
+              officialStoreUrl = `https://www.google.com/search?q=site%3Anike.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
+              officialStoreName = "Nike Store USA (Directo)";
             } else if (brandLower.includes("coach")) {
-              officialStoreUrl = `https://www.coachoutlet.com/search?q=${query}`;
-              officialStoreName = "Coach Outlet USA";
+              officialStoreUrl = `https://www.google.com/search?q=site%3Acoachoutlet.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
+              officialStoreName = "Coach Outlet (Directo)";
             } else if (brandLower.includes("stanley")) {
-              officialStoreUrl = `https://www.stanley1913.com/search?q=${query}`;
-              officialStoreName = "Stanley 1913 Oficial";
+              officialStoreUrl = `https://www.google.com/search?q=site%3Astanley1913.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
+              officialStoreName = "Stanley 1913 (Directo)";
             } else {
-              officialStoreUrl = `https://www.google.com/search?q=${encodeURIComponent(rawQuery + " buy online usa store")}`;
+              officialStoreUrl = `https://www.google.com/search?tbm=shop&q=${queryExactUSA}`;
               officialStoreName = parsed.suggestedStore || "Tienda Online USA";
             }
 
@@ -775,37 +778,38 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               suggestedSalePriceMXN: saleMxn,
               estimatedProfitMXN: profitMxn,
               profitMarginPct: marginPct,
-              searchQueryUSA: parsed.searchQueryUSA || parsed.productName,
+              searchQueryUSA: productQueryUSA,
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
               links: {
                 officialStore: officialStoreUrl,
-                amazon: `https://www.amazon.com/s?k=${query}`,
-                walmart: `https://www.walmart.com/search?q=${query}`,
-                target: `https://www.target.com/s?searchTerm=${query}`,
-                googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
+                amazon: `https://www.amazon.com/s?k=${queryExactUSA}`,
+                walmart: `https://www.walmart.com/search?q=${queryExactUSA}`,
+                target: `https://www.target.com/s?searchTerm=${queryExactUSA}`,
+                googleShopping: `https://www.google.com/search?tbm=shop&q=${queryExactUSA}`,
               }
             };
           } else {
-            const query = encodeURIComponent(msg.text || "articulos importacion usa");
+            const rawQuery = msg.text || "bath and body works import usa";
+            const query = encodeURIComponent(rawQuery);
             return {
               id: msg.id,
               productName: msg.text || "Artículo en foto",
               brand: "N/A",
               clientPrice: msg.text || "N/A",
               category: "General",
-              suggestedStore: "Bath & Body Works / Tienda USA",
-              officialStoreUrl: `https://www.bathandbodyworks.com/s?q=${query}`,
+              suggestedStore: "Google Shopping USA",
+              officialStoreUrl: `https://www.google.com/search?tbm=shop&q=${query}`,
               storePriceUSD: 10,
               estimatedCostMXN: 210,
               suggestedSalePriceMXN: 340,
               estimatedProfitMXN: 130,
               profitMarginPct: 62,
-              searchQueryUSA: msg.text || "usa import",
+              searchQueryUSA: rawQuery,
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
               links: {
-                officialStore: `https://www.bathandbodyworks.com/s?q=${query}`,
+                officialStore: `https://www.google.com/search?tbm=shop&q=${query}`,
                 amazon: `https://www.amazon.com/s?k=${query}`,
                 walmart: `https://www.walmart.com/search?q=${query}`,
                 target: `https://www.target.com/s?searchTerm=${query}`,
@@ -814,14 +818,15 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
             };
           }
         } catch {
-          const query = encodeURIComponent(msg.text || "producto importado");
+          const rawQuery = msg.text || "producto importado usa";
+          const query = encodeURIComponent(rawQuery);
           return {
             id: msg.id,
             productName: msg.text || "Artículo en foto",
             brand: "N/A",
             clientPrice: msg.text || "N/A",
             category: "General",
-            searchQueryUSA: msg.text || "usa import",
+            searchQueryUSA: rawQuery,
             imageUrl: msg.media_url,
             timestamp: msg.created_at,
             links: {
