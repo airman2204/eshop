@@ -678,7 +678,7 @@ Identifica y calcula con precisión:
    - Costo total de importación en MXN = (Precio USD * 18.50) + $25 envío unitario.
    - Precio de venta sugerido al público en MXN (redondeado, manteniendo la ganancia saludable y competitivo contra el mercado de reventa).
    - Ganancia neta estimada en MXN (Precio de venta sugerido - Costo total).
-7. Términos de búsqueda precisos en inglés para encontrarlo en tiendas de Estados Unidos.
+7. Términos de búsqueda precisos en inglés para encontrarlo en tiendas de Estados Unidos (nombre exacto de la fragancia o producto en inglés, ej: "White Pumpkin Single Wick Candle", "Champagne Apple and Honey Fine Fragrance Mist").
 
 Devuelve exclusivamente un JSON con esta estructura exacta:
 {
@@ -737,33 +737,36 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
             const profitMxn = Math.round(saleMxn - costMxn);
             const marginPct = costMxn > 0 ? Math.round((profitMxn / costMxn) * 100) : 55;
 
-            // Generar enlaces directos de compra sin romper en la página de inicio
-            // Para tiendas como Bath & Body Works que no soportan /s?q=, usamos búsqueda directa indexada de Google hacia el dominio del producto, Google Shopping y Amazon USA
+            // Generar enlaces directos de compra en cada tienda oficial
             let officialStoreUrl = "";
             let officialStoreName = parsed.suggestedStore || "Tienda Oficial";
             const brandLower = (parsed.brand || "").toLowerCase();
-            const productQueryUSA = parsed.searchQueryUSA || `${parsed.brand || ''} ${parsed.productName || ''}`.trim();
-            const queryExactUSA = encodeURIComponent(productQueryUSA);
+            // Usar términos en inglés específicos del producto para la búsqueda interna de la tienda
+            const rawSearchQuery = (parsed.searchQueryUSA || `${parsed.brand || ''} ${parsed.productName || ''}`).trim();
+            const cleanQuery = rawSearchQuery.replace(/[^a-zA-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+            const queryExactUSA = encodeURIComponent(cleanQuery || parsed.productName || rawQuery);
 
             if (brandLower.includes("bath") || brandLower.includes("body works")) {
-              officialStoreUrl = `https://www.google.com/search?q=site%3Abathandbodyworks.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
-              officialStoreName = "Bath & Body Works (Directo)";
+              officialStoreUrl = `https://www.bathandbodyworks.com/search?q=${queryExactUSA}`;
+              officialStoreName = "Bath & Body Works";
             } else if (brandLower.includes("victoria") || brandLower.includes("secret")) {
-              officialStoreUrl = `https://www.google.com/search?q=site%3Avictoriassecret.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
-              officialStoreName = "Victoria's Secret (Directo)";
+              officialStoreUrl = `https://www.victoriassecret.com/us/search?q=${queryExactUSA}`;
+              officialStoreName = "Victoria's Secret";
             } else if (brandLower.includes("nike")) {
-              officialStoreUrl = `https://www.google.com/search?q=site%3Anike.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
-              officialStoreName = "Nike Store USA (Directo)";
+              officialStoreUrl = `https://www.nike.com/w?q=${queryExactUSA}`;
+              officialStoreName = "Nike Store USA";
             } else if (brandLower.includes("coach")) {
-              officialStoreUrl = `https://www.google.com/search?q=site%3Acoachoutlet.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
-              officialStoreName = "Coach Outlet (Directo)";
+              officialStoreUrl = `https://www.coachoutlet.com/search?q=${queryExactUSA}`;
+              officialStoreName = "Coach Outlet";
             } else if (brandLower.includes("stanley")) {
-              officialStoreUrl = `https://www.google.com/search?q=site%3Astanley1913.com+${encodeURIComponent(parsed.productName || rawQuery)}`;
-              officialStoreName = "Stanley 1913 (Directo)";
+              officialStoreUrl = `https://www.stanley1913.com/search?q=${queryExactUSA}`;
+              officialStoreName = "Stanley 1913";
             } else {
               officialStoreUrl = `https://www.google.com/search?tbm=shop&q=${queryExactUSA}`;
-              officialStoreName = parsed.suggestedStore || "Tienda Online USA";
+              officialStoreName = parsed.suggestedStore || "Tienda USA";
             }
+
+            const productQueryUSA = rawSearchQuery;
 
             return {
               id: msg.id,

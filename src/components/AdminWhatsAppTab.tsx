@@ -2297,7 +2297,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                               target="_blank"
                               rel="noopener noreferrer"
                               className="py-1.5 px-2 bg-[#111B21] hover:bg-[#202C33] border border-cyan-500/40 text-cyan-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
-                              title="Búsqueda indexada directa en tienda oficial"
+                              title={`Buscar directamente en ${item.suggestedStore}`}
                             >
                               <span className="truncate">🌐 {item.suggestedStore || 'Tienda Oficial'}</span>
                               <ExternalLink className="w-3 h-3 text-cyan-400 shrink-0" />
