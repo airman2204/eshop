@@ -343,20 +343,29 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     isUserScrollingUpRef.current = distanceFromBottom > 100;
   };
 
-  const scrollToBottom = (force = false) => {
-    if (force || !isUserScrollingUpRef.current) {
+  const scrollToBottom = (instant = false) => {
+    const el = chatScrollContainerRef.current;
+    if (instant && el) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    if (!isUserScrollingUpRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   useEffect(() => {
-    // Si se cargan mensajes de un nuevo chat, forzar scroll abajo
+    // Si se cargan mensajes de un nuevo chat o al inicio, posicionar INMEDIATAMENTE al fondo (sin animación de bajada)
     const isNewChat = prevMessagesCountRef.current === 0 && messages.length > 0;
     if (isNewChat) {
       isUserScrollingUpRef.current = false;
+      // Posicionamiento inmediato síncrono y con un tick para asegurar renderizado completo de imágenes
       scrollToBottom(true);
+      requestAnimationFrame(() => {
+        scrollToBottom(true);
+      });
     } else if (messages.length > prevMessagesCountRef.current && !isUserScrollingUpRef.current) {
-      // Si llegó un mensaje nuevo mientras el usuario está al final, deslizar suave
+      // Si llega un mensaje nuevo mientras estás conversando al final, animar suave
       scrollToBottom(false);
     }
     prevMessagesCountRef.current = messages.length;
@@ -397,11 +406,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Cargar mensajes cuando se selecciona un chat
   const handleSelectChat = async (chat: WhatsAppChat) => {
     if (onSelectAnyChat) onSelectAnyChat();
+    prevMessagesCountRef.current = 0;
+    isUserScrollingUpRef.current = false;
     setActiveChat(chat);
     setLoadingMessages(true);
     const msgs = await getWhatsAppMessages(chat.id);
     setMessages(msgs);
     setLoadingMessages(false);
+    setTimeout(() => {
+      scrollToBottom(true);
+    }, 50);
 
     if (chat.unreadCount > 0) {
       markChatAsRead(chat.id);
