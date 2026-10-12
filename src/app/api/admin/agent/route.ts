@@ -730,11 +730,37 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
           if (responseText) {
             const parsed = JSON.parse(responseText);
             const query = encodeURIComponent(parsed.searchQueryUSA || parsed.productName);
+            const rawQuery = parsed.searchQueryUSA || parsed.productName;
             const usd = Number(parsed.storePriceUSD || 10);
             const costMxn = Math.round(Number(parsed.estimatedCostMXN || (usd * 18.5 + 25)));
             const saleMxn = Math.round(Number(parsed.suggestedSalePriceMXN || Math.round(costMxn * 1.55)));
             const profitMxn = Math.round(saleMxn - costMxn);
             const marginPct = costMxn > 0 ? Math.round((profitMxn / costMxn) * 100) : 55;
+
+            // Determinar enlace directo a la tienda oficial de la marca
+            let officialStoreUrl = "";
+            let officialStoreName = parsed.suggestedStore || "Tienda Oficial";
+            const brandLower = (parsed.brand || "").toLowerCase();
+
+            if (brandLower.includes("bath") || brandLower.includes("body works")) {
+              officialStoreUrl = `https://www.bathandbodyworks.com/s?q=${query}`;
+              officialStoreName = "Bath & Body Works Oficial";
+            } else if (brandLower.includes("victoria") || brandLower.includes("secret")) {
+              officialStoreUrl = `https://www.victoriassecret.com/us/search?q=${query}`;
+              officialStoreName = "Victoria's Secret Oficial";
+            } else if (brandLower.includes("nike")) {
+              officialStoreUrl = `https://www.nike.com/w?q=${query}`;
+              officialStoreName = "Nike Store USA";
+            } else if (brandLower.includes("coach")) {
+              officialStoreUrl = `https://www.coachoutlet.com/search?q=${query}`;
+              officialStoreName = "Coach Outlet USA";
+            } else if (brandLower.includes("stanley")) {
+              officialStoreUrl = `https://www.stanley1913.com/search?q=${query}`;
+              officialStoreName = "Stanley 1913 Oficial";
+            } else {
+              officialStoreUrl = `https://www.google.com/search?q=${encodeURIComponent(rawQuery + " buy online usa store")}`;
+              officialStoreName = parsed.suggestedStore || "Tienda Online USA";
+            }
 
             return {
               id: msg.id,
@@ -742,7 +768,8 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               brand: parsed.brand || "Sin marca",
               clientPrice: parsed.clientPrice || msg.text || "N/A",
               category: parsed.category || "General",
-              suggestedStore: parsed.suggestedStore || "Tienda Oficial / Amazon US",
+              suggestedStore: officialStoreName,
+              officialStoreUrl,
               storePriceUSD: usd,
               estimatedCostMXN: costMxn,
               suggestedSalePriceMXN: saleMxn,
@@ -752,6 +779,7 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
               links: {
+                officialStore: officialStoreUrl,
                 amazon: `https://www.amazon.com/s?k=${query}`,
                 walmart: `https://www.walmart.com/search?q=${query}`,
                 target: `https://www.target.com/s?searchTerm=${query}`,
@@ -766,7 +794,8 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               brand: "N/A",
               clientPrice: msg.text || "N/A",
               category: "General",
-              suggestedStore: "Amazon US / Retailer",
+              suggestedStore: "Bath & Body Works / Tienda USA",
+              officialStoreUrl: `https://www.bathandbodyworks.com/s?q=${query}`,
               storePriceUSD: 10,
               estimatedCostMXN: 210,
               suggestedSalePriceMXN: 340,
@@ -776,6 +805,7 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
               links: {
+                officialStore: `https://www.bathandbodyworks.com/s?q=${query}`,
                 amazon: `https://www.amazon.com/s?k=${query}`,
                 walmart: `https://www.walmart.com/search?q=${query}`,
                 target: `https://www.target.com/s?searchTerm=${query}`,

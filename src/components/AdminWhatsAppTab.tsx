@@ -2276,9 +2276,23 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       </div>
 
                       {/* Botones de Búsqueda Directa en Tiendas de USA */}
-                      <div className="pt-2 border-t border-[#2A3942] space-y-1.5">
+                      <div className="pt-2 border-t border-[#2A3942] space-y-2">
+                        {/* BOTÓN PRINCIPAL: IR DIRECTO A COMPRAR A LA TIENDA OFICIAL / DONDE SE ENCONTRÓ */}
+                        {item.links?.officialStore && (
+                          <a
+                            href={item.links.officialStore}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition transform active:scale-98"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <span>Comprar en {item.suggestedStore || 'Tienda Oficial'}</span>
+                            <ExternalLink className="w-3 h-3 opacity-80" />
+                          </a>
+                        )}
+
                         <span className="text-[10px] text-[#8696A0] font-bold block">
-                          Buscar en tiendas de USA (1 clic):
+                          Otras tiendas de USA para comparar:
                         </span>
                         <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                           <a
