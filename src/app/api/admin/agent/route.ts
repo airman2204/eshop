@@ -34,7 +34,7 @@ async function callGemini(
   }
 
   // Modelos ordenados por prioridad y compatibilidad garantizada
-  const models = ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-3.8-flash"];
+  const models = ["gemini-2.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.8-flash"];
   let lastError = "";
 
   for (const model of models) {
@@ -632,6 +632,127 @@ ${storeContext}`;
       }
 
       return NextResponse.json({ success: true });
+    }
+
+    // ── 9. RADAR DE IMPORTACIÓN USA (EXTRAER ARTÍCULOS PEDIDOS POR CLIENTES EN WHATSAPP) ──
+    if (action === "extract_chat_import_requests") {
+      const { chatId } = body;
+      if (!chatId) return NextResponse.json({ error: "chatId requerido" }, { status: 400 });
+
+      // Consultar todos los mensajes de clientes en este chat que tengan fotos o texto de interés
+      const { data: messages, error: msgErr } = await supabase
+        .from("whatsapp_messages")
+        .select("id, text, media_url, media_type, timestamp, created_at")
+        .eq("chat_id", chatId)
+        .eq("sender", "client")
+        .order("created_at", { ascending: false });
+
+      if (msgErr) throw new Error(msgErr.message);
+
+      const photoMessages = (messages || []).filter(
+        (m: any) => m.media_url && (m.media_type === "image" || m.media_url.startsWith("data:image/"))
+      );
+
+      // Usar Gemini Vision para analizar las fotos enviadas por el cliente
+      const identifiedItems: any[] = [];
+      const apiKey = process.env.GEMINI_API_KEY;
+
+      for (const msg of photoMessages) {
+        try {
+          const base64Data = msg.media_url.replace(/^data:image\/[a-z]+;base64,/, "");
+          let promptInstruction = `Analiza esta imagen enviada por un cliente en WhatsApp solicitando cotización o producto.
+Texto que acompañó el mensaje: "${msg.text || ''}".
+Identifica:
+1. Nombre claro y comercial del producto en español.
+2. Marca (si es visible en la etiqueta, empaque o producto).
+3. Precio mencionado por el cliente en el mensaje (si hay).
+4. Categoría del producto.
+5. Términos de búsqueda precisos en inglés para encontrarlo en tiendas de Estados Unidos (Amazon US, Walmart US, Target, Bath & Body Works, TJ Maxx, etc.).
+
+Devuelve exclusivamente un JSON con esta estructura exacta:
+{
+  "productName": "Nombre en español",
+  "brand": "Marca",
+  "clientPrice": "Texto del precio o N/A",
+  "category": "Categoría",
+  "searchQueryUSA": "Términos en inglés para buscar en tiendas USA"
+}`;
+
+          let responseText = "";
+          const visionModels = ["gemini-2.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"];
+
+          for (const vModel of visionModels) {
+            try {
+              const url = `https://generativelanguage.googleapis.com/v1beta/models/${vModel}:generateContent?key=${apiKey}`;
+              const gRes = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    role: "user",
+                    parts: [
+                      { text: promptInstruction },
+                      { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                    ]
+                  }],
+                  generationConfig: { responseMimeType: "application/json" }
+                })
+              });
+              if (!gRes.ok) continue;
+              const gData = await gRes.json();
+              const txt = gData.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (txt) {
+                responseText = txt;
+                break;
+              }
+            } catch {}
+          }
+
+          if (responseText) {
+            const parsed = JSON.parse(responseText);
+            const query = encodeURIComponent(parsed.searchQueryUSA || parsed.productName);
+            identifiedItems.push({
+              id: msg.id,
+              productName: parsed.productName || "Artículo solicitado",
+              brand: parsed.brand || "Sin marca",
+              clientPrice: parsed.clientPrice || msg.text || "N/A",
+              category: parsed.category || "General",
+              searchQueryUSA: parsed.searchQueryUSA || parsed.productName,
+              imageUrl: msg.media_url,
+              timestamp: msg.timestamp || msg.created_at,
+              links: {
+                amazon: `https://www.amazon.com/s?k=${query}`,
+                walmart: `https://www.walmart.com/search?q=${query}`,
+                target: `https://www.target.com/s?searchTerm=${query}`,
+                googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
+              }
+            });
+          } else {
+            // Fallback si no hubo respuesta de visión
+            const query = encodeURIComponent(msg.text || "articulos importacion usa");
+            identifiedItems.push({
+              id: msg.id,
+              productName: msg.text || "Artículo en foto",
+              brand: "N/A",
+              clientPrice: msg.text || "N/A",
+              category: "General",
+              searchQueryUSA: msg.text || "usa import",
+              imageUrl: msg.media_url,
+              timestamp: msg.timestamp || msg.created_at,
+              links: {
+                amazon: `https://www.amazon.com/s?k=${query}`,
+                walmart: `https://www.walmart.com/search?q=${query}`,
+                target: `https://www.target.com/s?searchTerm=${query}`,
+                googleShopping: `https://www.google.com/search?tbm=shop&q=${query}`,
+              }
+            });
+          }
+        } catch (itemErr) {
+          console.error("Error identificando foto individual:", itemErr);
+        }
+      }
+
+      return NextResponse.json({ success: true, items: identifiedItems });
     }
 
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });

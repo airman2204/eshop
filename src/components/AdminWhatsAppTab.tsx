@@ -8,7 +8,8 @@ import {
   Maximize2, Minimize2, Bell, BellRing, Volume2, X, Camera, Settings,
   Smile, Image as ImageIcon, Video, PhoneCall, CircleDot, Radio,
   Users, Archive, MoreVertical, Plus, Info, ChevronDown, PhoneOutgoing,
-  PhoneIncoming, PhoneMissed, Play, Paperclip, Zap, PanelLeftClose, PanelLeft
+  PhoneIncoming, PhoneMissed, Play, Paperclip, Zap, PanelLeftClose, PanelLeft,
+  ShoppingCart, Globe, Compass, DollarSign, Download
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile, WhatsAppStatusItem, WhatsAppCallRecord } from '@/types';
 import { 
@@ -238,7 +239,15 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     }
   };
 
+  // Radar de Importación USA (Extraer artículos de fotos y buscarlos en tiendas de EUA)
+  const [showImportRadarModal, setShowImportRadarModal] = useState(false);
+  const [importRadarItems, setImportRadarItems] = useState<any[]>([]);
+  const [loadingImportRadar, setLoadingImportRadar] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingUpRef = useRef<boolean>(false);
+  const prevMessagesCountRef = useRef<number>(0);
 
   // Solicitar permiso de notificaciones nativas del navegador / celular
   useEffect(() => {
@@ -325,14 +334,60 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     }
   };
 
-  // Auto scroll al final del chat
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Control de scroll inteligente: sólo hace scroll al final si el usuario NO está leyendo mensajes anteriores
+  const handleChatScroll = () => {
+    const el = chatScrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // Si el usuario está a más de 100px del final, significa que hizo scroll hacia arriba
+    isUserScrollingUpRef.current = distanceFromBottom > 100;
+  };
+
+  const scrollToBottom = (force = false) => {
+    if (force || !isUserScrollingUpRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Si se cargan mensajes de un nuevo chat, forzar scroll abajo
+    const isNewChat = prevMessagesCountRef.current === 0 && messages.length > 0;
+    if (isNewChat) {
+      isUserScrollingUpRef.current = false;
+      scrollToBottom(true);
+    } else if (messages.length > prevMessagesCountRef.current && !isUserScrollingUpRef.current) {
+      // Si llegó un mensaje nuevo mientras el usuario está al final, deslizar suave
+      scrollToBottom(false);
+    }
+    prevMessagesCountRef.current = messages.length;
   }, [messages]);
+
+  // Extraer con IA los productos solicitados en fotos de este chat y crear links de búsqueda en USA
+  const handleOpenImportRadar = async () => {
+    if (!activeChat) return;
+    setShowImportRadarModal(true);
+    setLoadingImportRadar(true);
+    try {
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'extract_chat_import_requests',
+          chatId: activeChat.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.items)) {
+        setImportRadarItems(data.items);
+      } else {
+        setImportRadarItems([]);
+      }
+    } catch (err) {
+      console.error('Error extrayendo artículos de importación:', err);
+    } finally {
+      setLoadingImportRadar(false);
+    }
+  };
 
   const activeChatRef = useRef<WhatsAppChat | null>(null);
   useEffect(() => {
@@ -1448,6 +1503,18 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 {chatAgentMode === 'agent' ? '🤖 Agente' : '👤 Manual'}
               </button>
 
+              {/* Botón Radar USA: Buscar Artículos pedidos en tiendas de EUA */}
+              <button
+                type="button"
+                onClick={handleOpenImportRadar}
+                className="text-[10px] sm:text-[11px] font-black px-2.5 py-1 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer ring-1 ring-amber-400/30"
+                title="Detectar con Inteligencia Artificial los artículos y precios pedidos por este cliente y buscarlos en tiendas de USA (Amazon, Walmart, Target)"
+              >
+                <Compass className="w-3.5 h-3.5 text-amber-200" />
+                <span className="hidden sm:inline">🇺🇸 Buscar en USA</span>
+                <span className="sm:hidden">🇺🇸 USA</span>
+              </button>
+
               {/* Abrir en App Nativa */}
               <a
                 href={`https://wa.me/${activeChat.phone}`}
@@ -1463,6 +1530,8 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
           {/* Área de Mensajes con Fondo Doodles Oscuro Oficial WhatsApp */}
           <div 
+            ref={chatScrollContainerRef}
+            onScroll={handleChatScroll}
             className="flex-1 overflow-y-auto p-4 space-y-3 relative overscroll-contain"
             style={{
               backgroundImage: `radial-gradient(#202C33 1px, transparent 1px)`,
@@ -2049,6 +2118,179 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
           </div>
 
           <span className="text-white/60 text-xs mt-2 font-medium">Toca en cualquier parte para cerrar</span>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 6. MODAL RADAR DE IMPORTACIÓN USA (CLIENT REQUEST FINDER) */}
+      {/* ======================================================== */}
+      {showImportRadarModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+          <div className="bg-[#111B21] border border-[#222E35] rounded-3xl max-w-4xl w-full p-5 sm:p-6 space-y-4 shadow-2xl relative max-h-[92vh] flex flex-col text-[#E9EDEF]">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between border-b border-[#222E35] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 flex items-center justify-center text-white shadow-md">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-white">
+                      Radar de Importación USA: {activeChat?.clientName || 'Cliente'}
+                    </h3>
+                    <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+                      IA Vision
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8696A0]">
+                    Artículos solicitados en fotos de WhatsApp listos para cotizar y comprar en tiendas de EUA.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowImportRadarModal(false)}
+                className="p-2 text-[#8696A0] hover:text-[#E9EDEF] hover:bg-[#202C33] rounded-full transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido / Lista de Productos */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {loadingImportRadar ? (
+                <div className="py-16 text-center space-y-3">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto text-orange-400" />
+                  <p className="text-sm font-bold text-white">
+                    FoxBot Vision está analizando las fotos del chat...
+                  </p>
+                  <p className="text-xs text-[#8696A0] max-w-md mx-auto">
+                    Identificando marcas, etiquetas de productos y generando términos optimizados para tiendas de Estados Unidos.
+                  </p>
+                </div>
+              ) : importRadarItems.length === 0 ? (
+                <div className="py-16 text-center text-[#8696A0] space-y-2">
+                  <ShoppingCart className="w-10 h-10 mx-auto text-[#8696A0]/50" />
+                  <p className="text-sm font-bold text-[#E9EDEF]">No se encontraron fotos de productos en este chat</p>
+                  <p className="text-xs text-[#8696A0] max-w-md mx-auto">
+                    Pídele al cliente que envíe fotos de los artículos que desea encargar y FoxBot los identificará automáticamente.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {importRadarItems.map((item, idx) => (
+                    <div
+                      key={item.id || idx}
+                      className="bg-[#202C33] border border-[#222E35] hover:border-orange-500/50 rounded-2xl p-3.5 flex flex-col justify-between space-y-3 transition shadow-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Foto del Producto Enviada por el Cliente */}
+                        <div 
+                          onClick={() => setPreviewMediaModal(item.imageUrl)}
+                          className="w-20 h-20 rounded-xl bg-black/40 overflow-hidden shrink-0 border border-white/10 cursor-pointer relative group"
+                          title="Clic para ver foto en grande"
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={item.productName}
+                            className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                            <Maximize2 className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+
+                        {/* Datos Identificados por IA */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                              {item.brand || 'Marca no detectada'}
+                            </span>
+                            {item.category && (
+                              <span className="text-[9px] text-[#8696A0] truncate">
+                                • {item.category}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-xs font-black text-white leading-snug line-clamp-2">
+                            {item.productName}
+                          </h4>
+
+                          {/* Precio que venía con el mensaje */}
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[10px] text-[#8696A0]">Precio cliente:</span>
+                            <span className="text-xs font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                              {item.clientPrice}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botones de Búsqueda Directa en Tiendas de USA */}
+                      <div className="pt-2 border-t border-[#2A3942] space-y-1.5">
+                        <span className="text-[10px] text-[#8696A0] font-bold block">
+                          Buscar en tiendas de USA (1 clic):
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                          <a
+                            href={item.links.amazon}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-1.5 px-2 bg-[#111B21] hover:bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
+                          >
+                            <span>🛒 Amazon US</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400" />
+                          </a>
+                          <a
+                            href={item.links.walmart}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-1.5 px-2 bg-[#111B21] hover:bg-blue-950/60 border border-blue-500/40 text-blue-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
+                          >
+                            <span>🏬 Walmart US</span>
+                            <ExternalLink className="w-3 h-3 text-blue-400" />
+                          </a>
+                          <a
+                            href={item.links.target}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-1.5 px-2 bg-[#111B21] hover:bg-rose-950/60 border border-rose-500/40 text-rose-300 font-bold rounded-xl flex items-center justify-center gap-1 transition"
+                          >
+                            <span>🎯 Target US</span>
+                            <ExternalLink className="w-3 h-3 text-rose-400" />
+                          </a>
+                          <a
+                            href={item.links.googleShopping}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-1.5 px-2 bg-[#111B21] hover:bg-slate-800 border border-[#374248] text-white font-bold rounded-xl flex items-center justify-center gap-1 transition"
+                          >
+                            <span>🔍 Google Shop</span>
+                            <ExternalLink className="w-3 h-3 text-[#8696A0]" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer Informativo */}
+            <div className="pt-2 border-t border-[#222E35] flex items-center justify-between text-[11px] text-[#8696A0]">
+              <span>💡 Total analizado: {importRadarItems.length} artículos solicitados</span>
+              <button
+                type="button"
+                onClick={handleOpenImportRadar}
+                disabled={loadingImportRadar}
+                className="text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingImportRadar ? 'animate-spin' : ''}`} />
+                <span>Re-escanear fotos</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
