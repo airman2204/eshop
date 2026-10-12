@@ -2231,12 +2231,22 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                             {item.productName}
                           </h4>
 
-                          {/* Tienda Recomendada y Precio Cliente */}
+                          {/* Tienda Recomendada, Estado de Stock en Vivo y Precio */}
                           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
                             <span className="bg-[#111B21] text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
                               <span>🏪 {item.suggestedStore || 'Bath & Body Works / Amazon'}</span>
-                              <span className="text-white font-mono font-black">~${item.storePriceUSD} USD</span>
+                              <span className="text-white font-mono font-black">${item.storePriceUSD} USD</span>
                             </span>
+                            {item.isLiveConfirmed ? (
+                              <span className="text-emerald-300 bg-emerald-950/60 font-extrabold px-2 py-0.5 rounded-md border border-emerald-500/40 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                {item.stockStatus || 'Confirmado en vivo'}
+                              </span>
+                            ) : item.stockStatus ? (
+                              <span className="text-teal-300 bg-[#111B21] px-2 py-0.5 rounded-md border border-[#2A3942]">
+                                {item.stockStatus}
+                              </span>
+                            ) : null}
                             {item.clientPrice && item.clientPrice !== 'N/A' && (
                               <span className="text-[#8696A0] bg-[#111B21] px-2 py-0.5 rounded-md border border-[#2A3942]">
                                 Ref. cliente: <b className="text-emerald-400 font-mono">{item.clientPrice}</b>

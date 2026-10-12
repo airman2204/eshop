@@ -695,8 +695,8 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
   "searchQueryUSA": "Términos en inglés para buscar en tiendas USA"
 }`;
 
-          let responseText = "";
-          const visionModels = ["gemini-2.5-flash-lite", "gemini-3.5-flash"];
+          let visionData: any = null;
+          const visionModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
 
           if (isBase64) {
             for (const vModel of visionModels) {
@@ -720,72 +720,132 @@ Devuelve exclusivamente un JSON con esta estructura exacta:
                 const gData = await gRes.json();
                 const txt = gData.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (txt) {
-                  responseText = txt;
+                  visionData = JSON.parse(txt);
                   break;
                 }
               } catch {}
             }
           }
 
-          if (responseText) {
-            const parsed = JSON.parse(responseText);
-            const query = encodeURIComponent(parsed.searchQueryUSA || parsed.productName);
-            const rawQuery = parsed.searchQueryUSA || parsed.productName;
-            const usd = Number(parsed.storePriceUSD || 10);
-            const costMxn = Math.round(Number(parsed.estimatedCostMXN || (usd * 18.5 + 25)));
-            const saleMxn = Math.round(Number(parsed.suggestedSalePriceMXN || Math.round(costMxn * 1.55)));
+          if (visionData) {
+            let liveConfirmed = false;
+            let realStorePriceUSD = Number(visionData.storePriceUSD || 10);
+            let verifiedProductUrl = "";
+            let verifiedStoreName = visionData.suggestedStore || "Tienda USA";
+            let stockStatus = "Disponible";
+
+            // FASE 2: Búsqueda en vivo en internet con Google Search Grounding para verificar precio real y disponibilidad
+            const liveSearchQuery = (visionData.searchQueryUSA || `${visionData.brand || ''} ${visionData.productName || ''}`).trim();
+            try {
+              const liveSearchPrompt = `Busca en internet en tiempo real el producto "${liveSearchQuery}".
+Confirma si está disponible para comprar en tiendas online de USA (como Bath & Body Works, Amazon US, Walmart, etc.), cuál es su precio actual en USD y la URL directa exacta donde se puede comprar.
+Devuelve únicamente un JSON con este formato:
+{
+  "isAvailable": true,
+  "currentPriceUSD": 14.95,
+  "storeName": "Bath & Body Works",
+  "directProductUrl": "https://www.bathandbodyworks.com/p/...",
+  "statusNote": "Disponible en tienda"
+}`;
+
+              const liveUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+              const liveRes = await fetch(liveUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    role: "user",
+                    parts: [{ text: liveSearchPrompt }]
+                  }],
+                  tools: [{ google_search: {} }]
+                })
+              });
+
+              if (liveRes.ok) {
+                const liveJson = await liveRes.json();
+                const cand = liveJson.candidates?.[0];
+                const rawLiveText = cand?.content?.parts?.[0]?.text || "";
+                
+                // Extraer enlaces encontrados por Google Grounding
+                const groundingChunks = cand?.groundingMetadata?.groundingChunks || [];
+                const webSources = groundingChunks
+                  .map((c: any) => c.web?.uri)
+                  .filter((uri: string) => uri && (uri.startsWith("http://") || uri.startsWith("https://")));
+
+                // Intentar parsear el JSON de la respuesta
+                const jsonMatch = rawLiveText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  const parsedLive = JSON.parse(jsonMatch[0]);
+                  liveConfirmed = true;
+                  if (parsedLive.currentPriceUSD && Number(parsedLive.currentPriceUSD) > 0) {
+                    realStorePriceUSD = Number(parsedLive.currentPriceUSD);
+                  }
+                  if (parsedLive.directProductUrl && parsedLive.directProductUrl.startsWith("http")) {
+                    verifiedProductUrl = parsedLive.directProductUrl;
+                  } else if (webSources.length > 0) {
+                    verifiedProductUrl = webSources[0];
+                  }
+                  if (parsedLive.storeName) {
+                    verifiedStoreName = parsedLive.storeName;
+                  }
+                  stockStatus = parsedLive.statusNote || (parsedLive.isAvailable ? "En Stock Confirmado" : "Agotado / Difícil");
+                } else if (webSources.length > 0) {
+                  verifiedProductUrl = webSources[0];
+                  liveConfirmed = true;
+                  stockStatus = "Encontrado en vivo";
+                }
+              }
+            } catch {
+              // Si falla la búsqueda en vivo, continuamos con los datos de visión
+            }
+
+            const rawSearchQuery = (visionData.searchQueryUSA || `${visionData.brand || ''} ${visionData.productName || ''}`).trim();
+            const cleanQuery = rawSearchQuery.replace(/[^a-zA-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+            const queryExactUSA = encodeURIComponent(cleanQuery || visionData.productName);
+
+            // Cálculos financieros con el precio real confirmado
+            const usd = realStorePriceUSD;
+            const costMxn = Math.round(usd * 18.5 + 25);
+            const saleMxn = Math.round(Number(visionData.suggestedSalePriceMXN || Math.round(costMxn * 1.55)));
             const profitMxn = Math.round(saleMxn - costMxn);
             const marginPct = costMxn > 0 ? Math.round((profitMxn / costMxn) * 100) : 55;
 
-            // Generar enlaces directos de compra en cada tienda oficial
-            let officialStoreUrl = "";
-            let officialStoreName = parsed.suggestedStore || "Tienda Oficial";
-            const brandLower = (parsed.brand || "").toLowerCase();
-            // Usar términos en inglés específicos del producto para la búsqueda interna de la tienda
-            const rawSearchQuery = (parsed.searchQueryUSA || `${parsed.brand || ''} ${parsed.productName || ''}`).trim();
-            const cleanQuery = rawSearchQuery.replace(/[^a-zA-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-            const queryExactUSA = encodeURIComponent(cleanQuery || parsed.productName || rawQuery);
+            // Determinar enlace directo final
+            let finalStoreUrl = verifiedProductUrl;
+            const brandLower = (visionData.brand || "").toLowerCase();
 
-            if (brandLower.includes("bath") || brandLower.includes("body works")) {
-              officialStoreUrl = `https://www.bathandbodyworks.com/search?q=${queryExactUSA}`;
-              officialStoreName = "Bath & Body Works";
-            } else if (brandLower.includes("victoria") || brandLower.includes("secret")) {
-              officialStoreUrl = `https://www.victoriassecret.com/us/search?q=${queryExactUSA}`;
-              officialStoreName = "Victoria's Secret";
-            } else if (brandLower.includes("nike")) {
-              officialStoreUrl = `https://www.nike.com/w?q=${queryExactUSA}`;
-              officialStoreName = "Nike Store USA";
-            } else if (brandLower.includes("coach")) {
-              officialStoreUrl = `https://www.coachoutlet.com/search?q=${queryExactUSA}`;
-              officialStoreName = "Coach Outlet";
-            } else if (brandLower.includes("stanley")) {
-              officialStoreUrl = `https://www.stanley1913.com/search?q=${queryExactUSA}`;
-              officialStoreName = "Stanley 1913";
-            } else {
-              officialStoreUrl = `https://www.google.com/search?tbm=shop&q=${queryExactUSA}`;
-              officialStoreName = parsed.suggestedStore || "Tienda USA";
+            if (!finalStoreUrl) {
+              if (brandLower.includes("bath") || brandLower.includes("body works")) {
+                finalStoreUrl = `https://www.bathandbodyworks.com/search?q=${queryExactUSA}`;
+              } else if (brandLower.includes("victoria") || brandLower.includes("secret")) {
+                finalStoreUrl = `https://www.victoriassecret.com/us/search?q=${queryExactUSA}`;
+              } else if (brandLower.includes("nike")) {
+                finalStoreUrl = `https://www.nike.com/w?q=${queryExactUSA}`;
+              } else {
+                finalStoreUrl = `https://www.google.com/search?tbm=shop&q=${queryExactUSA}`;
+              }
             }
-
-            const productQueryUSA = rawSearchQuery;
 
             return {
               id: msg.id,
-              productName: parsed.productName || "Artículo solicitado",
-              brand: parsed.brand || "Sin marca",
-              clientPrice: parsed.clientPrice || msg.text || "N/A",
-              category: parsed.category || "General",
-              suggestedStore: officialStoreName,
-              officialStoreUrl,
+              productName: visionData.productName || "Artículo solicitado",
+              brand: visionData.brand || "Sin marca",
+              clientPrice: visionData.clientPrice || msg.text || "N/A",
+              category: visionData.category || "General",
+              suggestedStore: verifiedStoreName,
+              officialStoreUrl: finalStoreUrl,
               storePriceUSD: usd,
               estimatedCostMXN: costMxn,
               suggestedSalePriceMXN: saleMxn,
               estimatedProfitMXN: profitMxn,
               profitMarginPct: marginPct,
-              searchQueryUSA: productQueryUSA,
+              searchQueryUSA: rawSearchQuery,
               imageUrl: msg.media_url,
               timestamp: msg.created_at,
+              isLiveConfirmed: liveConfirmed,
+              stockStatus,
               links: {
-                officialStore: officialStoreUrl,
+                officialStore: finalStoreUrl,
                 amazon: `https://www.amazon.com/s?k=${queryExactUSA}`,
                 walmart: `https://www.walmart.com/search?q=${queryExactUSA}`,
                 target: `https://www.target.com/s?searchTerm=${queryExactUSA}`,
