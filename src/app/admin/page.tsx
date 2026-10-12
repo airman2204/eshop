@@ -362,20 +362,21 @@ export default function AdminCRM() {
 
   // ─── ESTADO FOXBOT AI AGENT ─────────────────────────────────────────────────
   const [agentActiveTab, setAgentActiveTab] = useState<'chat' | 'marketing' | 'weekly_plan' | 'sales_radar'>('weekly_plan');
-  const [agentChatMessages, setAgentChatMessages] = useState<AgentChatMessage[]>([
-    {
-      id: 'welcome',
-      sender: 'agent',
-      text: '¡Hola! 🦊 Soy **Fox**, tu Director de Crecimiento (CMO) y Copiloto de Marketing 360° para FoxDrop México.\n\nEstoy conectado en vivo a tu inventario, ventas y clientes. Mi objetivo prioritario ahora es **dar a conocer la tienda, generar tráfico calificado y atraer a tus primeros clientes** mediante estrategias integrales de impacto.\n\n🎯 **¿Qué podemos detonar hoy?**\n- 🚀 **Estrategia 360° de Atracción y Lanzamiento:** Plan paso a paso para pasar de 0 a tus primeros 50 compradores.\n- 📲 **Guiones Virales para TikTok / Reels:** Formatos de video demostrativos que despiertan deseo inmediato.\n- 🛍️ **Estrategia Facebook Marketplace & Grupos:** Máquina de tráfico orgánico gratuito hacia WhatsApp y foxdrop.mx.\n- ⚡ **Oferta Irresistible de Entrada (Tripwire):** Producto gancho de bajo costo para generar tus primeras ventas y clientes de confianza.\n- 👑 **Club FoxDrop & Fidelización:** Sistema de puntos para convertir visitantes curiosos en clientes recurrentes.\n\n¿Qué estrategia o campaña quieres que diseñemos en este momento?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      actionSuggestions: [
-        '🚀 Fox, dame un plan 360° para conseguir nuestros primeros 30 clientes este mes',
-        '📲 Redacta 3 guiones virales de TikTok/Reels para dar a conocer la tienda',
-        '🛍️ Arma una estrategia para Facebook Marketplace que derive tráfico a la web',
-        '⚡ Diseña una oferta de inauguración irresistible para nuevos clientes',
-      ],
-    },
-  ]);
+  
+  const defaultAgentWelcomeMessage: AgentChatMessage = {
+    id: 'welcome',
+    sender: 'agent',
+    text: '¡Hola! 🦊 Soy **Fox**, tu Director de Crecimiento (CMO) y Copiloto de Marketing 360° para FoxDrop México.\n\nEstoy conectado en vivo a tu inventario, ventas y clientes. Mi objetivo prioritario ahora es **dar a conocer la tienda, generar tráfico calificado y atraer a tus primeros clientes** mediante estrategias integrales de impacto.\n\n🎯 **¿Qué podemos detonar hoy?**\n- 🚀 **Estrategia 360° de Atracción y Lanzamiento:** Plan paso a paso para pasar de 0 a tus primeros 50 compradores.\n- 📲 **Guiones Virales para TikTok / Reels:** Formatos de video demostrativos que despiertan deseo inmediato.\n- 🛍️ **Estrategia Facebook Marketplace & Grupos:** Máquina de tráfico orgánico gratuito hacia WhatsApp y foxdrop.mx.\n- ⚡ **Oferta Irresistible de Entrada (Tripwire):** Producto gancho de bajo costo para generar tus primeras ventas y clientes de confianza.\n- 👑 **Club FoxDrop & Fidelización:** Sistema de puntos para convertir visitantes curiosos en clientes recurrentes.\n\n¿Qué estrategia o campaña quieres que diseñemos en este momento?',
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    actionSuggestions: [
+      '🚀 Fox, dame un plan 360° para conseguir nuestros primeros 30 clientes este mes',
+      '📲 Redacta 3 guiones virales de TikTok/Reels para dar a conocer la tienda',
+      '🛍️ Arma una estrategia para Facebook Marketplace que derive tráfico a la web',
+      '⚡ Diseña una oferta de inauguración irresistible para nuevos clientes',
+    ],
+  };
+
+  const [agentChatMessages, setAgentChatMessages] = useState<AgentChatMessage[]>([defaultAgentWelcomeMessage]);
   const [agentInputText, setAgentInputText] = useState('');
   const [agentChatLoading, setAgentChatLoading] = useState(false);
 
@@ -495,6 +496,26 @@ export default function AdminCRM() {
     } finally {
       setAuthChecked(true);
     }
+
+    // Restaurar historial de conversación con FoxBot desde localStorage
+    try {
+      const savedMessages = localStorage.getItem('foxdrop_agent_chat_history');
+      if (savedMessages) {
+        const parsedMsgs = JSON.parse(savedMessages);
+        if (Array.isArray(parsedMsgs) && parsedMsgs.length > 0) {
+          setAgentChatMessages(parsedMsgs);
+        }
+      }
+
+      // Restaurar plan semanal si existe
+      const savedPlan = localStorage.getItem('foxdrop_agent_weekly_plan');
+      if (savedPlan) {
+        const parsedPlan = JSON.parse(savedPlan);
+        if (parsedPlan && parsedPlan.days) {
+          setAgentWeeklyPlan(parsedPlan);
+        }
+      }
+    } catch {}
   }, []);
 
 
@@ -1054,10 +1075,15 @@ export default function AdminCRM() {
         } else {
           window.open(`https://wa.me/?text=${text}`, '_blank');
         }
-        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
-          ...m,
-          actionExecution: { ...m.actionExecution, status: 'executed' }
-        } : m));
+        const updateStatus = (prev: AgentChatMessage[]) => {
+          const updated = prev.map(m => m.id === msgId && m.actionExecution ? {
+            ...m,
+            actionExecution: { ...m.actionExecution, status: 'executed' as const }
+          } : m);
+          try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+          return updated;
+        };
+        setAgentChatMessages(updateStatus);
         return;
       }
 
@@ -1086,21 +1112,31 @@ export default function AdminCRM() {
             setFlyerCustomBadge(actionExecution.payload.badge);
           }
         }
-        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
-          ...m,
-          actionExecution: { ...m.actionExecution, status: 'executed' }
-        } : m));
+        const updateStatus = (prev: AgentChatMessage[]) => {
+          const updated = prev.map(m => m.id === msgId && m.actionExecution ? {
+            ...m,
+            actionExecution: { ...m.actionExecution, status: 'executed' as const }
+          } : m);
+          try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+          return updated;
+        };
+        setAgentChatMessages(updateStatus);
         return;
       }
 
       const res = await executeAgentAction(actionExecution.type, actionExecution.payload);
       if (res.success) {
         alert(`✅ ${res.message || 'Acción ejecutada con éxito por Fox'}`);
-        // Marcar acción como ejecutada en el chat
-        setAgentChatMessages(prev => prev.map(m => m.id === msgId && m.actionExecution ? {
-          ...m,
-          actionExecution: { ...m.actionExecution, status: 'executed' }
-        } : m));
+        // Marcar acción como ejecutada en el chat y guardar en storage
+        const updateStatus = (prev: AgentChatMessage[]) => {
+          const updated = prev.map(m => m.id === msgId && m.actionExecution ? {
+            ...m,
+            actionExecution: { ...m.actionExecution, status: 'executed' as const }
+          } : m);
+          try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+          return updated;
+        };
+        setAgentChatMessages(updateStatus);
 
         // Refrescar inventario local si aplica
         if (actionExecution.type === 'update_stock' && actionExecution.payload?.productId) {
@@ -1138,7 +1174,11 @@ export default function AdminCRM() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setAgentChatMessages(prev => [...prev, userMsg]);
+    setAgentChatMessages(prev => {
+      const updated = [...prev, userMsg];
+      try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     if (!msgText) setAgentInputText('');
     setAgentChatLoading(true);
 
@@ -1155,7 +1195,11 @@ export default function AdminCRM() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         actionExecution,
       };
-      setAgentChatMessages(prev => [...prev, agentMsg]);
+      setAgentChatMessages(prev => {
+        const updated = [...prev, agentMsg];
+        try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
 
       // Voz desactivada por defecto para experiencia silenciosa y ágil
       if (autoVoiceReplyEnabled) {
@@ -1168,7 +1212,11 @@ export default function AdminCRM() {
         text: `⚠️ Hubo un inconveniente al conectar con Gemini: ${err.message || 'Error desconocido'}. Verifica que tu conexión o API key sean válidas.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setAgentChatMessages(prev => [...prev, errorMsg]);
+      setAgentChatMessages(prev => {
+        const updated = [...prev, errorMsg];
+        try { localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify(updated)); } catch {}
+        return updated;
+      });
     } finally {
       setAgentChatLoading(false);
     }
@@ -7365,10 +7413,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                     <button
                       onClick={() => {
-                        stopFoxVoice();
-                        setAgentChatMessages([agentChatMessages[0]]);
+                        if (window.confirm('¿Deseas reiniciar la conversación con Fox? Se guardará sólo el mensaje de bienvenida.')) {
+                          stopFoxVoice();
+                          setAgentChatMessages([defaultAgentWelcomeMessage]);
+                          try {
+                            localStorage.setItem('foxdrop_agent_chat_history', JSON.stringify([defaultAgentWelcomeMessage]));
+                          } catch {}
+                        }
                       }}
-                      className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold ml-1"
+                      className="text-[11px] text-slate-400 hover:text-slate-700 underline font-semibold ml-1 cursor-pointer"
+                      title="Reiniciar conversación y limpiar historial"
                     >
                       Limpiar
                     </button>
