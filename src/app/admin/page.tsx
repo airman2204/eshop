@@ -365,13 +365,13 @@ export default function AdminCRM() {
     {
       id: 'welcome',
       sender: 'agent',
-      text: '¡Hola! 🦊 Soy **Fox**, tu Director de Crecimiento (CMO) y Copiloto de Marketing & Ventas para FoxDrop Puebla.\n\nEstoy conectado en vivo a tu inventario, ventas y clientes. Mi objetivo número 1 es **crear promociones irresistibles, atraer nuevos clientes y multiplicar tus ventas** tanto en tienda física como en línea.\n\n🎯 **¿Qué podemos detonar hoy?**\n- ⚡ **Promoción Flash o Fin de Semana:** Estrategias 2x1, combos ganadores o liquidación de productos estancados.\n- 🧲 **Atracción de Clientes a Tienda:** Campañas para generar visitas a nuestros puntos en Puebla.\n- 📲 **Copys y Ganchos Virales:** Textos listos para WhatsApp, TikTok, Instagram y Facebook Marketplace.\n- 👑 **Reactivación de Clientes VIP:** Ofertas exclusivas para miembros con estrellas Club FoxDrop.\n- ☀️ **Briefing Operativo:** Resumen ejecutivo de entregas, stock y balance del día.\n\n¿Qué producto o campaña quieres que impulsemos hoy?',
+      text: '¡Hola! 🦊 Soy **Fox**, tu Director de Crecimiento (CMO) y Copiloto de Marketing 360° para FoxDrop México.\n\nEstoy conectado en vivo a tu inventario, ventas y clientes. Mi objetivo prioritario ahora es **dar a conocer la tienda, generar tráfico calificado y atraer a tus primeros clientes** mediante estrategias integrales de impacto.\n\n🎯 **¿Qué podemos detonar hoy?**\n- 🚀 **Estrategia 360° de Atracción y Lanzamiento:** Plan paso a paso para pasar de 0 a tus primeros 50 compradores.\n- 📲 **Guiones Virales para TikTok / Reels:** Formatos de video demostrativos que despiertan deseo inmediato.\n- 🛍️ **Estrategia Facebook Marketplace & Grupos:** Máquina de tráfico orgánico gratuito hacia WhatsApp y foxdrop.mx.\n- ⚡ **Oferta Irresistible de Entrada (Tripwire):** Producto gancho de bajo costo para generar tus primeras ventas y clientes de confianza.\n- 👑 **Club FoxDrop & Fidelización:** Sistema de puntos para convertir visitantes curiosos en clientes recurrentes.\n\n¿Qué estrategia o campaña quieres que diseñemos en este momento?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actionSuggestions: [
-        '⚡ Fox, crea una promoción flash para este fin de semana',
-        '🧲 Dame 3 estrategias para atraer más clientes a tienda física en Puebla',
-        '📦 Arma un combo ganador con productos de alta ganancia y stock estancado',
-        '📲 Redacta una campaña de WhatsApp para reactivar clientes inactivos',
+        '🚀 Fox, dame un plan 360° para conseguir nuestros primeros 30 clientes este mes',
+        '📲 Redacta 3 guiones virales de TikTok/Reels para dar a conocer la tienda',
+        '🛍️ Arma una estrategia para Facebook Marketplace que derive tráfico a la web',
+        '⚡ Diseña una oferta de inauguración irresistible para nuevos clientes',
       ],
     },
   ]);
@@ -391,7 +391,7 @@ export default function AdminCRM() {
   const [agentSelectedProductId, setAgentSelectedProductId] = useState<string>('');
   const [agentPlatform, setAgentPlatform] = useState<'instagram' | 'facebook' | 'tiktok' | 'whatsapp'>('instagram');
   const [agentTone, setAgentTone] = useState<string>('Divertido y entusiasta');
-  const [agentAudience, setAgentAudience] = useState<string>('Jóvenes y familias en Puebla amantes de productos virales de importación');
+  const [agentAudience, setAgentAudience] = useState<string>('Público general en México buscando productos virales de importación, tecnología y novedades');
   const [agentCustomDiscount, setAgentCustomDiscount] = useState<number>(0);
   const [agentGeneratedPost, setAgentGeneratedPost] = useState<AgentSocialPost | null>(null);
   const [agentGeneratingPost, setAgentGeneratingPost] = useState(false);

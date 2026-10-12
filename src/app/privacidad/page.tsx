@@ -56,7 +56,7 @@ export default function PrivacidadPage() {
               <span className="text-[#DF7F2D]">1.</span> Identidad y Domicilio del Responsable
             </h2>
             <p>
-              <strong>FoxDrop México</strong> (en adelante &quot;FoxDrop&quot;), con domicilio operativo en Puebla, Puebla, México, y portal web oficial{' '}
+              <strong>FoxDrop México</strong> (en adelante &quot;FoxDrop&quot;), con operaciones en los Estados Unidos Mexicanos y portal web oficial{' '}
               <strong className="text-[#0F3E36]">foxdrop.mx</strong>, es el responsable legítimo del uso, almacenamiento, confidencialidad y protección de sus datos personales.
             </p>
           </section>
@@ -89,7 +89,7 @@ export default function PrivacidadPage() {
                 <ul className="list-disc pl-5 space-y-1 text-gray-600 text-xs">
                   <li>Crear y autenticar su cuenta de usuario mediante códigos de un solo uso (OTP).</li>
                   <li>Procesar, preparar, empacar y enviar los artículos adquiridos en el catálogo o pedidos especiales.</li>
-                  <li>Coordinar puntos de encuentro y horarios de entrega personal en Puebla o emitir guías de paquetería nacional.</li>
+                  <li>Coordinar puntos de encuentro y horarios de entrega personal o emitir guías de paquetería nacional.</li>
                   <li>Enviar notificaciones de confirmación de pedido y estatus de rastreo vía WhatsApp o correo electrónico.</li>
                   <li>Atender aclaraciones, garantías y procesos de devolución.</li>
                 </ul>

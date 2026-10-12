@@ -27,8 +27,8 @@ export default function GoogleAddressInput({
   initialStreet = '',
   initialZip = '',
   initialColonia = '',
-  initialCity = 'Puebla',
-  initialState = 'Puebla',
+  initialCity = '',
+  initialState = '',
   onAddressChange,
 }: GoogleAddressInputProps) {
   const [street, setStreet] = useState(initialStreet);
@@ -178,7 +178,7 @@ export default function GoogleAddressInput({
           <input
             type="text"
             required
-            placeholder="Puebla"
+            placeholder="Ej. Guadalajara"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs"
@@ -191,7 +191,7 @@ export default function GoogleAddressInput({
           <input
             type="text"
             required
-            placeholder="Puebla"
+            placeholder="Ej. Jalisco"
             value={state}
             onChange={(e) => setState(e.target.value)}
             className="w-full bg-white border border-gray-300 rounded-xl p-2.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E65F2B] focus:border-transparent transition shadow-2xs"

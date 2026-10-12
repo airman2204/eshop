@@ -381,7 +381,7 @@ export default function TiendaFoxDrop() {
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(DEFAULT_CHECKOUT_SETTINGS);
   const [selectedShippingId, setSelectedShippingId] = useState<string>('pickup');
-  const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: 'Puebla', colonia: '', state: 'Puebla' });
+  const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: '', colonia: '', state: '' });
   const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -412,8 +412,8 @@ export default function TiendaFoxDrop() {
           street: defaultAddr.street,
           colonia: defaultAddr.colonia || '',
           zip: defaultAddr.zip,
-          city: defaultAddr.city || 'Puebla',
-          state: defaultAddr.state || 'Puebla',
+          city: defaultAddr.city || '',
+          state: defaultAddr.state || '',
         });
         setSelectedAddressId(defaultAddr.id);
       }
@@ -1155,19 +1155,19 @@ export default function TiendaFoxDrop() {
         clientName: user?.name || '',
         clientPhone: user?.phone || '',
         clientEmail: user?.email,
-        shippingType: isPersonalDelivery ? 'agreed_pickup' : (selectedShippingId === 'national' ? 'national_shipping' : 'puebla_local'),
+        shippingType: isPersonalDelivery ? 'agreed_pickup' : (selectedShippingId === 'national' ? 'national_shipping' : 'local_delivery'),
         shippingCost: shippingFee,
         subtotal: cartSubtotal,
         total: cartTotal,
         paymentMethod: paymentMethod === 'cash' ? 'cash' : 'spei',
         shippingAddress: isPersonalDelivery ? {
           street: 'Entrega personal / Acordar con vendedor',
-          zip: '72000',
-          city: 'Puebla',
+          zip: shippingAddress.zip || '',
+          city: shippingAddress.city || '',
         } : {
           street: `${shippingAddress.street}${shippingAddress.colonia ? ', ' + shippingAddress.colonia : ''}`,
           zip: shippingAddress.zip,
-          city: shippingAddress.city || 'Puebla',
+          city: shippingAddress.city || '',
         },
         items: cart,
       });
@@ -1271,7 +1271,7 @@ export default function TiendaFoxDrop() {
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
           <span className="font-extrabold text-[#0F3E36]">envíos seguros a todo México</span>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-600 font-medium">entregas personales en Puebla con pago contra entrega</span>
+          <span className="text-gray-600 font-medium">entregas personales con opción de pago contra entrega</span>
           <span className="text-gray-400 hidden sm:inline">|</span>
           <button 
             type="button" 
@@ -1301,7 +1301,7 @@ export default function TiendaFoxDrop() {
               className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
             >
               <MapPin className="w-3.5 h-3.5 text-[#DF7F2D]" />
-              <span>entregas puebla</span>
+              <span>entregas y envíos</span>
             </button>
 
             {/* MI CUENTA / INICIAR SESIÓN */}
@@ -2844,8 +2844,8 @@ export default function TiendaFoxDrop() {
                       initialStreet={addressForm.street || ''}
                       initialColonia={addressForm.colonia || ''}
                       initialZip={addressForm.zip || ''}
-                      initialCity={addressForm.city || 'Puebla'}
-                      initialState={addressForm.state || 'Puebla'}
+                      initialCity={addressForm.city || ''}
+                      initialState={addressForm.state || ''}
                       onAddressChange={(parsed) => {
                         setAddressForm(prev => ({
                           ...prev,
@@ -3003,7 +3003,7 @@ export default function TiendaFoxDrop() {
                     <span>Selecciona tu Método de Entrega</span>
                   </h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    Elige si deseas coordinar una entrega personal en Puebla sin costo o envío paquetería a domicilio.
+                    Elige si deseas coordinar una entrega personal sin costo o envío paquetería a tu domicilio.
                   </p>
                 </div>
 
@@ -3064,7 +3064,7 @@ export default function TiendaFoxDrop() {
                       <span>Entrega personal o a acordar seleccionada</span>
                     </div>
                     <p className="text-xs text-emerald-700 leading-relaxed">
-                      No es necesario ingresar dirección física en este momento. Al confirmar la compra, coordinaremos el punto de encuentro en Puebla o detalles de envío directamente por WhatsApp con el equipo FoxDrop.
+                      No es necesario ingresar dirección física en este momento. Al confirmar la compra, coordinaremos el punto de encuentro o detalles de entrega directamente por WhatsApp con el equipo FoxDrop.
                     </p>
                   </div>
                 ) : (
@@ -3092,14 +3092,14 @@ export default function TiendaFoxDrop() {
                           return (
                             <div
                               key={addr.id}
-                              onClick={() => {
+                                onClick={() => {
                                 setSelectedAddressId(addr.id);
                                 setShippingAddress({
                                   street: addr.street,
                                   colonia: addr.colonia || '',
                                   zip: addr.zip,
-                                  city: addr.city || 'Puebla',
-                                  state: addr.state || 'Puebla',
+                                  city: addr.city || '',
+                                  state: addr.state || '',
                                 });
                                 setAddressError(null);
                               }}
@@ -3135,8 +3135,8 @@ export default function TiendaFoxDrop() {
                               street: parsed.street,
                               colonia: parsed.colonia || '',
                               zip: parsed.zip,
-                              city: parsed.city || 'Puebla',
-                              state: parsed.state || 'Puebla',
+                              city: parsed.city || '',
+                              state: parsed.state || '',
                             });
                             if (parsed.street && parsed.zip) {
                               setAddressError(null);
@@ -3339,7 +3339,7 @@ export default function TiendaFoxDrop() {
                       <div>
                         <span className="font-extrabold text-sm text-gray-900">Efectivo contra Entrega</span>
                         <p className="text-xs text-gray-500 mt-1">
-                          Paga en efectivo al recibir tu producto o en el punto de encuentro acordado en Puebla.
+                          Paga en efectivo al recibir tu producto o en el punto de entrega acordado.
                         </p>
                       </div>
                     </div>
@@ -3526,7 +3526,7 @@ export default function TiendaFoxDrop() {
             <div className="space-y-3">
               <FoxDropLogo size="md" variant="dark" />
               <p className="text-[#D3E0DC] text-xs leading-relaxed max-w-sm">
-                Curaduría global y productos de importación con entregas seguras en Puebla y envíos a todo México.
+                Curaduría global y productos de importación con entregas seguras y envíos a todo México.
               </p>
               <div className="pt-1">
                 <a
@@ -3586,7 +3586,7 @@ export default function TiendaFoxDrop() {
                   <span className="text-lg">💵</span>
                   <div>
                     <span className="font-black text-white block text-xs">Efectivo</span>
-                    <span className="text-[10px] text-white/70">Pago contra entrega en Puebla</span>
+                    <span className="text-[10px] text-white/70">Pago contra entrega en puntos acordados</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 border border-white/15 px-3 py-2 rounded-xl">
@@ -3632,12 +3632,12 @@ export default function TiendaFoxDrop() {
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-[#0F3E36]">Política de Envíos</h3>
-                    <p className="text-xs text-gray-400 font-medium">Entregas locales y cobertura nacional</p>
+                    <p className="text-xs text-gray-400 font-medium">Entregas seguras y cobertura nacional</p>
                   </div>
                 </div>
                 <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
                   <p>
-                    <strong className="text-gray-900 block font-bold mb-0.5">📍 Entregas Locales en Puebla:</strong>
+                    <strong className="text-gray-900 block font-bold mb-0.5">📍 Entregas Personales Acordadas:</strong>
                     Coordinamos entregas directas y seguras en puntos céntricos o a domicilio. Puedes pagar en efectivo contra entrega o vía SPEI.
                   </p>
                   <p>

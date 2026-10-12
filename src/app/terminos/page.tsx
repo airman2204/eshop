@@ -74,7 +74,7 @@ export default function TerminosPage() {
             </h2>
             <p>Para mayor seguridad y transparencia de nuestros clientes, los pagos se efectúan a través de:</p>
             <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
-              <li><strong>Efectivo contra entrega:</strong> Disponible exclusivamente para entregas locales dentro de Puebla.</li>
+              <li><strong>Efectivo contra entrega:</strong> Disponible para entregas locales y puntos de encuentro acordados.</li>
               <li><strong>Transferencia bancaria SPEI:</strong> Directa a cuenta oficial, sin cobro de comisiones intermedias.</li>
             </ul>
           </section>
@@ -84,7 +84,7 @@ export default function TerminosPage() {
               4. Políticas de Envío y Tiempos de Entrega
             </h2>
             <p>
-              Los pedidos se procesan y empacan en un periodo de 24 a 48 horas hábiles. Para entregas locales en Puebla se coordinan horarios convenientes con el comprador. Para envíos nacionales, se proporciona número de guía y seguimiento en tiempo real.
+              Los pedidos se procesan y empacan en un periodo de 24 a 48 horas hábiles. Para entregas locales se coordinan horarios y puntos convenientes con el comprador. Para envíos nacionales, se proporciona número de guía y seguimiento en tiempo real.
             </p>
           </section>
 

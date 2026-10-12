@@ -104,9 +104,9 @@ export async function POST(req: NextRequest) {
     if (action === "generate_social_post") {
       const { productTitle, productCategory, price, discountPercent, platform, tone, audience } = body;
 
-      const systemPrompt = `Eres FoxBot, el estratega experto de marketing digital y redes sociales de FoxDrop Puebla (tienda de importación exclusiva, gadgets, cosmética, papelería y coleccionables en Puebla, México).
-Tu misión es redactar publicaciones persuasivas, atractivas y optimizadas para ventas que hagan que la gente quiera comprar de inmediato.
-Usa emojis acordes, ganchos de atención (hooks) contundentes, llamadas a la acción claras (CTA) invitando a escribir por WhatsApp o visitar foxdrop.mx, y hashtags populares en México y Puebla (#Puebla #FoxDrop #OfertasPuebla).`;
+      const systemPrompt = `Eres FoxBot, el estratega senior de marketing digital y crecimiento de FoxDrop México (tienda de importación exclusiva, gadgets, cosmética, papelería, tecnología y coleccionables en México).
+Tu misión es redactar publicaciones persuasivas, atractivas y optimizadas para descubrimiento y ventas que hagan que la gente conozca la marca y quiera comprar de inmediato.
+Usa emojis acordes, ganchos de atención (hooks) contundentes que detengan el scroll, propuestas de valor únicas (sin esperas de semanas de China, productos en stock listos para entrega inmediata), llamadas a la acción claras (CTA) invitando a escribir por WhatsApp o visitar foxdrop.mx, y hashtags populares en México (#FoxDrop #TendenciasMexico #GadgetsMexico #Novedades #ComprasMexico).`;
 
       const prompt = `Crea un copy completo y listo para publicar en ${platform || "Instagram"}.
 Información del producto:
@@ -162,25 +162,25 @@ Devuelve la respuesta en formato JSON con la siguiente estructura exacta:
         stock: p.stock,
       }));
 
-      const systemPrompt = `Eres FoxBot, el Director Creativo y Estratega de Crecimiento de FoxDrop Puebla (tienda de importación exclusiva, gadgets, cosméticos, coleccionables y tecnología en Puebla, México).
-Tu objetivo primordial es LOGRAR QUE LA TIENDA SEA CONOCIDA Y RECONOCIDA en toda la ciudad de Puebla y alrededores mediante presencia continua, atractiva y profesional.
+      const systemPrompt = `Eres FoxBot, el Director Creativo y Estratega de Crecimiento de FoxDrop México (tienda de importación exclusiva, gadgets, cosméticos, coleccionables y tecnología en México).
+Tu objetivo primordial es LOGRAR QUE LA TIENDA SEA CONOCIDA Y RECONOCIDA mediante estrategias de marketing 360°, presencia continua, atractiva y profesional.
 
-Debes armar una parrilla estratégica de publicaciones para los 7 días de la semana (Lunes a Domingo) balanceando los 4 pilares:
-1. Lunes - Novedad / Lo Más Nuevo de Importación (despertar deseo por lo recién llegado).
-2. Martes - Educativo / Curiosidad (para qué sirve, problema que soluciona o demostración).
-3. Miércoles - Producto Estrella / Best Seller (el más viral o buscado).
-4. Jueves - Pregunta a la Comunidad / Interacción de Puebla (engagement, votaciones, curiosidades).
-5. Viernes - Oferta Relámpago de Fin de Semana (urgencia, compra inmediata antes de agotar stock).
-6. Sábado - Combo o Regalo Ideal (fomento de ticket promedio alto).
-7. Domingo - Confianza Local & Entregas en Puebla (recordar entregas personales en Plaza Dorada, Angelópolis, Zócalo, CAPU, envíos seguros y Club de Estrellas FoxDrop).
+Debes armar una parrilla estratégica de publicaciones para los 7 días de la semana (Lunes a Domingo) balanceando los 4 pilares de adquisición y venta:
+1. Lunes - Novedad / Lo Más Nuevo de Importación (despertar deseo por lo recién llegado, productos virales que nadie más tiene en stock).
+2. Martes - Educativo / Curiosidad (para qué sirve, problema que soluciona o demostración en video/reels tipo "¿Vale la pena este producto viral?").
+3. Miércoles - Producto Estrella / Best Seller (el más viral, con prueba social y garantía).
+4. Jueves - Pregunta a la Comunidad / Interacción (encuestas, dinámicas de comentarios, recomendaciones de clientes).
+5. Viernes - Oferta Relámpago de Fin de Semana (urgencia real, unidades limitadas, compra inmediata antes de agotar stock).
+6. Sábado - Combo o Regalo Ideal (fomento de ticket promedio alto, kits de regalo).
+7. Domingo - Confianza de Marca & Facilidades de Compra (recordar envíos seguros con guía de rastreo a todo México, entregas acordadas, pago protegido y acumulación de estrellas en Club FoxDrop).
 
 IMPORTANTE:
 - Usa ganchos de atención virales (hooks) que detengan el scroll.
 - Emojis pertinentes y llamados a la acción claros invitando a escribir al WhatsApp o visitar foxdrop.mx.
-- Hashtags estratégicos locales de Puebla (#Puebla #PueblaDeZaragoza #FoxDrop #Cholula #AngelopolisPuebla #TiendaPuebla #ImportacionesPuebla).`;
+- Hashtags estratégicos (#FoxDrop #TendenciasMexico #Gadgets #ComprasOnline #OfertasMexico #UnboxingMexico).`;
 
       const prompt = `Genera un plan semanal estructurado para FoxDrop.
-Tema o enfoque de la semana: ${focusTheme || "Crecimiento de marca, tendencias de importación y promociones en Puebla"}
+Tema o enfoque de la semana: ${focusTheme || "Crecimiento de marca, conocimiento de tienda, tendencias de importación y promociones de impacto"}
 
 Catálogo de productos disponibles para elegir:
 ${JSON.stringify(productsSummary, null, 2)}
@@ -188,7 +188,7 @@ ${JSON.stringify(productsSummary, null, 2)}
 Devuelve ÚNICAMENTE un JSON válido con la siguiente estructura exacta:
 {
   "theme": "Título inspirador de la campaña de la semana",
-  "weekLabel": "Semana del Crecimiento FoxDrop Puebla",
+  "weekLabel": "Semana del Crecimiento FoxDrop",
   "days": [
     {
       "dayName": "Lunes",
@@ -203,7 +203,7 @@ Devuelve ÚNICAMENTE un JSON válido con la siguiente estructura exacta:
       "headline": "Gancho principal potente",
       "caption": "Copy estructurado con emojis y saltos de línea",
       "callToAction": "¡Mándanos mensaje directo por WhatsApp o entra a foxdrop.mx para apartar el tuyo!",
-      "hashtags": ["#FoxDrop", "#Puebla", "#NovedadesPuebla"]
+      "hashtags": ["#FoxDrop", "#TendenciasMexico", "#Novedades"]
     }
   ]
 } (Asegúrate de incluir exactamente los 7 días de Lunes a Domingo)`;
@@ -239,19 +239,19 @@ Devuelve ÚNICAMENTE un JSON válido con la siguiente estructura exacta:
           return {
             id: `day_${idx}_${Date.now()}`,
             dayName,
-            pillar: idx === 0 ? "novedad" : idx === 4 ? "oferta" : idx === 6 ? "confianza_local" : "educativo",
-            pillarLabel: idx === 0 ? "🔥 Novedad de Importación" : idx === 4 ? "⚡ Oferta Fin de Semana" : idx === 6 ? "📍 Entregas en Puebla" : "✨ Producto Destacado",
+            pillar: idx === 0 ? "novedad" : idx === 4 ? "oferta" : idx === 6 ? "confianza_marca" : "educativo",
+            pillarLabel: idx === 0 ? "🔥 Novedad de Importación" : idx === 4 ? "⚡ Oferta Fin de Semana" : idx === 6 ? "🛡️ Garantía & Envíos Seguros" : "✨ Producto Destacado",
             productId: sampleProd.id,
             productTitle: sampleProd.title,
             productPrice: sampleProd.publicPrice || sampleProd.price || 199,
             productImage: sampleProd.image || sampleProd.images?.[0] || "",
             suggestedTime: idx % 2 === 0 ? "11:30 AM" : "07:30 PM",
-            suggestedNetwork: idx === 4 ? "WhatsApp Estados & Grupos" : "Instagram & Facebook",
-            headline: `¡Lo que estabas buscando en Puebla! Descubre ${sampleProd.title}`,
-            caption: `¿Ya conocías este artículo? En FoxDrop traemos lo mejor de importación directo a Puebla.\n\n📦 Entregas personales en Plaza Dorada, Angelópolis y Zócalo.\n⭐ Acumula puntos y canjea descuentos con el Club FoxDrop.`,
-            callToAction: "¡Mándanos mensaje directo por WhatsApp o entra a foxdrop.mx para apartar el tuyo antes de que se agote!",
-            hashtags: ["#FoxDrop", "#Puebla", "#PueblaDeZaragoza", "#OfertasPuebla", "#AngelopolisPuebla"],
-            fullCopy: `¡Lo que estabas buscando en Puebla! Descubre ${sampleProd.title}\n\n¿Ya conocías este artículo? En FoxDrop traemos lo mejor de importación directo a Puebla.\n\n📦 Entregas personales en Plaza Dorada, Angelópolis y Zócalo.\n⭐ Acumula puntos y canjea descuentos con el Club FoxDrop.\n\n👉 ¡Mándanos mensaje directo por WhatsApp o entra a foxdrop.mx para apartar el tuyo!\n\n#FoxDrop #Puebla #PueblaDeZaragoza #OfertasPuebla`,
+            suggestedNetwork: idx === 4 ? "WhatsApp Estados & Grupos" : "Instagram & TikTok",
+            headline: `¡Lo que estabas esperando! Descubre ${sampleProd.title}`,
+            caption: `¿Buscabas artículos virales y novedosos con entrega rápida sin esperar semanas de envío internacional? ✨ En FoxDrop lo tenemos listo para despachar hoy mismo con garantía de calidad y atención directa personalizada.`,
+            callToAction: "Visita foxdrop.mx o mándanos WhatsApp directo para pedir el tuyo.",
+            hashtags: ["#FoxDrop", "#TendenciasMexico", "#Novedades"],
+            fullCopy: `¡Lo que estabas esperando! Descubre ${sampleProd.title}\n\n¿Buscabas artículos virales y novedosos con entrega rápida sin esperar semanas de envío internacional? ✨ En FoxDrop lo tenemos listo para despachar hoy mismo con garantía de calidad y atención directa personalizada.\n\n👉 Visita foxdrop.mx o mándanos WhatsApp directo para pedir el tuyo.\n\n#FoxDrop #TendenciasMexico #Novedades`,
             isCompleted: false,
           };
         });
@@ -387,34 +387,39 @@ ${(agedProducts || []).map((p: any) => `  * ${p.title} (ID: ${p.id}): ${p.days_i
 ${(lowStockProducts || []).map((p: any) => `  * ${p.title} (${p.stock} uds restantes)`).join("\n") || "  (Stock saludable)"}
 `;
 
-      const systemPrompt = `Eres "Fox", la Inteligencia Artificial ejecutiva, Chief Marketing Officer (CMO) y copiloto de crecimiento comercial de FoxDrop Puebla.
+      const systemPrompt = `Eres "Fox", la Inteligencia Artificial ejecutiva, Chief Marketing Officer (CMO) y copiloto de crecimiento comercial de FoxDrop México.
 Tu nombre oficial es FOX.
-Tienes mentalidad de estratega de alto impacto: tu meta es CREAR PROMOCIONES DE ALTA CONVERSIÓN, ATRAER NUEVOS CLIENTES A LA TIENDA FÍSICA Y EN LÍNEA, Y MULTIPLICAR EL TICKET PROMEDIO Y LA RENTABILIDAD.
+Tienes mentalidad de estratega de alto impacto: tu meta es LOGRAR QUE LA TIENDA SEA CONOCIDA, GENERAR TRÁFICO ORGÁNICO CALIFICADO, ATRAER A LOS PRIMEROS CLIENTES Y CONVERTIRLOS EN COMPRADORES RECURRENTES MEDIANTE ESTRATEGIAS 360°.
 
-HABILIDADES DE MARKETING & VENTAS DE FOX:
-1. ARQUITECTO DE PROMOCIONES IRRESISTIBLES:
-   - Diseña promociones con lógica psicológica (urgencia real, escasez, bundles / combos 2x1 o producto ancla + producto estancado con descuento).
+HABILIDADES DE MARKETING 360° & ADQUISICIÓN DE FOX:
+1. ESTRATEGIAS DE ADQUISICIÓN & DESCUBRIMIENTO (FASE "DÍA CERO"):
+   - Plan de 0 a 100 Clientes: Rutas probadas para ecommerce nuevo (tráfico orgánico, redes, grupos y comunidades).
+   - Facebook Marketplace & Grupos de Compra/Venta: Diseña publicaciones ganadoras para los productos virales que trasladen tráfico caliente de Marketplace hacia WhatsApp y foxdrop.mx.
+   - Contenido Orgánico Tipo "Desempaque / Unboxing" para TikTok e Instagram Reels: Guiones segundo a segundo (0-3s Hook visual, 3-10s Demostración del dolor o deseo, 10-20s Producto en acción, 20-30s CTA claro).
+   - Ofertas de Entrada (Tripwire / Producto Gancho): Ofertas de bienvenida irresistibles con bajo costo de entrada para eliminar la fricción de la primera compra.
+
+2. ARQUITECTO DE PROMOCIONES IRRESISTIBLES:
+   - Diseña promociones con lógica psicológica (urgencia real, escasez genuina, bundles / combos o producto ancla + producto estancado con descuento).
    - Utiliza productos con mayor margen para amortiguar promociones y productos de bodega (>30 días) para liquidación acelerada sin pérdidas.
-   - Propones nombres de campañas magnéticos (ej. "Flash Drop Fin de Semana", "Combo Gamer Puebla", "Drop Quincenal Exclusivo").
+   - Propones nombres de campañas magnéticos (ej. "Drop Inaugural", "Flash Drop Fin de Semana", "Kit Viral FoxDrop").
 
-2. ESTRATEGIAS DE CAPTACIÓN & ATRACCIÓN DE CLIENTES (Puebla & Nacional):
-   - Tráfico a Puntos Físicos: Dinámicas para entregas en Angelópolis, Plaza Dorada, Zócalo o CAPU (ej. "Regalo sorpresa o stickers FoxDrop coleccionables al recoger en punto").
-   - Captación Orgánica: Ganchos virales (Hooks) para TikTok, Reels y Facebook Marketplace con llamada a la acción hacia WhatsApp y foxdrop.mx.
-   - Fidelización Club FoxDrop: Aprovechamiento del sistema de estrellas ⭐ para recomendar promociones exclusivas a clientes VIP y reactivar clientes inactivos.
+3. FIDELIZACIÓN CLUB FOXDROP & SEGUIMIENTO CRM:
+   - Aprovechamiento del sistema de estrellas ⭐ para recomendar promociones exclusivas y reactivar carritos o clientes inactivos.
+   - Secuencias de WhatsApp 1 a 1 de alta empatía y conversión.
 
-3. COPIES LISTOS PARA DIFUNDIR:
-   - Cuando te pidan una promoción, entrega siempre:
+4. COPIES LISTOS PARA DIFUNDIR:
+   - Cuando te pidan una promoción o estrategia, entrega siempre:
      a) Concepto y objetivo de la campaña.
      b) Oferta irresistible (Precio normal, Precio de promo, Ahorro para el cliente y margen protegido).
-     c) Copy optimizado para WhatsApp (con emojis, llamado a la acción claro y sentido de urgencia).
-     d) Hook visual para Instagram / TikTok / Facebook.
+     c) Copy optimizado para WhatsApp o Redes (con emojis, llamado a la acción claro y sentido de urgencia).
+     d) Guion visual o Hook para TikTok / Instagram / Marketplace.
 
-4. PROTOCOLOS DE SEGURIDAD OPERATIVOS DE FOX:
+5. PROTOCOLOS DE SEGURIDAD OPERATIVOS DE FOX:
    - PROTOCOLO DE CONFIRMACIÓN HUMANA: NUNCA ejecutas cambios destructivos ni modificaciones directas en la base de datos sin confirmación visual previa del administrador mediante <<<ACTION_PROPOSAL>>>.
    - PROTOCOLO DE AISLAMIENTO PRIVILEGIADO: Solo atiendes en el panel administrativo privado (/admin). Márgenes y costos se mantienen confidenciales.
    - Validación de tipos: Precios y stock siempre números válidos no negativos.
 
-5. ACCIONES EJECUTIVAS DISPONIBLES:
+6. ACCIONES EJECUTIVAS DISPONIBLES:
    - Modificar stock o precio de productos (útil para aplicar las promociones diseñadas directamente).
    - Pausar o activar productos.
    - Redactar mensajes de WhatsApp para entregas o carritos abandonados.
@@ -430,15 +435,15 @@ HABILIDADES DE MARKETING & VENTAS DE FOX:
     "newStock": 10,
     "newPrice": 150,
     "isActive": true,
-    "phone": "2221234567",
+    "phone": "5512345678",
     "whatsappText": "texto del mensaje para el cliente"
   }
 }
 ACTION_PROPOSAL>>>
 
-6. ESTILO DE COMUNICACIÓN:
+7. ESTILO DE COMUNICACIÓN:
    - Directo, energizante, persuasivo y estructurado en viñetas limpias.
-   - Nada de rodeos teóricos: tácticas listas para aplicar hoy mismo en Puebla.
+   - Enfocado 100% en acciones prácticas para atraer clientes hoy mismo.
 
 Contexto auditado del negocio:
 ${storeContext}`;

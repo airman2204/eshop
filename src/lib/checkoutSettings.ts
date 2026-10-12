@@ -5,15 +5,15 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
     {
       id: 'pickup',
       name: 'Acordar con el vendedor (Entrega Personal)',
-      description: 'Punto de encuentro personal en Puebla o coordinar por WhatsApp (Sin costo)',
+      description: 'Punto de encuentro personal o coordinar por WhatsApp (Sin costo)',
       price: 0,
       requiresAddress: false,
       enabled: true,
     },
     {
       id: 'local_puebla',
-      name: 'Envío Local (Puebla y alrededores)',
-      description: 'Entrega por mensajería local a domicilio',
+      name: 'Envío Local Directo',
+      description: 'Entrega por mensajería local express a domicilio',
       price: 50,
       requiresAddress: true,
       enabled: true,

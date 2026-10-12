@@ -30,17 +30,17 @@ export const metadata: Metadata = {
     template: "%s | FoxDrop México",
   },
   description:
-    "Descubre tesoros mundiales y productos exclusivos en FoxDrop México. Entregas locales seguras en Puebla y envíos a toda la República Mexicana con garantía de satisfacción.",
+    "Descubre tesoros mundiales y productos exclusivos en FoxDrop México. Entregas seguras y envíos a toda la República Mexicana con garantía de satisfacción.",
   keywords: [
     "FoxDrop",
     "FoxDrop México",
-    "tienda online Puebla",
+    "tienda online México",
     "importación directa México",
     "gadgets exclusivos",
     "electrónica original",
     "cosmética importada",
     "compras seguras México",
-    "envíos express Puebla",
+    "envíos express México",
     "pedidos especiales",
   ],
   authors: [{ name: "FoxDrop México" }],
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     siteName: "FoxDrop México",
     title: "FoxDrop México — Calidad Amistosa y Garantizada",
     description:
-      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras en Puebla y envíos a todo México.",
+      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras y envíos a todo México.",
     images: [
       {
         url: "/fox-hero-desktop-banner.png",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "FoxDrop México — Calidad Amistosa y Garantizada",
     description:
-      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras en Puebla y envíos a todo México.",
+      "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras y envíos a todo México.",
     images: ["/fox-hero-desktop-banner.png"],
   },
   manifest: "/manifest.webmanifest",
@@ -110,7 +110,7 @@ const structuredData = {
       "name": "FoxDrop México",
       "url": "https://foxdrop.mx",
       "logo": "https://foxdrop.mx/foxdrop-header-logo-exact.png",
-      "description": "Tienda en línea de productos de importación, tecnología, hogar y cosmética con entrega segura en Puebla y envíos a todo México.",
+      "description": "Tienda en línea de productos de importación, tecnología, hogar y cosmética con entrega segura y envíos a todo México.",
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "Customer Support",

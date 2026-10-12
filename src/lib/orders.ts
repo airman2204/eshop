@@ -18,7 +18,7 @@ export interface CreateOrderInput {
   clientName: string;
   clientPhone: string;
   clientEmail?: string;
-  shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping';
+  shippingType: 'puebla_local' | 'local_delivery' | 'agreed_pickup' | 'national_shipping';
   pickupPoint?: string;
   shippingCost: number;
   subtotal: number;
