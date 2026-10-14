@@ -278,8 +278,8 @@ export default function AdminCRM() {
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchNameInput, setBatchNameInput] = useState('');
-  const [batchShippingCostInput, setBatchShippingCostInput] = useState(500);
-  const [batchUnitsInput, setBatchUnitsInput] = useState(25);
+  const [batchShippingCostInput, setBatchShippingCostInput] = useState<string>('500');
+  const [batchUnitsInput, setBatchUnitsInput] = useState<string>('25');
   const [batchNotesInput, setBatchNotesInput] = useState('');
   const [savingBatch, setSavingBatch] = useState(false);
 
@@ -2164,15 +2164,17 @@ export default function AdminCRM() {
   // Crear Lote de Importación
   const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!batchNameInput.trim() || batchUnitsInput <= 0) return;
+    const numUnits = parseInt(batchUnitsInput, 10) || 0;
+    const numShipping = parseFloat(batchShippingCostInput) || 0;
+    if (!batchNameInput.trim() || numUnits <= 0) return;
 
     setSavingBatch(true);
-    const costPerUnitCalc = batchShippingCostInput / batchUnitsInput;
+    const costPerUnitCalc = numShipping / numUnits;
     const newBatchObj: ImportBatch = {
       id: `batch-${Date.now()}`,
       batchName: batchNameInput,
-      totalShippingCost: batchShippingCostInput,
-      totalUnits: batchUnitsInput,
+      totalShippingCost: numShipping,
+      totalUnits: numUnits,
       costPerUnit: costPerUnitCalc,
       receivedAt: new Date().toISOString().split('T')[0],
       notes: batchNotesInput,
@@ -2181,8 +2183,8 @@ export default function AdminCRM() {
     try {
       const created = await createImportBatch({
         batchName: batchNameInput,
-        totalShippingCost: batchShippingCostInput,
-        totalUnits: batchUnitsInput,
+        totalShippingCost: numShipping,
+        totalUnits: numUnits,
         notes: batchNotesInput,
       });
       if (created) {
@@ -8759,8 +8761,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <input
                       type="number"
                       required
+                      min={0}
+                      placeholder="0"
                       value={batchShippingCostInput}
-                      onChange={e => setBatchShippingCostInput(parseFloat(e.target.value) || 0)}
+                      onChange={e => setBatchShippingCostInput(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
                     />
                   </div>
@@ -8770,8 +8774,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       type="number"
                       required
                       min={1}
+                      placeholder="1"
                       value={batchUnitsInput}
-                      onChange={e => setBatchUnitsInput(parseInt(e.target.value) || 1)}
+                      onChange={e => setBatchUnitsInput(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
                     />
                   </div>
@@ -8780,7 +8785,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <div className="bg-orange-50 border border-orange-200 p-3 rounded-xl flex items-center justify-between text-xs">
                   <span className="text-orange-950 font-bold">Flete Calculado por Pieza:</span>
                   <span className="text-base font-black text-[#E65F2B]">
-                    +${(batchUnitsInput > 0 ? batchShippingCostInput / batchUnitsInput : 0).toFixed(2)} MXN
+                    +${(() => {
+                      const u = parseInt(batchUnitsInput, 10) || 0;
+                      const s = parseFloat(batchShippingCostInput) || 0;
+                      return (u > 0 ? s / u : 0).toFixed(2);
+                    })()} MXN
                   </span>
                 </div>
 
