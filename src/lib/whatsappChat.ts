@@ -13,16 +13,18 @@ import { formatPhoneNumber } from './whatsapp';
 
 /**
  * Obtener todas las conversaciones de WhatsApp ordenadas por última interacción
+ * Optimizado para minimizar consumo de Egress en Supabase (seleccionando solo columnas requeridas)
  */
 export async function getWhatsAppChats(): Promise<WhatsAppChat[]> {
   try {
     const supabase = getSupabaseBrowserClient();
     const { data, error }: any = await (supabase as any)
       .from('whatsapp_chats')
-      .select('*')
+      .select('id, phone, client_name, last_message, last_message_time, unread_count, avatar_url, status, client_profile_id, notes, created_at, updated_at')
       .neq('status', 'archived')
       .not('phone', 'like', '_system_%')
-      .order('last_message_time', { ascending: false });
+      .order('last_message_time', { ascending: false })
+      .limit(50);
 
     if (error) {
       console.warn('Advertencia consultando whatsapp_chats:', error.message);
@@ -51,22 +53,27 @@ export async function getWhatsAppChats(): Promise<WhatsAppChat[]> {
 
 /**
  * Obtener el historial de mensajes de un chat específico
+ * Optimizado: carga los últimos 40 mensajes y solo las columnas necesarias para ahorrar hasta 90% de Egress
  */
-export async function getWhatsAppMessages(chatId: string): Promise<WhatsAppMessage[]> {
+export async function getWhatsAppMessages(chatId: string, limit = 40): Promise<WhatsAppMessage[]> {
   try {
     const supabase = getSupabaseBrowserClient();
     const { data, error }: any = await (supabase as any)
       .from('whatsapp_messages')
-      .select('*')
+      .select('id, chat_id, phone, sender, sender_name, text, status, media_url, media_type, created_at')
       .eq('chat_id', chatId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.warn('Advertencia consultando whatsapp_messages:', error.message);
       return [];
     }
 
-    return (data || []).map((row: any) => ({
+    // Invertir para mostrar en orden cronológico ascendente (el más viejo arriba, el más nuevo abajo)
+    const sorted = (data || []).reverse();
+
+    return sorted.map((row: any) => ({
       id: row.id,
       chatId: row.chat_id,
       phone: row.phone,
@@ -147,7 +154,7 @@ export async function sendWhatsAppMessageFromAdmin(params: {
         media_type: dbMediaType,
         status: 'sent',
       })
-      .select('*')
+      .select('id, chat_id, phone, sender, sender_name, text, media_url, media_type, status, created_at')
       .single();
 
     if (msgErr) throw msgErr;

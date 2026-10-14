@@ -602,18 +602,21 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       )
       .subscribe();
 
-    // Polling cada 4 segundos para asegurar sincronización instantánea de palomitas y mensajes en vivo
+    // Polling de respaldo inteligente (cada 15s y solo si la pestaña está visible)
+    // El canal de Realtime arriba ya recibe los mensajes nuevos e instantáneos por WebSockets sin gastar egress
     const pollInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return; // Si la pestaña está en segundo plano, no consultar
+
       loadChats(false);
       const currentActive = activeChatRef.current;
       if (currentActive) {
-        getWhatsAppMessages(currentActive.id).then(msgs => {
+        getWhatsAppMessages(currentActive.id, 30).then(msgs => {
           if (msgs && msgs.length > 0) {
             setMessages(msgs);
           }
         });
       }
-    }, 4000);
+    }, 15000);
 
     return () => {
       clearInterval(pollInterval);
