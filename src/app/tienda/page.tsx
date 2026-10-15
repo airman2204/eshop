@@ -251,7 +251,7 @@ export default function TiendaFoxDrop() {
 
   // VISTA INTEGRADA: Tienda ('store'), Mi Cuenta ('account') o Pantalla Completa de Checkout ('checkout')
   const [currentView, setCurrentView] = useState<'store' | 'account' | 'checkout'>('store');
-  const [accountTab, setAccountTab] = useState<'orders' | 'addresses' | 'cards' | 'club' | 'settings'>('orders');
+  const [accountTab, setAccountTab] = useState<'orders' | 'favorites' | 'addresses' | 'cards' | 'club' | 'settings'>('orders');
   const [fullProfile, setFullProfile] = useState<FullUserProfile | null>(null);
   const [loadingFullProfile, setLoadingFullProfile] = useState(false);
   const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'pos' | 'cancelled'>('all');
@@ -2078,25 +2078,29 @@ export default function TiendaFoxDrop() {
             </div>
           </div>
 
-          {/* HERO BANNER DE USUARIO INTEGRADO */}
-          <div className="bg-gradient-to-r from-[#0F3E36] via-[#164C42] to-[#0A2E28] text-white py-6 px-4 sm:px-6 shadow-inner">
-            <div className="max-w-7xl mx-auto space-y-6">
+          {/* HERO BANNER DE USUARIO INTEGRADO CON IDENTIDAD FOXDROP */}
+          <div className="bg-gradient-to-r from-[#0F3E36] via-[#164C42] to-[#0A2E28] text-white py-5 sm:py-7 px-4 sm:px-6 shadow-inner relative overflow-hidden">
+            {/* Luces sutiles de fondo */}
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#DF7F2D]/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="max-w-7xl mx-auto space-y-5 relative z-10">
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#DF7F2D] to-[#B85D14] text-white font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/20 shrink-0">
+                <div className="flex items-center gap-3.5 sm:gap-4">
+                  <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#DF7F2D] to-[#B85D14] text-white font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/20 shrink-0">
                     {user?.name ? user.name.charAt(0).toUpperCase() : '🦊'}
                   </div>
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-xl sm:text-2xl font-black text-white">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-lg sm:text-2xl font-black text-white leading-tight">
                         {user?.name || 'Mi Cuenta FoxDrop'}
                       </h1>
                       <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Verificado
                       </span>
                     </div>
-                    <p className="text-xs text-emerald-100/80 flex items-center gap-3">
+                    <p className="text-xs text-emerald-100/80 flex items-center gap-2 sm:gap-3 flex-wrap">
                       <span>{user?.email}</span>
                       {user?.phone && <span>• 📞 {user.phone}</span>}
                     </p>
@@ -2108,16 +2112,20 @@ export default function TiendaFoxDrop() {
                   const pts = user?.points ?? 0;
                   const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
                   return (
-                    <div className="bg-white/10 border border-white/15 backdrop-blur-xs rounded-2xl p-3 sm:px-4 flex items-center gap-3 shrink-0">
-                      <div className="text-2xl">{tier.badge}</div>
+                    <div 
+                      onClick={() => setAccountTab('club')}
+                      className="bg-white/10 hover:bg-white/15 transition border border-white/15 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 sm:px-4 flex items-center gap-3 shrink-0 cursor-pointer group"
+                      title="Ver beneficios de tu nivel"
+                    >
+                      <div className="text-2xl group-hover:scale-110 transition-transform">{tier.badge}</div>
                       <div>
                         <span className="text-[10px] uppercase font-bold tracking-wider text-[#E3B888] block">
                           Club Foxdrop
                         </span>
-                        <span className="text-sm font-black text-white">{tier.name}</span>
+                        <span className="text-xs sm:text-sm font-black text-white">{tier.name}</span>
                       </div>
                       <div className="border-l border-white/15 pl-3 text-right">
-                        <span className="text-lg font-black text-[#DF7F2D] block leading-tight">
+                        <span className="text-base sm:text-lg font-black text-[#DF7F2D] block leading-tight">
                           {pts}
                         </span>
                         <span className="text-[10px] text-white/70">Puntos</span>
@@ -2127,18 +2135,18 @@ export default function TiendaFoxDrop() {
                 })()}
               </div>
 
-              {/* 4 Cards de Resumen Rápido */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+              {/* 5 Cards de Resumen Rápido con scroll horizontal táctil en móvil */}
+              <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none">
                 <button
                   onClick={() => setAccountTab('orders')}
-                  className={`p-3.5 rounded-2xl text-left transition border cursor-pointer ${
+                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
                     accountTab === 'orders' 
                       ? 'bg-white text-[#0F3E36] border-white shadow-md' 
                       : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <Package className={`w-5 h-5 ${accountTab === 'orders' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
+                    <Package className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'orders' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
                       {userOrders.length}
                     </span>
@@ -2148,33 +2156,51 @@ export default function TiendaFoxDrop() {
                 </button>
 
                 <button
+                  onClick={() => setAccountTab('favorites')}
+                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
+                    accountTab === 'favorites' 
+                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'favorites' ? 'text-rose-500 fill-rose-500' : 'text-rose-400'}`} />
+                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
+                      {favorites.length}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold block">Favoritos</span>
+                  <span className="text-[10px] opacity-80 block truncate">Artículos guardados</span>
+                </button>
+
+                <button
                   onClick={() => setAccountTab('addresses')}
-                  className={`p-3.5 rounded-2xl text-left transition border cursor-pointer ${
+                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
                     accountTab === 'addresses' 
                       ? 'bg-white text-[#0F3E36] border-white shadow-md' 
                       : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <MapPin className={`w-5 h-5 ${accountTab === 'addresses' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
+                    <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'addresses' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
                       {fullProfile?.addresses?.length || 0}
                     </span>
                   </div>
                   <span className="text-xs font-bold block">Direcciones</span>
-                  <span className="text-[10px] opacity-80 block truncate">Lugares de entrega</span>
+                  <span className="text-[10px] opacity-80 block truncate">Entrega y envío</span>
                 </button>
 
                 <button
                   onClick={() => setAccountTab('cards')}
-                  className={`p-3.5 rounded-2xl text-left transition border cursor-pointer ${
+                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
                     accountTab === 'cards' 
                       ? 'bg-white text-[#0F3E36] border-white shadow-md' 
                       : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <CreditCard className={`w-5 h-5 ${accountTab === 'cards' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
+                    <CreditCard className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'cards' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
                       {fullProfile?.cards?.length || 0}
                     </span>
@@ -2185,14 +2211,14 @@ export default function TiendaFoxDrop() {
 
                 <button
                   onClick={() => setAccountTab('club')}
-                  className={`p-3.5 rounded-2xl text-left transition border cursor-pointer ${
+                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
                     accountTab === 'club' 
                       ? 'bg-white text-[#0F3E36] border-white shadow-md' 
                       : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <Award className={`w-5 h-5 ${accountTab === 'club' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
+                    <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'club' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
                     <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
                       {getClubFoxDropTier(user?.points ?? 0, clubSettings?.tiers).discountPercent}%
                     </span>
@@ -2213,6 +2239,7 @@ export default function TiendaFoxDrop() {
               <div className="flex items-center space-x-1 sm:space-x-2">
                 {[
                   { id: 'orders', label: '📦 Pedidos y Rastreo' },
+                  { id: 'favorites', label: `❤️ Favoritos (${favorites.length})` },
                   { id: 'addresses', label: '📍 Direcciones' },
                   { id: 'cards', label: '💳 Métodos de Pago' },
                   { id: 'club', label: '🦊 Club FoxDrop' },
@@ -2442,33 +2469,100 @@ export default function TiendaFoxDrop() {
                             )}
 
                             <div className="p-4 sm:p-6 pt-3 space-y-4">
-                              {/* Artículos */}
+                              {/* Artículos con Fotos Reales y Botón Re-comprar */}
                               {order.order_items && order.order_items.length > 0 && (
-                                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs">
-                                  {order.order_items.map((item: any, idx: number) => (
-                                    <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white">
-                                      <div className="flex items-center gap-2.5">
-                                        <span className="text-lg">📦</span>
-                                        <div>
-                                          <p className="font-bold text-gray-900">{item.product_title}</p>
-                                          <p className="text-[11px] text-gray-500">
-                                            Cantidad: {item.quantity} • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
-                                          </p>
+                                <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden text-xs bg-white">
+                                  {order.order_items.map((item: any, idx: number) => {
+                                    const matchedProd = products.find(p => p.id === item.product_id || p.title.toLowerCase() === item.product_title?.toLowerCase());
+                                    const prodImg = item.product_image || matchedProd?.images?.[0] || '/no-image.svg';
+
+                                    return (
+                                      <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-slate-50/60 transition">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                          <div className="w-12 h-12 rounded-xl bg-[#EAF1EF] p-1 border border-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
+                                            <img
+                                              src={prodImg}
+                                              alt={item.product_title}
+                                              className="w-full h-full object-contain"
+                                              onError={(e: any) => { e.currentTarget.src = '/no-image.svg'; }}
+                                            />
+                                          </div>
+                                          <div className="min-w-0">
+                                            <p className="font-bold text-gray-900 truncate max-w-[200px] sm:max-w-md">{item.product_title}</p>
+                                            <p className="text-[11px] text-gray-500">
+                                              Cantidad: <strong className="text-gray-800">{item.quantity}</strong> • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0">
+                                          <span className="font-extrabold text-gray-800 font-mono text-xs sm:text-sm">
+                                            ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)}
+                                          </span>
+                                          {matchedProd && (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                addToCart(matchedProd, e, item.quantity || 1);
+                                              }}
+                                              className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#DF7F2D] font-bold text-[10px] transition flex items-center gap-1 border border-orange-200 cursor-pointer"
+                                              title="Volver a comprar este producto"
+                                            >
+                                              <ShoppingCart className="w-3.5 h-3.5" />
+                                              <span className="hidden sm:inline">Reordenar</span>
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
-                                      <span className="font-bold text-gray-800">
-                                        ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)} MXN
-                                      </span>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               )}
-                              {/* Botón de acción para ver seguimiento y comprobante oficial */}
-                              <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+
+                              {/* Botones de acción para ver seguimiento, ticket, reordenar todo y WhatsApp */}
+                              <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
                                 <span className="text-[11px] text-gray-500 font-medium">
                                   {order.order_items?.length || 0} producto(s) en este pedido
                                 </span>
                                 <div className="flex items-center gap-2 flex-wrap">
+                                  {/* Botón Re-ordenar pedido completo */}
+                                  {order.order_items && order.order_items.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        let addedCount = 0;
+                                        order.order_items.forEach((item: any) => {
+                                          const matched = products.find(p => p.id === item.product_id || p.title.toLowerCase() === item.product_title?.toLowerCase());
+                                          if (matched) {
+                                            addToCart(matched, undefined, item.quantity || 1);
+                                            addedCount++;
+                                          }
+                                        });
+                                        if (addedCount === 0) {
+                                          alert("Los productos de este pedido ya no se encuentran en el catálogo actual.");
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition cursor-pointer"
+                                      title="Agregar todos los productos de este pedido al carrito"
+                                    >
+                                      <ShoppingCart className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Volver a comprar todo</span>
+                                    </button>
+                                  )}
+
+                                  {/* Botón WhatsApp con Folio */}
+                                  <a
+                                    href={`https://wa.me/522221234567?text=${encodeURIComponent(`Hola FoxDrop 🦊, tengo una duda sobre mi pedido *${order.order_number || order.id}* por *$${Number(order.total).toFixed(2)} MXN*.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                                    title="Contactar soporte por WhatsApp"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5 fill-white text-white" />
+                                    <span>Ayuda WhatsApp</span>
+                                  </a>
+
                                   {ticketUrl && (
                                     <a
                                       href={ticketUrl}
@@ -2480,6 +2574,7 @@ export default function TiendaFoxDrop() {
                                       <ArrowUpRight className="w-3.5 h-3.5" />
                                     </a>
                                   )}
+
                                   {(order.status === 'pending' || order.status === 'processing') && (
                                     <button
                                       type="button"
@@ -2492,15 +2587,16 @@ export default function TiendaFoxDrop() {
                                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition cursor-pointer"
                                     >
                                       <Ban className="w-3.5 h-3.5 text-red-600" />
-                                      <span>Cancelar Pedido</span>
+                                      <span>Cancelar</span>
                                     </button>
                                   )}
+
                                   <button
                                     type="button"
                                     onClick={() => setSelectedOrderForDetail(order)}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
                                   >
-                                    <span>Ver Detalle & Seguimiento</span>
+                                    <span>Rastreo & Detalle</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
@@ -2509,6 +2605,100 @@ export default function TiendaFoxDrop() {
                           </div>
                         );
                       })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB FAVORITOS (ARTÍCULOS GUARDADOS POR EL USUARIO) */}
+            {accountTab === 'favorites' && (
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                      <span>Mis Artículos Favoritos</span>
+                    </h3>
+                    <p className="text-xs text-gray-500">Productos que guardaste para comprar más tarde.</p>
+                  </div>
+                  {favorites.length > 0 && (
+                    <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                      {favorites.length} guardado(s)
+                    </span>
+                  )}
+                </div>
+
+                {favorites.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-12 text-center space-y-4 border border-gray-100 shadow-sm max-w-md mx-auto">
+                    <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+                      <Heart className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-base font-black text-gray-900">Aún no tienes favoritos</h4>
+                      <p className="text-xs text-gray-500">
+                        Explora la tienda y presiona el ícono del corazón ❤️ en cualquier producto que te guste para tenerlo a la mano.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCurrentView('store');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-2 bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs px-5 py-2.5 rounded-full transition shadow-md cursor-pointer"
+                    >
+                      <ShoppingBag className="w-4 h-4 text-[#DF7F2D]" />
+                      <span>Explorar Catálogo</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                    {products
+                      .filter(p => favorites.includes(p.id))
+                      .map(favProduct => (
+                        <div
+                          key={favProduct.id}
+                          onClick={() => {
+                            setModalQuantity(1);
+                            setSelectedProduct(favProduct);
+                          }}
+                          className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
+                        >
+                          <button
+                            onClick={(e) => toggleFav(favProduct.id, e)}
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow-xs flex items-center justify-center text-rose-500 hover:scale-110 transition z-10"
+                            title="Quitar de favoritos"
+                          >
+                            <Heart className="w-4 h-4 fill-rose-500" />
+                          </button>
+
+                          <div className="aspect-square bg-[#EAF1EF] rounded-xl flex items-center justify-center p-2 mb-2 overflow-hidden">
+                            <img
+                              src={favProduct.images[0]}
+                              alt={favProduct.title}
+                              className="max-h-full w-auto object-contain group-hover:scale-105 transition duration-200"
+                            />
+                          </div>
+
+                          <div className="space-y-1 flex-1 flex flex-col justify-between">
+                            <div>
+                              <h5 className="text-xs font-bold text-gray-900 line-clamp-1">{favProduct.title}</h5>
+                              <p className="text-[10px] text-gray-400">{favProduct.category}</p>
+                            </div>
+                            <div className="pt-1 flex items-center justify-between">
+                              <span className="text-xs sm:text-sm font-black text-[#0F3E36] font-mono">
+                                ${favProduct.publicPrice.toFixed(0)} MXN
+                              </span>
+                              <button
+                                onClick={(e) => addToCart(favProduct, e)}
+                                className="p-1.5 rounded-lg bg-[#0F3E36] hover:bg-[#1A5248] text-white transition shadow-2xs"
+                                title="Agregar al carrito"
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -2672,27 +2862,71 @@ export default function TiendaFoxDrop() {
                 {(() => {
                   const pts = user?.points ?? 0;
                   const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
+                  const tiersList = (clubSettings?.tiers && clubSettings.tiers.length > 0)
+                    ? clubSettings.tiers
+                    : DEFAULT_CLUB_SETTINGS.tiers;
+                  const sortedTiers = [...tiersList].sort((a, b) => a.minPoints - b.minPoints);
+                  const currentTierIndex = sortedTiers.findIndex(t => t.name === tier.name);
+                  const nextTier = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1
+                    ? sortedTiers[currentTierIndex + 1]
+                    : null;
+                  const prevPoints = sortedTiers[currentTierIndex]?.minPoints ?? 0;
+                  const nextMinPoints = nextTier ? nextTier.minPoints : prevPoints;
+                  const pointsNeeded = nextTier ? Math.max(0, nextMinPoints - pts) : 0;
+                  const rangeSpan = Math.max(1, nextMinPoints - prevPoints);
+                  const progressPct = nextTier 
+                    ? Math.min(100, Math.max(5, Math.round(((pts - prevPoints) / rangeSpan) * 100)))
+                    : 100;
+
                   return (
-                    <div className="bg-gradient-to-br from-[#0F3E36] via-[#1E5D52] to-[#DF7F2D] rounded-3xl p-6 text-white shadow-lg space-y-4">
+                    <div className="bg-gradient-to-br from-[#0F3E36] via-[#1E5D52] to-[#DF7F2D] rounded-3xl p-6 text-white shadow-lg space-y-5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-3xl">{tier.badge}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-4xl filter drop-shadow-md">{tier.badge}</span>
                           <div>
                             <span className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest block">
                               Membresía Exclusiva
                             </span>
-                            <h3 className="text-xl font-black text-white">{tier.name}</h3>
+                            <h3 className="text-xl sm:text-2xl font-black text-white">{tier.name}</h3>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-2xl border border-white/15">
                           <span className="text-2xl font-black text-[#E3B888] block leading-none">{pts}</span>
-                          <span className="text-[11px] text-white/80">Puntos Club</span>
+                          <span className="text-[11px] text-white/80 font-bold">Puntos Club</span>
                         </div>
                       </div>
-                      <p className="text-xs text-white/80">
+
+                      {/* Barra de progreso interactiva */}
+                      <div className="bg-black/20 backdrop-blur-xs p-4 rounded-2xl border border-white/15 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <span className="text-white/90 flex items-center gap-1.5">
+                            <Sparkle className="w-3.5 h-3.5 text-[#E3B888]" />
+                            {nextTier ? `Próximo Nivel: ${nextTier.name} ${nextTier.badge}` : '¡Has alcanzado el Nivel Máximo! 💎'}
+                          </span>
+                          <span className="text-[#E3B888] font-black">{progressPct}%</span>
+                        </div>
+                        
+                        <div className="h-3 bg-white/20 rounded-full overflow-hidden p-0.5 border border-white/10">
+                          <div 
+                            className="h-full bg-gradient-to-r from-[#DF7F2D] to-amber-300 rounded-full transition-all duration-700 shadow-sm"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-white/75 pt-0.5">
+                          <span>{pts} pts acumulados</span>
+                          <span>
+                            {nextTier 
+                              ? `Faltan ${pointsNeeded} pts para desbloquear ${nextTier.discountPercent}% OFF`
+                              : 'Beneficios VIP y envíos gratis ilimitados'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-white/85 leading-relaxed">
                         {tier.discountPercent > 0
-                          ? `Tienes un ${tier.discountPercent}% de descuento permanente en toda la tienda.`
-                          : 'Acumula 1 punto por cada $10 MXN gastados para desbloquear descuentos y envíos prioritarios.'}
+                          ? `🎉 Disfrutas de un ${tier.discountPercent}% de descuento permanente en toda la tienda FoxDrop.`
+                          : 'Acumula 1 punto por cada $10 MXN gastados para desbloquear descuentos automáticos y envíos prioritarios.'}
                       </p>
                     </div>
                   );
@@ -4627,23 +4861,52 @@ export default function TiendaFoxDrop() {
                 <span className="text-xs font-black uppercase text-gray-400 tracking-wider block">
                   Artículos Comprados
                 </span>
-                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs max-h-48 overflow-y-auto">
-                  {order.order_items && order.order_items.map((item: any, idx: number) => (
-                    <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-lg">📦</span>
-                        <div>
-                          <p className="font-bold text-gray-900 line-clamp-1">{item.product_title}</p>
-                          <p className="text-[11px] text-gray-500">
-                            Cantidad: {item.quantity} • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
-                          </p>
+                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs max-h-56 overflow-y-auto">
+                  {order.order_items && order.order_items.map((item: any, idx: number) => {
+                    const matchedProduct = products.find(p => p.id === item.product_id || p.title?.toLowerCase() === item.product_title?.toLowerCase());
+                    const productImg = item.product_image || matchedProduct?.images?.[0] || '/no-image.svg';
+
+                    return (
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-gray-50/50 transition">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-lg bg-[#EAF1EF] p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={productImg}
+                              alt={item.product_title}
+                              className="w-full h-full object-contain"
+                              onError={(e: any) => { e.currentTarget.src = '/no-image.svg'; }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-gray-900 truncate">{item.product_title}</p>
+                            <p className="text-[11px] text-gray-500">
+                              Cantidad: {item.quantity} • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-black text-gray-900 text-xs">
+                            ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)} MXN
+                          </span>
+                          {matchedProduct && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                addToCart(matchedProduct);
+                                setSelectedOrderForDetail(null);
+                                setIsCartOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-orange-50 hover:bg-[#DF7F2D] text-[#DF7F2D] hover:text-white transition cursor-pointer"
+                              title="Volver a comprar este producto"
+                            >
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <span className="font-bold text-gray-800">
-                        ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)} MXN
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
