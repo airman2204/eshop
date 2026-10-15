@@ -93,9 +93,8 @@ export default function TiendaFoxDrop() {
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
-  // Filtros avanzados: Rango de precio y solo en stock
+  // Filtros avanzados: Rango de precio
   const [priceFilter, setPriceFilter] = useState<'all' | 'under150' | '150to350' | 'above350'>('all');
-  const [inStockOnly, setInStockOnly] = useState(false);
 
   // Búsqueda predictiva con historial y búsquedas populares
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -570,8 +569,8 @@ export default function TiendaFoxDrop() {
     const matchSearch = matchesProductSearch(p, searchTerm);
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
     
-    // Filtro por stock
-    const matchStock = inStockOnly ? p.stock > 0 : true;
+    // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
+    const matchStock = p.stock > 0 || p.isSpecialOrder;
 
     // Filtro por rango de precio
     let matchPrice = true;
@@ -2102,20 +2101,6 @@ export default function TiendaFoxDrop() {
                 <option value="above350">Más de $350 MXN</option>
               </select>
             </div>
-
-            {/* TOGGLE SOLO CON STOCK INMEDIATO */}
-            <button
-              type="button"
-              onClick={() => setInStockOnly(prev => !prev)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
-                inStockOnly 
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs' 
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${inStockOnly ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-              <span>Solo en Stock</span>
-            </button>
 
             {activeTab === 'new' && (
               <button
