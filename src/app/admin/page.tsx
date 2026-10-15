@@ -33,7 +33,7 @@ import {
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
-import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi } from '@/lib/storage';
+import { uploadProductImage, uploadProductImageUrl } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
@@ -145,10 +145,6 @@ export default function AdminCRM() {
   const [isCombo, setIsCombo] = useState(false);
   const [selectedComboProductIds, setSelectedComboProductIds] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [generatingAiImage, setGeneratingAiImage] = useState(false);
-  const [lifestylePrompt, setLifestylePrompt] = useState('');
-  const [generatingLifestyle, setGeneratingLifestyle] = useState(false);
-  const [lifestylePreviewUrl, setLifestylePreviewUrl] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [newIsActive, setNewIsActive] = useState(true);
 
@@ -1570,68 +1566,6 @@ export default function AdminCRM() {
     const query = newTitle.trim() || newSku.trim() || 'producto';
     const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
     window.open(searchUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  // Generar / Homogeneizar Fotografía de Catálogo con IA
-  const handleGenerateAiImage = async () => {
-    if (!newTitle.trim()) {
-      alert('Por favor escribe primero el nombre o título del producto arriba.');
-      return;
-    }
-
-    setGeneratingAiImage(true);
-    setUploadSuccess(false);
-    try {
-      // Si el usuario ya pegó o tiene una foto en newImageUrl, la pasamos para que la IA la tome como base real
-      const generatedUrl = await generateProductImageWithAi(newTitle.trim(), newCategory, newImageUrl || undefined);
-      setNewImageUrl(generatedUrl);
-      setUploadSuccess(true);
-    } catch (err: any) {
-      console.error('Error al procesar imagen con IA:', err);
-      alert('No se pudo procesar la imagen con IA en este momento. Puedes usar "Buscar en Google" o pegar una imagen.');
-    } finally {
-      setGeneratingAiImage(false);
-    }
-  };
-
-  // Generar Fotografía de Uso Cotidiano / Lifestyle con IA basada en la foto real y prompt del usuario
-  const handleGenerateLifestyleImage = async () => {
-    if (!newTitle.trim()) {
-      alert('Por favor escribe primero el nombre o título del producto arriba.');
-      return;
-    }
-    if (!lifestylePrompt.trim()) {
-      alert('Por favor escribe una escena cotidiana (ej. "puesto en el tablero de un carro moderno") o selecciona uno de los botones rápidos.');
-      return;
-    }
-
-    setGeneratingLifestyle(true);
-    setUploadSuccess(false);
-    try {
-      // Priorizamos la foto de portada o la que esté en newImageUrl/newImages[0]
-      const referenceImage = newImageUrl || (newImages.length > 0 ? newImages[0] : undefined);
-      const generatedUrl = await generateProductImageWithAi(
-        newTitle.trim(),
-        newCategory,
-        referenceImage,
-        lifestylePrompt.trim()
-      );
-      
-      // Mostrar la imagen en el visor de revisión grande
-      setLifestylePreviewUrl(generatedUrl);
-      setUploadSuccess(true);
-    } catch (err: any) {
-      console.error('Error al generar foto en contexto real con IA:', err);
-      const wantsSearch = confirm(
-        'El motor de IA está saturado en este momento.\n\n¿Deseas buscar fotos de este producto en escena real en Google Fotos para copiar/pegar una?'
-      );
-      if (wantsSearch) {
-        const query = `${newTitle.trim()} ${lifestylePrompt.trim()}`.slice(0, 80);
-        window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
-      }
-    } finally {
-      setGeneratingLifestyle(false);
-    }
   };
 
   // Cálculo automático según Lote seleccionado
@@ -8522,181 +8456,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         }}
                         className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
                       />
-                    </div>
-
-                    {/* ✨ Generador de Foto en Uso Cotidiano / Lifestyle con IA ✨ */}
-                    <div className="mt-3 bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/70 border border-indigo-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-xs">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <span className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
-                            Foto en Uso Cotidiano con IA (Lifestyle / En Escena)
-                          </span>
-                          <p className="text-[10.5px] text-indigo-900/70 mt-0.5 leading-snug">
-                            Escribe una escena o usa un atajo para que la IA tome la foto de tu producto y lo ambiente en un contexto real de la vida cotidiana.
-                          </p>
-                        </div>
-                        {newImages.length > 0 && (
-                          <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full shrink-0 border border-indigo-200">
-                            Usa tu foto como base ✓
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Atajos Rápidos de Escenas */}
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        <span className="text-[10px] font-bold text-indigo-900/60 self-center mr-1">Atajos:</span>
-                        {[
-                          { label: '🚗 En carro / ventilila', prompt: 'Montado de forma elegante en la rejilla de ventilación del tablero de un auto moderno de lujo con luz de día' },
-                          { label: '🛁 En baño limpio', prompt: 'Puesto sobre el lavabo de mármol de un baño moderno y limpio con toallas y luz natural' },
-                          { label: '🛋️ En sala / mesa', prompt: 'Colocado sobre una mesa de centro de madera en una sala de estar moderna y acogedora' },
-                          { label: '💼 En oficina / escritorio', prompt: 'Sobre un escritorio de oficina ordenado junto a una laptop y una taza de café moderna' },
-                          { label: '🛏️ En recámara', prompt: 'Puesto en el buró o mesa de noche de una recámara minimalista y moderna' },
-                        ].map((preset, pIdx) => (
-                          <button
-                            key={pIdx}
-                            type="button"
-                            onClick={() => setLifestylePrompt(preset.prompt)}
-                            className="text-[10px] bg-white hover:bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-1 rounded-lg transition font-medium shadow-2xs hover:border-indigo-300"
-                          >
-                            {preset.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Input de Prompt Personalizado */}
-                      <div className="space-y-1.5">
-                        <div className="relative">
-                          <textarea
-                            rows={2}
-                            placeholder="Escribe el prompt de uso cotidiano... (ej. Puesto en el tablero de un carro, en la mano de una persona usando el producto, etc.)"
-                            value={lifestylePrompt}
-                            onChange={(e) => setLifestylePrompt(e.target.value)}
-                            disabled={generatingLifestyle}
-                            className="w-full bg-white border border-indigo-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-500 resize-none"
-                          />
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
-                          <span className="text-[10px] text-slate-400">
-                            {newImages.length === 0 ? '💡 Recomendación: Sube o pega primero tu foto base' : '✓ Podrás verla en grande y aprobarla antes de guardarla'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const q = `${newTitle.trim()} ${lifestylePrompt.trim() || 'en escena uso real'}`.trim();
-                                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
-                              }}
-                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
-                              title="Buscar fotos reales de esta escena en Google Imágenes"
-                            >
-                              <Globe className="w-3.5 h-3.5 text-blue-500" />
-                              <span>Buscar Escena en Google</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={handleGenerateLifestyleImage}
-                              disabled={generatingLifestyle || !newTitle.trim()}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer ${
-                                generatingLifestyle
-                                  ? 'bg-indigo-300 text-white cursor-not-allowed'
-                                  : !newTitle.trim()
-                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                              }`}
-                            >
-                              {generatingLifestyle ? (
-                                <>
-                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                  <span>Generando Escena Cotidiana...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                  <span>Generar Foto con IA</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* VISOR EN GRANDE PARA REVISAR FOTO GENERADA ANTES DE ACEPTARLA */}
-                        {lifestylePreviewUrl && (
-                          <div className="mt-3 bg-white border-2 border-indigo-500/60 rounded-2xl p-3.5 shadow-md space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
-                                <Eye className="w-4 h-4 text-indigo-600" />
-                                <span>Revisión de Foto Generada en Escena</span>
-                              </span>
-                              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
-                                Vista Previa (No guardada aún)
-                              </span>
-                            </div>
-
-                            {/* Imagen en Grande */}
-                            <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 max-h-80 flex items-center justify-center group">
-                              <img
-                                src={lifestylePreviewUrl}
-                                alt="Foto Lifestyle Generada"
-                                className="w-full h-auto max-h-80 object-contain rounded-lg"
-                              />
-                              <a
-                                href={lifestylePreviewUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute bottom-2 right-2 bg-black/70 hover:bg-black text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 transition"
-                              >
-                                <ExternalLink className="w-3 h-3" /> Ver tamaño completo
-                              </a>
-                            </div>
-
-                            {/* Controles para Aprobar o Descartar */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1 border-t border-slate-100">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setLifestylePreviewUrl(null);
-                                }}
-                                className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Descartar esta imagen (No me gustó)</span>
-                              </button>
-
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    // Agregar a galería como foto secundaria
-                                    setNewImages(prev => prev.includes(lifestylePreviewUrl) ? prev : [...prev, lifestylePreviewUrl]);
-                                    setLifestylePreviewUrl(null);
-                                  }}
-                                  className="flex-1 sm:flex-initial px-3 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Agregar a Galería</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    // Agregar y poner como Portada principal
-                                    setNewImages(prev => [lifestylePreviewUrl, ...prev.filter(url => url !== lifestylePreviewUrl)]);
-                                    setNewImageUrl(lifestylePreviewUrl);
-                                    setLifestylePreviewUrl(null);
-                                  }}
-                                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
-                                >
-                                  <Sparkles className="w-3.5 h-3.5" />
-                                  <span>Hacer Portada Principal</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
