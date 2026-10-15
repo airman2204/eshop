@@ -147,6 +147,7 @@ export default function AdminCRM() {
   const [generatingAiImage, setGeneratingAiImage] = useState(false);
   const [lifestylePrompt, setLifestylePrompt] = useState('');
   const [generatingLifestyle, setGeneratingLifestyle] = useState(false);
+  const [lifestylePreviewUrl, setLifestylePreviewUrl] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [newIsActive, setNewIsActive] = useState(true);
 
@@ -1611,11 +1612,8 @@ export default function AdminCRM() {
         lifestylePrompt.trim()
       );
       
-      // Añadir la foto lifestyle a la galería de fotos
-      setNewImages(prev => prev.includes(generatedUrl) ? prev : [...prev, generatedUrl]);
-      if (!newImageUrl) {
-        setNewImageUrl(generatedUrl);
-      }
+      // Mostrar la imagen en el visor de revisión grande
+      setLifestylePreviewUrl(generatedUrl);
       setUploadSuccess(true);
     } catch (err: any) {
       console.error('Error al generar foto en contexto real con IA:', err);
@@ -8439,7 +8437,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
                           <span className="text-[10px] text-slate-400">
-                            {newImages.length === 0 ? '💡 Recomendación: Sube o pega primero tu foto base' : '✓ Se añadirá automáticamente a la galería'}
+                            {newImages.length === 0 ? '💡 Recomendación: Sube o pega primero tu foto base' : '✓ Podrás verla en grande y aprobarla antes de guardarla'}
                           </span>
                           <div className="flex items-center gap-2">
                             <button
@@ -8481,6 +8479,81 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </button>
                           </div>
                         </div>
+
+                        {/* VISOR EN GRANDE PARA REVISAR FOTO GENERADA ANTES DE ACEPTARLA */}
+                        {lifestylePreviewUrl && (
+                          <div className="mt-3 bg-white border-2 border-indigo-500/60 rounded-2xl p-3.5 shadow-md space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
+                                <Eye className="w-4 h-4 text-indigo-600" />
+                                <span>Revisión de Foto Generada en Escena</span>
+                              </span>
+                              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+                                Vista Previa (No guardada aún)
+                              </span>
+                            </div>
+
+                            {/* Imagen en Grande */}
+                            <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 max-h-80 flex items-center justify-center group">
+                              <img
+                                src={lifestylePreviewUrl}
+                                alt="Foto Lifestyle Generada"
+                                className="w-full h-auto max-h-80 object-contain rounded-lg"
+                              />
+                              <a
+                                href={lifestylePreviewUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="absolute bottom-2 right-2 bg-black/70 hover:bg-black text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-xs flex items-center gap-1 transition"
+                              >
+                                <ExternalLink className="w-3 h-3" /> Ver tamaño completo
+                              </a>
+                            </div>
+
+                            {/* Controles para Aprobar o Descartar */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLifestylePreviewUrl(null);
+                                }}
+                                className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Descartar esta imagen (No me gustó)</span>
+                              </button>
+
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Agregar a galería como foto secundaria
+                                    setNewImages(prev => prev.includes(lifestylePreviewUrl) ? prev : [...prev, lifestylePreviewUrl]);
+                                    setLifestylePreviewUrl(null);
+                                  }}
+                                  className="flex-1 sm:flex-initial px-3 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Agregar a Galería</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Agregar y poner como Portada principal
+                                    setNewImages(prev => [lifestylePreviewUrl, ...prev.filter(url => url !== lifestylePreviewUrl)]);
+                                    setNewImageUrl(lifestylePreviewUrl);
+                                    setLifestylePreviewUrl(null);
+                                  }}
+                                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  <span>Hacer Portada Principal</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

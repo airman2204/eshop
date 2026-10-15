@@ -171,47 +171,59 @@ export async function POST(req: NextRequest) {
 
       // ── MODO 1: SI HAY PROMPT DE USO COTIDIANO / LIFESTYLE (FOTO EN CONTEXTO REAL) ──
       if (hasCustomPrompt) {
-        const lifestylePrompt = `Commercial lifestyle photography of ${title.trim()} (${category || 'product'}), naturally integrated in real everyday context: ${cleanCustomPrompt}. High-end editorial aesthetic, ultra-realistic, authentic lighting, 8k resolution, crisp focus on the product, natural surrounding environment, professional magazine shot, cinematic depth of field, no distorted text, no watermarks.`;
+        let optimizedPrompt = cleanCustomPrompt;
+        const apiKey = process.env.GEMINI_API_KEY || "";
 
-        // Si hay foto de referencia, alimentamos image-to-image para preservar la identidad del producto
-        if (inputImage && typeof inputImage === "string" && inputImage.trim().length > 0) {
+        // Traducir y enriquecer el prompt con Gemini 2.5 Flash a inglés para máxima fidelidad visual con FLUX
+        if (apiKey && apiKey.length > 10) {
           try {
-            const cleanInputUrl = inputImage.trim();
-            const seed = Math.floor(100000 + Math.random() * 900000);
-            const contextUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(lifestylePrompt)}?image=${encodeURIComponent(cleanInputUrl)}&width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
+            const gemUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const sysInstruction = `You are an expert e-commerce product photographer. Translate and enhance the following product scene into a vivid, descriptive prompt in English for FLUX image generator. Maintain the product look intact. Make it look like a high-end commercial editorial magazine photograph. Respond ONLY with the prompt in English, nothing else.`;
+            const userContent = `Product: ${title.trim()} (${category || 'product'})\nScene in real everyday use: ${cleanCustomPrompt}`;
             
-            const res = await fetch(contextUrl, {
-              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+            const gemRes = await fetch(gemUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${sysInstruction}\n\n${userContent}` }] }]
+              })
             });
 
-            if (res.ok) {
-              const arrBuf = await res.arrayBuffer();
-              imageBuffer = Buffer.from(arrBuf);
-              mimeType = res.headers.get("content-type") || "image/jpeg";
+            if (gemRes.ok) {
+              const gemJson = await gemRes.json();
+              const gemText = gemJson.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+              if (gemText && gemText.length > 10) {
+                optimizedPrompt = gemText;
+              }
             }
-          } catch (lifeErr) {
-            console.warn("Fallo en generación lifestyle condicionada a imagen:", lifeErr);
+          } catch (gemOptErr) {
+            console.warn("No se pudo optimizar prompt con Gemini:", gemOptErr);
           }
         }
 
-        // Si no hay imagen de referencia o falló, generamos la escena lifestyle desde cero
-        if (!imageBuffer) {
-          try {
-            const seed = Math.floor(100000 + Math.random() * 900000);
-            const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(lifestylePrompt)}?width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
-            
-            const fluxRes = await fetch(fluxUrl, {
-              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
-            });
+        // Si no se optimizó con Gemini, construir prompt descriptivo profesional en inglés
+        if (optimizedPrompt === cleanCustomPrompt) {
+          optimizedPrompt = `Commercial lifestyle photography of ${title.trim()}, ${cleanCustomPrompt}. High-end product photography, natural daylight, ultra-realistic details, crisp focus, cinematic background blur, 8k resolution, no watermarks, no distorted text`;
+        }
 
-            if (fluxRes.ok) {
-              const arrBuf = await fluxRes.arrayBuffer();
+        // Generar con FLUX
+        try {
+          const seed = Math.floor(100000 + Math.random() * 900000);
+          const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(optimizedPrompt)}?model=flux&width=800&height=800&seed=${seed}&nologo=true`;
+          
+          const fluxRes = await fetch(fluxUrl, {
+            headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+          });
+
+          if (fluxRes.ok) {
+            const arrBuf = await fluxRes.arrayBuffer();
+            if (arrBuf.byteLength > 2000) {
               imageBuffer = Buffer.from(arrBuf);
               mimeType = fluxRes.headers.get("content-type") || "image/jpeg";
             }
-          } catch (fluxErr) {
-            console.error("Error en generación lifestyle desde cero:", fluxErr);
           }
+        } catch (fluxErr) {
+          console.error("Error en motor de generación de imagen:", fluxErr);
         }
       }
 
