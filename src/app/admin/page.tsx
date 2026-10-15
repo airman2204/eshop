@@ -23,7 +23,7 @@ import {
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, updateImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
-  fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
+  fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory, bulkUpdateProductsDiscount,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
   deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS,
@@ -140,6 +140,7 @@ export default function AdminCRM() {
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
   const [priceMarkupPercent, setPriceMarkupPercent] = useState<number>(100);
+  const [newDiscountPercent, setNewDiscountPercent] = useState<number>(0);
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImages, setNewImages] = useState<string[]>([]);
@@ -148,6 +149,11 @@ export default function AdminCRM() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [newIsActive, setNewIsActive] = useState(true);
+
+  // Modal Descuento Promocional en Lote
+  const [showBulkDiscountModal, setShowBulkDiscountModal] = useState(false);
+  const [bulkDiscountSelected, setBulkDiscountSelected] = useState<number>(20);
+  const [savingBulkDiscount, setSavingBulkDiscount] = useState(false);
 
   // Escáner de Cámara Móvil (Códigos de barra / QR)
   const [showCameraScanner, setShowCameraScanner] = useState(false);
@@ -1583,6 +1589,12 @@ export default function AdminCRM() {
   const profitUnit = newPublicPrice - totalCostUnitMxn;
   const marginPercent = newPublicPrice > 0 ? (profitUnit / newPublicPrice) * 100 : 0;
 
+  // Cálculos dinámicos de Oferta / Promoción
+  const promoPrice = newDiscountPercent > 0 ? Math.round(newPublicPrice * (1 - newDiscountPercent / 100)) : newPublicPrice;
+  const promoProfit = promoPrice - totalCostUnitMxn;
+  const promoMarginPercent = promoPrice > 0 ? (promoProfit / promoPrice) * 100 : 0;
+  const isPromoMarginSafe = newDiscountPercent === 0 || promoMarginPercent >= 50;
+
   // Conteos para Filtros de Inventario
   const countOutOfStock = products.filter(p => (p.stock || 0) <= 0).length;
   const countLowStock = products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= 3).length;
@@ -1662,6 +1674,7 @@ export default function AdminCRM() {
     setNewCostMxnDirect(prod.baseCostMxn || (prod.baseCostUsd ? prod.baseCostUsd * usdRate : 100.0));
     setCostInputMode('mxn');
     setNewPublicPrice(prod.publicPrice);
+    setNewDiscountPercent(prod.discountPercent || 0);
     setNewStock(prod.stock);
     setNewImageUrl(prod.images[0] || '');
     setNewImages(prod.images && prod.images.length > 0 ? prod.images : []);
@@ -1705,6 +1718,7 @@ export default function AdminCRM() {
     setNewCostMxnDirect(initialBaseMxn);
     setCostInputMode('mxn');
     setPriceMarkupPercent(100); // 100% de incremento por defecto
+    setNewDiscountPercent(0); // Sin descuento por defecto
     const defaultBatchFreight = (batches[0]?.costPerUnit || 20.0);
     const initialTotalCost = initialBaseMxn + defaultBatchFreight;
     setNewPublicPrice(Math.round(initialTotalCost * 2)); // Costo * (1 + 100%) = Costo * 2
@@ -1737,6 +1751,7 @@ export default function AdminCRM() {
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
+          discountPercent: newDiscountPercent,
           stock: newStock,
           imageUrl: finalImages[0],
           images: finalImages,
@@ -1757,6 +1772,7 @@ export default function AdminCRM() {
               shippingCostAllocated: shippingPerUnit,
               totalCostMxn: totalCostUnitMxn,
               publicPrice: newPublicPrice,
+              discountPercent: newDiscountPercent,
               profitUnit,
               marginPercent,
               stock: newStock,
@@ -1780,6 +1796,7 @@ export default function AdminCRM() {
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
           publicPrice: newPublicPrice,
+          discountPercent: newDiscountPercent,
           stock: newStock,
           imageUrl: finalImages[0],
           images: finalImages,
@@ -2129,6 +2146,37 @@ export default function AdminCRM() {
       alert(`Error al ajustar stock: ${err.message || 'Intenta de nuevo'}`);
     } finally {
       setSavingBulkStock(false);
+    }
+  };
+
+  // 10. APLICAR DESCUENTO PROMOCIONAL EN LOTE
+  const handleApplyBulkDiscount = async (discountVal: number) => {
+    if (selectedProductIds.length === 0) return;
+    setSavingBulkDiscount(true);
+    try {
+      await bulkUpdateProductsDiscount(selectedProductIds, discountVal);
+
+      // Actualizar optimistamente el estado local de productos
+      setProducts(prev => prev.map(p => {
+        if (selectedProductIds.includes(p.id)) {
+          return { ...p, discountPercent: discountVal };
+        }
+        return p;
+      }));
+
+      const count = selectedProductIds.length;
+      setShowBulkDiscountModal(false);
+      setSelectedProductIds([]);
+      if (discountVal > 0) {
+        alert(`¡Listo! Se activó la oferta del ${discountVal}% de descuento para ${count} producto(s). Ahora aparecerán destacados en la pestaña Promociones.`);
+      } else {
+        alert(`¡Listo! Se quitó la promoción de ${count} producto(s).`);
+      }
+    } catch (err: any) {
+      console.error("Error al aplicar descuento en lote:", err);
+      alert(`Error al actualizar descuentos: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setSavingBulkDiscount(false);
     }
   };
 
@@ -3715,6 +3763,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span>Etiquetas ({selectedProductIds.length})</span>
                   </button>
 
+                  {/* Aplicar Descuento / Oferta Masivo */}
+                  <button
+                    onClick={() => setShowBulkDiscountModal(true)}
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Aplicar oferta o descuento promocional a los seleccionados"
+                  >
+                    <Percent className="w-3.5 h-3.5 text-white" />
+                    <span>Oferta / Descuento</span>
+                  </button>
+
                   {/* Cambiar Categoría */}
                   <button
                     onClick={handleOpenBulkCategoryModal}
@@ -3852,7 +3910,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </span>
                           </td>
                           
-                          {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA */}
+                          {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA Y BADGE DE OFERTA */}
                           <td className="py-3.5 px-4 font-mono font-black bg-emerald-50/40">
                             {editingPriceId === p.id ? (
                               <div className="flex items-center gap-1">
@@ -3876,18 +3934,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 />
                               </div>
                             ) : (
-                              <div 
-                                onClick={() => {
-                                  setEditingPriceId(p.id);
-                                  setEditingPriceValue(p.publicPrice.toString());
-                                }}
-                                title="Clic para editar precio al instante"
-                                className="group/price flex items-center gap-1 cursor-pointer hover:bg-emerald-100/70 px-1.5 py-0.5 rounded transition text-emerald-800"
-                              >
-                                <span>${p.publicPrice.toFixed(2)}</span>
-                                <Edit3 className="w-3 h-3 text-emerald-500 opacity-0 group-hover/price:opacity-100 transition shrink-0" />
-                                {savingPriceId === p.id && (
-                                  <span className="text-[9px] text-emerald-600 font-sans font-bold animate-pulse">...</span>
+                              <div>
+                                <div 
+                                  onClick={() => {
+                                    setEditingPriceId(p.id);
+                                    setEditingPriceValue(p.publicPrice.toString());
+                                  }}
+                                  title="Clic para editar precio al instante"
+                                  className="group/price flex items-center gap-1 cursor-pointer hover:bg-emerald-100/70 px-1.5 py-0.5 rounded transition text-emerald-800"
+                                >
+                                  {p.discountPercent && p.discountPercent > 0 ? (
+                                    <div className="flex items-baseline gap-1">
+                                      <span className="text-[10px] text-slate-400 line-through">${p.publicPrice.toFixed(0)}</span>
+                                      <span className="text-xs font-black text-[#E65F2B]">
+                                        ${Math.round(p.publicPrice * (1 - p.discountPercent / 100))}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>${p.publicPrice.toFixed(2)}</span>
+                                  )}
+                                  <Edit3 className="w-3 h-3 text-emerald-500 opacity-0 group-hover/price:opacity-100 transition shrink-0" />
+                                  {savingPriceId === p.id && (
+                                    <span className="text-[9px] text-emerald-600 font-sans font-bold animate-pulse">...</span>
+                                  )}
+                                </div>
+                                {p.discountPercent && p.discountPercent > 0 && (
+                                  <span className="inline-block mt-0.5 bg-[#E65F2B] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                                    -{p.discountPercent}% OFF
+                                  </span>
                                 )}
                               </div>
                             )}
@@ -8535,7 +8609,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 </div>
 
-                {/* Banner de Resultado Financiero */}
+                {/* Banner de Resultado Financiero Regular */}
                 <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
                   <div>
                     <span className="text-slate-600 block text-[11px]">
@@ -8549,6 +8623,118 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className="text-[10px] text-slate-400 block uppercase">Margen Bruto</span>
                     <span className="text-sm font-black text-slate-900 font-mono">{marginPercent.toFixed(1)}%</span>
                   </div>
+                </div>
+
+                {/* 5. SECCIÓN DE OFERTAS Y PROMOCIONES (Descuento con Piso de Seguridad de Utilidad >= 50%) */}
+                <div className={`p-3 rounded-2xl border transition-all ${
+                  newDiscountPercent > 0 
+                    ? isPromoMarginSafe ? 'bg-gradient-to-r from-orange-50/70 via-amber-50/40 to-white border-orange-300 shadow-2xs' : 'bg-rose-50/70 border-rose-300'
+                    : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Percent className={`w-3.5 h-3.5 ${newDiscountPercent > 0 ? 'text-[#E65F2B]' : 'text-slate-400'}`} />
+                      <span className="font-bold text-slate-800 text-xs">
+                        Descuento de Oferta / Promoción:
+                      </span>
+                      {newDiscountPercent > 0 && (
+                        <span className="bg-[#E65F2B] text-white font-black text-[10px] px-2 py-0.5 rounded-full">
+                          -{newDiscountPercent}% OFF ACTIVO
+                        </span>
+                      )}
+                    </div>
+                    {/* Botón rápido para apagar promo */}
+                    {newDiscountPercent > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setNewDiscountPercent(0)}
+                        className="text-[10px] font-bold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
+                      >
+                        ✕ Quitar Oferta
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Botones de porcentaje de descuento recomendados */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      { label: 'Sin Oferta (0%)', val: 0 },
+                      { label: '10% OFF', val: 10 },
+                      { label: '15% OFF', val: 15 },
+                      { label: '20% OFF', val: 20 },
+                      { label: '25% OFF', val: 25 },
+                      { label: '30% OFF', val: 30 },
+                      { label: '40% OFF', val: 40 },
+                    ].map((item) => (
+                      <button
+                        key={item.val}
+                        type="button"
+                        onClick={() => setNewDiscountPercent(item.val)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          newDiscountPercent === item.val
+                            ? 'bg-[#E65F2B] text-white shadow-xs'
+                            : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+
+                    {/* Input para descuento libre personalizado */}
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold">Otro %:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="80"
+                        value={newDiscountPercent > 0 && ![10, 15, 20, 25, 30, 40].includes(newDiscountPercent) ? newDiscountPercent : ''}
+                        onChange={(e) => {
+                          const val = Math.max(0, Math.min(80, parseInt(e.target.value) || 0));
+                          setNewDiscountPercent(val);
+                        }}
+                        placeholder="%"
+                        className="w-10 text-xs font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Panel de resultado con el descuento aplicado */}
+                  {newDiscountPercent > 0 && (
+                    <div className="mt-2.5 pt-2.5 border-t border-orange-200/60 grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block">Precio de Oferta al Cliente:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-400 line-through text-xs">${newPublicPrice}</span>
+                          <span className="text-sm font-black text-[#E65F2B] font-mono">${promoPrice} MXN</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-500 block">Ganancia Tras Descuento:</span>
+                        <span className="text-xs font-black text-emerald-700 font-mono">
+                          +${promoProfit.toFixed(2)} MXN
+                        </span>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <span className="text-[10px] text-slate-500 block">Margen de Ganancia:</span>
+                        <div className="inline-flex items-center gap-1">
+                          <span className={`text-xs font-black font-mono ${isPromoMarginSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
+                            {promoMarginPercent.toFixed(1)}%
+                          </span>
+                          {isPromoMarginSafe ? (
+                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full border border-emerald-200" title="Margen protegido por encima del 50%">
+                              ✓ Seguro (&ge;50%)
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded-full border border-rose-200" title="Alerta: margen menor a 50%">
+                              ⚠️ Menor a 50%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 5. Fotografías del Producto (Compacto) */}
@@ -10105,6 +10291,158 @@ ${ticketImg}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL OFERTA / DESCUENTO MASIVO EN LOTE */}
+      {/* ======================================================== */}
+      {showBulkDiscountModal && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative border border-slate-200 animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => setShowBulkDiscountModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-[#E65F2B] shrink-0">
+                <Percent className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  Aplicar Descuento / Oferta en Lote
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Activará o desactivará la promoción en <span className="font-bold text-[#E65F2B]">{selectedProductIds.length}</span> producto(s) seleccionados.
+                </p>
+              </div>
+            </div>
+
+            {/* Lista previa de los primeros artículos seleccionados */}
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200">
+              <span className="text-[11px] font-bold text-slate-600 block mb-1.5">Productos seleccionados:</span>
+              <div className="max-h-28 overflow-y-auto space-y-1 pr-1 text-xs text-slate-700">
+                {products
+                  .filter(p => selectedProductIds.includes(p.id))
+                  .map(p => {
+                    const previewPromo = bulkDiscountSelected > 0 ? Math.round(p.publicPrice * (1 - bulkDiscountSelected / 100)) : p.publicPrice;
+                    const previewProfit = previewPromo - (p.totalCostMxn || 0);
+                    const previewMargin = previewPromo > 0 ? (previewProfit / previewPromo) * 100 : 0;
+                    return (
+                      <div key={p.id} className="flex items-center justify-between text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200">
+                        <span className="font-bold truncate max-w-[200px]">{p.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400 line-through font-mono">${p.publicPrice}</span>
+                          <span className="font-black text-[#E65F2B] font-mono">${previewPromo}</span>
+                          <span className={`text-[10px] font-bold ${previewMargin >= 50 ? 'text-emerald-700' : 'text-amber-600'}`}>
+                            ({previewMargin.toFixed(0)}% util.)
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <label className="text-xs font-bold text-slate-700 block">
+                Selecciona el Porcentaje de Descuento Promocional:
+              </label>
+
+              {/* Botones de porcentajes predefinidos */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {[
+                  { label: '10% OFF', val: 10 },
+                  { label: '15% OFF', val: 15 },
+                  { label: '20% OFF', val: 20 },
+                  { label: '25% OFF', val: 25 },
+                  { label: '30% OFF', val: 30 },
+                  { label: '40% OFF', val: 40 },
+                  { label: 'Quitar Oferta (0%)', val: 0, fullCol: true },
+                ].map((item) => (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => setBulkDiscountSelected(item.val)}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
+                      item.fullCol ? 'col-span-3 sm:col-span-2' : ''
+                    } ${
+                      bulkDiscountSelected === item.val
+                        ? item.val === 0 
+                          ? 'bg-slate-800 text-white shadow-xs' 
+                          : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs'
+                        : item.val === 0
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input porcentaje libre */}
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                <span className="text-xs font-bold text-slate-600">O escribe otro porcentaje manual:</span>
+                <div className="flex items-center gap-1 bg-white border border-slate-300 rounded-lg px-2.5 py-1">
+                  <input
+                    type="number"
+                    min="0"
+                    max="80"
+                    value={bulkDiscountSelected > 0 && ![10, 15, 20, 25, 30, 40].includes(bulkDiscountSelected) ? bulkDiscountSelected : ''}
+                    onChange={(e) => setBulkDiscountSelected(Math.max(0, Math.min(80, parseInt(e.target.value) || 0)))}
+                    placeholder="25"
+                    className="w-12 text-xs font-bold text-slate-900 outline-none text-right font-mono"
+                  />
+                  <span className="text-xs font-bold text-slate-400">%</span>
+                </div>
+              </div>
+
+              {/* Advertencia de política de piso de utilidad 50% */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[11px] text-amber-800 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p>
+                  <strong>Regla de negocio FoxDrop:</strong> Al aplicar promociones en la tienda, el sistema mostrará el precio tachado y badge <strong>-{bulkDiscountSelected}%</strong>, asegurando que la utilidad neta se mantenga lo más cercana o por encima del 50%.
+                </p>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDiscountModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={savingBulkDiscount}
+                  onClick={() => handleApplyBulkDiscount(bulkDiscountSelected)}
+                  className="flex-1 py-2.5 bg-[#E65F2B] hover:bg-[#D45321] text-white font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-orange-950/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {savingBulkDiscount ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Aplicando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>
+                        {bulkDiscountSelected === 0 
+                          ? `Quitar oferta de ${selectedProductIds.length} art.`
+                          : `Aplicar -${bulkDiscountSelected}% a ${selectedProductIds.length} art.`}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

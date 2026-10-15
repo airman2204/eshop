@@ -53,6 +53,7 @@ export interface NewProductInput {
   sku?: string;
   isCombo?: boolean;
   comboProductIds?: string[];
+  discountPercent?: number;
   isActive?: boolean;
 }
 
@@ -107,6 +108,25 @@ export async function bulkUpdateProductsCategory(productIds: string[], categoryN
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || "Error al actualizar categorías en lote");
+  }
+
+  const json = await res.json();
+  return json;
+}
+
+/**
+ * Aplica o retira un porcentaje de descuento promocional en lote a múltiples productos.
+ */
+export async function bulkUpdateProductsDiscount(productIds: string[], discountPercent: number) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "bulk_update_discount", productIds, discountPercent }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al actualizar descuentos en lote");
   }
 
   const json = await res.json();

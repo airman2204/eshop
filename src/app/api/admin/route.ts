@@ -599,6 +599,7 @@ export async function POST(req: NextRequest) {
         public_price: product.publicPrice || 0,
         stock: product.stock ?? 0,
         images: productImages,
+        discount_percent: Math.max(0, Number(product.discountPercent) || 0),
         is_active: product.isActive !== undefined ? Boolean(product.isActive) : true,
       };
 
@@ -614,11 +615,12 @@ export async function POST(req: NextRequest) {
         .select("*, categories(id, name, slug, icon)")
         .single();
 
-      // Si falla porque las columnas combo aún no se migran en la base de datos remota, reintentamos omitiendo los campos combo
-      if (error && (error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo"))) {
-        console.warn("Columnas combo no encontradas en Supabase, reintentando inserción básica:", error.message);
+      // Si falla porque columnas combo o discount_percent aún no se migran en la base de datos remota, reintentamos omitiendo los campos
+      if (error && (error.message?.includes("discount_percent") || error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo") || error.details?.includes("discount_percent"))) {
+        console.warn("Columnas no encontradas en Supabase al insertar, reintentando inserción básica:", error.message);
         delete insertRecord.is_combo;
         delete insertRecord.combo_product_ids;
+        delete insertRecord.discount_percent;
         const retryResult = await supabase
           .from("products")
           .insert([insertRecord])
@@ -646,6 +648,7 @@ export async function POST(req: NextRequest) {
       if (product.shippingCostAllocated !== undefined) payload.shipping_cost_allocated = product.shippingCostAllocated;
       if (product.publicPrice !== undefined) payload.public_price = product.publicPrice;
       if (product.stock !== undefined) payload.stock = product.stock;
+      if (product.discountPercent !== undefined) payload.discount_percent = Math.max(0, Number(product.discountPercent) || 0);
       if (product.isActive !== undefined) payload.is_active = Boolean(product.isActive);
       if (product.images && product.images.length > 0) {
         payload.images = product.images;
@@ -686,11 +689,12 @@ export async function POST(req: NextRequest) {
         .select("*, categories(id, name, slug, icon)")
         .single();
 
-      // Si falla por columnas combo no existentes, reintentamos omitiéndolas
-      if (error && (error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo"))) {
-        console.warn("Columnas combo no encontradas al actualizar, reintentando actualización básica:", error.message);
+      // Si falla por columnas combo o discount_percent no existentes, reintentamos omitiéndolas
+      if (error && (error.message?.includes("discount_percent") || error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo") || error.details?.includes("discount_percent"))) {
+        console.warn("Columnas no encontradas al actualizar, reintentando actualización básica:", error.message);
         delete payload.is_combo;
         delete payload.combo_product_ids;
+        delete payload.discount_percent;
         const retryResult = await supabase
           .from("products")
           .update(payload)
@@ -751,6 +755,33 @@ export async function POST(req: NextRequest) {
         updatedCount: updatedProds?.length || productIds.length,
         categoryName: catTrimmed,
         categoryId: catData.id
+      });
+    }
+
+    // ─── APLICAR DESCUENTO PROMOCIONAL EN LOTE ─────────────────────────────
+    if (action === "bulk_update_discount") {
+      const { productIds, discountPercent } = body;
+      if (!Array.isArray(productIds) || productIds.length === 0) {
+        return NextResponse.json({ error: "productIds (array) requerido" }, { status: 400 });
+      }
+
+      const validDiscount = Math.max(0, Math.min(90, Number(discountPercent) || 0));
+
+      const { data: updatedProds, error: bulkError } = await supabase
+        .from("products")
+        .update({
+          discount_percent: validDiscount,
+          updated_at: new Date().toISOString()
+        })
+        .in("id", productIds)
+        .select("id, title, discount_percent");
+
+      if (bulkError) throw bulkError;
+
+      return NextResponse.json({
+        success: true,
+        updatedCount: updatedProds?.length || productIds.length,
+        discountPercent: validDiscount
       });
     }
 

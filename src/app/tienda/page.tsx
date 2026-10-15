@@ -513,16 +513,8 @@ export default function TiendaFoxDrop() {
     return { name: catName, icon };
   });
 
-  // Productos con descuento real o productos destacados para Deals del Mes
-  const dealsProducts = (() => {
-    const withRealDiscount = products.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
-    if (withRealDiscount.length > 0) return withRealDiscount;
-    // Si en base de datos no se ha asignado discountPercent aún, creamos ofertas promocionales automáticas con los primeros productos
-    return products.slice(0, 4).map((p, idx) => ({
-      ...p,
-      discountPercent: idx % 2 === 0 ? 20 : 15,
-    }));
-  })();
+  // Productos con descuento real para Promociones / Deals
+  const dealsProducts = products.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
 
   // Filtrado dinámico por búsqueda de palabras clave (sin acentos, flexible) y categoría
   const baseFilteredProducts = products.filter(p => {
