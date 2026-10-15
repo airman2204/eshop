@@ -4577,62 +4577,7 @@ export default function TiendaFoxDrop() {
                     </button>
                   </div>
 
-                  {/* ESTIMADOR RÁPIDO DE ENVÍO POR CÓDIGO POSTAL */}
-                  <div className="bg-[#FAF6F0] border border-[#E8DFC8] rounded-xl p-3 space-y-2 text-xs">
-                    <span className="font-bold text-gray-800 flex items-center gap-1 text-[11px]">
-                      <Truck className="w-3.5 h-3.5 text-[#DF7F2D]" />
-                      <span>Calcular entrega a tu Código Postal:</span>
-                    </span>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        maxLength={5}
-                        placeholder="C.P. (ej. 72000)"
-                        value={modalZipCode}
-                        onChange={(e) => setModalZipCode(e.target.value.replace(/\D/g, ''))}
-                        className="flex-1 bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs text-gray-900 font-mono outline-none focus:border-[#DF7F2D]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const cp = modalZipCode.trim();
-                          if (cp.length < 5) return;
-                          // Si es zona conurbada de Puebla/Cholula
-                          const isLocal = cp.startsWith('72') || cp.startsWith('73');
-                          if (isLocal) {
-                            setModalShippingEstimate({
-                              zip: cp,
-                              cost: 0,
-                              time: 'Mismo día o 24 hrs',
-                              label: 'Entrega local personal o motoexpress',
-                            });
-                          } else {
-                            setModalShippingEstimate({
-                              zip: cp,
-                              cost: 150,
-                              time: '2 a 4 días hábiles',
-                              label: 'Envío Nacional Estafeta / FedEx',
-                            });
-                          }
-                        }}
-                        className="bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold px-3 py-1.5 rounded-lg text-[11px] transition cursor-pointer"
-                      >
-                        Calcular
-                      </button>
-                    </div>
 
-                    {modalShippingEstimate && (
-                      <div className="bg-white p-2 rounded-lg border border-emerald-200 text-[11px] space-y-0.5 animate-in fade-in">
-                        <div className="flex items-center justify-between font-bold text-gray-900">
-                          <span>{modalShippingEstimate.label}</span>
-                          <span className="text-emerald-700 font-black">
-                            {modalShippingEstimate.cost === 0 ? '¡GRATIS / Acordar!' : `$${modalShippingEstimate.cost} MXN`}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-[10px]">Tiempo estimado: <strong>{modalShippingEstimate.time}</strong></p>
-                      </div>
-                    )}
-                  </div>
 
                   {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS */}
                   {getCrossSellRecommendations(selectedProduct, products, 2).length > 0 && (
