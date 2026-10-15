@@ -157,26 +157,68 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ─── GENERACIÓN / HOMOGENEIZACIÓN DE IMAGEN CON IA (ESTILO ESTUDIO FOXDROP) ────
+    // ─── GENERACIÓN / HOMOGENEIZACIÓN DE IMAGEN CON IA (ESTILO ESTUDIO FOXDROP O USO COTIDIANO / LIFESTYLE) ────
     if (action === "generate_ai_image") {
-      const { title, category, inputImage } = body;
+      const { title, category, inputImage, customPrompt } = body;
       if (!title || typeof title !== "string") {
         return NextResponse.json({ error: "Título del producto requerido" }, { status: 400 });
       }
 
       let imageBuffer: Buffer | null = null;
       let mimeType = "image/png";
+      const hasCustomPrompt = customPrompt && typeof customPrompt === "string" && customPrompt.trim().length > 0;
+      const cleanCustomPrompt = hasCustomPrompt ? customPrompt.trim() : "";
 
-      // ── MODO 1: SI EL USUARIO YA SUBIÓ O PEGÓ UNA FOTO REAL DEL PRODUCTO ──
-      // Extraemos el objeto real y le colocamos el fondo de estudio neutro homogéneo
-      if (inputImage && typeof inputImage === "string" && inputImage.trim().length > 0) {
+      // ── MODO 1: SI HAY PROMPT DE USO COTIDIANO / LIFESTYLE (FOTO EN CONTEXTO REAL) ──
+      if (hasCustomPrompt) {
+        const lifestylePrompt = `Commercial lifestyle photography of ${title.trim()} (${category || 'product'}), naturally integrated in real everyday context: ${cleanCustomPrompt}. High-end editorial aesthetic, ultra-realistic, authentic lighting, 8k resolution, crisp focus on the product, natural surrounding environment, professional magazine shot, cinematic depth of field, no distorted text, no watermarks.`;
+
+        // Si hay foto de referencia, alimentamos image-to-image para preservar la identidad del producto
+        if (inputImage && typeof inputImage === "string" && inputImage.trim().length > 0) {
+          try {
+            const cleanInputUrl = inputImage.trim();
+            const seed = Math.floor(100000 + Math.random() * 900000);
+            const contextUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(lifestylePrompt)}?image=${encodeURIComponent(cleanInputUrl)}&width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
+            
+            const res = await fetch(contextUrl, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+            });
+
+            if (res.ok) {
+              const arrBuf = await res.arrayBuffer();
+              imageBuffer = Buffer.from(arrBuf);
+              mimeType = res.headers.get("content-type") || "image/jpeg";
+            }
+          } catch (lifeErr) {
+            console.warn("Fallo en generación lifestyle condicionada a imagen:", lifeErr);
+          }
+        }
+
+        // Si no hay imagen de referencia o falló, generamos la escena lifestyle desde cero
+        if (!imageBuffer) {
+          try {
+            const seed = Math.floor(100000 + Math.random() * 900000);
+            const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(lifestylePrompt)}?width=800&height=800&seed=${seed}&nologo=true&enhance=true&model=flux`;
+            
+            const fluxRes = await fetch(fluxUrl, {
+              headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" }
+            });
+
+            if (fluxRes.ok) {
+              const arrBuf = await fluxRes.arrayBuffer();
+              imageBuffer = Buffer.from(arrBuf);
+              mimeType = fluxRes.headers.get("content-type") || "image/jpeg";
+            }
+          } catch (fluxErr) {
+            console.error("Error en generación lifestyle desde cero:", fluxErr);
+          }
+        }
+      }
+
+      // ── MODO 2: FOTO DE ESTUDIO CON RECORTADOR INTELIGENTE (CUANDO YA HAY FOTO REAL Y NO HAY PROMPT PERSONALIZADO) ──
+      if (!imageBuffer && inputImage && typeof inputImage === "string" && inputImage.trim().length > 0) {
         try {
-          // Si inputImage es URL remota o Data URL, procesamos la extracción de fondo
-          // Usamos el servicio de recorte inteligente sin alterar la forma ni los colores del producto
           const cleanInputUrl = inputImage.trim();
-          const removeBgEndpoint = `https://api.remove.bg/v1.0/removebg`;
-          
-          // Fallback a motor público de extracción de fondo transparente de alta fidelidad
           const extractUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(`Product cutout of ${title.trim()}, isolated on clean light grey solid studio background #f3f4f6, subtle floor shadow, centered e-commerce catalog photography`)}?image=${encodeURIComponent(cleanInputUrl)}&nologo=true&width=800&height=800`;
           
           const remRes = await fetch(extractUrl, {
@@ -195,7 +237,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // ── MODO 2: GENERACIÓN DESDE CERO (SI NO HAY FOTO DE REFERENCIA) ──
+      // ── MODO 3: GENERACIÓN DE ESTUDIO DESDE CERO (SIN FOTO DE REFERENCIA NI PROMPT PERSONALIZADO) ──
       if (!imageBuffer) {
         const apiKey = process.env.GEMINI_API_KEY || "";
         const visualPrompt = `Professional commercial studio product photography of: ${title.trim()}, category ${category || 'electronics'}. Centered hero composition, seamless clean minimalist light neutral grey studio backdrop (#f3f4f6), soft diffused dual-light studio illumination, elegant subtle ground contact shadow, ultra-realistic textures, 4k sharp details, premium e-commerce look, no watermarks, no background clutter, no text.`;

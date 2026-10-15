@@ -145,6 +145,8 @@ export default function AdminCRM() {
   const [selectedComboProductIds, setSelectedComboProductIds] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [generatingAiImage, setGeneratingAiImage] = useState(false);
+  const [lifestylePrompt, setLifestylePrompt] = useState('');
+  const [generatingLifestyle, setGeneratingLifestyle] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [newIsActive, setNewIsActive] = useState(true);
 
@@ -1583,6 +1585,43 @@ export default function AdminCRM() {
       alert('No se pudo procesar la imagen con IA en este momento. Puedes usar "Buscar en Google" o pegar una imagen.');
     } finally {
       setGeneratingAiImage(false);
+    }
+  };
+
+  // Generar Fotografía de Uso Cotidiano / Lifestyle con IA basada en la foto real y prompt del usuario
+  const handleGenerateLifestyleImage = async () => {
+    if (!newTitle.trim()) {
+      alert('Por favor escribe primero el nombre o título del producto arriba.');
+      return;
+    }
+    if (!lifestylePrompt.trim()) {
+      alert('Por favor escribe una escena cotidiana (ej. "puesto en el tablero de un carro moderno") o selecciona uno de los botones rápidos.');
+      return;
+    }
+
+    setGeneratingLifestyle(true);
+    setUploadSuccess(false);
+    try {
+      // Priorizamos la foto de portada o la que esté en newImageUrl/newImages[0]
+      const referenceImage = newImageUrl || (newImages.length > 0 ? newImages[0] : undefined);
+      const generatedUrl = await generateProductImageWithAi(
+        newTitle.trim(),
+        newCategory,
+        referenceImage,
+        lifestylePrompt.trim()
+      );
+      
+      // Añadir la foto lifestyle a la galería de fotos
+      setNewImages(prev => prev.includes(generatedUrl) ? prev : [...prev, generatedUrl]);
+      if (!newImageUrl) {
+        setNewImageUrl(generatedUrl);
+      }
+      setUploadSuccess(true);
+    } catch (err: any) {
+      console.error('Error al generar foto en contexto real con IA:', err);
+      alert('No se pudo generar la foto en escena con IA en este momento. Intenta con una descripción más breve.');
+    } finally {
+      setGeneratingLifestyle(false);
     }
   };
 
@@ -8371,6 +8410,91 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         }}
                         className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
                       />
+                    </div>
+
+                    {/* ✨ Generador de Foto en Uso Cotidiano / Lifestyle con IA ✨ */}
+                    <div className="mt-3 bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/70 border border-indigo-200/80 rounded-2xl p-3.5 space-y-2.5 shadow-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-xs text-indigo-950 flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
+                            Foto en Uso Cotidiano con IA (Lifestyle / En Escena)
+                          </span>
+                          <p className="text-[10.5px] text-indigo-900/70 mt-0.5 leading-snug">
+                            Escribe una escena o usa un atajo para que la IA tome la foto de tu producto y lo ambiente en un contexto real de la vida cotidiana.
+                          </p>
+                        </div>
+                        {newImages.length > 0 && (
+                          <span className="text-[9px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full shrink-0 border border-indigo-200">
+                            Usa tu foto como base ✓
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Atajos Rápidos de Escenas */}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        <span className="text-[10px] font-bold text-indigo-900/60 self-center mr-1">Atajos:</span>
+                        {[
+                          { label: '🚗 En carro / ventilila', prompt: 'Montado de forma elegante en la rejilla de ventilación del tablero de un auto moderno de lujo con luz de día' },
+                          { label: '🛁 En baño limpio', prompt: 'Puesto sobre el lavabo de mármol de un baño moderno y limpio con toallas y luz natural' },
+                          { label: '🛋️ En sala / mesa', prompt: 'Colocado sobre una mesa de centro de madera en una sala de estar moderna y acogedora' },
+                          { label: '💼 En oficina / escritorio', prompt: 'Sobre un escritorio de oficina ordenado junto a una laptop y una taza de café moderna' },
+                          { label: '🛏️ En recámara', prompt: 'Puesto en el buró o mesa de noche de una recámara minimalista y moderna' },
+                        ].map((preset, pIdx) => (
+                          <button
+                            key={pIdx}
+                            type="button"
+                            onClick={() => setLifestylePrompt(preset.prompt)}
+                            className="text-[10px] bg-white hover:bg-indigo-50 text-indigo-800 border border-indigo-200 px-2 py-1 rounded-lg transition font-medium shadow-2xs hover:border-indigo-300"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Input de Prompt Personalizado */}
+                      <div className="space-y-1.5">
+                        <div className="relative">
+                          <textarea
+                            rows={2}
+                            placeholder="Escribe el prompt de uso cotidiano... (ej. Puesto en el tablero de un carro, en la mano de una persona usando el producto, etc.)"
+                            value={lifestylePrompt}
+                            onChange={(e) => setLifestylePrompt(e.target.value)}
+                            disabled={generatingLifestyle}
+                            className="w-full bg-white border border-indigo-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-500 resize-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-400">
+                            {newImages.length === 0 ? '💡 Recomendación: Primero sube o pega una foto del producto' : '✓ Se añadirá automáticamente a la galería'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleGenerateLifestyleImage}
+                            disabled={generatingLifestyle || !newTitle.trim()}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer ${
+                              generatingLifestyle
+                                ? 'bg-indigo-300 text-white cursor-not-allowed'
+                                : !newTitle.trim()
+                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                            }`}
+                          >
+                            {generatingLifestyle ? (
+                              <>
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Generando Escena Cotidiana...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Generar Foto en Escena Real</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
