@@ -139,6 +139,7 @@ export default function AdminCRM() {
   const [newCostUsd, setNewCostUsd] = useState(5.00);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
+  const [priceMarkupPercent, setPriceMarkupPercent] = useState<number>(100);
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImages, setNewImages] = useState<string[]>([]);
@@ -1669,14 +1670,27 @@ export default function AdminCRM() {
     setNewIsActive(prod.isActive !== false);
 
     // Emparejar lote exacto: primero por batchId, luego por coincidencia de flete unitario (+- $0.05 MXN)
+    let assignedBatch = null;
     if (prod.batchId) {
       setSelectedBatchId(prod.batchId);
+      assignedBatch = batches.find(b => b.id === prod.batchId);
     } else {
       const matchedBatch = batches.find(b => Math.abs(b.costPerUnit - (prod.shippingCostAllocated || 0)) < 0.05);
       if (matchedBatch) {
         setSelectedBatchId(matchedBatch.id);
+        assignedBatch = matchedBatch;
       }
     }
+
+    // Calcular qué porcentaje de incremento tiene ya aplicado este producto existente
+    const prodTotalCost = (prod.baseCostMxn || 0) + (assignedBatch?.costPerUnit || prod.shippingCostAllocated || 0);
+    if (prodTotalCost > 0 && prod.publicPrice > 0) {
+      const existingMarkup = Math.round(((prod.publicPrice - prodTotalCost) / prodTotalCost) * 100);
+      setPriceMarkupPercent(Math.max(10, Math.min(300, existingMarkup)));
+    } else {
+      setPriceMarkupPercent(100);
+    }
+
     setShowAddModal(true);
   };
 
@@ -1687,9 +1701,13 @@ export default function AdminCRM() {
     setNewSku('');
     setNewCategory('Electrónica');
     setNewCostUsd(5.00);
-    setNewCostMxnDirect(100.00);
+    const initialBaseMxn = 100.00;
+    setNewCostMxnDirect(initialBaseMxn);
     setCostInputMode('mxn');
-    setNewPublicPrice(230.00);
+    setPriceMarkupPercent(100); // 100% de incremento por defecto
+    const defaultBatchFreight = (batches[0]?.costPerUnit || 20.0);
+    const initialTotalCost = initialBaseMxn + defaultBatchFreight;
+    setNewPublicPrice(Math.round(initialTotalCost * 2)); // Costo * (1 + 100%) = Costo * 2
     setNewStock(15);
     setNewImageUrl('');
     setNewImages([]);
@@ -8399,7 +8417,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 </div>
 
-                {/* 4. Costo Base y Precio de Venta (Finanzas Claras) */}
+                {/* 4. Costo Base y Precio de Venta con Deslizante de Margen Dinámico (100% a 190%) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {/* Costo Base */}
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
@@ -8410,7 +8428,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <button
                         type="button"
                         onClick={() => setCostInputMode(costInputMode === 'mxn' ? 'usd' : 'mxn')}
-                        className="text-[10px] text-[#E65F2B] hover:underline font-bold"
+                        className="text-[10px] text-[#E65F2B] hover:underline font-bold cursor-pointer"
                       >
                         {costInputMode === 'mxn' ? 'Cambiar a USD' : 'Cambiar a MXN'}
                       </button>
@@ -8423,7 +8441,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           type="number"
                           step="1"
                           value={newCostMxnDirect}
-                          onChange={e => setNewCostMxnDirect(parseFloat(e.target.value) || 0)}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setNewCostMxnDirect(val);
+                            // Al escribir costo base, recalcular precio de venta con el margen actual
+                            const autoTotalCost = val + shippingPerUnit;
+                            setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
+                          }}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
                         />
                       ) : (
@@ -8431,51 +8455,82 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           type="number"
                           step="0.1"
                           value={newCostUsd}
-                          onChange={e => setNewCostUsd(parseFloat(e.target.value) || 0)}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setNewCostUsd(val);
+                            const autoTotalCost = (val * usdRate) + shippingPerUnit;
+                            setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
+                          }}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
                         />
                       )}
                     </div>
-                    <span className="text-[10px] text-slate-400 mt-0.5 block font-mono">
-                      {costInputMode === 'mxn'
-                        ? `Equivale a aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
-                        : `Equivale a $${costMxn.toFixed(2)} MXN`}
-                    </span>
+                    <div className="mt-1 flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400 font-mono">
+                        {costInputMode === 'mxn'
+                          ? `Aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
+                          : `Equivale a $${costMxn.toFixed(2)} MXN`}
+                      </span>
+                      <span className="text-slate-600 font-bold font-mono">
+                        +${shippingPerUnit.toFixed(2)} flete = <strong className="text-slate-900">${totalCostUnitMxn.toFixed(2)}</strong>
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Precio Venta */}
-                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <label className="text-slate-700 font-bold block mb-1 text-xs">Precio Venta Público (MXN):</label>
+                  {/* Precio Venta con Deslizante (Slider 100% a 190%) */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-slate-700 font-bold text-xs">Precio Venta Público (MXN):</label>
+                      <span className="font-bold text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
+                        +{priceMarkupPercent}% sobre costo
+                      </span>
+                    </div>
+
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
                       <input
                         type="number"
                         value={newPublicPrice}
-                        onChange={e => setNewPublicPrice(parseFloat(e.target.value) || 0)}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setNewPublicPrice(val);
+                          if (totalCostUnitMxn > 0) {
+                            const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
+                            setPriceMarkupPercent(Math.max(10, Math.min(300, calculatedMarkup)));
+                          }
+                        }}
                         className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
                       />
                     </div>
-                    {/* Botones de cálculo rápido de margen deseado */}
-                    <div className="flex items-center gap-1 mt-1 flex-wrap">
-                      <span className="text-[9px] text-slate-400 font-bold">Margen:</span>
-                      {[
-                        { label: '+30%', margin: 0.30 },
-                        { label: '+40%', margin: 0.40 },
-                        { label: '+50%', margin: 0.50 },
-                        { label: '+100%', margin: 1.00 },
-                      ].map(preset => {
-                        const suggestedPrice = Math.round(totalCostUnitMxn / (1 - (preset.margin === 1.0 ? 0.5 : preset.margin)));
-                        return (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            onClick={() => setNewPublicPrice(suggestedPrice)}
-                            className="text-[9px] px-1.5 py-0.5 rounded bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold transition cursor-pointer"
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
+
+                    {/* Deslizante interactivo de 100% a 190% */}
+                    <div className="pt-1 space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
+                        <span>100% (Duplicar)</span>
+                        <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                          {priceMarkupPercent}%
+                        </span>
+                        <span>190% (Casi el triple)</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={100}
+                        max={190}
+                        step={5}
+                        value={Math.max(100, Math.min(190, priceMarkupPercent))}
+                        onChange={e => {
+                          const newMarkup = parseInt(e.target.value);
+                          setPriceMarkupPercent(newMarkup);
+                          const calculatedPrice = Math.round(totalCostUnitMxn * (1 + newMarkup / 100));
+                          setNewPublicPrice(calculatedPrice);
+                        }}
+                        className="w-full accent-[#E65F2B] cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                      />
+                      <div className="flex items-center justify-between text-[9px] text-slate-400">
+                        <span>+$100% ($ {(totalCostUnitMxn * 2).toFixed(0)})</span>
+                        <span className="font-bold text-emerald-600">Ganancia: +${profitUnit.toFixed(2)} MXN</span>
+                        <span>+$190% ($ {(totalCostUnitMxn * 2.9).toFixed(0)})</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -8486,12 +8541,12 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className="text-slate-600 block text-[11px]">
                       Costo Total: <strong className="text-slate-900 font-mono">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
                     </span>
-                    <span className="text-xs font-black text-emerald-700">
-                      Ganancia Neta: +${profitUnit.toFixed(2)} MXN
+                    <span className="text-xs font-black text-emerald-700 font-mono">
+                      Ganancia Neta en Pesos: +${profitUnit.toFixed(2)} MXN (+{priceMarkupPercent}% de incremento)
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase">Margen</span>
+                    <span className="text-[10px] text-slate-400 block uppercase">Margen Bruto</span>
                     <span className="text-sm font-black text-slate-900 font-mono">{marginPercent.toFixed(1)}%</span>
                   </div>
                 </div>
