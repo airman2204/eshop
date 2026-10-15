@@ -9,7 +9,7 @@ import {
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
   Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy,
-  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp
+  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp, TrendingUp, Coins
 } from 'lucide-react';
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
@@ -90,15 +90,45 @@ export default function TiendaFoxDrop() {
   const [activeModalImageIndex, setActiveModalImageIndex] = useState(0);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
-  const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc'>('default');
+  const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
   // Filtros avanzados: Rango de precio y solo en stock
   const [priceFilter, setPriceFilter] = useState<'all' | 'under150' | '150to350' | 'above350'>('all');
   const [inStockOnly, setInStockOnly] = useState(false);
 
-  // Búsqueda predictiva con desplegable rápido
+  // Búsqueda predictiva con historial y búsquedas populares
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const POPULAR_SEARCHES = ['Difusores', 'Aromatizantes', 'Apple Watch', 'Skincare', 'Perfumes', 'Combos'];
+
+  // Cargar historial de búsquedas de localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('foxdrop_recent_searches');
+      if (stored) setRecentSearches(JSON.parse(stored).slice(0, 5));
+    } catch {}
+  }, []);
+
+  const saveSearchTerm = (term: string) => {
+    const clean = term.trim();
+    if (!clean) return;
+    setRecentSearches(prev => {
+      const updated = [clean, ...prev.filter(s => s.toLowerCase() !== clean.toLowerCase())].slice(0, 5);
+      try { localStorage.setItem('foxdrop_recent_searches', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  };
+
+  const clearRecentSearches = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRecentSearches([]);
+    try { localStorage.removeItem('foxdrop_recent_searches'); } catch {}
+  };
+
+  // Zoom interactivo en modal de producto
+  const [isZoomActive, setIsZoomActive] = useState(false);
+  const [zoomCoords, setZoomCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
 
   // Cupones de descuento promocionales en checkout
   const [couponInput, setCouponInput] = useState('');
@@ -569,12 +599,14 @@ export default function TiendaFoxDrop() {
       prods = baseFilteredProducts.slice(0, 8);
     }
 
-    // Ordenamiento por precio y A-Z
+    // Ordenamiento por precio, descuento y A-Z
     const sorted = [...prods];
     if (sortBy === 'price_asc') {
       sorted.sort((a, b) => a.publicPrice - b.publicPrice);
     } else if (sortBy === 'price_desc') {
       sorted.sort((a, b) => b.publicPrice - a.publicPrice);
+    } else if (sortBy === 'discount_desc') {
+      sorted.sort((a, b) => (b.discountPercent || 0) - (a.discountPercent || 0));
     } else if (sortBy === 'name_asc') {
       sorted.sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
     } else if (sortBy === 'name_desc') {
@@ -1503,51 +1535,123 @@ export default function TiendaFoxDrop() {
                 </button>
               )}
 
-              {/* DESPLEGABLE DE BÚSQUEDA PREDICTIVA CON PRODUCTOS EN VIVO */}
-              {isSearchFocused && searchSuggestions.length > 0 && (
+              {/* DESPLEGABLE DE BÚSQUEDA PREDICTIVA CON HISTORIAL Y POPULARES */}
+              {isSearchFocused && (
                 <div 
                   onMouseDown={(e) => e.preventDefault()} 
                   className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-1"
                 >
-                  <div className="p-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-500">
-                    <span>Sugerencias rápidas</span>
-                    <span className="text-[#DF7F2D] font-mono">{searchSuggestions.length} encontrados</span>
-                  </div>
-                  <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-                    {searchSuggestions.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => {
-                          setSelectedProduct(item);
-                          setModalQuantity(1);
-                          setIsSearchFocused(false);
-                        }}
-                        className="p-2.5 flex items-center gap-2.5 hover:bg-orange-50/60 cursor-pointer transition text-left"
-                      >
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
-                          <img src={item.images?.[0] || '/no-image.svg'} alt={item.title} className="w-full h-full object-contain" />
+                  {searchTerm.trim().length >= 2 ? (
+                    searchSuggestions.length > 0 ? (
+                      <>
+                        <div className="p-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-500">
+                          <span>Sugerencias rápidas</span>
+                          <span className="text-[#DF7F2D] font-mono">{searchSuggestions.length} encontrados</span>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
-                          <div className="flex items-center justify-between mt-0.5">
-                            <span className="text-[10px] text-gray-400 capitalize">{item.category}</span>
-                            <span className="text-xs font-black text-[#DF7F2D] font-mono">${item.publicPrice.toFixed(0)} MXN</span>
+                        <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+                          {searchSuggestions.map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => {
+                                saveSearchTerm(item.title);
+                                setSelectedProduct(item);
+                                setModalQuantity(1);
+                                setIsSearchFocused(false);
+                              }}
+                              className="p-2.5 flex items-center gap-2.5 hover:bg-orange-50/60 cursor-pointer transition text-left"
+                            >
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
+                                <img src={item.images?.[0] || '/no-image.svg'} alt={item.title} className="w-full h-full object-contain" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
+                                <div className="flex items-center justify-between mt-0.5">
+                                  <span className="text-[10px] text-gray-400 capitalize">{item.category}</span>
+                                  <span className="text-xs font-black text-[#DF7F2D] font-mono">${item.publicPrice.toFixed(0)} MXN</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            saveSearchTerm(searchTerm);
+                            setIsSearchFocused(false);
+                            const el = document.getElementById('catalog-section');
+                            el?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-center text-[11px] font-bold text-[#0F3E36] border-t border-gray-100 transition"
+                        >
+                          Ver todos los resultados en el catálogo →
+                        </button>
+                      </>
+                    ) : (
+                      <div className="p-4 text-center text-xs text-gray-500 space-y-1">
+                        <p className="font-semibold text-gray-700">Sin coincidencias exactas</p>
+                        <p className="text-[11px] text-gray-400">Intenta buscar por categoría o palabra clave.</p>
+                      </div>
+                    )
+                  ) : (
+                    /* HISTORIAL RECIENTE Y BÚSQUEDAS POPULARES */
+                    <div className="p-3 space-y-3 text-xs">
+                      {recentSearches.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 mb-1.5">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-gray-400" /> Búsquedas recientes
+                            </span>
+                            <button 
+                              onClick={clearRecentSearches}
+                              className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                            >
+                              Borrar
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {recentSearches.map((s, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  setSearchTerm(s);
+                                  setSelectedCategory('Todas');
+                                  setIsSearchFocused(false);
+                                  const el = document.getElementById('catalog-section');
+                                  el?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-[11px] font-medium transition cursor-pointer flex items-center gap-1"
+                              >
+                                <span>{s}</span>
+                              </button>
+                            ))}
                           </div>
                         </div>
+                      )}
+
+                      <div>
+                        <span className="text-[11px] font-bold text-gray-500 block mb-1.5 flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3 text-[#DF7F2D]" /> Más buscados
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {POPULAR_SEARCHES.map((tag, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setSearchTerm(tag);
+                                setSelectedCategory('Todas');
+                                setIsSearchFocused(false);
+                                const el = document.getElementById('catalog-section');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="px-2.5 py-1 bg-[#FAF6F0] hover:bg-orange-100/70 border border-orange-200/60 rounded-lg text-gray-800 text-[11px] font-semibold transition cursor-pointer"
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSearchFocused(false);
-                      const el = document.getElementById('catalog-section');
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-center text-[11px] font-bold text-[#0F3E36] border-t border-gray-100 transition"
-                  >
-                    Ver todos los resultados en el catálogo →
-                  </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1986,6 +2090,7 @@ export default function TiendaFoxDrop() {
                 className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
               >
                 <option value="default">Recomendados / Novedades</option>
+                <option value="discount_desc">Mayor Descuento (% OFF 🔥)</option>
                 <option value="price_asc">Precio: Menor a Mayor ($ ↑)</option>
                 <option value="price_desc">Precio: Mayor a Menor ($ ↓)</option>
                 <option value="name_asc">Nombre: A - Z</option>
@@ -2046,7 +2151,24 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {loadingProducts ? (
+          /* SKELETON SCREENS DURANTE CARGA DE PRODUCTOS */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5 animate-pulse">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <div key={n} className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-3.5 space-y-3">
+                <div className="aspect-square bg-slate-100 rounded-2xl w-full" />
+                <div className="space-y-2">
+                  <div className="h-3.5 bg-slate-100 rounded-md w-3/4" />
+                  <div className="h-2.5 bg-slate-100 rounded-md w-1/2" />
+                </div>
+                <div className="pt-2 flex items-center justify-between">
+                  <div className="h-5 bg-slate-100 rounded-md w-16" />
+                  <div className="h-7 w-7 bg-slate-100 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center space-y-3">
             <p className="text-gray-500 font-medium text-sm">No se encontraron productos en esta categoría o selección.</p>
             <button
@@ -3081,6 +3203,44 @@ export default function TiendaFoxDrop() {
                     </div>
                   );
                 })()}
+
+                {/* CALCULADORA INTERACTIVA DE VALOR Y CANJE DE PUNTOS */}
+                <div className="bg-[#FAF6F0] rounded-2xl p-5 border border-orange-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#DF7F2D] flex items-center justify-center font-bold">
+                        <Coins className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-gray-900 tracking-wide">Calculadora de Canje</h4>
+                        <p className="text-[11px] text-gray-500">Convierte tus puntos acumulados en dinero de descuento para tu siguiente pedido.</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono font-black text-[#0F3E36] bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs">
+                      10 pts = $1.00 MXN
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-gray-500 block">Tu saldo actual disponible:</span>
+                      <span className="text-lg font-black text-[#DF7F2D] font-mono">
+                        {user?.points ?? 0} {clubSettings?.currencySymbol || '⭐'}
+                      </span>
+                    </div>
+
+                    <div className="sm:text-right border-t sm:border-t-0 sm:border-l border-gray-100 pt-2 sm:pt-0 sm:pl-4">
+                      <span className="text-xs text-gray-500 block">Valor directo en descuento:</span>
+                      <span className="text-lg font-black text-emerald-700 font-mono">
+                        ${(((user?.points ?? 0) / 10)).toFixed(2)} MXN
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-500 leading-relaxed">
+                    💡 <em>Tip: Al finalizar tu compra en la tienda web, tus puntos se aplicarán automáticamente como saldo a favor en el total a liquidar.</em>
+                  </p>
+                </div>
 
                 <div className="bg-white rounded-2xl p-5 border border-gray-200 space-y-3">
                   <h4 className="text-xs font-black uppercase text-gray-900 tracking-wide">Niveles de Membresía</h4>
@@ -4197,17 +4357,36 @@ export default function TiendaFoxDrop() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
               {/* IMAGEN PRINCIPAL Y SELECTOR DE FOTOS MÚLTIPLES */}
               <div className="space-y-3">
-                <div className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden">
+                <div 
+                  onMouseEnter={() => setIsZoomActive(true)}
+                  onMouseLeave={() => setIsZoomActive(false)}
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    setZoomCoords({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+                  }}
+                  className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden cursor-crosshair group"
+                >
                   <img
                     src={selectedProduct.images[activeModalImageIndex] || selectedProduct.images[0]}
                     alt={selectedProduct.title}
-                    className="max-h-full object-contain transition-all duration-300"
+                    style={isZoomActive ? {
+                      transform: 'scale(2.2)',
+                      transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`
+                    } : {}}
+                    className="max-h-full object-contain transition-transform duration-100 ease-out pointer-events-none select-none"
                   />
                   {selectedProduct.isCombo && (
-                    <span className="absolute top-3 left-3 bg-[#E65F2B] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                    <span className="absolute top-3 left-3 bg-[#E65F2B] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 z-10 pointer-events-none">
                       <Sparkles className="w-3 h-3" /> COMBO PROMOCIONAL
                     </span>
                   )}
+                  {/* Pista visual de zoom */}
+                  <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full opacity-60 group-hover:opacity-100 transition pointer-events-none flex items-center gap-1">
+                    <Search className="w-2.5 h-2.5" />
+                    <span>Pasa el cursor para zoom</span>
+                  </div>
                 </div>
 
                 {/* Miniaturas de galería si tiene más de 1 imagen */}
@@ -4308,9 +4487,14 @@ export default function TiendaFoxDrop() {
                         Agotado temporalmente
                       </span>
                     ) : selectedProduct.stock === 1 ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                        ¡Última pieza disponible en almacén!
+                      </span>
+                    ) : selectedProduct.stock <= 3 ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
                         <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                        ¡Último disponible en stock!
+                        ¡Solo quedan {selectedProduct.stock} piezas listas para entrega!
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -4568,6 +4752,29 @@ export default function TiendaFoxDrop() {
                       </div>
                     ))}
                   </div>
+
+                  {/* CÁLCULO DE AHORRO TOTAL EN CARRITO */}
+                  {(() => {
+                    const totalSavings = cart.reduce((acc, it) => {
+                      if (it.product.discountPercent && it.product.discountPercent > 0) {
+                        const originalPrice = it.product.publicPrice / (1 - (it.product.discountPercent / 100));
+                        return acc + ((originalPrice - it.product.publicPrice) * it.quantity);
+                      }
+                      return acc;
+                    }, 0);
+
+                    return totalSavings > 0 ? (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between text-xs text-emerald-900 font-bold animate-in fade-in">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-emerald-600 fill-emerald-600" />
+                          <span>¡Estás ahorrando en esta orden!</span>
+                        </span>
+                        <span className="text-emerald-700 font-black font-mono">
+                          -${totalSavings.toFixed(0)} MXN
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
 
                   <div className="pt-4 border-t border-gray-200 space-y-3">
                     <div className="flex justify-between text-base font-black text-gray-900">
