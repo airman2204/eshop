@@ -1903,11 +1903,11 @@ export default function TiendaFoxDrop() {
                     </div>
 
                     {/* EL ZORRO COURIER REPARTIDOR */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[52%] flex items-end justify-center pointer-events-none z-15">
+                    <div className="absolute right-0 top-0 bottom-0 w-[45%] flex items-end justify-center pointer-events-none z-15 pr-1">
                       <img 
-                        src="/hero-fox-layer.png" 
+                        src="/fox-mascot-isolated.png" 
                         alt="Fox Courier" 
-                        className="w-full h-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
+                        className="max-h-[95%] w-auto object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
                       />
                     </div>
                   </div>
@@ -1999,11 +1999,11 @@ export default function TiendaFoxDrop() {
                     </div>
 
                     {/* EL ZORRO COURIER (EN SU CAPA EXACTA) */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[52%] flex items-end justify-center pointer-events-none z-15">
+                    <div className="absolute right-0 top-0 bottom-0 w-[45%] lg:w-[42%] flex items-end justify-center pointer-events-none z-15 pr-2 lg:pr-6">
                       <img 
-                        src="/hero-fox-layer.png" 
+                        src="/fox-mascot-isolated.png" 
                         alt="FoxDrop Mascot" 
-                        className="w-full h-full object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
+                        className="max-h-[96%] w-auto object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
                       />
                     </div>
                   </div>
