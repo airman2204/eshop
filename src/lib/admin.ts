@@ -8,6 +8,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { AbandonedCart, ClubFoxDropSettings, LoyaltyMetrics } from "@/types";
+import { fetchAdminApi, fetchAgentApi } from "./adminAuth";
 
 /**
  * Consulta el tipo de cambio oficial USD a MXN en tiempo real con redundancia de APIs financieras.
@@ -61,7 +62,7 @@ export interface NewProductInput {
  * Inserta un producto nuevo en Supabase usando la ruta segura del servidor
  */
 export async function createProductInDb(input: NewProductInput) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create_product", product: input }),
@@ -80,7 +81,7 @@ export async function createProductInDb(input: NewProductInput) {
  * Actualizar un producto existente en Supabase usando la ruta segura del servidor
  */
 export async function updateProductInDb(id: string, updates: Partial<NewProductInput>) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "update_product", id, product: updates }),
@@ -99,7 +100,7 @@ export async function updateProductInDb(id: string, updates: Partial<NewProductI
  * Cambia la categoría de múltiples productos de forma simultánea.
  */
 export async function bulkUpdateProductsCategory(productIds: string[], categoryName: string) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "bulk_update_category", productIds, categoryName }),
@@ -118,7 +119,7 @@ export async function bulkUpdateProductsCategory(productIds: string[], categoryN
  * Aplica o retira un porcentaje de descuento promocional en lote a múltiples productos.
  */
 export async function bulkUpdateProductsDiscount(productIds: string[], discountPercent: number) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "bulk_update_discount", productIds, discountPercent }),
@@ -138,7 +139,7 @@ export async function bulkUpdateProductsDiscount(productIds: string[], discountP
  */
 export async function deleteProductInDb(id: string) {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete_product", id }),
@@ -160,7 +161,7 @@ export async function deleteProductInDb(id: string) {
  */
 export async function getImportBatches() {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_batches" }),
@@ -199,7 +200,7 @@ export async function createImportBatch(batch: {
   totalUnits: number;
   notes?: string;
 }) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create_batch", batch }),
@@ -223,7 +224,7 @@ export async function updateImportBatch(id: string, batch: {
   totalUnits: number;
   notes?: string;
 }) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "update_batch", id, batch }),
@@ -242,7 +243,7 @@ export async function updateImportBatch(id: string, batch: {
  * Elimina un lote de importación de Supabase usando la ruta segura del servidor
  */
 export async function deleteImportBatch(id: string) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "delete_batch", id }),
@@ -262,7 +263,7 @@ export async function deleteImportBatch(id: string) {
  */
 export async function getClientsWithMetrics() {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_clients" }),
@@ -281,7 +282,7 @@ export async function getClientsWithMetrics() {
 }
 
 export async function deleteClientFromDb(clientId: string, clientEmail?: string, clientPhone?: string, deleteOrders: boolean = false) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -316,7 +317,7 @@ export interface CarouselSlide {
 
 export async function getCarouselSlides(): Promise<CarouselSlide[]> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_slides" }),
@@ -330,7 +331,7 @@ export async function getCarouselSlides(): Promise<CarouselSlide[]> {
 }
 
 export async function createCarouselSlide(slide: Omit<CarouselSlide, "id" | "is_active">) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create_slide", slide: { ...slide, is_active: true } }),
@@ -344,7 +345,7 @@ export async function createCarouselSlide(slide: Omit<CarouselSlide, "id" | "is_
 }
 
 export async function deleteCarouselSlide(id: string) {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "delete_slide", id }),
@@ -358,7 +359,7 @@ export async function deleteCarouselSlide(id: string) {
 
 export async function fetchAdminCategories(): Promise<{ id: string; name: string; slug: string }[]> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_categories" }),
@@ -372,7 +373,7 @@ export async function fetchAdminCategories(): Promise<{ id: string; name: string
 }
 
 export async function createAdminCategory(name: string): Promise<{ id: string; name: string; slug: string }> {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "create_category", name }),
@@ -389,7 +390,7 @@ export async function createAdminCategory(name: string): Promise<{ id: string; n
 
 export async function getAdminAbandonedCarts(): Promise<AbandonedCart[]> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_abandoned_carts" }),
@@ -405,7 +406,7 @@ export async function getAdminAbandonedCarts(): Promise<AbandonedCart[]> {
 
 export async function updateAdminAbandonedCart(cartId: string, followedUp: boolean): Promise<boolean> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update_abandoned_cart", cartId, followedUp }),
@@ -419,7 +420,7 @@ export async function updateAdminAbandonedCart(cartId: string, followedUp: boole
 
 export async function deleteAdminAbandonedCart(id: string): Promise<boolean> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete_abandoned_cart", id }),
@@ -433,7 +434,7 @@ export async function deleteAdminAbandonedCart(id: string): Promise<boolean> {
 
 export async function createTestAbandonedCart(): Promise<boolean> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "create_test_abandoned_cart" }),
@@ -449,7 +450,7 @@ export async function createTestAbandonedCart(): Promise<boolean> {
 
 export async function getClubSettings(): Promise<ClubFoxDropSettings> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_club_settings" }),
@@ -491,7 +492,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
 
 export async function getStoreSettings(): Promise<StoreSettings> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_store_settings" }),
@@ -507,7 +508,7 @@ export async function getStoreSettings(): Promise<StoreSettings> {
 }
 
 export async function saveStoreSettings(settings: StoreSettings): Promise<StoreSettings> {
-  const res = await fetch("/api/admin", {
+  const res = await fetchAdminApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "save_store_settings", settings }),
@@ -522,7 +523,7 @@ export async function saveStoreSettings(settings: StoreSettings): Promise<StoreS
 
 export async function saveClubSettings(settings: ClubFoxDropSettings): Promise<boolean> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_club_settings", settings }),
@@ -536,7 +537,7 @@ export async function saveClubSettings(settings: ClubFoxDropSettings): Promise<b
 
 export async function getLoyaltyMetrics(): Promise<LoyaltyMetrics | null> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_loyalty_metrics" }),
@@ -557,7 +558,7 @@ export async function getLoyaltyMetrics(): Promise<LoyaltyMetrics | null> {
  */
 export async function generateTicketImage(ticket: any): Promise<{ imageUrl: string; base64: string } | null> {
   try {
-    const res = await fetch("/api/admin", {
+    const res = await fetchAdminApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "generate_ticket_image", ticket }),
@@ -590,7 +591,7 @@ export async function generateAgentSocialPost(params: {
   tone?: string;
   audience?: string;
 }) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "generate_social_post", ...params }),
@@ -601,7 +602,7 @@ export async function generateAgentSocialPost(params: {
 }
 
 export async function generateAgentWeeklyCalendar(availableProducts: any[], focusTheme?: string) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "generate_weekly_calendar", availableProducts, focusTheme }),
@@ -619,7 +620,7 @@ export async function generateAgentOrderFollowup(params: {
   daysSinceCreated: number;
   trackingNumber?: string;
 }) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "generate_order_followup", ...params }),
@@ -635,7 +636,7 @@ export async function generateAgentCartRecovery(params: {
   total: number;
   discountCode?: string;
 }) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "generate_cart_recovery", ...params }),
@@ -646,7 +647,7 @@ export async function generateAgentCartRecovery(params: {
 }
 
 export async function chatWithFoxBot(userMessage: string, history: Array<{ sender: string; text: string }>) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "chat", userMessage, history }),
@@ -657,7 +658,7 @@ export async function chatWithFoxBot(userMessage: string, history: Array<{ sende
 }
 
 export async function executeAgentAction(actionType: string, payload: any) {
-  const res = await fetch("/api/admin/agent", {
+  const res = await fetchAgentApi( {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "execute_agent_action", actionType, payload }),
@@ -669,7 +670,7 @@ export async function executeAgentAction(actionType: string, payload: any) {
 
 export async function getAgentChatHistory(): Promise<any[]> {
   try {
-    const res = await fetch("/api/admin/agent", {
+    const res = await fetchAgentApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_chat_history" }),
@@ -685,7 +686,7 @@ export async function getAgentChatHistory(): Promise<any[]> {
 
 export async function saveAgentChatHistory(messages: any[]): Promise<boolean> {
   try {
-    const res = await fetch("/api/admin/agent", {
+    const res = await fetchAgentApi( {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "save_chat_history", messages }),
@@ -696,5 +697,6 @@ export async function saveAgentChatHistory(messages: any[]): Promise<boolean> {
     return false;
   }
 }
+
 
 

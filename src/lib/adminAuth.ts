@@ -7,12 +7,79 @@ export interface AdminSession {
   email: string;
   mustChangePassword: boolean;
   twoFactorVerified: boolean;
+  token?: string;
+}
+
+/**
+ * Obtiene el token activo de administración desde localStorage
+ */
+export function getStoredAdminToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("foxdrop_admin_session");
+    if (raw) {
+      const parsed: AdminSession = JSON.parse(raw);
+      return parsed.token || null;
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Helper para llamar a /api/admin inyectando automáticamente el token en Authorization header
+ */
+export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
+  const token = getStoredAdminToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Si ya nos pasaron un objeto tipo { method: 'POST', body: '...' }
+  if (bodyOrOptions && typeof bodyOrOptions === "object" && "body" in bodyOrOptions) {
+    const customHeaders = bodyOrOptions.headers || {};
+    return fetch("/api/admin", {
+      ...bodyOrOptions,
+      headers: { ...headers, ...customHeaders },
+    });
+  }
+
+  return fetch("/api/admin", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(bodyOrOptions),
+  });
+}
+
+/**
+ * Helper para llamar a /api/admin/agent inyectando automáticamente el token en Authorization header
+ */
+export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
+  const token = getStoredAdminToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (bodyOrOptions && typeof bodyOrOptions === "object" && "body" in bodyOrOptions) {
+    const customHeaders = bodyOrOptions.headers || {};
+    return fetch("/api/admin/agent", {
+      ...bodyOrOptions,
+      headers: { ...headers, ...customHeaders },
+    });
+  }
+
+  return fetch("/api/admin/agent", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(bodyOrOptions),
+  });
 }
 
 /**
  * Valida el acceso de un administrador con correo y contraseña.
- * 1. Revisa localStorage del dispositivo actual.
- * 2. Si no hay o no coincide, consulta al servidor (/api/admin) que tiene acceso a Supabase con Service Role.
+ * 1. Revisa lista blanca de correos autorizados.
+ * 2. Consulta al servidor (/api/admin) que verifica el hash y genera token firmado.
  * 3. Si no hay contraseña personalizada en BD, permite la temporal 'FoxDrop2026!' y exige cambiarla.
  */
 export async function authenticateAdmin(
@@ -46,12 +113,12 @@ export async function authenticateAdmin(
             email: normalizedEmail,
             mustChangePassword: data.mustChangePassword ?? false,
             twoFactorVerified: false,
+            token: data.token,
           },
         };
       } else if (data.valid === false) {
         return { success: false, error: "Contraseña incorrecta." };
       }
-      // data.valid === null significa que no hay contraseña en BD todavía
     }
   } catch (err) {
     console.warn("Fallo verificando contraseña en servidor:", err);
@@ -117,6 +184,15 @@ export async function updateAdminPassword(email: string, newPass: string) {
     if (!res.ok) {
       const errJson = await res.json();
       console.warn("Advertencia al sincronizar en backend:", errJson.error);
+    } else {
+      const data = await res.json();
+      if (data.token && typeof window !== "undefined") {
+        const stored = localStorage.getItem("foxdrop_admin_session");
+        const currentSession: AdminSession = stored ? JSON.parse(stored) : { email: normalizedEmail, mustChangePassword: false, twoFactorVerified: false };
+        currentSession.token = data.token;
+        currentSession.mustChangePassword = false;
+        localStorage.setItem("foxdrop_admin_session", JSON.stringify(currentSession));
+      }
     }
   } catch (err) {
     console.warn("Error de red al actualizar contraseña remota:", err);

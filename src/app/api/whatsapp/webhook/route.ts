@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { formatPhoneNumber } from "@/lib/whatsapp";
+import { checkRateLimit } from "@/lib/security";
 
 /**
  * POST /api/whatsapp/webhook
@@ -9,6 +10,21 @@ import { formatPhoneNumber } from "@/lib/whatsapp";
  */
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verificación de token secreto opcional para el bridge
+    const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const incomingSecret = req.headers.get("x-webhook-secret") || req.nextUrl.searchParams.get("secret");
+      if (incomingSecret !== webhookSecret) {
+        return NextResponse.json({ error: "No autorizado: Token de webhook inválido" }, { status: 401 });
+      }
+    }
+
+    // 2. Rate limit preventivo (máx 120 eventos por minuto)
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`wa_webhook:${ip}`, 120, 60)) {
+      return NextResponse.json({ error: "Rate limit excedido" }, { status: 429 });
+    }
+
     const body = await req.json();
 
     const supabase = createServerClient();

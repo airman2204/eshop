@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: Máximo 20 consultas por minuto por dirección IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    const allowed = checkRateLimit(`lookup:${ip}`, 20, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Por favor espera un momento." },
+        { status: 429 }
+      );
+    }
+
     const { email } = await req.json();
     if (!email || typeof email !== "string") {
       return NextResponse.json({ error: "Email requerido" }, { status: 400 });

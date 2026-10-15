@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { verifyAdminToken, checkRateLimit } from "@/lib/security";
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -94,7 +95,22 @@ async function callGemini(
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limiting por IP para IA (máx 30 peticiones/min)
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`agent_api:${clientIp}`, 30, 60)) {
+      return NextResponse.json({ error: "Límite de solicitudes de IA excedido. Espera un momento." }, { status: 429 });
+    }
+
+    // 2. Verificación de token administrativo
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     const body = await req.json();
+    const resolvedToken = token || body.adminToken || null;
+
+    if (!verifyAdminToken(resolvedToken).valid) {
+      return NextResponse.json({ error: "No autorizado para usar el Agente FoxBot" }, { status: 401 });
+    }
+
     const { action } = body;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

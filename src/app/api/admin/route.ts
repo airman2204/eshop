@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCategoryIconEmoji } from "@/lib/constants";
+import { verifyAdminToken, generateAdminToken, checkRateLimit } from "@/lib/security";
 import crypto from "crypto";
 
 function hashPassword(pass: string): string {
@@ -76,6 +77,31 @@ export async function POST(req: NextRequest) {
     // 2. JSON actions
     const body = await req.json();
     const { action, id, email, password, product, batch } = body;
+
+    // Rate Limiting general para el endpoint admin (máx 150 peticiones/min por IP)
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`admin_api:${clientIp}`, 150, 60)) {
+      return NextResponse.json({ error: "Límite de solicitudes administrativas excedido" }, { status: 429 });
+    }
+
+    // Acciones públicas o de autenticación inicial (no requieren token previo)
+    const PUBLIC_ADMIN_ACTIONS = ["verify_password", "get_products", "get_categories", "get_carousel_slides", "get_club_settings", "get_store_settings"];
+
+    if (!PUBLIC_ADMIN_ACTIONS.includes(action)) {
+      const authHeader = req.headers.get("authorization") || "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : (body.adminToken || null);
+      const tokenCheck = verifyAdminToken(token);
+
+      // Si no tiene token válido, pero viene con contraseña para actualizar contraseña
+      const isPasswordUpdateWithCurrentCreds = action === "update_password" && email;
+
+      if (!tokenCheck.valid && !isPasswordUpdateWithCurrentCreds) {
+        return NextResponse.json(
+          { error: "No autorizado: Sesión administrativa inválida o expirada. Por favor vuelve a iniciar sesión." },
+          { status: 401 }
+        );
+      }
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServerClient() as any;
@@ -1170,7 +1196,8 @@ export async function POST(req: NextRequest) {
         throw saveError;
       }
 
-      return NextResponse.json({ success: true, email: normalizedEmail, mustChangePassword: false });
+      const adminToken = generateAdminToken(normalizedEmail);
+      return NextResponse.json({ success: true, token: adminToken, email: normalizedEmail, mustChangePassword: false });
     }
 
     if (action === "verify_password") {
@@ -1206,8 +1233,10 @@ export async function POST(req: NextRequest) {
                   .catch(() => {});
               }
 
+              const adminToken = generateAdminToken(normalizedEmail);
               return NextResponse.json({
                 valid: true,
+                token: adminToken,
                 mustChangePassword: Boolean(userCred.mustChangePassword),
               });
             } else {
