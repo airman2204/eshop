@@ -590,6 +590,24 @@ export default function AdminCRM() {
         setSelectedBatchId('');
       }
 
+      // Asociar dinámicamente cada producto con el nombre real de su lote
+      if (dbProducts && dbProducts.length > 0 && mappedBatches.length > 0) {
+        setProducts(prevProds => prevProds.map(p => {
+          if (p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1') return p;
+          // Buscar coincidencia exacta por ID de lote
+          if (p.batchId) {
+            const matchedById = mappedBatches.find(b => b.id === p.batchId);
+            if (matchedById) return { ...p, batchName: matchedById.batchName };
+          }
+          // Buscar coincidencia por costo de flete unitario (+- $0.05 MXN)
+          const matchedByCost = mappedBatches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
+          if (matchedByCost) {
+            return { ...p, batchId: matchedByCost.id, batchName: matchedByCost.batchName };
+          }
+          return p;
+        }));
+      }
+
       // Clientes y métricas
       const dbClients = await getClientsWithMetrics();
       setClients(dbClients ?? []);
@@ -3710,9 +3728,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]">
-                              {p.batchName || 'Lote 1 (+Flete)'}
-                            </span>
+                            {(() => {
+                              const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
+                                || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
+                              const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
+                                ? p.batchName
+                                : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
+
+                              return (
+                                <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]" title={displayName}>
+                                  {displayName}
+                                </span>
+                              );
+                            })()}
                             <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
                           </td>
                           <td className="py-3.5 px-4 font-mono font-black text-slate-900">${p.totalCostMxn.toFixed(2)}</td>
@@ -3976,9 +4004,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   COMBO
                                 </span>
                               )}
-                              <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                {p.batchName || 'Lote 1'}
-                              </span>
+                              {(() => {
+                                const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
+                                  || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
+                                const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
+                                  ? p.batchName
+                                  : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
+
+                                return (
+                                  <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                    {displayName}
+                                  </span>
+                                );
+                              })()}
                               <span className="text-[10px] text-slate-400 font-mono">
                                 +${p.shippingCostAllocated.toFixed(0)} flete
                               </span>
