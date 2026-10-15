@@ -108,5 +108,45 @@ html, body {
   will-change: transform, opacity;
 }
 
+/* Animaciones de nubes flotantes para el Hero Banner */
+@keyframes cloudDriftSlow {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(16px, -6px) scale(1.03);
+  }
+}
+
+@keyframes cloudDriftReverse {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-14px, 5px) scale(0.97);
+  }
+}
+
+@keyframes cloudFloatSubtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-cloud-slow {
+  animation: cloudDriftSlow 7s ease-in-out infinite;
+}
+
+.animate-cloud-reverse {
+  animation: cloudDriftReverse 9s ease-in-out infinite;
+}
+
+.animate-cloud-float {
+  animation: cloudFloatSubtle 5s ease-in-out infinite;
+}
+
 
 
