@@ -274,6 +274,7 @@ export default function AdminCRM() {
   // Modal de Impresión de Etiquetas con Código de Barras / QR
   const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
   const [barcodePrintProducts, setBarcodePrintProducts] = useState<Product[]>([]);
+  const [barcodePrintCopiesMode, setBarcodePrintCopiesMode] = useState<'single' | 'by_stock'>('single');
 
   // Modal Nuevo Lote de Importación
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -3384,6 +3385,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <FileSpreadsheet className="w-4 h-4 text-slate-500" />
                   <span className="hidden sm:inline">Exportar CSV</span>
+                </button>
+
+                {/* Botón Imprimir Todas las Etiquetas de un jalón */}
+                <button
+                  onClick={() => handleOpenBarcodePrintModal(filteredProducts.length > 0 ? filteredProducts : products)}
+                  title="Imprimir etiquetas de todos los productos del inventario actual de un solo jalón"
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs border border-slate-700 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-cyan-400" />
+                  <span>Imprimir Todas ({filteredProducts.length})</span>
                 </button>
 
                 <button
@@ -11190,32 +11201,72 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             onClick={e => e.stopPropagation()}
             className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden"
           >
-            {/* Header */}
-            <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
+            {/* Header y Selector de Modo de Impresión */}
+            <div className="bg-slate-900 text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <Printer className="w-5 h-5 text-cyan-400" />
                 <div>
                   <h3 className="font-bold text-sm">Etiquetas de Precios y Código de Barras</h3>
-                  <p className="text-[11px] text-slate-400">{barcodePrintProducts.length} artículo(s) listos para impresión</p>
+                  <p className="text-[11px] text-slate-400">
+                    {(() => {
+                      const totalCopies = barcodePrintProducts.reduce((acc, p) => acc + (barcodePrintCopiesMode === 'by_stock' ? Math.max(1, p.stock || 1) : 1), 0);
+                      return `${barcodePrintProducts.length} producto(s) • ${totalCopies} etiqueta(s) a imprimir`;
+                    })()}
+                  </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowBarcodePrintModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                <div className="bg-slate-800 p-0.5 rounded-xl border border-slate-700 flex text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setBarcodePrintCopiesMode('single')}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                      barcodePrintCopiesMode === 'single'
+                        ? 'bg-cyan-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    1 por producto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBarcodePrintCopiesMode('by_stock')}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                      barcodePrintCopiesMode === 'by_stock'
+                        ? 'bg-cyan-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Según Stock (Piezas)
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBarcodePrintModal(false)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Contenido Imprimible de Etiquetas */}
             <div className="p-6 overflow-y-auto space-y-4 print:p-0">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 print:grid-cols-3 print:gap-2">
-                {barcodePrintProducts.map((p, idx) => {
+                {barcodePrintProducts.flatMap((p) => {
+                  const copies = barcodePrintCopiesMode === 'by_stock' ? Math.max(1, p.stock || 1) : 1;
+                  return Array.from({ length: copies }).map((_, cIdx) => ({
+                    ...p,
+                    copyIndex: cIdx,
+                    totalCopies: copies,
+                  }));
+                }).map((p: any, idx) => {
                   const displaySku = p.sku || `FX-${p.id.slice(0, 8).toUpperCase()}`;
                   return (
                     <div 
-                      key={`${p.id}-${idx}`}
+                      key={`${p.id}-${p.copyIndex}-${idx}`}
                       className="border-2 border-dashed border-slate-300 rounded-2xl p-3 flex flex-col justify-between items-center text-center bg-white shadow-2xs space-y-2 page-break-inside-avoid"
                     >
                       {/* Logo / Nombre Tienda */}
