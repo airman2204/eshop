@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { notifyAbandonedCartRecovery } from "@/lib/whatsapp";
 import { dispatchOrderStatusNotification } from "@/lib/orderNotifications";
-
 import { createServerClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: Máximo 40 despachos por minuto por IP
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`wa_dispatch:${clientIp}`, 40, 60)) {
+      return NextResponse.json({ error: "Límite de solicitudes de notificación excedido" }, { status: 429 });
+    }
+
     const body = await req.json();
     const { action, orderNumber, clientName, clientPhone, total, newStatus, discountCode } = body;
 

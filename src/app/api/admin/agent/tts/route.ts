@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 // @ts-ignore
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import { checkRateLimit } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   try {
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`tts:${clientIp}`, 40, 60)) {
+      return NextResponse.json({ error: "Límite de audio excedido" }, { status: 429 });
+    }
+
     const { searchParams } = new URL(req.url);
     const text = searchParams.get("text");
 

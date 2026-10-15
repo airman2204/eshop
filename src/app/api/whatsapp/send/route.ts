@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { formatPhoneNumber } from "@/lib/whatsapp";
+import { checkRateLimit, verifyAdminToken } from "@/lib/security";
 
 /**
  * POST /api/whatsapp/send
@@ -8,7 +9,22 @@ import { formatPhoneNumber } from "@/lib/whatsapp";
  */
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate limiting por IP (máximo 60 mensajes por minuto)
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
+    if (!checkRateLimit(`wa_send:${clientIp}`, 60, 60)) {
+      return NextResponse.json({ error: "Límite de mensajes por minuto excedido" }, { status: 429 });
+    }
+
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     const body = await req.json();
+    const resolvedToken = token || body.adminToken || null;
+
+    // Solo los administradores autenticados pueden despachar mensajes libres por WhatsApp
+    if (!verifyAdminToken(resolvedToken).valid) {
+      return NextResponse.json({ error: "No autorizado para enviar mensajes de WhatsApp" }, { status: 401 });
+    }
+
     const { phone, text, senderName } = body;
 
     if (!phone || !text) {
