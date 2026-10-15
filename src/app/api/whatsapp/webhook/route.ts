@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       if (newChatErr) throw newChatErr;
       chatId = newChat.id;
     } else {
-      // Incrementar contador de no leídos y actualizar LID o avatar si vino uno nuevo
+      // Incrementar contador de no leídos y actualizar LID o avatar si vino uno nuevo (preservando notes existentes)
       const updateData: any = {
         client_name: clientName,
         last_message: text,
@@ -150,7 +150,12 @@ export async function POST(req: NextRequest) {
         updated_at: new Date().toISOString(),
       };
       if (incomingLid) {
-        updateData.notes = JSON.stringify({ lid: incomingLid });
+        let currentNotes: any = {};
+        try {
+          currentNotes = typeof chat?.notes === "string" ? JSON.parse(chat.notes) : (chat?.notes || {});
+        } catch {}
+        currentNotes.lid = incomingLid;
+        updateData.notes = JSON.stringify(currentNotes);
       }
       if (incomingAvatarUrl) {
         updateData.avatar_url = incomingAvatarUrl;
@@ -190,12 +195,13 @@ export async function POST(req: NextRequest) {
         chatNotes = typeof chat?.notes === "string" ? JSON.parse(chat?.notes) : (chat?.notes || {});
       } catch {}
 
-      const agentMode = chatNotes.agentMode !== false && chatNotes.agentMode !== "manual";
-      const manualUntil = chatNotes.manualUntil ? new Date(chatNotes.manualUntil).getTime() : 0;
-      const isManualPaused = Date.now() < manualUntil;
+      // SI EL USUARIO PUSO EL CHAT EN MODO 'manual', SE RESPETA ESTRICTAMENTE
+      // El bot NO responderá a menos que el admin lo vuelva a activar explícitamente a 'agent'
+      const isManual = chatNotes.agentMode === "manual" || chatNotes.agentMode === false;
+      const isAgentActive = !isManual;
 
-      // Si el agente está activo y no hay pausa manual activa
-      if (agentMode && !isManualPaused && !text.startsWith("[Sticker")) {
+      // Si el agente está activo y no es un sticker
+      if (isAgentActive && !text.startsWith("[Sticker")) {
         // Ejecutar en background para no demorar la respuesta HTTP al webhook
         (async () => {
           try {

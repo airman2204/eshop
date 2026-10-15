@@ -1502,6 +1502,14 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     const data = await res.json();
                     if (data.success) {
                       setChatAgentMode(newMode);
+                      if (activeChat) {
+                        try {
+                          const currNotes = typeof activeChat.notes === 'string' ? JSON.parse(activeChat.notes) : (activeChat.notes || {});
+                          currNotes.agentMode = newMode;
+                          activeChat.notes = JSON.stringify(currNotes);
+                          setChats(prev => prev.map(c => c.id === activeChat.id ? { ...c, notes: JSON.stringify(currNotes) } : c));
+                        } catch {}
+                      }
                       try { soundManager.triggerHaptic('light'); } catch {}
                     }
                   } catch (err) {

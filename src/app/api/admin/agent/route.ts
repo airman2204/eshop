@@ -573,12 +573,9 @@ ${storeContext}`;
       } catch {}
 
       notesObj.agentMode = agentMode;
-      if (agentMode === "manual") {
-        // Pausar agente por 2 horas o hasta que el admin decida reactivar
-        notesObj.manualUntil = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-      } else {
-        delete notesObj.manualUntil;
-      }
+      // El modo es permanente: si se pone en 'manual', se queda manual para siempre
+      // a menos que el usuario vuelva a presionar 'Agente'
+      delete notesObj.manualUntil;
 
       await supabase
         .from("whatsapp_chats")
