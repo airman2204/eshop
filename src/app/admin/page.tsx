@@ -179,6 +179,8 @@ export default function AdminCRM() {
   const [generatingTicketImg, setGeneratingTicketImg] = useState(false);
   const [viewingTicketOrder, setViewingTicketOrder] = useState<Order | null>(null);
   const [regeneratingTicket, setRegeneratingTicket] = useState(false);
+  const [ticketSentOrders, setTicketSentOrders] = useState<Set<string>>(new Set());
+  const [isSendingTicketViaWa, setIsSendingTicketViaWa] = useState(false);
   const ticketReceiptRef = useRef<HTMLDivElement>(null);
 
   // Estados de Ventanas Flotantes (WhatsApp y Fox IA accesibles desde cualquier pestaña)
@@ -2645,6 +2647,7 @@ export default function AdminCRM() {
 
             // DISPARO 100% AUTOMÁTICO DEL TICKET POR WHATSAPP OFICIAL DE FOXDROP
             if (cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.replace(/\D/g, '').length >= 10) {
+              setTicketSentOrders(prev => new Set(prev).add(saleResult.orderNumber));
               fetch("/api/whatsapp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -2684,32 +2687,45 @@ export default function AdminCRM() {
 
   // Enviar ticket directamente usando el sistema de WhatsApp oficial de FoxDrop
   const shareTicketImageDirectly = async (ticket: NonNullable<typeof posCompletedTicket>) => {
-    // 1. Si el ticket tiene número de cliente válido, disparar el envío oficial con imagen
-    const cleanPhone = (ticket.clientPhone || '').replace(/\D/g, '');
-    if (cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.length >= 10) {
-      try {
-        await fetch("/api/whatsapp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "status_update",
-            orderNumber: ticket.orderNumber,
-            clientName: ticket.clientName,
-            clientPhone: ticket.clientPhone,
-            newStatus: "delivered",
-            shippingType: "pos_in_store",
-            total: ticket.total,
-            ticketImageUrl: ticket.ticketImageUrl,
-            loyaltyStars: ticket.pointsEarned,
-          }),
-        });
-      } catch (err) {
-        console.warn("Aviso: reintento de envío de ticket por API:", err);
-      }
-    }
+    if (isSendingTicketViaWa) return;
+    setIsSendingTicketViaWa(true);
 
-    // 2. Abrir el chat interno de WhatsApp de FoxDrop en la ventana flotante con el mensaje oficial precargado
-    sendWhatsAppTicket(ticket);
+    try {
+      const cleanPhone = (ticket.clientPhone || '').replace(/\D/g, '');
+      const alreadySent = ticketSentOrders.has(ticket.orderNumber);
+
+      // 1. Si no ha sido despachado automáticamente aún y es un teléfono válido, enviarlo por API
+      if (!alreadySent && cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.length >= 10) {
+        setTicketSentOrders(prev => new Set(prev).add(ticket.orderNumber));
+        try {
+          await fetch("/api/whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "status_update",
+              orderNumber: ticket.orderNumber,
+              clientName: ticket.clientName,
+              clientPhone: ticket.clientPhone,
+              newStatus: "delivered",
+              shippingType: "pos_in_store",
+              total: ticket.total,
+              ticketImageUrl: ticket.ticketImageUrl,
+              loyaltyStars: ticket.pointsEarned,
+            }),
+          });
+        } catch (err) {
+          console.warn("Aviso: reintento de envío de ticket por API:", err);
+        }
+      }
+
+      // 2. Cerrar el modal del ticket para no bloquear ni dejar pantalla negra sobre el WhatsApp flotante
+      setPosCompletedTicket(null);
+
+      // 3. Abrir la ventana flotante de WhatsApp posicionada en el chat del cliente (sin reenviar texto duplicado si ya se mandó)
+      sendWhatsAppTicket(ticket);
+    } finally {
+      setIsSendingTicketViaWa(false);
+    }
   };
 
   const sendWhatsAppTicket = (ticket: NonNullable<typeof posCompletedTicket>) => {
@@ -9655,7 +9671,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* MODAL TICKET DIGITAL FOXDROP & ENVÍO POR WHATSAPP */}
       {/* ======================================================== */}
       {posCompletedTicket && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-slate-100 rounded-3xl max-w-sm w-full p-4 sm:p-5 space-y-3.5 shadow-2xl relative border border-slate-300 my-auto">
             <button
               onClick={() => setPosCompletedTicket(null)}
@@ -9788,11 +9804,27 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           {/* Acciones de Envío Directo y Compartir (con z-20 para estar al frente mientras el ticket emerge por detrás) */}
           <div className="space-y-2 pt-1 relative z-20">
               <button
+                type="button"
+                disabled={isSendingTicketViaWa}
                 onClick={() => shareTicketImageDirectly(posCompletedTicket)}
-                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98] cursor-pointer"
+                className="w-full bg-[#25D366] hover:bg-[#20ba59] disabled:opacity-75 text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98] cursor-pointer"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Enviar Ticket por WhatsApp FoxDrop</span>
+                {isSendingTicketViaWa ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Abriendo chat de WhatsApp...</span>
+                  </>
+                ) : ticketSentOrders.has(posCompletedTicket.orderNumber) ? (
+                  <>
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Abrir Chat de WhatsApp (Ticket Ya Enviado ✓)</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Enviar Ticket por WhatsApp FoxDrop</span>
+                  </>
+                )}
               </button>
 
               <button
