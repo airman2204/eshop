@@ -1966,39 +1966,29 @@ export default function TiendaFoxDrop() {
 
           {/* LADO DERECHO: MOSAICO GRID DE PRODUCTOS / ESTILO TJ MAXX */}
           <div className="w-full lg:w-[55%] grid grid-cols-3 sm:grid-cols-4 gap-1 p-2 bg-white/40">
-            {(() => {
-              // Obtenemos los primeros productos con fotos o fallbacks
-              const displayProducts = products.length > 0 
-                ? products.slice(0, 8) 
-                : [
-                    { id: '1', title: 'Smart Gadget Fox', images: ['/card-laptop.png'] },
-                    { id: '2', title: 'Cosmética Premium', images: ['/card-cosmetic.png'] },
-                    { id: '3', title: 'Accesorio Cuero', images: ['/card-leather.png'] },
-                    { id: '4', title: 'Zorrito FoxDrop', images: ['/fox-head-3d.png'] },
-                    { id: '5', title: 'Tech Pro Deals', images: ['/fox-deals-card.png'] },
-                    { id: '6', title: 'Lifestyle Import', images: ['/fox-mascot-bag.png'] },
-                    { id: '7', title: 'Gadget Edición Especial', images: ['/fox-mascot-suitcase.png'] },
-                    { id: '8', title: 'Colección Tesoros', images: ['/fox-mascot-hd-transparent.png'] },
-                  ];
-
-              return displayProducts.map((p, idx) => (
+            {loadingProducts ? (
+              /* SKELETON LOADER SUAVE MIENTRAS DESCARGAN LOS PRODUCTOS REALES */
+              Array.from({ length: 8 }).map((_, idx) => (
                 <div
-                  key={p.id || idx}
+                  key={`skeleton-hero-${idx}`}
+                  className="aspect-square bg-white relative overflow-hidden border border-gray-100 flex items-center justify-center p-3 animate-pulse"
+                >
+                  <div className="w-full h-full bg-slate-100 rounded-xl" />
+                </div>
+              ))
+            ) : products.length > 0 ? (
+              /* PRODUCTOS REALES CON SUS IMÁGENES GENUINAS */
+              products.slice(0, 8).map((p) => (
+                <div
+                  key={p.id}
                   onClick={() => {
-                    const found = products.find(prod => prod.id === p.id);
-                    if (found) {
-                      setSelectedProduct(found);
-                    } else {
-                      setActiveTab('all');
-                      const el = document.getElementById('catalog-section');
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }
+                    setSelectedProduct(p);
                   }}
                   className="aspect-square bg-white relative overflow-hidden group cursor-pointer border border-gray-100 flex items-center justify-center p-2 hover:shadow-md transition duration-200"
                   title={p.title}
                 >
                   <img
-                    src={p.images?.[0] || '/fox-logo-head-3d.png'}
+                    src={p.images?.[0] || '/no-image.svg'}
                     alt={p.title}
                     className="w-full h-full object-contain group-hover:scale-108 transition-transform duration-300"
                     loading="lazy"
@@ -2009,8 +1999,8 @@ export default function TiendaFoxDrop() {
                     </span>
                   </div>
                 </div>
-              ));
-            })()}
+              ))
+            ) : null}
           </div>
 
         </div>
