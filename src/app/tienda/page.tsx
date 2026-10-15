@@ -1991,22 +1991,22 @@ export default function TiendaFoxDrop() {
                     />
 
                     {/* CAPA 2: CONTENIDO TIPOGRÁFICO NATIVO Y NÍTIDO CON GREETING PERSONALIZADO */}
-                    <div className="relative z-10 w-[50%] p-8 lg:p-12 xl:p-14 flex flex-col justify-between">
-                      <div className="space-y-3 lg:space-y-4">
-                        <span className="inline-block text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                    <div className="relative z-10 w-[48%] lg:w-[47%] p-6 lg:p-10 xl:p-12 flex flex-col justify-between">
+                      <div className="space-y-2 lg:space-y-3">
+                        <span className="inline-block text-xs lg:text-[13px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
-                        <h1 className="text-2xl lg:text-4xl xl:text-[44px] font-black text-white leading-[1.12] drop-shadow-sm max-w-xl">
+                        <h1 className="text-xl sm:text-2xl lg:text-[34px] xl:text-[38px] font-black text-white leading-[1.15] drop-shadow-sm max-w-md">
                           {isDefaultSlide && user?.name 
                             ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
                             : currentSlide.title}
                         </h1>
-                        <p className="text-sm lg:text-base text-emerald-100/90 leading-relaxed max-w-lg font-medium drop-shadow-xs">
+                        <p className="text-xs sm:text-sm lg:text-[15px] text-emerald-100/90 leading-snug max-w-sm font-medium drop-shadow-xs">
                           Descubre tesoros mundiales con envío rápido y calidad garantizada.
                         </p>
                       </div>
 
-                      <div className="pt-4 lg:pt-6">
+                      <div className="pt-3 lg:pt-5">
                         <button
                           onClick={() => {
                             setSelectedCategory(currentSlide.cta_category || 'Todas');
@@ -2014,10 +2014,10 @@ export default function TiendaFoxDrop() {
                             const el = document.getElementById('catalog-section');
                             el?.scrollIntoView({ behavior: 'smooth' });
                           }}
-                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8A2E] hover:to-[#F05E00] text-white font-black px-7 py-3 rounded-full text-sm lg:text-base shadow-[0_6px_24px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
+                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8A2E] hover:to-[#F05E00] text-white font-black px-6 py-2.5 rounded-full text-xs sm:text-sm shadow-[0_6px_24px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
                         >
                           <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
-                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                         </button>
                       </div>
                     </div>
