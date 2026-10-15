@@ -195,6 +195,30 @@ export async function createImportBatch(batch: {
 }
 
 /**
+ * Actualizar un lote de importación existente en Supabase usando la ruta segura del servidor
+ */
+export async function updateImportBatch(id: string, batch: {
+  batchName: string;
+  totalShippingCost: number;
+  totalUnits: number;
+  notes?: string;
+}) {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "update_batch", id, batch }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al actualizar lote en la base de datos");
+  }
+
+  const json = await res.json();
+  return json.data;
+}
+
+/**
  * Elimina un lote de importación de Supabase usando la ruta segura del servidor
  */
 export async function deleteImportBatch(id: string) {

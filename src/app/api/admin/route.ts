@@ -1066,6 +1066,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data });
     }
 
+    if (action === "update_batch") {
+      if (!id || !batch || !batch.batchName) {
+        return NextResponse.json({ error: "ID y datos de lote requeridos" }, { status: 400 });
+      }
+
+      const updatePayload: any = {
+        batch_name: batch.batchName,
+        total_shipping_cost: batch.totalShippingCost || 0,
+        total_units: batch.totalUnits || 1,
+        notes: batch.notes || null,
+      };
+
+      const { data, error } = await supabase
+        .from("import_batches")
+        .update(updatePayload)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
     if (action === "delete_batch") {
       if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
       const { error } = await supabase.from("import_batches").delete().eq("id", id);

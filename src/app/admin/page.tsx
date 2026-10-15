@@ -21,7 +21,7 @@ import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile
 import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
-  getImportBatches, createImportBatch, deleteImportBatch, getClientsWithMetrics,
+  getImportBatches, createImportBatch, updateImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
@@ -281,8 +281,9 @@ export default function AdminCRM() {
   const [barcodePrintProducts, setBarcodePrintProducts] = useState<Product[]>([]);
   const [barcodePrintCopiesMode, setBarcodePrintCopiesMode] = useState<'single' | 'by_stock'>('single');
 
-  // Modal Nuevo Lote de Importación
+  // Modal Lote de Importación (Crear / Editar)
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [editingBatch, setEditingBatch] = useState<ImportBatch | null>(null);
   const [batchNameInput, setBatchNameInput] = useState('');
   const [batchShippingCostInput, setBatchShippingCostInput] = useState<string>('500');
   const [batchUnitsInput, setBatchUnitsInput] = useState<string>('25');
@@ -2225,8 +2226,28 @@ export default function AdminCRM() {
     setShowBarcodePrintModal(true);
   };
 
-  // Crear Lote de Importación
-  const handleCreateBatch = async (e: React.FormEvent) => {
+  // Abrir Modal para Crear Lote
+  const handleOpenCreateBatch = () => {
+    setEditingBatch(null);
+    setBatchNameInput('');
+    setBatchShippingCostInput('500');
+    setBatchUnitsInput('25');
+    setBatchNotesInput('');
+    setShowBatchModal(true);
+  };
+
+  // Abrir Modal para Editar Lote
+  const handleOpenEditBatch = (batch: ImportBatch) => {
+    setEditingBatch(batch);
+    setBatchNameInput(batch.batchName);
+    setBatchShippingCostInput(batch.totalShippingCost.toString());
+    setBatchUnitsInput(batch.totalUnits.toString());
+    setBatchNotesInput(batch.notes || '');
+    setShowBatchModal(true);
+  };
+
+  // Guardar Lote de Importación (Crear o Actualizar)
+  const handleSaveBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     const numUnits = parseInt(batchUnitsInput, 10) || 0;
     const numShipping = parseFloat(batchShippingCostInput) || 0;
@@ -2234,37 +2255,85 @@ export default function AdminCRM() {
 
     setSavingBatch(true);
     const costPerUnitCalc = numShipping / numUnits;
-    const newBatchObj: ImportBatch = {
-      id: `batch-${Date.now()}`,
-      batchName: batchNameInput,
-      totalShippingCost: numShipping,
-      totalUnits: numUnits,
-      costPerUnit: costPerUnitCalc,
-      receivedAt: new Date().toISOString().split('T')[0],
-      notes: batchNotesInput,
-    };
 
-    try {
-      const created = await createImportBatch({
+    if (editingBatch) {
+      // Modo Edición
+      try {
+        const updated = await updateImportBatch(editingBatch.id, {
+          batchName: batchNameInput.trim(),
+          totalShippingCost: numShipping,
+          totalUnits: numUnits,
+          notes: batchNotesInput,
+        });
+
+        const newCostPerUnit = Number(updated?.cost_per_unit || costPerUnitCalc);
+
+        setBatches(prev => prev.map(b => {
+          if (b.id !== editingBatch.id) return b;
+          return {
+            ...b,
+            batchName: batchNameInput.trim(),
+            totalShippingCost: numShipping,
+            totalUnits: numUnits,
+            costPerUnit: newCostPerUnit,
+            notes: batchNotesInput,
+          };
+        }));
+
+        // Actualizar nombres de lote y prorrateo de flete en los artículos vinculados en memoria
+        setProducts(prev => prev.map(p => {
+          if (p.batchId === editingBatch.id || p.batchName === editingBatch.batchName) {
+            return {
+              ...p,
+              batchName: batchNameInput.trim(),
+              shippingCostAllocated: newCostPerUnit,
+            };
+          }
+          return p;
+        }));
+
+        setShowBatchModal(false);
+        setEditingBatch(null);
+      } catch (err: any) {
+        console.error("Error al actualizar lote:", err);
+        alert(`Error al actualizar el lote: ${err.message || 'Intente de nuevo'}`);
+      } finally {
+        setSavingBatch(false);
+      }
+    } else {
+      // Modo Creación
+      const newBatchObj: ImportBatch = {
+        id: `batch-${Date.now()}`,
         batchName: batchNameInput,
         totalShippingCost: numShipping,
         totalUnits: numUnits,
+        costPerUnit: costPerUnitCalc,
+        receivedAt: new Date().toISOString().split('T')[0],
         notes: batchNotesInput,
-      });
-      if (created) {
-        newBatchObj.id = created.id;
-        newBatchObj.costPerUnit = Number(created.cost_per_unit || costPerUnitCalc);
+      };
+
+      try {
+        const created = await createImportBatch({
+          batchName: batchNameInput,
+          totalShippingCost: numShipping,
+          totalUnits: numUnits,
+          notes: batchNotesInput,
+        });
+        if (created) {
+          newBatchObj.id = created.id;
+          newBatchObj.costPerUnit = Number(created.cost_per_unit || costPerUnitCalc);
+        }
+        setBatches([newBatchObj, ...batches]);
+        setSelectedBatchId(newBatchObj.id);
+        setShowBatchModal(false);
+        setBatchNameInput('');
+        setBatchNotesInput('');
+      } catch (err: any) {
+        console.error("Error al crear lote en base de datos:", err);
+        alert(`Error al guardar el lote en la base de datos: ${err.message || 'Intente de nuevo'}`);
+      } finally {
+        setSavingBatch(false);
       }
-      setBatches([newBatchObj, ...batches]);
-      setSelectedBatchId(newBatchObj.id);
-      setShowBatchModal(false);
-      setBatchNameInput('');
-      setBatchNotesInput('');
-    } catch (err: any) {
-      console.error("Error al crear lote en base de datos:", err);
-      alert(`Error al guardar el lote en la base de datos: ${err.message || 'Intente de nuevo'}`);
-    } finally {
-      setSavingBatch(false);
     }
   };
 
@@ -4242,8 +4311,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
 
               <button
-                onClick={() => setShowBatchModal(true)}
-                className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+                onClick={handleOpenCreateBatch}
+                className="bg-[#2D4A58] hover:bg-[#203641] text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Nuevo Lote de Importación
               </button>
@@ -4266,13 +4335,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </div>
                       <div className="flex items-center gap-1.5">
                         <button
+                          onClick={() => handleOpenEditBatch(batch)}
+                          title="Editar este lote de importación"
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleDeleteBatch(batch.id, batch.batchName)}
                           title="Eliminar este lote de importación"
-                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                        <Layers className="w-5 h-5 text-gray-400" />
                       </div>
                     </div>
 
@@ -8855,13 +8930,27 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className="font-bold text-slate-900 block text-[11px] flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Asignar a Lote de Importación:
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowBatchModal(true)}
-                      className="text-[#E65F2B] font-bold text-[10px] hover:underline"
-                    >
-                      + Crear Nuevo Lote
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {selectedBatchId && batches.find(b => b.id === selectedBatchId) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const b = batches.find(item => item.id === selectedBatchId);
+                            if (b) handleOpenEditBatch(b);
+                          }}
+                          className="text-blue-600 font-bold text-[10px] hover:underline cursor-pointer"
+                        >
+                          ✎ Editar Este Lote
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleOpenCreateBatch}
+                        className="text-[#E65F2B] font-bold text-[10px] hover:underline cursor-pointer"
+                      >
+                        + Crear Nuevo Lote
+                      </button>
+                    </div>
                   </div>
 
                   <select
@@ -8992,24 +9081,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         )}
 
-        {/* MODAL CREAR NUEVO LOTE DE IMPORTACIÓN */}
+        {/* MODAL CREAR / EDITAR LOTE DE IMPORTACIÓN */}
         {showBatchModal && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-              <button onClick={() => setShowBatchModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
+              <button 
+                onClick={() => {
+                  setShowBatchModal(false);
+                  setEditingBatch(null);
+                }} 
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
 
               <div>
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-[#E65F2B]" /> Nuevo Lote de Importación
+                  <Layers className="w-5 h-5 text-[#E65F2B]" /> 
+                  {editingBatch ? 'Editar Lote de Importación' : 'Nuevo Lote de Importación'}
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Ingresa el costo total de envío pagado por la caja o remesa para que el sistema calcule el prorrateo automático.
+                  {editingBatch 
+                    ? `Modifica los costos o unidades del lote (${editingBatch.batchName}). El flete unitario se recalculará automáticamente.`
+                    : 'Ingresa el costo total de envío pagado por la caja o remesa para que el sistema calcule el prorrateo automático.'}
                 </p>
               </div>
 
-              <form onSubmit={handleCreateBatch} className="space-y-3 text-xs">
+              <form onSubmit={handleSaveBatch} className="space-y-3 text-xs">
                 <div>
                   <label className="text-slate-700 font-bold block mb-1">Nombre o Folio del Lote:</label>
                   <input
@@ -9029,6 +9127,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       type="number"
                       required
                       min={0}
+                      step="any"
                       placeholder="0"
                       value={batchShippingCostInput}
                       onChange={e => setBatchShippingCostInput(e.target.value)}
@@ -9074,9 +9173,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="submit"
                   disabled={savingBatch}
-                  className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3 rounded-lg shadow-sm transition"
+                  className="w-full bg-[#2D4A58] hover:bg-[#203641] text-white font-bold py-3 rounded-lg shadow-sm transition cursor-pointer disabled:opacity-50"
                 >
-                  {savingBatch ? 'Registrando...' : 'Guardar Lote de Importación'}
+                  {savingBatch ? 'Guardando en Base de Datos...' : (editingBatch ? 'Actualizar Lote' : 'Guardar Lote de Importación')}
                 </button>
               </form>
             </div>
