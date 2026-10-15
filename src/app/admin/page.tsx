@@ -37,6 +37,7 @@ import { uploadProductImage, uploadProductImageUrl, generateProductImageWithAi }
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
+import { generateTicketCanvasDataUrl } from '@/lib/ticketCanvas';
 
 export default function AdminCRM() {
   // Estado de Autenticación y Seguridad
@@ -177,6 +178,7 @@ export default function AdminCRM() {
   } | null>(null);
   const [generatingTicketImg, setGeneratingTicketImg] = useState(false);
   const [viewingTicketOrder, setViewingTicketOrder] = useState<Order | null>(null);
+  const [regeneratingTicket, setRegeneratingTicket] = useState(false);
   const ticketReceiptRef = useRef<HTMLDivElement>(null);
 
   // Estados de Ventanas Flotantes (WhatsApp y Fox IA accesibles desde cualquier pestaña)
@@ -2542,28 +2544,15 @@ export default function AdminCRM() {
 
       setPosCompletedTicket(ticketData);
 
-      // Generar ticket gráfico nítido en el cliente y sincronizar con servidor
+      // Generar ticket gráfico nítido e instantáneo vía Canvas 2D (cero lag, cero memory leak)
       setGeneratingTicketImg(true);
-      setTimeout(async () => {
+      (async () => {
         try {
           let clientDataUrl = "";
-          if (ticketReceiptRef.current) {
-            try {
-              clientDataUrl = await toPng(ticketReceiptRef.current, {
-                cacheBust: true,
-                pixelRatio: 2,
-                backgroundColor: '#ffffff',
-                skipFonts: true,
-                style: {
-                  transform: 'none',
-                  animation: 'none',
-                  clipPath: 'none',
-                  opacity: '1',
-                },
-              });
-            } catch (errCapture) {
-              console.warn("No se pudo capturar ticket desde DOM client-side:", errCapture);
-            }
+          try {
+            clientDataUrl = await generateTicketCanvasDataUrl(ticketData);
+          } catch (canvasErr) {
+            console.warn("No se pudo generar ticket vía Canvas:", canvasErr);
           }
 
           const result = await generateTicketImage({
@@ -2609,7 +2598,7 @@ export default function AdminCRM() {
         } finally {
           setGeneratingTicketImg(false);
         }
-      }, 800);
+      })();
 
       // Limpiar carrito
       setPosCart([]);
@@ -2693,6 +2682,51 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 ¡Muchas gracias por tu compra y confianza! 🔥`;
 
     sendWhatsAppNotification(ticket.clientPhone, msg);
+  };
+
+  const handleRegenerateTicketOrder = async (order: Order) => {
+    setRegeneratingTicket(true);
+    try {
+      const items = (order.order_items && order.order_items.length > 0)
+        ? order.order_items.map((it: any) => ({
+            title: it.product_title || 'Artículo',
+            quantity: it.quantity || 1,
+            price: Number(it.price_at_purchase) || 0,
+          }))
+        : [{ title: 'Compra mostrador FoxDrop', quantity: 1, price: order.total }];
+
+      const ticketData = {
+        orderNumber: order.id,
+        items,
+        total: order.total,
+        paymentMethod: order.paymentMethod || 'cash',
+        clientPhone: order.clientPhone || 'Mostrador',
+        clientName: order.clientName || 'Cliente FoxDrop',
+        pointsEarned: Math.floor(order.total / 10),
+        date: order.createdAt || new Date().toISOString(),
+      };
+
+      const canvasDataUrl = await generateTicketCanvasDataUrl(ticketData);
+      const res = await generateTicketImage({
+        ...ticketData,
+        imageDataUrl: canvasDataUrl,
+      });
+
+      const finalUrl = res?.imageUrl || canvasDataUrl;
+      if (finalUrl) {
+        const cleanNotes = (order.notes || "").replace(/Ticket:\s*(https?:\/\/[^\s]+)/i, "").trim();
+        const updatedNotes = cleanNotes ? `${cleanNotes} | Ticket: ${finalUrl}` : `Venta física POS | Ticket: ${finalUrl}`;
+        await updateOrderStatusInDb(order.id, order.status, updatedNotes);
+        const updatedOrder = { ...order, notes: updatedNotes };
+        setViewingTicketOrder(updatedOrder);
+        setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+      }
+    } catch (err) {
+      console.error("Error al regenerar ticket:", err);
+      alert("No se pudo regenerar el ticket: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setRegeneratingTicket(false);
+    }
   };
 
   const sendWhatsAppNotification = (phone: string, text: string) => {
@@ -9667,22 +9701,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 onClick={async () => {
                   try {
                     let downloadUrl = posCompletedTicket.ticketImageUrl;
-                    if (ticketReceiptRef.current) {
+                    if (!downloadUrl) {
                       try {
-                        downloadUrl = await toPng(ticketReceiptRef.current, {
-                          cacheBust: true,
-                          pixelRatio: 2,
-                          backgroundColor: '#ffffff',
-                          skipFonts: true,
-                          style: {
-                            transform: 'none',
-                            animation: 'none',
-                            clipPath: 'none',
-                            opacity: '1',
-                          },
-                        });
+                        downloadUrl = await generateTicketCanvasDataUrl(posCompletedTicket);
                       } catch (cErr) {
-                        console.warn("Fallo toPng en descarga:", cErr);
+                        console.warn("Fallo canvas en descarga:", cErr);
                       }
                     }
 
@@ -9822,6 +9845,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <span>Abrir / Descargar Imagen PNG</span>
                       </a>
                     )}
+
+                    <button
+                      type="button"
+                      disabled={regeneratingTicket}
+                      onClick={() => handleRegenerateTicketOrder(viewingTicketOrder)}
+                      className="w-full bg-orange-50 hover:bg-orange-100 text-[#E65F2B] border border-orange-200 font-bold py-2 rounded-2xl flex items-center justify-center gap-1.5 text-xs transition disabled:opacity-60"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${regeneratingTicket ? 'animate-spin' : ''}`} />
+                      <span>{regeneratingTicket ? 'Regenerando Ticket en HD...' : '🔄 Re-generar Ticket Gráfico (HD)'}</span>
+                    </button>
 
                     <button
                       onClick={() => setViewingTicketOrder(null)}
