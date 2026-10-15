@@ -1849,7 +1849,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-mascot-hd-transparent.png',
+                  image_url: '/fox-courier-delivery.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1873,7 +1873,7 @@ export default function TiendaFoxDrop() {
                     />
 
                     {/* Contenido izquierdo: Tag, Título y Botón */}
-                    <div className="relative z-10 w-[62%] p-4 flex flex-col justify-between">
+                    <div className="relative z-10 w-[60%] sm:w-[62%] p-4 flex flex-col justify-between">
                       <div className="space-y-1">
                         <span className="text-[10px] font-black tracking-widest text-[#E3B888] uppercase block">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
@@ -1902,11 +1902,11 @@ export default function TiendaFoxDrop() {
                     </div>
 
                     {/* Ilustración o Mascota en el lado derecho */}
-                    <div className="relative z-10 w-[38%] flex items-end justify-center pr-2 pb-1">
+                    <div className="relative z-10 w-[40%] sm:w-[38%] flex items-end justify-center pr-2 pb-0">
                       <img
-                        src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
+                        src={currentSlide.image_url || '/fox-courier-delivery.png'}
                         alt={currentSlide.title}
-                        className={`max-h-[175px] w-auto drop-shadow-xl ${isDefaultSlide ? 'object-contain' : 'object-cover rounded-xl my-auto max-h-[140px] border border-white/20'}`}
+                        className={`max-h-[185px] w-auto drop-shadow-2xl ${isDefaultSlide ? 'object-contain' : 'object-cover rounded-xl my-auto max-h-[140px] border border-white/20'}`}
                       />
                     </div>
                   </div>
@@ -1944,7 +1944,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! Descubre tesoros mundiales, calidad garantizada.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-mascot-hd-transparent.png',
+                  image_url: '/fox-courier-delivery.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1968,7 +1968,7 @@ export default function TiendaFoxDrop() {
                     />
 
                     {/* Columna Izquierda: Tipografía nítida y botón CTA */}
-                    <div className="relative z-10 w-[60%] lg:w-[58%] p-8 lg:p-12 flex flex-col justify-between">
+                    <div className="relative z-10 w-[58%] lg:w-[56%] p-8 lg:p-12 flex flex-col justify-between">
                       <div className="space-y-3">
                         <span className="text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase block">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
@@ -1996,14 +1996,14 @@ export default function TiendaFoxDrop() {
                       </div>
                     </div>
 
-                    {/* Columna Derecha: Mascota FoxDrop 3D HD en gran detalle */}
-                    <div className="relative z-10 w-[40%] lg:w-[42%] flex items-end justify-center pr-6 pb-2">
+                    {/* Columna Derecha: Mascota FoxDrop 3D Courier Repartidor en gran detalle */}
+                    <div className="relative z-10 w-[42%] lg:w-[44%] flex items-end justify-center pr-4 pb-0">
                       <img
-                        src={currentSlide.image_url || '/fox-mascot-hd-transparent.png'}
+                        src={currentSlide.image_url || '/fox-courier-delivery.png'}
                         alt={currentSlide.title}
                         className={`drop-shadow-2xl transition-transform duration-300 hover:scale-105 ${
                           isDefaultSlide 
-                            ? 'max-h-[290px] lg:max-h-[330px] w-auto object-contain' 
+                            ? 'max-h-[300px] lg:max-h-[340px] w-auto object-contain' 
                             : 'max-h-[260px] lg:max-h-[290px] w-auto object-cover rounded-2xl my-auto border-2 border-white/20 shadow-xl'
                         }`}
                       />
