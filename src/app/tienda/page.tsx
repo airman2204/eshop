@@ -1849,7 +1849,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-courier-delivery.png',
+                  image_url: '/fox-courier-clean.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1863,56 +1863,77 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full min-h-[170px] flex items-stretch">
-                    {/* FONDO ARTÍSTICO 100% IDÉNTICO AL ORIGINAL */}
+                    {/* CAPA 1: ESCENARIO DE FONDO LIMPIO CON MAPA MUNDIAL Y CURVAS ORIGINALES */}
                     <img 
-                      src="/banner-foxdrop-hero.png" 
+                      src="/hero-background-scene.png" 
                       alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* CAPA DE NUBES FOTOREALISTAS ANIMADAS FLOTANTES */}
-                    {/* Nube 1: Flotando suavemente junto al zorro */}
+                    {/* CAPA 2: CONTENIDO TIPOGRÁFICO DINÁMICO NATIVO Y NÍTIDO */}
+                    <div className="relative z-10 w-[54%] p-3 sm:p-5 lg:p-7 flex flex-col justify-between">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <span className="inline-block text-[8px] sm:text-[10px] font-black tracking-widest text-[#E3B888] uppercase">
+                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                        </span>
+                        <h2 className="text-xs sm:text-lg md:text-xl font-black text-white leading-tight drop-shadow-sm line-clamp-2">
+                          {isDefaultSlide && user?.name 
+                            ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                            : currentSlide.title}
+                        </h2>
+                        <p className="text-[9px] sm:text-[11px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2">
+                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
+                        </p>
+                      </div>
+
+                      <div className="pt-1.5 sm:pt-3">
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(currentSlide.cta_category || 'Todas');
+                            setActiveTab('all');
+                            const el = document.getElementById('catalog-section');
+                            el?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[9px] sm:text-[11px] font-black px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-[0_4px_16px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
+                        >
+                          <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
+                          <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CAPA 3: NUBES DE FONDO (DETRÁS DEL ZORRITO) */}
                     <img 
-                      src="/cloud-original-1.png"
+                      src="/cloud-anim-mid.png"
                       alt=""
                       className="absolute left-[47%] top-[38%] w-[16%] opacity-85 pointer-events-none animate-cloud-slow z-10"
                     />
-
-                    {/* Nube 2: Flotando en reversa cerca del globo base */}
                     <img 
-                      src="/cloud-original-2.png"
-                      alt=""
-                      className="absolute left-[50%] bottom-[4%] w-[18%] opacity-90 pointer-events-none animate-cloud-reverse z-10"
-                    />
-
-                    {/* Nube 3: Flotando en la esquina superior derecha */}
-                    <img 
-                      src="/cloud-original-3.png"
+                      src="/cloud-anim-right.png"
                       alt=""
                       className="absolute right-[2%] top-[38%] w-[14%] opacity-80 pointer-events-none animate-cloud-float z-10"
                     />
 
-                    {/* Nube adicional suave */}
+                    {/* CAPA 4: EL ZORRO COURIER REPARTIDOR (SEPARADO Y EN SU POSICIÓN EXACTA) */}
+                    <div className="absolute right-0 top-0 bottom-0 w-[55%] flex items-end justify-center pointer-events-none z-15">
+                      <img 
+                        src="/hero-fox-layer.png" 
+                        alt="Fox Courier" 
+                        className="w-full h-full object-contain object-bottom drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]"
+                      />
+                    </div>
+
+                    {/* CAPA 5: NUBES POR DELANTE DEL ZORRITO (FLOTANDO A SUS PIES) */}
                     <img 
                       src="/realistic-cloud-1.png"
                       alt=""
-                      className="absolute right-[22%] top-[10%] w-[15%] opacity-65 pointer-events-none animate-cloud-slow z-10"
+                      className="absolute right-[22%] top-[10%] w-[15%] opacity-70 pointer-events-none animate-cloud-slow z-20"
                     />
-
-                    {/* ÁREA INTERACTIVA CLICKEABLE PARA EL BOTÓN Y ENLACE DEL CATÁLOGO */}
-                    <div 
-                      onClick={() => {
-                        setSelectedCategory(currentSlide.cta_category || 'Todas');
-                        setActiveTab('all');
-                        const el = document.getElementById('catalog-section');
-                        el?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="absolute inset-0 cursor-pointer z-20 group"
-                      title="Ver Catálogo Completo"
-                    >
-                      {/* En móvil, hotspot visual sutil pulsante sobre el botón */}
-                      <div className="absolute left-[5%] bottom-[16%] w-[28%] h-[18%] rounded-full opacity-0 group-hover:opacity-10 transition-opacity bg-white" />
-                    </div>
+                    <img 
+                      src="/cloud-original-2.png"
+                      alt=""
+                      className="absolute left-[52%] bottom-[2%] w-[18%] opacity-95 pointer-events-none animate-cloud-reverse z-20"
+                    />
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
@@ -1948,7 +1969,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-courier-delivery.png',
+                  image_url: '/fox-courier-clean.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1962,62 +1983,82 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
-                    {/* FONDO DE ILUSTRACIÓN ORIGINAL 100% IDÉNTICO */}
+                    {/* CAPA 1: ESCENARIO DE FONDO LIMPIO ORIGINAL (MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS) */}
                     <img 
-                      src="/banner-foxdrop-hero.png" 
-                      alt="FoxDrop Hero Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                      src="/hero-background-scene.png" 
+                      alt="FoxDrop Hero Background" 
+                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* CAPA DE NUBES REALISTAS ANIMADAS FLOTANTES (EFECTO PARALAJE 3D) */}
-                    {/* Nube 1: Flotando suavemente junto al avión de papel y mapa */}
+                    {/* CAPA 2: CONTENIDO TIPOGRÁFICO NATIVO Y NÍTIDO CON GREETING PERSONALIZADO */}
+                    <div className="relative z-10 w-[50%] p-8 lg:p-12 xl:p-14 flex flex-col justify-between">
+                      <div className="space-y-3 lg:space-y-4">
+                        <span className="inline-block text-xs lg:text-sm font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                        </span>
+                        <h1 className="text-2xl lg:text-4xl xl:text-[44px] font-black text-white leading-[1.12] drop-shadow-sm max-w-xl">
+                          {isDefaultSlide && user?.name 
+                            ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                            : currentSlide.title}
+                        </h1>
+                        <p className="text-sm lg:text-base text-emerald-100/90 leading-relaxed max-w-lg font-medium drop-shadow-xs">
+                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
+                        </p>
+                      </div>
+
+                      <div className="pt-4 lg:pt-6">
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(currentSlide.cta_category || 'Todas');
+                            setActiveTab('all');
+                            const el = document.getElementById('catalog-section');
+                            el?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8A2E] hover:to-[#F05E00] text-white font-black px-7 py-3 rounded-full text-sm lg:text-base shadow-[0_6px_24px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
+                        >
+                          <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
+                          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CAPA 3: NUBES DE FONDO (DETRÁS DEL ZORRITO FLOTANDO SUAVEMENTE) */}
                     <img 
-                      src="/cloud-original-1.png"
+                      src="/cloud-anim-mid.png"
                       alt=""
                       className="absolute left-[47%] top-[40%] w-[13%] opacity-90 pointer-events-none animate-cloud-slow z-10"
                     />
-
-                    {/* Nube 2: Flotando sobre el pie del zorro y el globo terráqueo inferior */}
                     <img 
-                      src="/cloud-original-2.png"
-                      alt=""
-                      className="absolute left-[51%] bottom-[6%] w-[15%] opacity-90 pointer-events-none animate-cloud-reverse z-10"
-                    />
-
-                    {/* Nube 3: Flotando a la derecha detrás del globo terráqueo superior */}
-                    <img 
-                      src="/cloud-original-3.png"
+                      src="/cloud-anim-right.png"
                       alt=""
                       className="absolute right-[2.5%] top-[42%] w-[12%] opacity-85 pointer-events-none animate-cloud-float z-10"
                     />
 
-                    {/* Nube 4: Nube esponjosa flotando arriba en el cielo cálido */}
+                    {/* CAPA 4: EL ZORRO COURIER (SEPARADO EN SU CAPA CON MOVIMIENTO SUTIL) */}
+                    <div className="absolute right-0 top-0 bottom-0 w-[54%] flex items-end justify-center pointer-events-none z-15">
+                      <img 
+                        src="/hero-fox-layer.png" 
+                        alt="FoxDrop Mascot" 
+                        className="w-full h-full object-contain object-bottom drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
+                      />
+                    </div>
+
+                    {/* CAPA 5: NUBES POR DELANTE (ENFRENTE DE LOS PIES DEL ZORRO Y PARACAÍDAS) */}
+                    <img 
+                      src="/cloud-original-2.png"
+                      alt=""
+                      className="absolute left-[52%] bottom-[4%] w-[16%] opacity-95 pointer-events-none animate-cloud-reverse z-20"
+                    />
                     <img 
                       src="/realistic-cloud-1.png"
                       alt=""
-                      className="absolute right-[24%] top-[12%] w-[13%] opacity-65 pointer-events-none animate-cloud-slow z-10"
+                      className="absolute right-[24%] top-[12%] w-[13%] opacity-70 pointer-events-none animate-cloud-slow z-20"
                     />
-
-                    {/* Nube 5: Nube suave cerca del paracaídas */}
                     <img 
                       src="/realistic-cloud-2.png"
                       alt=""
-                      className="absolute right-[7%] bottom-[12%] w-[11%] opacity-60 pointer-events-none animate-cloud-reverse z-10"
+                      className="absolute right-[7%] bottom-[12%] w-[11%] opacity-65 pointer-events-none animate-cloud-reverse z-20"
                     />
-
-                    {/* HOTSPOT INTERACTIVO SOBRE EL BOTÓN "VER CATÁLOGO COMPLETO" */}
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(currentSlide.cta_category || 'Todas');
-                        setActiveTab('all');
-                        const el = document.getElementById('catalog-section');
-                        el?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="absolute left-[5.2%] bottom-[14.8%] w-[23.5%] h-[15.5%] rounded-full cursor-pointer z-20 transition-all duration-300 hover:ring-4 hover:ring-amber-300/50 hover:shadow-[0_0_25px_rgba(255,140,40,0.8)]"
-                      title="Ver Catálogo Completo"
-                    >
-                      <span className="sr-only">Ver Catálogo Completo</span>
-                    </button>
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
