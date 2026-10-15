@@ -1469,40 +1469,24 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {/* FILA CENTRAL: LOGO CENTRADO (ESTILO TJ MAXX) + BUSCADOR A LA DERECHA */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        {/* FILA CENTRAL TIPO AMAZON / MERCADO LIBRE: LOGO IZQUIERDA + BUSCADOR PROTAGÓNICO CENTRADO + ACCIONES DERECHA */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-6">
           
-          {/* LADO IZQUIERDO: ACCIONES RÁPIDAS O ESPACIO EN ESCRITORIO */}
-          <div className="md:w-1/4 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCategory('Todas');
-                setActiveTab('new');
-                if (currentView === 'account') setCurrentView('store');
-              }}
-              className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-black text-amber-200 bg-white/10 px-3 py-1.5 rounded-full border border-white/15 hover:bg-white/20 transition cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#DF7F2D]" />
-              <span>Hallazgos del Día</span>
-            </button>
-          </div>
-
-          {/* CENTRO: LOGO DE FOXDROP ELEGANTE Y PROTAGÓNICO */}
+          {/* LADO IZQUIERDO: LOGO DE FOXDROP */}
           <div 
             onClick={() => {
               setCurrentView('store');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="cursor-pointer flex items-center justify-center transition-transform hover:scale-102"
+            className="cursor-pointer shrink-0 transition-transform hover:scale-102 flex items-center gap-2"
             title="Ir al inicio de FoxDrop"
           >
             <FoxDropLogo size="lg" variant="dark" />
           </div>
 
-          {/* LADO DERECHO: BUSCADOR PILL BEIGE CON LUPA ÁMBAR */}
-          <div className="flex items-center justify-end gap-3 md:w-1/4">
-            <div className="relative w-full max-w-[240px] sm:max-w-[280px]">
+          {/* CENTRO: BARRA DE BÚSQUEDA PROTAGÓNICA (AMAZON / MERCADO LIBRE STYLE) */}
+          <div className="flex-1 max-w-2xl relative">
+            <div className="flex items-center w-full bg-white rounded-xl shadow-xs overflow-hidden border-2 border-transparent focus-within:border-[#DF7F2D] transition">
               <input
                 type="text"
                 value={searchTerm}
@@ -1515,158 +1499,202 @@ export default function TiendaFoxDrop() {
                   }
                   if (currentView === 'account') setCurrentView('store');
                 }}
-                placeholder="buscar productos..."
-                className="w-full bg-[#FAF6F0] text-[#113B34] placeholder-[#7E9690] pl-3.5 pr-9 py-2 rounded-full text-xs font-medium outline-none transition shadow-inner border border-transparent focus:border-[#DF7F2D]"
+                placeholder="Buscar productos, marcas y tesoros en FoxDrop..."
+                className="w-full bg-white text-gray-900 placeholder-gray-400 pl-4 pr-10 py-2.5 text-xs sm:text-sm font-medium outline-none"
               />
-              {searchTerm ? (
+              {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#0F3E36] p-0.5"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 transition"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button 
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#DF7F2D] hover:text-[#C96E24] transition cursor-pointer"
-                  title="Buscar"
-                >
-                  <Search className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsSearchFocused(false);
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white px-4 sm:px-5 py-2.5 flex items-center justify-center transition cursor-pointer shrink-0 font-bold"
+                title="Buscar"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </div>
 
-              {/* DESPLEGABLE DE BÚSQUEDA PREDICTIVA CON HISTORIAL Y POPULARES */}
-              {isSearchFocused && (
-                <div 
-                  onMouseDown={(e) => e.preventDefault()} 
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-1"
-                >
-                  {searchTerm.trim().length >= 2 ? (
-                    searchSuggestions.length > 0 ? (
-                      <>
-                        <div className="p-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-500">
-                          <span>Sugerencias rápidas</span>
-                          <span className="text-[#DF7F2D] font-mono">{searchSuggestions.length} encontrados</span>
-                        </div>
-                        <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-                          {searchSuggestions.map((item) => (
-                            <div
-                              key={item.id}
-                              onClick={() => {
-                                saveSearchTerm(item.title);
-                                setSelectedProduct(item);
-                                setModalQuantity(1);
-                                setIsSearchFocused(false);
-                              }}
-                              className="p-2.5 flex items-center gap-2.5 hover:bg-orange-50/60 cursor-pointer transition text-left"
-                            >
-                              <div className="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
-                                <img src={item.images?.[0] || '/no-image.svg'} alt={item.title} className="w-full h-full object-contain" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
-                                <div className="flex items-center justify-between mt-0.5">
-                                  <span className="text-[10px] text-gray-400 capitalize">{item.category}</span>
-                                  <span className="text-xs font-black text-[#DF7F2D] font-mono">${item.publicPrice.toFixed(0)} MXN</span>
-                                </div>
+            {/* DESPLEGABLE DE BÚSQUEDA PREDICTIVA CON HISTORIAL Y POPULARES */}
+            {isSearchFocused && (
+              <div 
+                onMouseDown={(e) => e.preventDefault()} 
+                className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-1"
+              >
+                {searchTerm.trim().length >= 2 ? (
+                  searchSuggestions.length > 0 ? (
+                    <>
+                      <div className="p-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-[11px] font-bold text-gray-500">
+                        <span>Sugerencias rápidas</span>
+                        <span className="text-[#DF7F2D] font-mono">{searchSuggestions.length} encontrados</span>
+                      </div>
+                      <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+                        {searchSuggestions.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => {
+                              saveSearchTerm(item.title);
+                              setSelectedProduct(item);
+                              setModalQuantity(1);
+                              setIsSearchFocused(false);
+                            }}
+                            className="p-2.5 flex items-center gap-2.5 hover:bg-orange-50/60 cursor-pointer transition text-left"
+                          >
+                            <div className="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
+                              <img src={item.images?.[0] || '/no-image.svg'} alt={item.title} className="w-full h-full object-contain" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
+                              <div className="flex items-center justify-between mt-0.5">
+                                <span className="text-[10px] text-gray-400 capitalize">{item.category}</span>
+                                <span className="text-xs font-black text-[#DF7F2D] font-mono">${item.publicPrice.toFixed(0)} MXN</span>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            saveSearchTerm(searchTerm);
-                            setIsSearchFocused(false);
-                            const el = document.getElementById('catalog-section');
-                            el?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-center text-[11px] font-bold text-[#0F3E36] border-t border-gray-100 transition"
-                        >
-                          Ver todos los resultados en el catálogo →
-                        </button>
-                      </>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-gray-500 space-y-1">
-                        <p className="font-semibold text-gray-700">Sin coincidencias exactas</p>
-                        <p className="text-[11px] text-gray-400">Intenta buscar por categoría o palabra clave.</p>
+                          </div>
+                        ))}
                       </div>
-                    )
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveSearchTerm(searchTerm);
+                          setIsSearchFocused(false);
+                          const el = document.getElementById('catalog-section');
+                          el?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-center text-[11px] font-bold text-[#0F3E36] border-t border-gray-100 transition"
+                      >
+                        Ver todos los resultados en el catálogo →
+                      </button>
+                    </>
                   ) : (
-                    /* HISTORIAL RECIENTE Y BÚSQUEDAS POPULARES */
-                    <div className="p-3 space-y-3 text-xs">
-                      {recentSearches.length > 0 && (
-                        <div>
-                          <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 mb-1.5">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-gray-400" /> Búsquedas recientes
-                            </span>
-                            <button 
-                              onClick={clearRecentSearches}
-                              className="text-[10px] text-rose-500 hover:underline cursor-pointer"
-                            >
-                              Borrar
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {recentSearches.map((s, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => {
-                                  setSearchTerm(s);
-                                  setSelectedCategory('Todas');
-                                  setIsSearchFocused(false);
-                                  const el = document.getElementById('catalog-section');
-                                  el?.scrollIntoView({ behavior: 'smooth' });
-                                }}
-                                className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-[11px] font-medium transition cursor-pointer flex items-center gap-1"
-                              >
-                                <span>{s}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
+                    <div className="p-4 text-center text-xs text-gray-500 space-y-1">
+                      <p className="font-semibold text-gray-700">Sin coincidencias exactas</p>
+                      <p className="text-[11px] text-gray-400">Intenta buscar por categoría o palabra clave.</p>
+                    </div>
+                  )
+                ) : (
+                  /* HISTORIAL RECIENTE Y BÚSQUEDAS POPULARES */
+                  <div className="p-3 space-y-3 text-xs">
+                    {recentSearches.length > 0 && (
                       <div>
-                        <span className="text-[11px] font-bold text-gray-500 block mb-1.5 flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3 text-[#DF7F2D]" /> Más buscados
-                        </span>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 mb-1.5">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-gray-400" /> Búsquedas recientes
+                          </span>
+                          <button 
+                            onClick={clearRecentSearches}
+                            className="text-[10px] text-rose-500 hover:underline cursor-pointer"
+                          >
+                            Borrar
+                          </button>
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
-                          {POPULAR_SEARCHES.map((tag, idx) => (
+                          {recentSearches.map((s, idx) => (
                             <button
                               key={idx}
                               onClick={() => {
-                                setSearchTerm(tag);
+                                setSearchTerm(s);
                                 setSelectedCategory('Todas');
                                 setIsSearchFocused(false);
                                 const el = document.getElementById('catalog-section');
                                 el?.scrollIntoView({ behavior: 'smooth' });
                               }}
-                              className="px-2.5 py-1 bg-[#FAF6F0] hover:bg-orange-100/70 border border-orange-200/60 rounded-lg text-gray-800 text-[11px] font-semibold transition cursor-pointer"
+                              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 text-[11px] font-medium transition cursor-pointer flex items-center gap-1"
                             >
-                              {tag}
+                              <span>{s}</span>
                             </button>
                           ))}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    )}
 
-            {/* CARRITO MÓVIL VISIBLE EN CELULAR */}
+                    <div>
+                      <span className="text-[11px] font-bold text-gray-500 block mb-1.5 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-[#DF7F2D]" /> Más buscados
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {POPULAR_SEARCHES.map((tag, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSearchTerm(tag);
+                              setSelectedCategory('Todas');
+                              setIsSearchFocused(false);
+                              const el = document.getElementById('catalog-section');
+                              el?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="px-2.5 py-1 bg-[#FAF6F0] hover:bg-orange-100/70 border border-orange-200/60 rounded-lg text-gray-800 text-[11px] font-semibold transition cursor-pointer"
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* LADO DERECHO: ACCIONES RÁPIDAS (CUENTA, FAVORITOS Y CARRITO) */}
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            {/* MI CUENTA */}
+            {user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentView === 'account') {
+                    setCurrentView('store');
+                  } else {
+                    loadFullProfileData();
+                    setCurrentView('account');
+                  }
+                }}
+                className="hidden sm:flex flex-col text-left hover:text-amber-300 transition cursor-pointer"
+              >
+                <span className="text-[10px] text-white/70 leading-tight">Hola, {user.name ? user.name.split(' ')[0] : 'Cliente'}</span>
+                <span className="text-xs font-black text-amber-300 flex items-center gap-0.5">Mi Cuenta</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openAuthModal}
+                className="hidden sm:flex flex-col text-left hover:text-white transition cursor-pointer"
+              >
+                <span className="text-[10px] text-white/70 leading-tight">Bienvenido</span>
+                <span className="text-xs font-black text-white flex items-center gap-0.5">Iniciar Sesión</span>
+              </button>
+            )}
+
+            {/* CARRITO PRINCIPAL DESTACADO */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="md:hidden relative p-1.5 text-white hover:text-amber-300 transition cursor-pointer"
+              className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer border border-white/15"
             >
-              <ShoppingCart className="w-6 h-6" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#DF7F2D] text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
-                  {cartItemCount}
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5 text-amber-300" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-[#DF7F2D] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                    {cartItemCount}
+                  </span>
+                )}
+              </div>
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-[10px] text-white/75 leading-tight">Carrito</span>
+                <span className="text-xs font-black text-white font-mono">
+                  ${cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0).toFixed(0)} MXN
                 </span>
-              )}
+              </div>
             </button>
           </div>
         </div>
@@ -2005,194 +2033,40 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* ======================================================== */}
-          {/* 2. TJ MAXX BANNER: LIQUIDACIÓN (CONDICIONAL DESDE EL ADMIN) */}
-          {/* ======================================================== */}
-          {storeSettings.showClearanceBanner && (
-        <section className="w-full bg-[#A83820] text-white shadow-inner overflow-hidden border-y border-[#7D2613] animate-in fade-in duration-300">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
-            {/* TITULAR DE MARCA Y DESCUENTOS */}
-            <div className="space-y-0.5">
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-xs capitalize">
-                {storeSettings.clearanceTitle}{' '}
-                <span className="underline decoration-[#FFDF00] decoration-wavy decoration-1">
-                  {storeSettings.clearanceDiscountText}
-                </span>
-              </h2>
-              <p className="text-[11px] sm:text-xs text-white/80 font-medium">
-                {storeSettings.clearanceSubtitle}
-              </p>
-            </div>
-
-            {/* ACCESOS DIRECTOS DE LIQUIDACIÓN ESTILO TJ MAXX */}
-            <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-1 text-xs sm:text-[13px] font-bold text-white/95">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer capitalize"
-              >
-                Liquidación Total
-              </button>
-              {/* CATEGORÍAS POPULARES CON STOCK REAL */}
-              {popularCategories.slice(0, 3).map((cat) => (
-                <button
-                  key={cat.name}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('all');
-                    setSelectedCategory(cat.name);
-                    const el = document.getElementById('catalog-section');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer capitalize"
-                >
-                  {cat.name}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('new');
-                  setSelectedCategory('Todas');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-amber-200 underline underline-offset-4 decoration-white/60 hover:decoration-amber-200 transition cursor-pointer font-black capitalize"
-              >
-                Nuevas Rebajas
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ======================================================== */}
-      {/* 3. HERO SECTION MOSAICO ESTILO TJ MAXX: "JUST ARRIVED OVERNIGHT" */}
-      {/* ======================================================== */}
-      <section className="w-full bg-[#E4ECE8] border-b border-gray-200">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch">
-          
-          {/* LADO IZQUIERDO: TEXTO TITULAR + SUBTÍTULO + BOTONES CURVOS */}
-          <div className="w-full lg:w-[45%] p-6 sm:p-10 lg:p-14 flex flex-col justify-center space-y-6">
-            <div className="space-y-3">
-              <span className="text-[11px] font-black tracking-widest uppercase text-[#DF7F2D] block">
-                Nueva Mercancía Diaria
-              </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0F3E36] leading-[1.05] tracking-tight">
-                Recién llegado a FoxDrop
-              </h1>
-              <p className="text-sm sm:text-base text-gray-700 font-medium leading-relaxed max-w-md">
-                Nuevos tesoros y productos exclusivos llegan continuamente. Descúbrelos antes de que se agoten.
-              </p>
-            </div>
-
-            {/* BOTONES PILL EN ROJO CÁLIDO / ÁMBAR CON MAYÚSCULAS/MINÚSCULAS NATURALES */}
-            <div className="grid grid-cols-2 gap-3 max-w-sm pt-2">
-              {popularCategories.slice(0, 2).map((cat) => (
-                <button
-                  key={cat.name}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(cat.name);
-                    setActiveTab('all');
-                    const el = document.getElementById('catalog-section');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-[#C43820] hover:bg-[#A82E19] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize truncate"
-                >
-                  {cat.name}
-                </button>
-              ))}
-
-              {storeSettings.showClearanceBanner ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('deals');
-                    setSelectedCategory('Todas');
-                    const el = document.getElementById('catalog-section');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
-                >
-                  Liquidación
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('new');
-                    setSelectedCategory('Todas');
-                    const el = document.getElementById('catalog-section');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
-                >
-                  Novedades
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedCategory('Todas');
-                  const el = document.getElementById('catalog-section');
-                  el?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-[#0F3E36] hover:bg-[#154E45] active:scale-95 text-white font-extrabold py-3 px-4 rounded-full text-xs sm:text-sm transition duration-150 shadow-sm text-center cursor-pointer capitalize"
-              >
-                Ver Todo el Stock
-              </button>
-            </div>
-          </div>
-
-          {/* LADO DERECHO: MOSAICO GRID DE PRODUCTOS / ESTILO TJ MAXX */}
-          <div className="w-full lg:w-[55%] grid grid-cols-3 sm:grid-cols-4 gap-1 p-2 bg-white/40">
-            {loadingProducts ? (
-              /* SKELETON LOADER SUAVE MIENTRAS DESCARGAN LOS PRODUCTOS REALES */
-              Array.from({ length: 8 }).map((_, idx) => (
-                <div
-                  key={`skeleton-hero-${idx}`}
-                  className="aspect-square bg-white relative overflow-hidden border border-gray-100 flex items-center justify-center p-3 animate-pulse"
-                >
-                  <div className="w-full h-full bg-slate-100 rounded-xl" />
+          {/* CINTILLO DE CONFIANZA TIPO AMAZON / MERCADO LIBRE */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-white border border-gray-200/90 rounded-2xl p-3 shadow-2xs text-gray-700">
+              <div className="flex items-center gap-2.5 px-2">
+                <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-gray-900 leading-tight">Envíos Rápidos</p>
+                  <p className="text-[10px] text-gray-400">Puebla y todo México</p>
                 </div>
-              ))
-            ) : products.length > 0 ? (
-              /* PRODUCTOS REALES CON SUS IMÁGENES GENUINAS */
-              products.slice(0, 8).map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => {
-                    setSelectedProduct(p);
-                  }}
-                  className="aspect-square bg-white relative overflow-hidden group cursor-pointer border border-gray-100 flex items-center justify-center p-2 hover:shadow-md transition duration-200"
-                  title={p.title}
-                >
-                  <img
-                    src={p.images?.[0] || '/no-image.svg'}
-                    alt={p.title}
-                    className="w-full h-full object-contain group-hover:scale-108 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-[#0F3E36]/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
-                    <span className="text-[10px] font-bold text-gray-900 bg-white/95 px-1.5 py-0.5 rounded shadow-xs line-clamp-1">
-                      {p.title}
-                    </span>
-                  </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-gray-900 leading-tight">Compra Protegida</p>
+                  <p className="text-[10px] text-gray-400">Garantía en cada pedido</p>
                 </div>
-              ))
-            ) : null}
-          </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
+                <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-gray-900 leading-tight">Puntos Fox Rewards</p>
+                  <p className="text-[10px] text-gray-400">Canjeables por dinero</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
+                <Send className="w-5 h-5 text-[#0F3E36] shrink-0" />
+                <div>
+                  <p className="text-xs font-black text-gray-900 leading-tight">Pedidos Especiales</p>
+                  <p className="text-[10px] text-gray-400">Traemos lo que busques</p>
+                </div>
+              </div>
+            </div>
+          </section>
 
-        </div>
-      </section>
 
       {/* ======================================================== */}
       {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
@@ -2291,18 +2165,7 @@ export default function TiendaFoxDrop() {
               </select>
             </div>
 
-            {activeTab === 'new' && (
-              <button
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedCategory('Todas');
-                }}
-                className="bg-gray-100 hover:bg-gray-200 text-[#2D4A58] text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>Ver todo</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
+
             {selectedCategory !== 'Todas' && (
               <button
                 onClick={() => setSelectedCategory('Todas')}
@@ -2451,25 +2314,14 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
 
-                  {/* ACCIÓN PRINCIPAL AGREGAR & VISTA RÁPIDA */}
-                  <div className="pt-3 space-y-1.5">
+                  {/* ACCIÓN PRINCIPAL: AGREGAR AL CARRITO ESTILO E-COMMERCE MODERNO */}
+                  <div className="pt-3">
                     <button
                       onClick={(e) => addToCart(product, e)}
-                      className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                      className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md"
                     >
-                      <ShoppingCart className="w-3.5 h-3.5" />
+                      <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
                       <span>Agregar al Carrito</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setModalQuantity(1);
-                        setSelectedProduct(product);
-                      }}
-                      className="w-full bg-[#FAF6F0] hover:bg-gray-100 text-gray-700 font-bold py-1.5 rounded-lg text-[11px] transition duration-150 cursor-pointer text-center border border-gray-200/80"
-                    >
-                      Vista rápida
                     </button>
                   </div>
                 </div>
