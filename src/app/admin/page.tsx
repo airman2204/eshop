@@ -9803,29 +9803,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
           {/* Acciones de Envío Directo y Compartir (con z-20 para estar al frente mientras el ticket emerge por detrás) */}
           <div className="space-y-2 pt-1 relative z-20">
-              <button
-                type="button"
-                disabled={isSendingTicketViaWa}
-                onClick={() => shareTicketImageDirectly(posCompletedTicket)}
-                className="w-full bg-[#25D366] hover:bg-[#20ba59] disabled:opacity-75 text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98] cursor-pointer"
-              >
-                {isSendingTicketViaWa ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Abriendo chat de WhatsApp...</span>
-                  </>
-                ) : ticketSentOrders.has(posCompletedTicket.orderNumber) ? (
-                  <>
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Abrir Chat de WhatsApp (Ticket Ya Enviado ✓)</span>
-                  </>
-                ) : (
-                  <>
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Enviar Ticket por WhatsApp FoxDrop</span>
-                  </>
-                )}
-              </button>
+              {/* Confirmación de envío automático por WhatsApp */}
+              {posCompletedTicket.clientPhone && posCompletedTicket.clientPhone !== 'Mostrador' && posCompletedTicket.clientPhone.replace(/\D/g, '').length >= 10 ? (
+                <div className="w-full bg-emerald-50 border border-emerald-200 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-2 text-emerald-800 text-xs font-bold shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+                  <span>Ticket enviado automáticamente por WhatsApp ✓</span>
+                </div>
+              ) : (
+                <div className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3 flex items-center justify-center gap-1.5 text-slate-500 text-xs font-semibold">
+                  <span>Venta en mostrador sin teléfono registrado</span>
+                </div>
+              )}
 
               <button
                 type="button"
