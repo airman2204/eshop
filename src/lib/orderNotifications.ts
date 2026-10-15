@@ -235,7 +235,10 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
         (params.ticketImageUrl ? `🧾 *Comprobante oficial digital emitido con éxito.*\n\n` : "") +
         `¡Fue un placer atenderte hoy! Si necesitas asistencia o seguimiento, sólo responde a este mensaje.`;
       
-      stickerUrl = `${baseUrl}/stickers/sticker-gracias-compra.webp`;
+      // Si ya lleva la imagen oficial del ticket gráfico, no enviar sticker para evitar saturar con 3 mensajes
+      if (!params.ticketImageUrl) {
+        stickerUrl = `${baseUrl}/stickers/sticker-gracias-compra.webp`;
+      }
     }
   }
 

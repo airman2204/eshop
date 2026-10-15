@@ -1699,6 +1699,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                             <img 
                               src={msg.mediaUrl} 
                               alt="Media WhatsApp" 
+                              onError={(e) => {
+                                if (msg.mediaUrl?.includes('/stickers/')) {
+                                  const fileName = msg.mediaUrl.split('/stickers/').pop();
+                                  if (fileName && !e.currentTarget.src.endsWith(`/stickers/${fileName}`)) {
+                                    e.currentTarget.src = `/stickers/${fileName}`;
+                                    return;
+                                  }
+                                }
+                                e.currentTarget.style.display = 'none';
+                              }}
                               onClick={() => setPreviewMediaModal(msg.mediaUrl!)}
                               className="w-48 max-h-64 object-contain rounded-xl mx-auto cursor-pointer hover:opacity-95 transition shadow-sm active:scale-98"
                               title="Toca para ver en pantalla completa"
