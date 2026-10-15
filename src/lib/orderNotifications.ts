@@ -246,11 +246,11 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
   // FLUJO B: COMPRA EN LÍNEA CON CONTRA-ENTREGA EN PUEBLA (O PUNTO ACORDADO)
   // =========================================================================
   else if (shippingType === "puebla_local" || shippingType === "agreed_pickup") {
-    const punto = pickupPoint || "Punto de entrega acordado en Puebla";
+    const punto = pickupPoint || "Punto de entrega acordado";
 
     switch (newStatus) {
       case "pending":
-        messageText = `🦊 ¡Hola *${firstName}*! Recibimos tu pedido *#${orderId}* en FoxDrop Puebla.\n\n` +
+        messageText = `🦊 ¡Hola *${firstName}*! Recibimos tu pedido *#${orderId}* en FoxDrop.\n\n` +
           (totalFormatted ? `💵 *Total a liquidar contra-entrega:* ${totalFormatted}\n` : "") +
           `📍 *Punto/Zona acordada:* ${punto}\n\n` +
           `Estamos coordinando el horario ideal para la entrega. Te notificaremos en cuanto el paquete entre a empaque.`;
@@ -258,7 +258,7 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
 
       case "processing":
         messageText = `🦊 ¡Tu pedido *#${orderId}* está en preparación, *${firstName}*!\n\n` +
-          `Nuestro equipo en Puebla está empaquetando y revisando cuidadosamente tus productos para garantizar que todo llegue impecable.\n` +
+          `Nuestro equipo está empaquetando y revisando cuidadosamente tus productos para garantizar que todo llegue impecable.\n` +
           `Te confirmaremos en cuanto el repartidor salga en ruta.`;
         stickerUrl = `${baseUrl}/stickers/sticker-pago-caja.webp`;
         break;
@@ -274,7 +274,7 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
       case "delivered":
         messageText = `🎉 ¡Pedido *#${orderId}* entregado con éxito, *${firstName}*!\n\n` +
           (starsCount > 0 ? `⭐ *Has acumulado:* +${starsCount} estrellas en tu cuenta FoxDrop.\n` : "") +
-          `Esperamos que disfrutes mucho tus artículos. ¡Gracias por confiar en FoxDrop Puebla!\n\n` +
+          `Esperamos que disfrutes mucho tus artículos. ¡Gracias por confiar en FoxDrop!\n\n` +
           `¿Todo llegó excelente? Nos encantaría que nos compartas tu opinión. 🦊`;
         stickerUrl = `${baseUrl}/stickers/sticker-gracias-compra.webp`;
         break;

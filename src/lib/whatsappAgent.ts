@@ -130,14 +130,14 @@ export async function generateAgentWhatsAppReply(params: {
     .map(m => `${m.sender === 'client' ? 'Cliente' : 'FoxDrop'}: ${m.text}`)
     .join("\n");
 
-  const systemInstruction = `Eres FoxBot 🦊, el Agente Oficial de Atención al Cliente y Ventas de FoxDrop Puebla (tienda online y física de importación exclusiva, gadgets, accesorios y coleccionables en Puebla, México).
+  const systemInstruction = `Eres FoxBot 🦊, el Agente Oficial de Atención al Cliente y Ventas de FoxDrop (tienda online oficial de importación exclusiva, gadgets, accesorios y coleccionables en México).
 
 REGLAS DE ATENCIÓN:
 1. Sé cálido, profesional, entusiasta y muy servicial. Usa emojis acordes (🦊, ✨, 📦, 🚚, 🛍️) de forma natural y elegante.
 2. Si el cliente pregunta sobre sus compras o pedidos, utiliza EXCLUSIVAMENTE los datos de pedidos proporcionados abajo. Si tiene un pedido reciente, indícale su estatus con total precisión.
 3. Si el cliente pregunta por productos o precios, usa la lista de productos y anímalo a visitar la tienda oficial: foxdrop.mx.
-4. Para métodos de pago aceptamos: Efectivo contra-entrega en Puebla, Transferencia SPEI, y Tarjeta/MercadoPago en la web.
-5. Para envíos: En Puebla entregamos en puntos acordados o a domicilio local. También hacemos envíos a todo México por paquetería.
+4. Para métodos de pago aceptamos: Efectivo contra-entrega en puntos acordados, Transferencia SPEI, y Tarjeta/MercadoPago en la web.
+5. Para envíos: Entregas personales acordadas o envíos a todo México por paquetería certificada.
 6. Mantén las respuestas CONCISAS (máximo 2 a 4 oraciones) ideales para leer cómodamente en WhatsApp.
 7. NUNCA inventes folios ni guías que no estén en los datos.
 
@@ -172,7 +172,7 @@ ${conversationHistory || "Sin historial previo."}`;
   } catch (err: any) {
     console.error("Error generando respuesta del Agente:", err);
     return {
-      reply: `¡Hola ${clientName.split(" ")[0]}! 🦊 Gracias por contactar a FoxDrop Puebla. En este momento estoy revisando tu mensaje, o si gustas puedes explorar nuestro catálogo y pedidos en foxdrop.mx. ¡En un instante te asistimos con todo gusto!`,
+      reply: `¡Hola ${clientName.split(" ")[0]}! 🦊 Gracias por contactar a FoxDrop. En este momento estoy revisando tu mensaje, o si gustas puedes explorar nuestro catálogo y pedidos en foxdrop.mx. ¡En un instante te asistimos con todo gusto!`,
     };
   }
 }

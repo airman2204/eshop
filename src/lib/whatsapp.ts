@@ -74,7 +74,7 @@ export async function sendWhatsAppMessage(toPhone: string, text: string) {
  * Plantilla de confirmación de pedido recibido
  */
 export async function notifyOrderConfirmed(orderNumber: string, clientName: string, clientPhone: string, total: number) {
-  const message = `🦊 ¡Hola ${clientName}! Tu pedido en FoxDrop con folio *${orderNumber}* por un total de *$${total.toLocaleString("es-MX")} MXN* ha sido recibido con éxito.\n\nEstamos preparándolo para entrega en Puebla. Puedes darle seguimiento desde tu cuenta. ¡Gracias por tu compra!`;
+  const message = `🦊 ¡Hola ${clientName}! Tu pedido en FoxDrop con folio *${orderNumber}* por un total de *$${total.toLocaleString("es-MX")} MXN* ha sido recibido con éxito.\n\nEstamos preparándolo para su entrega. Puedes darle seguimiento desde tu cuenta. ¡Gracias por tu compra!`;
   return sendWhatsAppMessage(clientPhone, message);
 }
 
