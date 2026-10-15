@@ -1715,7 +1715,7 @@ export default function AdminCRM() {
     try {
       const finalImages = newImages.length > 0
         ? newImages
-        : (newImageUrl ? [newImageUrl] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700&auto=format&fit=crop&q=80']);
+        : (newImageUrl ? [newImageUrl] : ['/no-image.svg']);
 
       if (editingProductId) {
         // EDICIÓN

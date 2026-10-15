@@ -532,7 +532,7 @@ export async function POST(req: NextRequest) {
 
       const productImages = product.images && product.images.length > 0
         ? product.images
-        : (product.imageUrl ? [product.imageUrl] : ["https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=800"]);
+        : (product.imageUrl ? [product.imageUrl] : ["/no-image.svg"]);
 
       const insertRecord: any = {
         sku,

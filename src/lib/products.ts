@@ -64,7 +64,9 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
     marginPercent: Number(marginPercent.toFixed(2)),
     stock: dbProd.stock,
     isSpecialOrder: dbProd.is_special_order,
-    images: dbProd.images && dbProd.images.length > 0 ? dbProd.images : ["/file.svg"],
+    images: dbProd.images && dbProd.images.length > 0 && !dbProd.images[0].includes('photo-1523275335684') && !dbProd.images[0].includes('photo-1546868871')
+      ? dbProd.images 
+      : ["/no-image.svg"],
     daysInStock: dbProd.days_in_stock || 0,
     expirationDate: dbProd.expiration_date || undefined,
     isCombo: dbProd.is_combo || false,
