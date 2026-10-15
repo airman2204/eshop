@@ -8175,552 +8175,184 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         )}
 
-        {/* MODAL ALTA / EDICIÓN DE ARTÍCULO */}
+        {/* MODAL ALTA / EDICIÓN DE ARTÍCULO OPTIMIZADO */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700">
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-bold text-slate-900">
-                  {editingProductId ? 'Editar Artículo en Inventario' : 'Dar de Alta Artículo con Lote'}
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  Selecciona el lote correspondiente para asignar el prorrateo de flete automáticamente.
-                </p>
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto border border-slate-200">
+              {/* Header compacto */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#E65F2B]"></span>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    {editingProductId ? 'Editar Artículo en Inventario' : 'Dar de Alta Artículo'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
-                <div>
-                  <label className="text-slate-700 font-bold block mb-1">Nombre del Producto:</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Apple AirPods Pro 2da Gen, Reloj Seiko..."
-                    value={newTitle}
-                    onChange={e => setNewTitle(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:outline-none focus:border-slate-900"
-                  />
-                </div>
-
-                {/* Código de Barras / SKU con Escáner Móvil y Generador Automático */}
-                <div>
-                  <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-                    <label className="text-slate-700 font-bold block">Código de Barras / SKU:</label>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleGenerateAutoSku()}
-                        className="text-blue-600 hover:text-blue-700 font-bold text-[11px] flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200 shadow-2xs cursor-pointer transition hover:bg-blue-100"
-                        title="Generar un SKU único automáticamente para este producto"
-                      >
-                        <Zap className="w-3 h-3 text-blue-500" />
-                        <span>Generar SKU</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setScannerContext('sku_input');
-                          setShowCameraScanner(true);
-                        }}
-                        className="text-[#E65F2B] hover:text-[#c44f22] font-bold text-[11px] flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-200 shadow-2xs cursor-pointer transition hover:bg-orange-100"
-                      >
-                        <QrCode className="w-3.5 h-3.5" />
-                        <span>Escanear con Cámara</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="relative">
+              {/* Formulario scrolleable interno para evitar desbordes en cualquier pantalla */}
+              <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto pr-1 space-y-3 text-xs">
+                {/* 1. Nombre y SKU en 2 columnas */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  <div className="sm:col-span-7">
+                    <label className="text-slate-700 font-bold block mb-1">Nombre del Producto *</label>
                     <input
                       type="text"
-                      placeholder="Ej. 7501000123456 o FX-4021"
+                      required
+                      placeholder="Ej. Body mist Be Enchanted..."
+                      value={newTitle}
+                      onChange={e => setNewTitle(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-medium focus:outline-none focus:border-[#E65F2B]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-5">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-bold block">SKU / Código</label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateAutoSku()}
+                          className="text-blue-600 hover:text-blue-700 font-bold text-[10px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 transition cursor-pointer"
+                          title="Generar SKU automático"
+                        >
+                          Generar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setScannerContext('sku_input');
+                            setShowCameraScanner(true);
+                          }}
+                          className="text-[#E65F2B] font-bold text-[10px] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 transition cursor-pointer"
+                          title="Escanear con cámara"
+                        >
+                          Escanear
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="7501000123456"
                       value={newSku}
                       onChange={e => setNewSku(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-xs focus:outline-none focus:border-slate-900"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-mono text-xs focus:outline-none focus:border-[#E65F2B]"
                     />
-                    {newSku && (
-                      <span className="absolute right-3 top-2.5 text-[10px] text-emerald-600 font-bold">
-                        Detectado ✓
-                      </span>
-                    )}
-                  </div>
-                  {/* Alerta si el SKU ya existe en otro producto */}
-                  {(() => {
-                    const duplicate = products.find(p => p.sku && p.sku.toLowerCase() === newSku.trim().toLowerCase() && p.id !== editingProductId);
-                    if (duplicate && newSku.trim()) {
-                      return (
-                        <p className="text-[10px] text-rose-600 font-bold mt-1 flex items-center gap-1 bg-rose-50 p-1.5 rounded-lg border border-rose-200">
-                          <AlertTriangle className="w-3 h-3 shrink-0" />
-                          <span>Atención: Este SKU ya está asignado a "{duplicate.title}". Verifica antes de guardar.</span>
-                        </p>
-                      );
-                    }
-                    return (
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        Puedes teclearlo, escanear el código de fábrica o pulsar "Generar SKU" si es mercancía genérica.
-                      </p>
-                    );
-                  })()}
-                </div>
-
-                {/* Subida de Múltiples Imágenes con Buscador y Portapapeles */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-slate-700 font-bold block text-xs flex items-center gap-1.5">
-                      <span>Fotografías del Producto</span>
-                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                        {newImages.length} {newImages.length === 1 ? 'foto' : 'fotos'}
-                      </span>
-                    </label>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={handleSearchImageOnGoogle}
-                        className="text-slate-600 hover:text-slate-900 font-bold text-[11px] flex items-center gap-1 bg-white hover:bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 transition"
-                        title="Buscar fotos de este producto en Google"
-                      >
-                        <Globe className="w-3.5 h-3.5 text-blue-500" />
-                        <span>Google Fotos</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div 
-                    onPaste={handlePasteImage}
-                    className="space-y-2 border border-slate-200 bg-slate-50/50 p-3 rounded-2xl"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {/* Opción 1: Tomar foto directa con la cámara del celular */}
-                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition shadow-2xs">
-                        <Camera className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="font-semibold text-xs truncate">
-                          {uploadingImage ? 'Procesando...' : '+ Tomar Foto con Cámara'}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handleMultipleFilesUpload}
-                          disabled={uploadingImage}
-                          className="hidden"
-                        />
-                      </label>
-
-                      {/* Opción 2: Subir archivos desde la galería / archivos */}
-                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition shadow-2xs">
-                        <Upload className="w-4 h-4 text-[#E65F2B] shrink-0" />
-                        <span className="font-semibold text-xs truncate">
-                          {uploadingImage ? 'Subiendo...' : '+ Subir Fotos (Galería)'}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleMultipleFilesUpload}
-                          disabled={uploadingImage}
-                          className="hidden"
-                        />
-                      </label>
-
-                      {/* Opción 3: Pegar foto del portapapeles */}
-                      <button
-                        type="button"
-                        onClick={() => handlePasteImage()}
-                        disabled={uploadingImage}
-                        className="bg-white hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 text-slate-700 transition font-semibold text-xs shadow-2xs truncate"
-                      >
-                        <Clipboard className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span className="truncate">Pegar foto copiada</span>
-                      </button>
-                    </div>
-
-                    {uploadSuccess && (
-                      <div className="text-[11px] text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5">
-                          <Check className="w-4 h-4 text-emerald-600" /> ¡Fotografía añadida a la galería con éxito!
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Galería de Miniaturas de Fotos */}
-                    {newImages.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <span className="text-[10px] font-bold text-slate-600 block">Fotos cargadas (la primera es la portada de la tienda):</span>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                          {newImages.map((imgUrl, idx) => (
-                            <div key={idx} className={`relative group rounded-xl overflow-hidden border-2 bg-white aspect-square shadow-2xs flex flex-col justify-between p-1 ${
-                              idx === 0 ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-slate-200'
-                            }`}>
-                              <img
-                                src={imgUrl}
-                                alt={`Foto ${idx + 1}`}
-                                className="w-full h-full object-cover rounded-lg absolute inset-0 z-0"
-                              />
-                              <div className="relative z-10 flex items-center justify-between w-full">
-                                {idx === 0 ? (
-                                  <span className="bg-[#E65F2B] text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow">
-                                    ★ Portada
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      // Mover esta foto al inicio (índice 0)
-                                      const updated = [imgUrl, ...newImages.filter((_, i) => i !== idx)];
-                                      setNewImages(updated);
-                                      setNewImageUrl(imgUrl);
-                                    }}
-                                    className="bg-slate-900/80 hover:bg-slate-900 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow cursor-pointer transition opacity-90 hover:opacity-100"
-                                    title="Hacer esta foto la portada principal"
-                                  >
-                                    Hacer Portada
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = newImages.filter((_, i) => i !== idx);
-                                    setNewImages(updated);
-                                    if (updated.length > 0) setNewImageUrl(updated[0]);
-                                    else setNewImageUrl('');
-                                  }}
-                                  className="bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 transition shadow cursor-pointer"
-                                  title="Eliminar foto"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
-
-                              {/* Flechas de reordenamiento */}
-                              <div className="relative z-10 flex items-center justify-end gap-1 mt-auto">
-                                {idx > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const updated = [...newImages];
-                                      const temp = updated[idx - 1];
-                                      updated[idx - 1] = updated[idx];
-                                      updated[idx] = temp;
-                                      setNewImages(updated);
-                                      if (idx - 1 === 0) setNewImageUrl(updated[0]);
-                                    }}
-                                    className="bg-white/90 hover:bg-white text-slate-800 p-1 rounded-md shadow-xs cursor-pointer"
-                                    title="Mover a la izquierda"
-                                  >
-                                    <ArrowLeft className="w-2.5 h-2.5" />
-                                  </button>
-                                )}
-                                {idx < newImages.length - 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const updated = [...newImages];
-                                      const temp = updated[idx + 1];
-                                      updated[idx + 1] = updated[idx];
-                                      updated[idx] = temp;
-                                      setNewImages(updated);
-                                      if (idx === 0) setNewImageUrl(updated[0]);
-                                    }}
-                                    className="bg-white/90 hover:bg-white text-slate-800 p-1 rounded-md shadow-xs cursor-pointer"
-                                    title="Mover a la derecha"
-                                  >
-                                    <ArrowRight className="w-2.5 h-2.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-0.5">
-                      <span className="text-[10px] text-slate-400 font-medium shrink-0">+ Añadir por URL:</span>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={newImageUrl.startsWith('data:') ? '' : newImageUrl}
-                        onChange={async (e) => {
-                          const val = e.target.value;
-                          setNewImageUrl(val);
-                          if (val.startsWith('http://') || val.startsWith('https://')) {
-                            try {
-                              const uploaded = await uploadProductImageUrl(val);
-                              setNewImageUrl(uploaded);
-                              setNewImages(prev => prev.includes(uploaded) ? prev : [...prev, uploaded]);
-                              setUploadSuccess(true);
-                            } catch {}
-                          }
-                        }}
-                        className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-slate-800"
-                      />
-                    </div>
                   </div>
                 </div>
 
-                {/* MODALIDAD: PRODUCTO INDIVIDUAL O COMBO */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-slate-900 text-xs block flex items-center gap-1.5">
-                        <Package className="w-4 h-4 text-[#E65F2B]" /> Tipo de Oferta / Venta:
-                      </span>
-                      <span className="text-[10px] text-slate-500">¿Se vende como artículo individual o como un combo con varios productos?</span>
-                    </div>
-                    <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                      <button
-                        type="button"
-                        onClick={() => setIsCombo(false)}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                          !isCombo ? 'bg-[#2D4A58] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        Individual
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsCombo(true)}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
-                          isCombo ? 'bg-[#E65F2B] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        <Sparkles className="w-3 h-3" /> Combo
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Configuración especial si es COMBO */}
-                  {isCombo && (
-                    <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-3 space-y-2.5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-orange-950 flex items-center gap-1">
-                          📦 Selecciona los productos incluidos en este combo:
-                        </span>
-                        <span className="text-[10px] font-bold text-orange-800 bg-orange-100 px-2 py-0.5 rounded-full">
-                          {selectedComboProductIds.length} seleccionados
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-orange-900/80">
-                        El combo se venderá por un <strong>solo precio global</strong>, pero el inventario de cada artículo se mantendrá separado y se descontará automáticamente.
-                      </p>
-
-                      <div className="max-h-40 overflow-y-auto space-y-1 bg-white border border-orange-200 rounded-xl p-2">
-                        {products
-                          .filter(p => !editingProductId || p.id !== editingProductId)
-                          .map(p => {
-                            const isSelected = selectedComboProductIds.includes(p.id);
-                            return (
-                              <label
-                                key={p.id}
-                                className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition text-xs ${
-                                  isSelected ? 'bg-orange-50 border border-orange-300' : 'hover:bg-slate-50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={e => {
-                                      if (e.target.checked) {
-                                        setSelectedComboProductIds(prev => [...prev, p.id]);
-                                      } else {
-                                        setSelectedComboProductIds(prev => prev.filter(id => id !== p.id));
-                                      }
-                                    }}
-                                    className="rounded text-[#E65F2B] focus:ring-[#E65F2B] w-4 h-4"
-                                  />
-                                  <img src={p.images[0] || '/file.svg'} alt={p.title} className="w-6 h-6 object-cover rounded" />
-                                  <span className="font-semibold text-slate-800">{p.title}</span>
-                                </div>
-                                <span className="text-[10px] text-slate-500 font-mono">Stock: {p.stock}</span>
-                              </label>
-                            );
-                          })}
-                      </div>
-
-                      {/* Stock calculado para el combo si hay productos seleccionados */}
-                      {selectedComboProductIds.length > 0 && (() => {
-                        const includedProds = products.filter(p => selectedComboProductIds.includes(p.id));
-                        const minStock = includedProds.length > 0 ? Math.min(...includedProds.map(p => p.stock)) : 0;
-                        return (
-                          <div className="flex items-center justify-between text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 p-2 rounded-lg font-medium">
-                            <span>Stock disponible máximo del combo (según inventario de partes):</span>
-                            <strong className="font-black text-xs text-emerald-700">{minStock} combos listos</strong>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                {/* 2. Categoría, Stock y Encendido/Apagado */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  {/* Categoría */}
+                  <div className="sm:col-span-5">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-700 font-bold block">Categoría:</label>
+                      <label className="text-slate-700 font-bold block">Categoría</label>
                       <button
                         type="button"
                         onClick={() => setIsAddingNewCategory(!isAddingNewCategory)}
-                        className="text-[#E65F2B] hover:text-[#D45321] text-[10px] font-bold hover:underline flex items-center gap-0.5"
+                        className="text-[#E65F2B] text-[10px] font-bold hover:underline"
                       >
-                        {isAddingNewCategory ? '✕ Cancelar' : '+ Crear Nueva'}
+                        {isAddingNewCategory ? '✕ Cancelar' : '+ Nueva'}
                       </button>
                     </div>
-
                     {isAddingNewCategory ? (
-                      <div className="space-y-1.5 p-2 bg-orange-50/70 border border-orange-200 rounded-xl">
-                        <span className="text-[10px] font-bold text-orange-950 block">Dar de alta nueva categoría fija:</span>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            placeholder="Ej. Juguetes, Joyería..."
-                            value={customNewCategoryName}
-                            onChange={e => setCustomNewCategoryName(e.target.value)}
-                            className="flex-1 bg-white border border-orange-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-[#E65F2B]"
-                          />
-                          <button
-                            type="button"
-                            disabled={creatingCategoryLoading || !customNewCategoryName.trim()}
-                            onClick={async () => {
-                              if (!customNewCategoryName.trim()) return;
-                              setCreatingCategoryLoading(true);
-                              try {
-                                const created = await createAdminCategory(customNewCategoryName.trim());
-                                setDbCategories(prev => {
-                                  const exists = prev.some(c => c.name.toLowerCase() === created.name.toLowerCase());
-                                  return exists ? prev : [...prev, created].sort((a,b) => a.name.localeCompare(b.name));
-                                });
-                                setNewCategory(created.name);
-                                setCustomNewCategoryName('');
-                                setIsAddingNewCategory(false);
-                              } catch (err: any) {
-                                alert(`Error al registrar categoría: ${err.message || 'Intente de nuevo'}`);
-                              } finally {
-                                setCreatingCategoryLoading(false);
-                              }
-                            }}
-                            className="bg-[#2D4A58] hover:bg-[#203641] disabled:bg-gray-400 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition shrink-0"
-                          >
-                            {creatingCategoryLoading ? '...' : 'Guardar'}
-                          </button>
-                        </div>
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          placeholder="Nueva categoría..."
+                          value={customNewCategoryName}
+                          onChange={e => setCustomNewCategoryName(e.target.value)}
+                          className="flex-1 bg-white border border-orange-300 rounded-lg px-2 py-1 text-xs text-slate-900"
+                        />
+                        <button
+                          type="button"
+                          disabled={creatingCategoryLoading || !customNewCategoryName.trim()}
+                          onClick={async () => {
+                            if (!customNewCategoryName.trim()) return;
+                            setCreatingCategoryLoading(true);
+                            try {
+                              const created = await createAdminCategory(customNewCategoryName.trim());
+                              setDbCategories(prev => [...prev, created]);
+                              setNewCategory(created.name);
+                              setCustomNewCategoryName('');
+                              setIsAddingNewCategory(false);
+                            } catch (err: any) {
+                              alert(`Error: ${err.message || 'Error al guardar'}`);
+                            } finally {
+                              setCreatingCategoryLoading(false);
+                            }
+                          }}
+                          className="bg-[#2D4A58] text-white font-bold px-2 py-1 rounded-lg text-xs shrink-0"
+                        >
+                          OK
+                        </button>
                       </div>
                     ) : (
-                      <>
-                        <select
-                          value={newCategory}
-                          onChange={e => setNewCategory(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold focus:outline-none focus:border-[#E65F2B]"
-                        >
-                          {(() => {
-                            const allCategoryNames = Array.from(new Set([
-                              ...dbCategories.map(c => c.name),
-                              ...products.map(p => p.category).filter(Boolean),
-                              'Cosmética', 'Juguetes', 'Electrónica', 'Moda', 'Hogar'
-                            ]));
-                            return allCategoryNames.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ));
-                          })()}
-                        </select>
-
-                        {/* Chips de selección rápida de categorías guardadas */}
-                        <div className="flex flex-wrap gap-1 mt-1.5 max-h-16 overflow-y-auto">
-                          {Array.from(new Set([
-                            ...dbCategories.map(c => c.name),
-                            ...products.map(p => p.category).filter(Boolean),
-                            'Cosmética'
-                          ])).slice(0, 8).map(cat => (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => setNewCategory(cat)}
-                              className={`text-[10px] px-2 py-0.5 rounded-full border transition cursor-pointer ${
-                                newCategory.toLowerCase() === cat.toLowerCase()
-                                  ? 'bg-[#2D4A58] text-white border-[#2D4A58] font-bold'
-                                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                              }`}
-                            >
-                              {cat}
-                            </button>
-                          ))}
-                        </div>
-                      </>
+                      <select
+                        value={newCategory}
+                        onChange={e => setNewCategory(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-medium"
+                      >
+                        {Array.from(new Set([
+                          ...dbCategories.map(c => c.name),
+                          ...products.map(p => p.category).filter(Boolean),
+                          'Cosmética', 'Juguetes', 'Electrónica', 'Moda', 'Hogar'
+                        ])).map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
                     )}
                   </div>
-                  <div>
+
+                  {/* Stock */}
+                  <div className="sm:col-span-3">
                     <label className="text-slate-700 font-bold block mb-1">
-                      {isCombo ? 'Stock Disponible del Combo:' : 'Stock Inicial:'}
+                      {isCombo ? 'Stock Combo' : 'Stock Piezas'}
                     </label>
                     <input
                       type="number"
+                      min={0}
                       value={newStock}
-                      onChange={e => {
-                        const val = parseInt(e.target.value) || 0;
-                        setNewStock(val);
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900"
+                      onChange={e => setNewStock(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-bold text-center"
                     />
-                    {isCombo && selectedComboProductIds.length > 0 && (
-                      <span className="text-[10px] text-slate-400 mt-1 block">
-                        Limitado por el producto de menor stock en la lista.
-                      </span>
-                    )}
                   </div>
-                </div>
 
-                {/* Control de Encendido / Apagado (Visibilidad en Tienda) */}
-                <div className={`p-3.5 rounded-2xl border transition-all ${
-                  newIsActive 
-                    ? 'bg-emerald-50/70 border-emerald-200' 
-                    : 'bg-rose-50/70 border-rose-200'
-                }`}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Power className={`w-4 h-4 ${newIsActive ? 'text-emerald-600' : 'text-rose-600'}`} />
-                        <span className="font-bold text-xs text-slate-900">
-                          {newIsActive ? 'Artículo Encendido (Visible en Tienda)' : 'Artículo Apagado (Oculto a Clientes)'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {newIsActive 
-                          ? 'Los clientes pueden ver y comprar este producto en la tienda online.'
-                          : 'El producto está pausado. Úsalo si no hay stock o no quieres mostrarlo sin tener que eliminarlo.'}
-                      </p>
+                  {/* Interruptor Encendido en Tienda */}
+                  <div className="sm:col-span-4 flex items-center justify-between p-2 rounded-xl border bg-slate-50 border-slate-200">
+                    <div className="flex items-center gap-1.5">
+                      <Power className={`w-3.5 h-3.5 ${newIsActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                      <span className="text-[11px] font-bold text-slate-800">
+                        {newIsActive ? 'Visible Tienda' : 'Pausado'}
+                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setNewIsActive(!newIsActive)}
-                      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
                         newIsActive ? 'bg-emerald-500' : 'bg-slate-300'
                       }`}
-                      role="switch"
-                      aria-checked={newIsActive}
                     >
                       <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-                          newIsActive ? 'translate-x-7' : 'translate-x-0'
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                          newIsActive ? 'translate-x-5' : 'translate-x-0'
                         }`}
-                      >
-                        <Power className={`w-3 h-3 ${newIsActive ? 'text-emerald-600' : 'text-slate-400'}`} />
-                      </span>
+                      />
                     </button>
                   </div>
-                  {!newIsActive && (
-                    <div className="mt-2 pt-2 border-t border-rose-200/60 flex items-center gap-1.5 text-[10px] text-rose-700 font-semibold">
-                      <span>⚠️ Este artículo no aparecerá en el catálogo de clientes hasta que lo vuelvas a encender.</span>
-                    </div>
-                  )}
                 </div>
 
-                {/* Selección de Lote de Importación */}
-                <div className="bg-orange-50/60 p-3.5 rounded-2xl border border-orange-200 space-y-2">
+                {/* 3. Asignación a Lote de Importación */}
+                <div className="bg-orange-50/70 p-2.5 rounded-xl border border-orange-200 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 block text-[11px] flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Asignar a Lote de Importación:
+                    <span className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                      <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote de Importación (Prorrateo):
                     </span>
                     <div className="flex items-center gap-2">
                       {selectedBatchId && batches.find(b => b.id === selectedBatchId) && (
@@ -8732,7 +8364,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           }}
                           className="text-blue-600 font-bold text-[10px] hover:underline cursor-pointer"
                         >
-                          ✎ Editar Este Lote
+                          ✎ Editar Lote
                         </button>
                       )}
                       <button
@@ -8740,33 +8372,39 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         onClick={handleOpenCreateBatch}
                         className="text-[#E65F2B] font-bold text-[10px] hover:underline cursor-pointer"
                       >
-                        + Crear Nuevo Lote
+                        + Nuevo Lote
                       </button>
                     </div>
                   </div>
 
-                  <select
-                    value={selectedBatchId}
-                    onChange={e => setSelectedBatchId(e.target.value)}
-                    className="w-full bg-white border border-orange-200 rounded-lg p-2 text-slate-900 font-medium"
-                  >
-                    {batches.map(b => (
-                      <option key={b.id} value={b.id}>
-                        {b.batchName} (+${b.costPerUnit.toFixed(2)} MXN flete/ud)
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="text-[11px] text-orange-900 font-bold flex justify-between">
-                    <span>Flete unitario calculado del lote:</span>
-                    <span>+${shippingPerUnit.toFixed(2)} MXN</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                    <div className="sm:col-span-8">
+                      <select
+                        value={selectedBatchId}
+                        onChange={e => setSelectedBatchId(e.target.value)}
+                        className="w-full bg-white border border-orange-200 rounded-lg p-1.5 text-xs text-slate-900 font-medium"
+                      >
+                        {batches.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.batchName} (+${b.costPerUnit.toFixed(2)} flete/ud)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-4 text-right">
+                      <span className="text-[11px] font-black text-orange-950 font-mono">
+                        +${shippingPerUnit.toFixed(2)} MXN flete
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+                {/* 4. Costo Base y Precio de Venta (Finanzas Claras) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* Costo Base */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-700 font-bold block text-xs">
+                      <label className="text-slate-700 font-bold text-xs">
                         {costInputMode === 'mxn' ? 'Costo Base (MXN):' : 'Costo Base (USD):'}
                       </label>
                       <button
@@ -8778,69 +8416,61 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </button>
                     </div>
 
-                    {costInputMode === 'mxn' ? (
-                      <div>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                          <input
-                            type="number"
-                            step="1"
-                            value={newCostMxnDirect}
-                            onChange={e => setNewCostMxnDirect(parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
-                          />
-                        </div>
-                        <span className="text-[10px] text-slate-400 mt-1 block font-mono">
-                          Equivale a aprox. ${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD
-                        </span>
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={newCostUsd}
-                            onChange={e => setNewCostUsd(parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
-                          />
-                        </div>
-                        <span className="text-[10px] text-slate-400 mt-1 block font-mono">
-                          Equivale a ${costMxn.toFixed(2)} MXN
-                        </span>
-                      </div>
-                    )}
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                      {costInputMode === 'mxn' ? (
+                        <input
+                          type="number"
+                          step="1"
+                          value={newCostMxnDirect}
+                          onChange={e => setNewCostMxnDirect(parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                        />
+                      ) : (
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={newCostUsd}
+                          onChange={e => setNewCostUsd(parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                        />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-0.5 block font-mono">
+                      {costInputMode === 'mxn'
+                        ? `Equivale a aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
+                        : `Equivale a $${costMxn.toFixed(2)} MXN`}
+                    </span>
                   </div>
-                  <div>
+
+                  {/* Precio Venta */}
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                     <label className="text-slate-700 font-bold block mb-1 text-xs">Precio Venta Público (MXN):</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
                       <input
                         type="number"
                         value={newPublicPrice}
                         onChange={e => setNewPublicPrice(parseFloat(e.target.value) || 0)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 pl-7 text-slate-900 font-bold"
+                        className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
                       />
                     </div>
                     {/* Botones de cálculo rápido de margen deseado */}
-                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                      <span className="text-[9px] text-slate-400 font-bold">Margen sugerido:</span>
+                    <div className="flex items-center gap-1 mt-1 flex-wrap">
+                      <span className="text-[9px] text-slate-400 font-bold">Margen:</span>
                       {[
                         { label: '+30%', margin: 0.30 },
                         { label: '+40%', margin: 0.40 },
                         { label: '+50%', margin: 0.50 },
                         { label: '+100%', margin: 1.00 },
                       ].map(preset => {
-                        // Si margen = 40%, precio = costo / (1 - 0.40)
                         const suggestedPrice = Math.round(totalCostUnitMxn / (1 - (preset.margin === 1.0 ? 0.5 : preset.margin)));
                         return (
                           <button
                             key={preset.label}
                             type="button"
                             onClick={() => setNewPublicPrice(suggestedPrice)}
-                            className="text-[10px] px-2 py-0.5 rounded-md bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold transition shadow-2xs cursor-pointer"
-                            title={`Fijar precio en $${suggestedPrice} MXN (${preset.label})`}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-200 font-mono font-bold transition cursor-pointer"
                           >
                             {preset.label}
                           </button>
@@ -8850,24 +8480,241 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 </div>
 
-                <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-2xl flex justify-between items-center text-xs">
+                {/* Banner de Resultado Financiero */}
+                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
                   <div>
-                    <span className="text-slate-500 block">Costo Total Unitario: ${totalCostUnitMxn.toFixed(2)} MXN</span>
-                    <span className="text-sm font-black text-emerald-700">Ganancia Neta: +${profitUnit.toFixed(2)} MXN</span>
+                    <span className="text-slate-600 block text-[11px]">
+                      Costo Total: <strong className="text-slate-900 font-mono">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
+                    </span>
+                    <span className="text-xs font-black text-emerald-700">
+                      Ganancia Neta: +${profitUnit.toFixed(2)} MXN
+                    </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block">Margen:</span>
-                    <span className="text-base font-black text-slate-900">{marginPercent.toFixed(1)}%</span>
+                    <span className="text-[10px] text-slate-400 block uppercase">Margen</span>
+                    <span className="text-sm font-black text-slate-900 font-mono">{marginPercent.toFixed(1)}%</span>
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSaving || uploadingImage}
-                  className="w-full bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-gray-400 text-white font-bold py-3 rounded-md shadow-sm transition"
-                >
-                  {isSaving ? 'Guardando en Servidor...' : (editingProductId ? 'Actualizar Artículo' : 'Guardar en Catálogo')}
-                </button>
+                {/* 5. Fotografías del Producto (Compacto) */}
+                <div className="space-y-1.5 border border-slate-200 bg-slate-50/60 p-2.5 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-700 font-bold block text-xs flex items-center gap-1">
+                      <span>Fotos del Producto</span>
+                      <span className="text-[10px] text-slate-500 font-semibold bg-slate-200/80 px-1.5 py-0.2 rounded-full">
+                        {newImages.length}
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSearchImageOnGoogle}
+                      className="text-slate-600 hover:text-slate-900 font-bold text-[10px] flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs transition"
+                    >
+                      <Globe className="w-3 h-3 text-blue-500" />
+                      <span>Buscar en Google</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-lg p-2 flex items-center justify-center gap-1.5 text-slate-700 transition shadow-2xs">
+                      <Camera className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span className="font-semibold text-[11px] truncate">Cámara</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleMultipleFilesUpload}
+                        disabled={uploadingImage}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-200 rounded-lg p-2 flex items-center justify-center gap-1.5 text-slate-700 transition shadow-2xs">
+                      <Upload className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
+                      <span className="font-semibold text-[11px] truncate">
+                        {uploadingImage ? '...' : 'Galería'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleMultipleFilesUpload}
+                        disabled={uploadingImage}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => handlePasteImage()}
+                      disabled={uploadingImage}
+                      className="bg-white hover:bg-slate-100 border border-slate-200 rounded-lg p-2 flex items-center justify-center gap-1.5 text-slate-700 transition font-semibold text-[11px] shadow-2xs truncate"
+                    >
+                      <Clipboard className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">Pegar</span>
+                    </button>
+                  </div>
+
+                  {/* Miniaturas de fotos */}
+                  {newImages.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto py-1">
+                      {newImages.map((imgUrl, idx) => (
+                        <div key={idx} className={`relative group rounded-lg overflow-hidden border-2 bg-white w-14 h-14 shrink-0 shadow-2xs flex flex-col justify-between p-0.5 ${
+                          idx === 0 ? 'border-[#E65F2B] ring-1 ring-orange-200' : 'border-slate-200'
+                        }`}>
+                          <img
+                            src={imgUrl}
+                            alt=""
+                            className="w-full h-full object-cover rounded absolute inset-0 z-0"
+                          />
+                          <div className="relative z-10 flex items-center justify-between w-full">
+                            {idx === 0 ? (
+                              <span className="bg-[#E65F2B] text-white text-[7px] font-black px-1 rounded">
+                                Portada
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [imgUrl, ...newImages.filter((_, i) => i !== idx)];
+                                  setNewImages(updated);
+                                  setNewImageUrl(imgUrl);
+                                }}
+                                className="bg-slate-900/80 hover:bg-slate-900 text-white text-[7px] font-bold px-1 rounded cursor-pointer"
+                              >
+                                Top
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = newImages.filter((_, i) => i !== idx);
+                                setNewImages(updated);
+                                if (updated.length > 0) setNewImageUrl(updated[0]);
+                                else setNewImageUrl('');
+                              }}
+                              className="bg-red-600 text-white rounded-full p-0.5 cursor-pointer ml-auto"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-slate-400 shrink-0">+ URL:</span>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={newImageUrl.startsWith('data:') ? '' : newImageUrl}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setNewImageUrl(val);
+                        if (val.startsWith('http://') || val.startsWith('https://')) {
+                          try {
+                            const uploaded = await uploadProductImageUrl(val);
+                            setNewImageUrl(uploaded);
+                            setNewImages(prev => prev.includes(uploaded) ? prev : [...prev, uploaded]);
+                            setUploadSuccess(true);
+                          } catch {}
+                        }
+                      }}
+                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 6. Modalidad Combo (Opcional, discreto) */}
+                <div className="flex items-center justify-between p-2 rounded-xl border border-slate-200 bg-slate-50">
+                  <div className="flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-[#E65F2B]" />
+                    <span className="font-bold text-[11px] text-slate-800">¿Es un Combo de productos?</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsCombo(false)}
+                      className={`px-2 py-0.5 text-xs font-bold rounded-lg transition ${
+                        !isCombo ? 'bg-[#2D4A58] text-white shadow-2xs' : 'text-slate-600'
+                      }`}
+                    >
+                      Individual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCombo(true)}
+                      className={`px-2 py-0.5 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
+                        isCombo ? 'bg-[#E65F2B] text-white shadow-2xs' : 'text-slate-600'
+                      }`}
+                    >
+                      <Sparkles className="w-3 h-3" /> Combo
+                    </button>
+                  </div>
+                </div>
+
+                {isCombo && (
+                  <div className="bg-orange-50/70 border border-orange-200 rounded-xl p-2.5 space-y-1.5 animate-in fade-in duration-200">
+                    <span className="text-[11px] font-bold text-orange-950 block">
+                      Selecciona los productos que integran este combo:
+                    </span>
+                    <div className="max-h-32 overflow-y-auto space-y-1 bg-white border border-orange-200 rounded-lg p-1.5">
+                      {products
+                        .filter(p => !editingProductId || p.id !== editingProductId)
+                        .map(p => {
+                          const isSelected = selectedComboProductIds.includes(p.id);
+                          return (
+                            <label
+                              key={p.id}
+                              className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer text-xs ${
+                                isSelected ? 'bg-orange-50 border border-orange-300' : 'hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={e => {
+                                    if (e.target.checked) setSelectedComboProductIds(prev => [...prev, p.id]);
+                                    else setSelectedComboProductIds(prev => prev.filter(id => id !== p.id));
+                                  }}
+                                  className="rounded text-[#E65F2B] w-3.5 h-3.5"
+                                />
+                                <span className="font-semibold text-slate-800 truncate max-w-[200px]">{p.title}</span>
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-mono">Stock: {p.stock}</span>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón de Enviar Fijo al Final */}
+                <div className="pt-2 border-t border-slate-100 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving || uploadingImage}
+                    className="flex-2 bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-gray-400 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5"
+                  >
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <span>{editingProductId ? 'Actualizar Artículo' : 'Guardar en Catálogo'}</span>
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
