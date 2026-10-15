@@ -175,11 +175,16 @@ export async function getUserFullProfile(): Promise<FullUserProfile | null> {
 
     if (!session?.user) return null;
 
-    // Intentar consultar API de perfil
+    // Intentar consultar API de perfil con token de sesión verificado
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
       const res = await fetch("/api/user/profile", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "get_profile",
           userId: session.user.id,
@@ -263,20 +268,27 @@ export async function upsertUserProfile(profile: { id: string; email: string; fu
     console.error("Error al actualizar perfil:", error);
   }
 
-  // Notificar también a la API de servidor
-  fetch("/api/user/profile", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "update_profile",
-      userId: profile.id,
-      email: profile.email,
-      profileData: {
-        fullName: profile.full_name,
-        phone: profile.phone,
-      },
-    }),
-  }).catch(() => {});
+  // Notificar también a la API de servidor si hay sesión activa
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+    fetch("/api/user/profile", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "update_profile",
+        userId: profile.id,
+        email: profile.email,
+        profileData: {
+          fullName: profile.full_name,
+          phone: profile.phone,
+        },
+      }),
+    }).catch(() => {});
+  } catch {}
 }
 
 /**
@@ -288,9 +300,14 @@ export async function saveUserAddress(address: UserAddress): Promise<UserAddress
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) throw new Error("Sesión no activa");
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+
   const res = await fetch("/api/user/profile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       action: "save_address",
       userId: session.user.id,
@@ -317,9 +334,14 @@ export async function deleteUserAddress(addressId: string): Promise<UserAddress[
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) throw new Error("Sesión no activa");
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+
   const res = await fetch("/api/user/profile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       action: "delete_address",
       userId: session.user.id,
@@ -342,9 +364,14 @@ export async function saveUserCard(card: UserCard): Promise<UserCard[]> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) throw new Error("Sesión no activa");
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+
   const res = await fetch("/api/user/profile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       action: "save_card",
       userId: session.user.id,
@@ -371,9 +398,14 @@ export async function deleteUserCard(cardId: string): Promise<UserCard[]> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) throw new Error("Sesión no activa");
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (session.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`;
+  }
+
   const res = await fetch("/api/user/profile", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       action: "delete_card",
       userId: session.user.id,

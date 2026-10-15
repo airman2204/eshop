@@ -80,7 +80,6 @@ export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
  * Valida el acceso de un administrador con correo y contraseña.
  * 1. Revisa lista blanca de correos autorizados.
  * 2. Consulta al servidor (/api/admin) que verifica el hash y genera token firmado.
- * 3. Si no hay contraseña personalizada en BD, permite la temporal 'FoxDrop2026!' y exige cambiarla.
  */
 export async function authenticateAdmin(
   email: string,
@@ -124,66 +123,45 @@ export async function authenticateAdmin(
     console.warn("Fallo verificando contraseña en servidor:", err);
   }
 
-  // 3. Fallback en localStorage del dispositivo
-  if (typeof window !== "undefined") {
-    const savedLocalPass = localStorage.getItem(`admin_pass_${normalizedEmail}`);
-    if (savedLocalPass) {
-      if (savedLocalPass === pass) {
-        return {
-          success: true,
-          session: {
-            email: normalizedEmail,
-            mustChangePassword: false,
-            twoFactorVerified: false,
-          },
-        };
-      }
-      return { success: false, error: "Contraseña incorrecta." };
-    }
-  }
-
-  // 4. Contraseña inicial genérica para primer acceso
-  if (pass === "FoxDrop2026!" || pass === "Foxdrop2026*") {
-    return {
-      success: true,
-      session: {
-        email: normalizedEmail,
-        mustChangePassword: true, // Obliga a cambiar de inmediato
-        twoFactorVerified: false,
-      },
-    };
-  }
-
+  // 3. Ya no se usa almacenamiento inseguro en localStorage ni contraseñas quemadas en código.
+  // Todas las autenticaciones de administrador deben resolverse a través del servidor seguro /api/admin.
   return {
     success: false,
-    error: "Contraseña incorrecta. Utiliza la contraseña temporal provista.",
+    error: "Contraseña incorrecta o credenciales no configuradas.",
   };
 }
 
 /**
- * Actualiza la contraseña administrativa en localStorage y en Supabase vía /api/admin
+ * Actualiza la contraseña administrativa en Supabase vía /api/admin de forma segura
  */
-export async function updateAdminPassword(email: string, newPass: string) {
+export async function updateAdminPassword(email: string, newPass: string, currentPass?: string) {
   if (newPass.length < 8) {
     throw new Error("La nueva contraseña debe tener al menos 8 caracteres.");
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  const token = getStoredAdminToken();
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   // Persistir de forma segura en Supabase con hash SHA-256 a través del endpoint del servidor
   try {
     const res = await fetch("/api/admin", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         action: "update_password",
         email: normalizedEmail,
         password: newPass,
+        currentPassword: currentPass,
       }),
     });
     if (!res.ok) {
       const errJson = await res.json();
-      console.warn("Advertencia al sincronizar en backend:", errJson.error);
+      throw new Error(errJson.error || "Fallo al actualizar contraseña en el servidor");
     } else {
       const data = await res.json();
       if (data.token && typeof window !== "undefined") {
@@ -194,9 +172,11 @@ export async function updateAdminPassword(email: string, newPass: string) {
         localStorage.setItem("foxdrop_admin_session", JSON.stringify(currentSession));
       }
     }
-  } catch (err) {
-    console.warn("Error de red al actualizar contraseña remota:", err);
+  } catch (err: any) {
+    console.warn("Error al actualizar contraseña:", err);
+    throw err;
   }
 
   return true;
 }
+

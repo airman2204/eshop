@@ -1,16 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { verifyAdminToken } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization") || "";
+    const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
     const body = await req.json();
     const { action, userId, email, profileData, address, addressId, card, cardId } = body;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServerClient() as any;
 
-    if (!userId && !email) {
-      return NextResponse.json({ error: "Identificador de usuario requerido" }, { status: 400 });
+    // VALIDACIÓN DE AUTENTICACIÓN ESTRICTA
+    // Todo acceso a datos sensibles (perfil, tarjetas, direcciones, cancelación de pedidos)
+    // requiere un JWT de sesión de Supabase válido o un token administrativo firmado.
+    let authenticatedUser: any = null;
+    let isAdmin = false;
+
+    if (bearerToken) {
+      // 1. Verificar si es token de administrador
+      const adminCheck = verifyAdminToken(bearerToken);
+      if (adminCheck.valid) {
+        isAdmin = true;
+      } else {
+        // 2. Verificar si es token de sesión de Supabase Auth
+        try {
+          const { data, error } = await supabase.auth.getUser(bearerToken);
+          if (!error && data?.user) {
+            authenticatedUser = data.user;
+          }
+        } catch {}
+      }
+    }
+
+    // Salvo acciones públicas muy acotadas (ninguna en este endpoint maneja datos anónimos),
+    // el usuario DEBE estar autenticado.
+    if (!isAdmin && !authenticatedUser) {
+      return NextResponse.json(
+        { error: "No autorizado. Se requiere iniciar sesión con una cuenta válida." },
+        { status: 401 }
+      );
+    }
+
+    // Si es un cliente común (no admin), asegurar que solo acceda o modifique SU propio perfil
+    const targetUserId = userId || authenticatedUser?.id;
+    const targetEmail = (email || authenticatedUser?.email || "").trim().toLowerCase();
+
+    if (!isAdmin && authenticatedUser) {
+      const isOwner =
+        (targetUserId && authenticatedUser.id === targetUserId) ||
+        (targetEmail && authenticatedUser.email?.toLowerCase() === targetEmail);
+
+      if (!isOwner) {
+        return NextResponse.json(
+          { error: "Acceso denegado: No tienes permiso para ver o modificar datos de otro usuario." },
+          { status: 403 }
+        );
+      }
     }
 
     // 1. OBTENER PERFIL COMPLETO (DATOS + DIRECCIONES + TARJETAS + PUNTOS)
@@ -363,7 +411,7 @@ export async function POST(req: NextRequest) {
 
       // 1. Verificar el estado actual de la orden para garantizar que no esté ya enviada o entregada
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
-      let fetchQuery = supabase.from("orders").select("id, order_number, status, total, client_phone, client_name");
+      let fetchQuery = supabase.from("orders").select("id, order_number, user_id, client_email, client_phone, status, total, client_name");
       if (isUuid) {
         fetchQuery = fetchQuery.eq("id", orderId);
       } else {
@@ -374,6 +422,20 @@ export async function POST(req: NextRequest) {
 
       if (fetchErr || !orderData) {
         return NextResponse.json({ error: "No se encontró el pedido solicitado" }, { status: 404 });
+      }
+
+      // Validar que el cliente que cancela sea el dueño del pedido (si no es admin)
+      if (!isAdmin && authenticatedUser) {
+        const ownsOrder =
+          (orderData.user_id && orderData.user_id === authenticatedUser.id) ||
+          (orderData.client_email && orderData.client_email.toLowerCase() === authenticatedUser.email?.toLowerCase());
+
+        if (!ownsOrder) {
+          return NextResponse.json(
+            { error: "Acceso denegado: No tienes permiso para cancelar un pedido ajeno." },
+            { status: 403 }
+          );
+        }
       }
 
       if (orderData.status === "shipped" || orderData.status === "delivered") {

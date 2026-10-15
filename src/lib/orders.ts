@@ -548,9 +548,27 @@ export async function getClientOrderHistory(identifier: string, options?: { emai
     const cleanEmail = options?.email || (identifier.includes("@") ? identifier.trim().toLowerCase() : undefined);
 
     // 1. Intentar primero a través de la API protegida del servidor
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const browserSupabase = getSupabaseBrowserClient() as any;
+      const { data: { session } } = await browserSupabase.auth.getSession();
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      } else {
+        const adminTok = typeof window !== "undefined" ? localStorage.getItem("foxdrop_admin_session") : null;
+        if (adminTok) {
+          try {
+            const parsed = JSON.parse(adminTok);
+            if (parsed.token) headers["Authorization"] = `Bearer ${parsed.token}`;
+          } catch {}
+        }
+      }
+    } catch {}
+
     const res = await fetch("/api/user/profile", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         action: "get_orders",
         userId: options?.userId,

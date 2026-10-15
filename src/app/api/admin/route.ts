@@ -21,13 +21,29 @@ export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "";
 
-    // 1. Manejo de subida de imágenes multipart/form-data
+    // 1. Manejo de subida de imágenes multipart/form-data (ESTRICTAMENTE PROTEGIDO)
     if (contentType.includes("multipart/form-data")) {
+      const authHeader = req.headers.get("authorization") || "";
+      const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const tokenCheck = verifyAdminToken(token);
+      if (!tokenCheck.valid) {
+        return NextResponse.json(
+          { error: "No autorizado para subir archivos. Se requiere token de administrador." },
+          { status: 401 }
+        );
+      }
+
       const formData = await req.formData();
       const file = formData.get("file") as File;
 
       if (!file) {
         return NextResponse.json({ error: "Archivo requerido" }, { status: 400 });
+      }
+
+      // Validar tipo MIME permitido para imágenes
+      const mime = file.type?.toLowerCase() || "";
+      if (!mime.startsWith("image/") && !["application/pdf"].includes(mime)) {
+        return NextResponse.json({ error: "Tipo de archivo no permitido. Solo se aceptan imágenes." }, { status: 400 });
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,10 +108,8 @@ export async function POST(req: NextRequest) {
       const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : (body.adminToken || null);
       const tokenCheck = verifyAdminToken(token);
 
-      // Si no tiene token válido, pero viene con contraseña para actualizar contraseña
-      const isPasswordUpdateWithCurrentCreds = action === "update_password" && email;
-
-      if (!tokenCheck.valid && !isPasswordUpdateWithCurrentCreds) {
+      // update_password requiere obligatoriamente o token admin válido o verificación de contraseña actual
+      if (!tokenCheck.valid && action !== "update_password") {
         return NextResponse.json(
           { error: "No autorizado: Sesión administrativa inválida o expirada. Por favor vuelve a iniciar sesión." },
           { status: 401 }
@@ -1158,29 +1172,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, deletedId: id });
     }
 
-    // ─── AUTH ADMIN CON PERSISTENCIA MULTIDISPOSITIVO ────────────
+    // ─── AUTH ADMIN CON PERSISTENCIA SEGURA Y PRIVADA ────────────
     if (action === "update_password") {
       if (!email || !password) {
-        return NextResponse.json({ error: "Email y contraseña requeridos" }, { status: 400 });
+        return NextResponse.json({ error: "Email y nueva contraseña requeridos" }, { status: 400 });
       }
 
       const normalizedEmail = email.trim().toLowerCase();
-      
-      // 1. Cargar diccionario de credenciales actual desde Supabase Storage
+      const currentPassword = body.currentPassword || body.currentPass || null;
+      const authHeader = req.headers.get("authorization") || "";
+      const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : (body.adminToken || null);
+      const tokenVerification = verifyAdminToken(bearerToken);
+
+      // Garantizar que el bucket privado del sistema exista
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const hasPrivateBucket = buckets?.some((b: any) => b.name === "admin-vault");
+        if (!hasPrivateBucket) {
+          await supabase.storage.createBucket("admin-vault", {
+            public: false, // ¡ESTRICTAMENTE PRIVADO! Nadie por internet puede accederlo
+            fileSizeLimit: 1048576,
+          });
+        }
+      } catch (vaultInitErr) {
+        console.warn("Aviso asegurando vault privado:", vaultInitErr);
+      }
+
+      // 1. Cargar diccionario de credenciales desde el bucket privado 'admin-vault'
       let credsDict: Record<string, { password: string; mustChangePassword: boolean; updatedAt: string }> = {};
       try {
         const { data: fileData } = await supabase.storage
-          .from("product-images")
-          .download("_system/admin_passwords.json");
+          .from("admin-vault")
+          .download("credentials.json");
         if (fileData) {
           const rawText = await fileData.text();
           credsDict = JSON.parse(rawText || "{}");
         }
       } catch (readErr) {
-        console.warn("Inicializando nuevo almacén de credenciales admin:", readErr);
+        // Fallback de migración: Si aún no existe en admin-vault, buscar en product-images para migrarlo
+        try {
+          const { data: legacyData } = await supabase.storage
+            .from("product-images")
+            .download("_system/admin_passwords.json");
+          if (legacyData) {
+            const rawLegacy = await legacyData.text();
+            credsDict = JSON.parse(rawLegacy || "{}");
+            // Borrar el archivo viejo del bucket público de inmediato por seguridad
+            await supabase.storage.from("product-images").remove(["_system/admin_passwords.json"]);
+          }
+        } catch {}
       }
 
-      // 2. Actualizar contraseña (almacenada con hash SHA-256) y quitar flag de cambio obligatorio
+      const existingCred = credsDict[normalizedEmail];
+
+      // Verificación estricta: Se requiere token firmado válido O coincidencia de contraseña actual
+      const isAuthorizedByToken = tokenVerification.valid && tokenVerification.email === normalizedEmail;
+      let isAuthorizedByPassword = false;
+
+      if (currentPassword && existingCred?.password) {
+        const currentHash = hashPassword(currentPassword);
+        if (existingCred.password === currentHash || existingCred.password === currentPassword.trim()) {
+          isAuthorizedByPassword = true;
+        }
+      } else if (!existingCred && currentPassword) {
+        // Primer setup si no existía credencial
+        isAuthorizedByPassword = true;
+      }
+
+      if (!isAuthorizedByToken && !isAuthorizedByPassword) {
+        return NextResponse.json(
+          { error: "No autorizado para cambiar la contraseña: Se requiere la contraseña actual o una sesión activa." },
+          { status: 403 }
+        );
+      }
+
+      // 2. Actualizar contraseña (almacenada con hash SHA-256)
       const hashed = hashPassword(password);
       credsDict[normalizedEmail] = {
         password: hashed,
@@ -1188,18 +1254,23 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       };
 
-      // 3. Guardar de forma persistente en Supabase
+      // 3. Guardar en bucket privado 'admin-vault'
       const { error: saveError } = await supabase.storage
-        .from("product-images")
-        .upload("_system/admin_passwords.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+        .from("admin-vault")
+        .upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
           contentType: "application/json",
           upsert: true,
         });
 
       if (saveError) {
-        console.error("Error guardando credenciales en Supabase:", saveError);
+        console.error("Error guardando credenciales en vault privado:", saveError);
         throw saveError;
       }
+
+      // Asegurar que el archivo legado en product-images sea destruido
+      try {
+        await supabase.storage.from("product-images").remove(["_system/admin_passwords.json"]);
+      } catch {}
 
       const adminToken = generateAdminToken(normalizedEmail);
       return NextResponse.json({ success: true, token: adminToken, email: normalizedEmail, mustChangePassword: false });
@@ -1213,9 +1284,20 @@ export async function POST(req: NextRequest) {
       const normalizedEmail = email.trim().toLowerCase();
       
       try {
-        const { data: fileData } = await supabase.storage
-          .from("product-images")
-          .download("_system/admin_passwords.json");
+        // Intentar leer primero del vault privado
+        let fileData = null;
+        try {
+          const res = await supabase.storage.from("admin-vault").download("credentials.json");
+          fileData = res.data;
+        } catch {}
+
+        // Si no está en admin-vault, buscar en legacy product-images y migrarlo
+        if (!fileData) {
+          try {
+            const legacyRes = await supabase.storage.from("product-images").download("_system/admin_passwords.json");
+            fileData = legacyRes.data;
+          } catch {}
+        }
 
         if (fileData) {
           const rawText = await fileData.text();
@@ -1226,16 +1308,21 @@ export async function POST(req: NextRequest) {
             const inputHash = hashPassword(password);
             const matches = userCred.password === inputHash || userCred.password === password.trim();
             if (matches) {
-              // Si aún estaba en texto plano, migrarla a hash automáticamente
-              if (userCred.password !== inputHash) {
-                userCred.password = inputHash;
-                supabase.storage
-                  .from("product-images")
-                  .upload("_system/admin_passwords.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
-                    contentType: "application/json",
-                    upsert: true,
-                  })
-                  .catch(() => {});
+              // Migrar a hash SHA-256 y guardar en admin-vault privado
+              userCred.password = inputHash;
+              try {
+                const { data: buckets } = await supabase.storage.listBuckets();
+                if (!buckets?.some((b: any) => b.name === "admin-vault")) {
+                  await supabase.storage.createBucket("admin-vault", { public: false, fileSizeLimit: 1048576 });
+                }
+                await supabase.storage.from("admin-vault").upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+                  contentType: "application/json",
+                  upsert: true,
+                });
+                // Eliminar copia pública vieja
+                await supabase.storage.from("product-images").remove(["_system/admin_passwords.json"]);
+              } catch (migErr) {
+                console.warn("Aviso migrando credencial a vault privado:", migErr);
               }
 
               const adminToken = generateAdminToken(normalizedEmail);
