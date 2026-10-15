@@ -1847,9 +1847,9 @@ export default function TiendaFoxDrop() {
                   id: 'default-welcome',
                   title: user?.name 
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                    : '¡Hola! El mundo, directo a tu puerta.',
+                    : '¡Hola, Mario! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-courier-clean.png',
+                  image_url: '/foxdrop-hero-complete.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1862,54 +1862,21 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/400] w-full min-h-[160px] max-h-[220px] flex items-stretch">
-                    {/* FONDO OFICIAL COMPACTO CON NUBES, MAPA, AVIONES Y GLOBOS */}
+                  <div 
+                    onClick={() => {
+                      setSelectedCategory(currentSlide.cta_category || 'Todas');
+                      setActiveTab('all');
+                      const el = document.getElementById('catalog-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full cursor-pointer group"
+                    title="Ver Catálogo Completo"
+                  >
                     <img 
-                      src="/hero-background-official.png" 
-                      alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      src={isDefaultSlide ? '/foxdrop-hero-complete.png' : (currentSlide.image_url || '/foxdrop-hero-complete.png')} 
+                      alt="FoxDrop Hero Banner" 
+                      className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-300 group-hover:scale-[1.01]"
                     />
-
-                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
-                    <div className="relative z-10 w-[52%] p-3.5 sm:p-5 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <span className="inline-block text-[8px] sm:text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase">
-                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                        </span>
-                        <h2 className="text-xs sm:text-base md:text-lg font-black text-white leading-tight drop-shadow-sm line-clamp-2">
-                          {isDefaultSlide && user?.name 
-                            ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                            : currentSlide.title}
-                        </h2>
-                        <p className="text-[9px] sm:text-[10.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2">
-                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                        </p>
-                      </div>
-
-                      <div className="pt-1.5 sm:pt-2">
-                        <button
-                          onClick={() => {
-                            setSelectedCategory(currentSlide.cta_category || 'Todas');
-                            setActiveTab('all');
-                            const el = document.getElementById('catalog-section');
-                            el?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[9px] sm:text-[10px] font-black px-3 sm:px-3.5 py-1 rounded-full shadow-[0_3px_12px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
-                        >
-                          <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
-                          <ArrowRight className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* EL ZORRO COURIER REPARTIDOR */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[45%] flex items-end justify-center pointer-events-none z-15 pr-1">
-                      <img 
-                        src="/fox-mascot-isolated.png" 
-                        alt="Fox Courier" 
-                        className="max-h-[95%] w-auto object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)]"
-                      />
-                    </div>
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
@@ -1935,17 +1902,15 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* VERSIÓN ESCRITORIO (MÁS COMPACTA Y SIN NUBES FLOTANTES ARTIFICIALES) */}
+          {/* VERSIÓN ESCRITORIO (IMAGEN COMPLETA ORIGINAL 100% IDÉNTICA) */}
           <section className="hidden md:block pt-4 pb-2 px-6 max-w-7xl mx-auto w-full">
             {(() => {
               const totalHeroSlides = slides.length > 0 ? slides : [
                 {
                   id: 'default-welcome',
-                  title: user?.name 
-                    ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
-                    : '¡Hola! El mundo, directo a tu puerta.',
+                  title: '¡Hola, Mario! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/fox-courier-clean.png',
+                  image_url: '/foxdrop-hero-complete.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1958,54 +1923,21 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/360] max-h-[300px] w-full flex items-stretch">
-                    {/* FONDO OFICIAL CON NUBES, MAPA, AVIONES Y GLOBOS INCORPORADOS */}
+                  <div 
+                    onClick={() => {
+                      setSelectedCategory(currentSlide.cta_category || 'Todas');
+                      setActiveTab('all');
+                      const el = document.getElementById('catalog-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[380px] w-full cursor-pointer group"
+                    title="Ver Catálogo Completo"
+                  >
                     <img 
-                      src="/hero-background-official.png" 
-                      alt="FoxDrop Hero Background" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      src={isDefaultSlide ? '/foxdrop-hero-complete.png' : (currentSlide.image_url || '/foxdrop-hero-complete.png')} 
+                      alt="FoxDrop Hero Banner" 
+                      className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-500 group-hover:scale-[1.01]"
                     />
-
-                    {/* CONTENIDO TIPOGRÁFICO NATIVO Y NÍTIDO */}
-                    <div className="relative z-10 w-[48%] p-6 lg:p-8 xl:p-9 flex flex-col justify-between">
-                      <div className="space-y-1.5 lg:space-y-2">
-                        <span className="inline-block text-xs font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                        </span>
-                        <h1 className="text-xl lg:text-[28px] xl:text-[32px] font-black text-white leading-[1.18] drop-shadow-sm max-w-md">
-                          {isDefaultSlide && user?.name 
-                            ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                            : currentSlide.title}
-                        </h1>
-                        <p className="text-xs lg:text-[13.5px] text-emerald-100/90 leading-snug max-w-sm font-medium drop-shadow-xs">
-                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                        </p>
-                      </div>
-
-                      <div className="pt-2 lg:pt-3">
-                        <button
-                          onClick={() => {
-                            setSelectedCategory(currentSlide.cta_category || 'Todas');
-                            setActiveTab('all');
-                            const el = document.getElementById('catalog-section');
-                            el?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8A2E] hover:to-[#F05E00] text-white font-black px-5 py-2 rounded-full text-xs lg:text-sm shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
-                        >
-                          <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
-                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* EL ZORRO COURIER (EN SU CAPA EXACTA) */}
-                    <div className="absolute right-0 top-0 bottom-0 w-[45%] lg:w-[42%] flex items-end justify-center pointer-events-none z-15 pr-2 lg:pr-6">
-                      <img 
-                        src="/fox-mascot-isolated.png" 
-                        alt="FoxDrop Mascot" 
-                        className="max-h-[96%] w-auto object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
-                      />
-                    </div>
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
