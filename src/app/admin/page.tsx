@@ -2626,67 +2626,33 @@ export default function AdminCRM() {
     }
   };
 
-  // Compartir imagen del ticket directamente al WhatsApp o galería mediante Web Share API
+  // Enviar ticket directamente usando el sistema de WhatsApp oficial de FoxDrop
   const shareTicketImageDirectly = async (ticket: NonNullable<typeof posCompletedTicket>) => {
-    try {
-      let file: File | null = null;
-
-      // 1. Si tenemos el ref del DOM del ticket en pantalla, renderizarlo con html-to-image de forma segura
-      if (ticketReceiptRef.current) {
-        try {
-          const dataUrl = await toPng(ticketReceiptRef.current, {
-            cacheBust: true,
-            pixelRatio: 2, // 2x alta resolución nítida
-            backgroundColor: '#ffffff',
-            skipFonts: true,
-            style: {
-              transform: 'none',
-              animation: 'none',
-              clipPath: 'none',
-              opacity: '1',
-            },
-          });
-
-          if (dataUrl && dataUrl.length > 5000) {
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
-
-            // Si el ticket no tenía imageUrl en storage, podemos actualizarlo
-            if (!ticket.ticketImageUrl) {
-              setPosCompletedTicket(prev => prev ? { ...prev, ticketImageUrl: dataUrl } : null);
-            }
-          }
-        } catch (domImgErr) {
-          console.warn("Fallo renderizando imagen de ticket desde DOM:", domImgErr);
-        }
-      }
-
-      // 2. Si no fue posible desde DOM pero hay ticketImageUrl guardado en el ticket
-      if (!file && ticket.ticketImageUrl) {
-        try {
-          const res = await fetch(ticket.ticketImageUrl);
-          const blob = await res.blob();
-          file = new File([blob], `Ticket-${ticket.orderNumber}.png`, { type: "image/png" });
-        } catch (fetchErr) {
-          console.warn("Error convirtiendo ticketImageUrl a File:", fetchErr);
-        }
-      }
-
-      // 3. Compartir archivo directo si Web Share está disponible
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Ticket FoxDrop ${ticket.orderNumber}`,
-          text: `Foxdrop - Tu atajo al mundo\nComprobante oficial de compra ${ticket.orderNumber}`,
+    // 1. Si el ticket tiene número de cliente válido, disparar el envío oficial con imagen
+    const cleanPhone = (ticket.clientPhone || '').replace(/\D/g, '');
+    if (cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.length >= 10) {
+      try {
+        await fetch("/api/whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "status_update",
+            orderNumber: ticket.orderNumber,
+            clientName: ticket.clientName,
+            clientPhone: ticket.clientPhone,
+            newStatus: "delivered",
+            shippingType: "pos_in_store",
+            total: ticket.total,
+            ticketImageUrl: ticket.ticketImageUrl,
+            loyaltyStars: ticket.pointsEarned,
+          }),
         });
-        return;
+      } catch (err) {
+        console.warn("Aviso: reintento de envío de ticket por API:", err);
       }
-    } catch (shareErr) {
-      console.warn("Web Share API no disponible o cancelado, fallback a WhatsApp estándar:", shareErr);
     }
 
-    // Fallback: Si no soporta compartir archivo directamente, enviar texto con enlace directo a WhatsApp
+    // 2. Abrir el chat interno de WhatsApp de FoxDrop en la ventana flotante con el mensaje oficial precargado
     sendWhatsAppTicket(ticket);
   };
 
@@ -9617,10 +9583,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           <div className="space-y-2 pt-1 relative z-20">
               <button
                 onClick={() => shareTicketImageDirectly(posCompletedTicket)}
-                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98]"
+                className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-3 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition active:scale-[0.98] cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>Enviar Imagen de Ticket a WhatsApp</span>
+                <span>Enviar Ticket por WhatsApp FoxDrop</span>
               </button>
 
               <button
