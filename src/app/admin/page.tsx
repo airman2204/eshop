@@ -1619,7 +1619,13 @@ export default function AdminCRM() {
       setUploadSuccess(true);
     } catch (err: any) {
       console.error('Error al generar foto en contexto real con IA:', err);
-      alert('No se pudo generar la foto en escena con IA en este momento. Intenta con una descripción más breve.');
+      const wantsSearch = confirm(
+        'El motor de IA está saturado en este momento.\n\n¿Deseas buscar fotos de este producto en escena real en Google Fotos para copiar/pegar una?'
+      );
+      if (wantsSearch) {
+        const query = `${newTitle.trim()} ${lifestylePrompt.trim()}`.slice(0, 80);
+        window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+      }
     } finally {
       setGeneratingLifestyle(false);
     }
@@ -8465,34 +8471,49 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           />
                         </div>
 
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
                           <span className="text-[10px] text-slate-400">
-                            {newImages.length === 0 ? '💡 Recomendación: Primero sube o pega una foto del producto' : '✓ Se añadirá automáticamente a la galería'}
+                            {newImages.length === 0 ? '💡 Recomendación: Sube o pega primero tu foto base' : '✓ Se añadirá automáticamente a la galería'}
                           </span>
-                          <button
-                            type="button"
-                            onClick={handleGenerateLifestyleImage}
-                            disabled={generatingLifestyle || !newTitle.trim()}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer ${
-                              generatingLifestyle
-                                ? 'bg-indigo-300 text-white cursor-not-allowed'
-                                : !newTitle.trim()
-                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
-                            }`}
-                          >
-                            {generatingLifestyle ? (
-                              <>
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                <span>Generando Escena Cotidiana...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-3.5 h-3.5" />
-                                <span>Generar Foto en Escena Real</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const q = `${newTitle.trim()} ${lifestylePrompt.trim() || 'en escena uso real'}`.trim();
+                                window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`, '_blank', 'noopener,noreferrer');
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+                              title="Buscar fotos reales de esta escena en Google Imágenes"
+                            >
+                              <Globe className="w-3.5 h-3.5 text-blue-500" />
+                              <span>Buscar Escena en Google</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleGenerateLifestyleImage}
+                              disabled={generatingLifestyle || !newTitle.trim()}
+                              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer ${
+                                generatingLifestyle
+                                  ? 'bg-indigo-300 text-white cursor-not-allowed'
+                                  : !newTitle.trim()
+                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white'
+                              }`}
+                            >
+                              {generatingLifestyle ? (
+                                <>
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Generando Escena Cotidiana...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                  <span>Generar Foto con IA</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
