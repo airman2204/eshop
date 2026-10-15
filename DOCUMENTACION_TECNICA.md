@@ -1,97 +1,96 @@
 # 📖 Manual Técnico de Arquitectura y Referencia de Código: FoxDrop
 
-Este documento describe la arquitectura interna, flujo de datos, convenciones y funciones clave del sistema **FoxDrop E-Shop, CRM & WhatsApp Bot Engine**.
+Este documento describe la arquitectura interna, flujo de datos, convenciones y funciones clave del sistema **FoxDrop E-Shop, CRM, Punto de Venta (POS) & Motor de Seguridad**.
 
 ---
 
 ## 1. Módulos y Flujos de Datos
 
-### 1.1 Catálogo y Sincronización de Productos
-- **Ubicación clave:** `src/lib/products.ts`, `src/app/api/admin/route.ts`
+### 1.1 Catálogo, Margen Dinámico y Sistema de Promociones
+- **Ubicación clave:** `src/lib/products.ts`, `src/types/index.ts`, `src/app/api/admin/route.ts`
 - **Consulta Pública (`/tienda`):**
   - La función `getActiveProducts(false)` invoca `/api/admin` con `includeInactive: false`.
   - La API aplica `eq('is_active', true)`, asegurando que los productos apagados nunca se transmitan a clientes.
 - **Consulta Administrativa (`/admin`):**
   - Invoca `getActiveProducts(true)` para cargar todos los productos (activos y apagados).
   - Los productos apagados se muestran con indicador visual y opacidad reducida.
-- **Prorrateo de Costos:**
-  - `total_cost_mxn = base_cost_mxn + shipping_cost_allocated`.
-  - `profit_unit = public_price - total_cost_mxn`.
-  - En la interfaz administrativa se calculan los márgenes comerciales en vivo antes de guardar en base de datos.
+- **Slider de Markup Dinámico & Utilidad en Pesos:**
+  - Slider interactivo configurable de **100% a 190%** sobre el costo total con preview en vivo de ganancia neta en Pesos MXN.
+- **Sistema de Promociones & Descuentos Inteligentes:**
+  - Descuentos del 15%, 20%, 30% o porcentaje personalizado con **Piso de Utilidad Protegido al 50%**.
+  - Si un descuento compromete el margen mínimo de rentabilidad, la interfaz alerta al administrador y ajusta el tope máximo seguro.
+  - Activación individual o masiva por lote. En el storefront, los productos en oferta se etiquetan dinámicamente con precio anterior tachado, porcentaje de ahorro y badge de promoción.
 
 ### 1.2 Punto de Venta POS Móvil y Emisión Automática de Tickets
 - **Ubicación clave:** `src/app/admin/page.tsx` (sección POS), `src/lib/orders.ts` y `src/lib/orderNotifications.ts`.
 - **Flujo de Venta Física con Disparo Automático:**
   1. El operador agrega productos escaneando con la cámara trasera o seleccionando en la grilla táctil.
   2. Al pulsar **"Cobrar y Generar Ticket"**:
-     - Se descuenta el stock de Supabase de manera inmediata.
+     - Se descuenta el stock de Supabase de manera inmediata (soportando componentes de combos).
      - Se genera una orden con canal físico y estado `delivered`.
+     - **Persistencia de Multimedia:** Se guarda `product_image` en cada ítem de `order_items` para preservar la foto en el historial.
      - Se renderiza el componente del ticket térmico virtual (`ticketReceiptRef`).
      - Se utiliza `html-to-image` (`toPng`) en 2x (alta nitidez) para convertir el ticket en imagen PNG oficial.
-     - **Envío 100% Automático por WhatsApp:** Se invoca `/api/whatsapp` (`status_update`), enviando la imagen del ticket, el mensaje oficial de agradecimiento y el Sticker ilustrado oficial de FoxDrop al cliente.
-     - Queda registrado en tiempo real en la pestaña de WhatsApp del CRM.
+     - **Envío 100% Automático por WhatsApp:** Se invoca `/api/whatsapp` (`status_update`), enviando la imagen del ticket, el desglose, total liquidado y las estrellas del Club FoxDrop al cliente.
 
-### 1.3 Motor de Notificaciones Automáticas por Etapas (`src/lib/orderNotifications.ts`)
-Diseñado para atender los 3 canales de venta de FoxDrop sin intervención manual:
-- **Flujo A: Compra Presencial (POS / Mostrador):**
-  - Al completar la venta, envía ticket digital con folio de venta, desglose, total liquidado, acumulación de estrellas del Club FoxDrop y el Sticker `¡Gracias por tu compra!`.
-- **Flujo B: Compra en Línea con Contra-Entrega (Puebla):**
-  - **`pending`**: Bienvenida y confirmación de punto/horario de entrega.
-  - **`processing`**: Aviso de empaquetado + Sticker `¡Caja FoxDrop lista!`.
-  - **`shipped`**: Aviso de repartidor en ruta al punto acordado + Sticker `¡Tu pedido va en camino!`.
-  - **`delivered`**: Confirmación de entrega, liquidación y estrellas + Sticker `¡Gracias por tu compra!`.
-- **Flujo C: Compra en Línea con Envío Nacional (Paquetería):**
-  - **`processing`**: Notificación de pago acreditado + Sticker `¡Pago recibido!`.
-  - **`shipped`**: Notificación de despacho con paquetería y número de guía + Sticker `¡Pedido enviado!`.
-  - **`delivered`**: Confirmación de entrega por paquetería + Sticker `¡Gracias por tu compra!`.
+### 1.3 Experiencia de Compra E-Commerce Avanzada (`/tienda`)
+- **Compra Rápida en 1 Clic (1-Click Checkout):**
+  - Acceso directo para comprar inmediatamente sin pasar por múltiples pasos del carrito si ya se tienen datos registrados.
+- **Buscador Predictivo en Tiempo Real:**
+  - Sugerencias automáticas con debounce conforme el usuario escribe, búsqueda por categoría, título o SKU.
+- **Cotizador de Envío por Código Postal (CP):**
+  - Integrado en el carrito y ficha de producto, cotiza flete local en Puebla vs envío nacional y calcula el tiempo de entrega estimado.
+- **Cupones de Descuento & Club FoxDrop:**
+  - Validación dinámica de cupones con tope de descuento y canje de puntos/estrellas acumuladas.
+- **Fallback Visual Elegante (`no-image.svg`):**
+  - Se sustituyó el ícono de cámara rota por un badge minimalista de paquete 3D de FoxDrop con acabado comercial para artículos sin imagen.
 
-### 1.4 Agente Híbrido de WhatsApp & Copiloto (`src/lib/whatsappAgent.ts`)
-- **Arquitectura Híbrida:**
-  - Cada chat en `AdminWhatsAppTab.tsx` cuenta con el interruptor **`[ 🤖 Agente Activo / 👤 Modo Manual ]`**.
-  - Si el Agente está activo, responde automáticamente 24/7 consultas sobre compras, rastreo de pedidos en vivo con su folio, precios del catálogo y dudas generales.
-  - Si Mario o Nydia intervienen manualmente enviando un mensaje, el Agente **se pausa automáticamente en esa conversación** para permitir atención personalizada.
-- **Copiloto en 1 Clic (Sugerencias Rápidas):**
-  - Barra de 3 sugerencias inteligentes generadas por Gemini justo encima del cuadro de texto. Al hacer clic, el texto se escribe listo para enviar.
+### 1.4 Portal del Cliente y Gestión de Pedidos (`/tienda?tab=cuenta`)
+- **Tipado Fuerte (`OrderItem`):**
+  - Contrato formal en `src/types/index.ts` con retrocompatibilidad para `price_at_sale` y `product_cost`.
+- **Enriquecimiento en Lote (Batch Image Enrichment):**
+  - `/api/user/profile` (acción `get_orders`) detecta ítems de pedidos antiguos que no guardaban foto y consulta el catálogo en lote en una sola petición indexada (`IN (...)`).
+- **Botón Re-comprar:**
+  - Permite agregar artículos de pedidos pasados directamente al carrito actual con 1 clic.
+- **Cancelación Segura (Flujo Amazon / Mercado Libre):**
+  - Cancelación directa para órdenes en estado `pending` o `processing`, reposición automática de stock y notificación automática por WhatsApp.
+- **Cumplimiento Estricto PCI-DSS:**
+  - Sanitización en el guardado de tarjetas (`/api/user/profile` acción `save_card`), almacenando únicamente los últimos 4 dígitos (`last4`), vigencia y marca.
 
-### 1.5 Arquitectura de Seguridad del Administrador
-- **Whitelist de Acceso:** Restringido a correos autorizados en `src/lib/adminAuth.ts`.
-- **Cifrado de Credenciales:**
-  - Las contraseñas administrativas se procesan y almacenan con **hash criptográfico SHA-256**.
-  - Se eliminó el almacenamiento inseguro de contraseñas en texto plano en `localStorage`.
-- **Aislamiento de Privilegios:**
-### 1.6 Seguridad y Experiencia del Portal del Cliente (`/tienda?tab=cuenta` y `/perfil`)
-- **Visualización Integrada de Tickets POS:**
-  - Los clientes pueden consultar su historial de pedidos tanto online como de mostrador físico.
-  - Si el pedido cuenta con comprobante de compra (`Ticket: https://...`), el portal muestra la vista previa del ticket oficial con opción de descarga y apertura directa.
-- **Cumplimiento Estricto de Seguridad PCI-DSS:**
-  - En la gestión de métodos de pago guardados (`/api/user/profile` acción `save_card`), el backend sanitiza los objetos entrantes eliminando de raíz CVVs y números de tarjeta completos. Solo se guardan los últimos 4 dígitos (`last4`), marca y vigencia.
-- **Cancelación Segura con Notificación en Tiempo Real:**
-  - Los clientes pueden cancelar pedidos en estado `pending` o `processing`.
-  - La cancelación actualiza el inventario y dispara de inmediato un WhatsApp oficial al cliente confirmando la cancelación sin requerir intervención manual.
+### 1.5 Arquitectura de Seguridad & Hardening API
+- **Protección de Endpoints Críticos:**
+  - `/api/admin`, `/api/admin/agent`, `/api/whatsapp/send`: Validación mediante Bearer token y tokens criptográficos en encabezados.
+- **Limitación de Tasa (Rate Limiting en Memoria):**
+  - Implementado en `src/lib/security.ts` con ventanas deslizantes de peticiones para prevenir abusos y ataques de fuerza bruta en autenticación, consultas de perfiles y generación TTS.
+- **Validación de Webhooks:**
+  - Verificación de tokens de firma y origen para peticiones entrantes de pasarelas de pago y proveedores de mensajería.
+- **Whitelist y Cifrado:**
+  - Cuentas administrativas validadas contra lista blanca y contraseñas hasheadas con SHA-256 (sin almacenamiento en texto plano).
 
 ---
 
 ## 2. Convenciones de Código y Estado
 
-1. **Gestión de Fechas y Moneda:**
-   - Precios siempre formateados con `Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })`.
-   - Fechas locales usando `toLocaleDateString('es-MX')` y zonas horarias controladas.
-2. **Optimistic Updates:**
+1. **Tipado Estricto con TypeScript:**
+   - Cero uso de `any` no controlado en modelos troncales (`Product`, `Order`, `OrderItem`, `ClientProfile`).
+2. **Conventional Commits:**
+   - Todo cambio en el repositorio sigue el estándar `feat(...)`, `fix(...)`, `refactor(...)`, `security(...)` o `docs(...)`.
+3. **Optimistic Updates:**
    - Tanto el cambio de stock rápido (+1 / -1) como el encendido/apagado aplican cambios inmediatos en el estado local de React antes de completar la promesa HTTP hacia Supabase.
-3. **Control de Errores y Resiliencia:**
-   - Sincronización continua de estados en WhatsApp (1 palomita = enviado, 2 palomitas grises = entregado, 2 palomitas azules = leído).
+4. **Formateo Monetario:**
+   - Precios estandarizados con `Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })`.
 
 ---
 
 ## 3. Comandos Útiles
 
 ```bash
-# Validar tipado y compilación
+# Validar tipado y compilación completa de Next.js
 npm run build
 
-# Analizar archivos modificados en Git
+# Analizar estado del repositorio en Git
 git status
 
-# Ejecutar servidor de desarrollo local
+# Ejecutar servidor de desarrollo local con Turbopack
 npm run dev
 ```

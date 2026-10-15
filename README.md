@@ -153,13 +153,17 @@ eshop/
 
 | Ruta | Método | Descripción |
 | :--- | :--- | :--- |
-| `/api/admin` | `POST` | Operaciones de backend administrativo (CRUD productos, toggle activo/apagado, lotes, órdenes, métricas, carrusel). |
+| `/api/admin` | `POST` | Operaciones de backend administrativo (CRUD productos, toggle activo/apagado, lotes, órdenes, métricas, carrusel). Protegido con token Bearer. |
+| `/api/admin/agent` | `POST` | Asistente Copiloto con IA y sugerencias de respuesta para WhatsApp. |
+| `/api/admin/agent/tts` | `POST` | Generación de audio de voz con limitación de tasa (rate limiting). |
 | `/api/cart/sync` | `POST` | Sincroniza el carrito del cliente y registra carritos abandonados para remarketing. |
-| `/api/auth/lookup` | `POST` | Valida credenciales administrativas y consulta perfiles. |
-| `/api/user/profile` | `GET / POST` | Recupera el historial de pedidos y saldo de puntos de un cliente por teléfono. |
-| `/api/shipping/quote` | `POST` | Calcula costos de flete según zona geográfica y tipo de entrega. |
-| `/api/postal` | `GET` | Consulta colonias y municipios a partir del código postal mexicano. |
+| `/api/auth/lookup` | `POST` | Valida credenciales administrativas con hash SHA-256 y control de tasa. |
+| `/api/user/profile` | `GET / POST` | Recupera perfil, historial con enriquecimiento en lote de imágenes, métodos de pago PCI-DSS y cancelación de pedidos. |
+| `/api/shipping/quote` | `POST` | Calcula costos de flete según zona geográfica, código postal y tipo de entrega. |
+| `/api/postal` | `GET` | Consulta colonias y municipios a partir del código postal mexicano (SEPOMEX). |
 | `/api/whatsapp` | `POST` | Generación y registro de eventos de notificación hacia WhatsApp. |
+| `/api/whatsapp/send` | `POST` | Envío seguro de mensajes multimedia y tickets con autenticación por token. |
+| `/api/whatsapp/webhook`| `POST` | Recepción de eventos entrantes de WhatsApp con validación de firma. |
 
 ---
 
