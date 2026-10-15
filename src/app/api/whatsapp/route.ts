@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         .from("whatsapp_chats")
         .update({
           notes: JSON.stringify(targetNotes),
+          avatar_url: targetChat.avatar_url || sourceChat.avatar_url || null,
           last_message: sourceChat.last_message || targetChat.last_message,
           last_message_time: sourceChat.last_message_time || targetChat.last_message_time,
           updated_at: new Date().toISOString(),

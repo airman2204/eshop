@@ -30,6 +30,23 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json();
+
+    // Si encontramos avatar y tenemos chatId o phone, persistir en Supabase para no tener que volver a consultarlo
+    if (data.success && data.avatarUrl) {
+      const chatId = searchParams.get("chatId");
+      try {
+        const { createServerClient } = await import("@/lib/supabase/server");
+        const supabase = createServerClient() as any;
+        if (chatId) {
+          await supabase.from("whatsapp_chats").update({ avatar_url: data.avatarUrl }).eq("id", chatId);
+        } else if (phone) {
+          await supabase.from("whatsapp_chats").update({ avatar_url: data.avatarUrl }).eq("phone", phone);
+        }
+      } catch (err) {
+        console.error("Error persistiendo avatar_url:", err);
+      }
+    }
+
     return NextResponse.json(data);
   } catch (error: any) {
     return NextResponse.json({ success: false, avatarUrl: "", error: error.message });

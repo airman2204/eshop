@@ -569,7 +569,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     data.forEach(async (c) => {
       if (!c.avatarUrl) {
         try {
-          const res = await fetch(`/api/whatsapp/contact-avatar?phone=${c.phone}`);
+          let lid = "";
+          try {
+            const parsedNotes = typeof c.notes === "string" ? JSON.parse(c.notes) : (c.notes || {});
+            lid = parsedNotes.lid || "";
+          } catch {}
+
+          const params = new URLSearchParams({ phone: c.phone, chatId: c.id });
+          if (lid) params.set("lid", lid);
+
+          const res = await fetch(`/api/whatsapp/contact-avatar?${params.toString()}`);
           const resData = await res.json();
           if (resData.success && resData.avatarUrl) {
             setChats(prev => prev.map(item => item.id === c.id ? { ...item, avatarUrl: resData.avatarUrl } : item));
@@ -580,6 +589,37 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
         } catch {}
       }
     });
+  };
+
+  const [refreshingAvatar, setRefreshingAvatar] = useState(false);
+
+  const refreshContactAvatar = async (chatToRefresh?: any) => {
+    const target = chatToRefresh || activeChat;
+    if (!target) return;
+    setRefreshingAvatar(true);
+    try {
+      let lid = "";
+      try {
+        const parsedNotes = typeof target.notes === "string" ? JSON.parse(target.notes) : (target.notes || {});
+        lid = parsedNotes.lid || "";
+      } catch {}
+
+      const params = new URLSearchParams({ phone: target.phone, chatId: target.id });
+      if (lid) params.set("lid", lid);
+
+      const res = await fetch(`/api/whatsapp/contact-avatar?${params.toString()}`);
+      const resData = await res.json();
+      if (resData.success && resData.avatarUrl) {
+        setChats(prev => prev.map(item => item.id === target.id ? { ...item, avatarUrl: resData.avatarUrl } : item));
+        if (activeChatRef.current?.id === target.id) {
+          setActiveChat(prev => prev ? { ...prev, avatarUrl: resData.avatarUrl } : prev);
+        }
+      }
+    } catch (e) {
+      console.error("Error refreshing avatar:", e);
+    } finally {
+      setRefreshingAvatar(false);
+    }
   };
 
   useEffect(() => {
@@ -1477,19 +1517,28 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 )}
               </button>
 
-              <div className="w-10 h-10 rounded-full bg-[#6B7C85] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+              <div 
+                className="w-10 h-10 rounded-full bg-[#6B7C85] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative cursor-pointer group"
+                onClick={() => refreshContactAvatar()}
+                title="Toca para actualizar/cargar foto de WhatsApp"
+              >
                 {activeChat.avatarUrl ? (
                   <img 
                     src={getSafeAvatarUrl(activeChat.avatarUrl)} 
                     alt={activeChat.clientName} 
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover rounded-full"
+                    className="w-full h-full object-cover rounded-full group-hover:opacity-80 transition"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
                 ) : (
                   <span>{activeChat.clientName.charAt(0).toUpperCase()}</span>
+                )}
+                {refreshingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-[#00A884] animate-spin" />
+                  </div>
                 )}
               </div>
 
