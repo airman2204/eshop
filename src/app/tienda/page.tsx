@@ -3204,44 +3204,6 @@ export default function TiendaFoxDrop() {
                   );
                 })()}
 
-                {/* CALCULADORA INTERACTIVA DE VALOR Y CANJE DE PUNTOS */}
-                <div className="bg-[#FAF6F0] rounded-2xl p-5 border border-orange-200/80 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-orange-100 text-[#DF7F2D] flex items-center justify-center font-bold">
-                        <Coins className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black uppercase text-gray-900 tracking-wide">Calculadora de Canje</h4>
-                        <p className="text-[11px] text-gray-500">Convierte tus puntos acumulados en dinero de descuento para tu siguiente pedido.</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-mono font-black text-[#0F3E36] bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs">
-                      10 pts = $1.00 MXN
-                    </span>
-                  </div>
-
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <span className="text-xs text-gray-500 block">Tu saldo actual disponible:</span>
-                      <span className="text-lg font-black text-[#DF7F2D] font-mono">
-                        {user?.points ?? 0} {clubSettings?.currencySymbol || '⭐'}
-                      </span>
-                    </div>
-
-                    <div className="sm:text-right border-t sm:border-t-0 sm:border-l border-gray-100 pt-2 sm:pt-0 sm:pl-4">
-                      <span className="text-xs text-gray-500 block">Valor directo en descuento:</span>
-                      <span className="text-lg font-black text-emerald-700 font-mono">
-                        ${(((user?.points ?? 0) / 10)).toFixed(2)} MXN
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-gray-500 leading-relaxed">
-                    💡 <em>Tip: Al finalizar tu compra en la tienda web, tus puntos se aplicarán automáticamente como saldo a favor en el total a liquidar.</em>
-                  </p>
-                </div>
-
                 <div className="bg-white rounded-2xl p-5 border border-gray-200 space-y-3">
                   <h4 className="text-xs font-black uppercase text-gray-900 tracking-wide">Niveles de Membresía</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
