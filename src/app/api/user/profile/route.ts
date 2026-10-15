@@ -303,7 +303,51 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: ordErr.message }, { status: 500 });
       }
 
-      return NextResponse.json({ orders: orders || [] });
+      // Si algunos items no tienen product_image guardada (pedidos anteriores),
+      // realizamos un enriquecimiento en lote consultando el catálogo de productos
+      const populatedOrders = orders || [];
+      const missingProductIds = new Set<string>();
+      for (const ord of populatedOrders) {
+        if (Array.isArray(ord.order_items)) {
+          for (const item of ord.order_items) {
+            if (!item.product_image && item.product_id) {
+              missingProductIds.add(item.product_id);
+            }
+          }
+        }
+      }
+
+      if (missingProductIds.size > 0) {
+        try {
+          const { data: catalogProducts } = await supabase
+            .from("products")
+            .select("id, images")
+            .in("id", Array.from(missingProductIds));
+
+          if (catalogProducts && catalogProducts.length > 0) {
+            const imageMap = new Map<string, string>();
+            for (const cp of catalogProducts) {
+              if (cp.images && cp.images.length > 0) {
+                imageMap.set(cp.id, cp.images[0]);
+              }
+            }
+
+            for (const ord of populatedOrders) {
+              if (Array.isArray(ord.order_items)) {
+                for (const item of ord.order_items) {
+                  if (!item.product_image && item.product_id && imageMap.has(item.product_id)) {
+                    item.product_image = imageMap.get(item.product_id);
+                  }
+                }
+              }
+            }
+          }
+        } catch (enrichErr) {
+          console.warn("Aviso al enriquecer imágenes de pedidos pasados:", enrichErr);
+        }
+      }
+
+      return NextResponse.json({ orders: populatedOrders });
     }
 
     // 8. CANCELAR PEDIDO POR PARTE DEL CLIENTE (FLUJO AMAZON / MERCADO LIBRE)

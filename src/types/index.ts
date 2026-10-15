@@ -142,8 +142,26 @@ export interface Order {
   notes?: string;
   paymentMethod?: 'spei' | 'card' | 'cash' | 'mercadopago' | string;
   paymentStatus?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  order_items?: any[];
+  order_items?: OrderItem[];
+}
+
+/**
+ * Representa cada artículo individual perteneciente a una orden de compra.
+ */
+export interface OrderItem {
+  id?: string;
+  order_id?: string;
+  product_id?: string | null;
+  product_title: string;
+  product_image?: string | null;
+  quantity: number;
+  price_at_purchase: number;
+  /** Alias para retrocompatibilidad con vistas previas */
+  price_at_sale?: number;
+  cost_at_purchase?: number;
+  /** Alias para retrocompatibilidad en cortes de caja */
+  product_cost?: number;
+  created_at?: string;
 }
 
 /**
