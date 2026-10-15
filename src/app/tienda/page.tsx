@@ -4428,18 +4428,7 @@ export default function TiendaFoxDrop() {
                     <span>Ganas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'} {clubSettings?.currencyName || 'puntos'}</strong> para tu <strong>Club Foxdrop</strong>.</span>
                   </div>
 
-                  {/* PRUEBA SOCIAL & VISITAS EN VIVO */}
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                    <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      <span>4.9 / 5.0</span>
-                      <span className="text-amber-700 font-normal">({(selectedProduct.title.length * 3) % 40 + 12} opiniones)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-orange-50/80 text-orange-900 border border-orange-200 px-2 py-0.5 rounded-full font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
-                      <span>{(selectedProduct.title.length % 9) + 4} personas viendo esto hoy</span>
-                    </div>
-                  </div>
+
 
                   {/* DISPONIBILIDAD DE STOCK & BADGES */}
                   <div className="pt-2">
