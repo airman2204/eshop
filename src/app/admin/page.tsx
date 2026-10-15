@@ -1733,7 +1733,16 @@ export default function AdminCRM() {
     setIsCombo(Boolean(prod.isCombo));
     setSelectedComboProductIds(prod.comboProductIds || []);
     setNewIsActive(prod.isActive !== false);
-    if (prod.batchId) setSelectedBatchId(prod.batchId);
+
+    // Emparejar lote exacto: primero por batchId, luego por coincidencia de flete unitario (+- $0.05 MXN)
+    if (prod.batchId) {
+      setSelectedBatchId(prod.batchId);
+    } else {
+      const matchedBatch = batches.find(b => Math.abs(b.costPerUnit - (prod.shippingCostAllocated || 0)) < 0.05);
+      if (matchedBatch) {
+        setSelectedBatchId(matchedBatch.id);
+      }
+    }
     setShowAddModal(true);
   };
 
@@ -3882,7 +3891,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             })()}
                             <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-black text-slate-900">${p.totalCostMxn.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-mono">
+                            <span className="font-black text-slate-900 block text-xs">
+                              ${p.totalCostMxn.toFixed(2)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Base: ${p.baseCostMxn.toFixed(2)}
+                            </span>
+                          </td>
                           
                           {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA */}
                           <td className="py-3.5 px-4 font-mono font-black bg-emerald-50/40">
@@ -4198,8 +4214,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         {/* Métricas financieras del producto con Edición Rápida de Precio */}
                         <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center items-center">
                           <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo</span>
-                            <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(0)}</span>
+                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo Total</span>
+                            <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(2)}</span>
+                            <span className="text-[9px] font-mono text-slate-400 block">Base: ${p.baseCostMxn.toFixed(2)}</span>
                           </div>
                           <div className="border-x border-slate-200 px-1">
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta (toca)</span>
