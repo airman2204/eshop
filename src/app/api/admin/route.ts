@@ -1048,12 +1048,17 @@ export async function POST(req: NextRequest) {
           order_id: order.id,
           product_id: item.product.id && !item.product.id.startsWith("PROD-") ? item.product.id : null,
           product_title: item.product.title,
+          product_image: item.product.images?.[0] || null,
           quantity: item.quantity,
           price_at_purchase: item.product.publicPrice,
           cost_at_purchase: item.product.totalCostMxn || item.product.baseCostMxn || 0,
         }));
 
-        await supabase.from("order_items").insert(orderItems);
+        const { error: insErr } = await supabase.from("order_items").insert(orderItems);
+        if (insErr) {
+          const basicItems = orderItems.map(({ product_image, ...rest }: any) => rest);
+          await supabase.from("order_items").insert(basicItems);
+        }
       }
 
       // 5. Si el cliente proporcionó teléfono o tiene perfil, acumular puntos Club FoxDrop

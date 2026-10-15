@@ -2615,14 +2615,21 @@ export default function TiendaFoxDrop() {
                               {/* Artículos con Fotos Reales y Botón Re-comprar */}
                               {order.order_items && order.order_items.length > 0 && (
                                 <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden text-xs bg-white">
-                                  {order.order_items.map((item: any, idx: number) => {
-                                    const matchedProd = products.find(p => p.id === item.product_id || p.title.toLowerCase() === item.product_title?.toLowerCase());
-                                    const prodImg = item.product_image || matchedProd?.images?.[0] || '/no-image.svg';
+                                   {order.order_items.map((item: any, idx: number) => {
+                                    const cleanItemTitle = (item.product_title || "").trim().toLowerCase();
+                                    const matchedProd = products.find(p => {
+                                      if (p.id && item.product_id && p.id === item.product_id) return true;
+                                      const pTitle = (p.title || "").trim().toLowerCase();
+                                      return pTitle === cleanItemTitle || (cleanItemTitle.length > 5 && pTitle.includes(cleanItemTitle));
+                                    });
+                                    const prodImg = (item.product_image && !item.product_image.includes("no-image.svg"))
+                                      ? item.product_image
+                                      : (matchedProd?.images?.[0] && !matchedProd.images[0].includes("no-image.svg") ? matchedProd.images[0] : '/no-image.svg');
 
                                     return (
                                       <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-slate-50/60 transition">
                                         <div className="flex items-center gap-3 min-w-0">
-                                          <div className="w-12 h-12 rounded-xl bg-[#EAF1EF] p-1 border border-gray-200 shrink-0 flex items-center justify-center overflow-hidden">
+                                          <div className="w-12 h-12 rounded-xl bg-slate-50 p-1 border border-slate-200/80 shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
                                             <img
                                               src={prodImg}
                                               alt={item.product_title}
@@ -5178,13 +5185,20 @@ export default function TiendaFoxDrop() {
                 </span>
                 <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs max-h-56 overflow-y-auto">
                   {order.order_items && order.order_items.map((item: any, idx: number) => {
-                    const matchedProduct = products.find(p => p.id === item.product_id || p.title?.toLowerCase() === item.product_title?.toLowerCase());
-                    const productImg = item.product_image || matchedProduct?.images?.[0] || '/no-image.svg';
+                    const cleanItemTitle = (item.product_title || "").trim().toLowerCase();
+                    const matchedProduct = products.find(p => {
+                      if (p.id && item.product_id && p.id === item.product_id) return true;
+                      const pTitle = (p.title || "").trim().toLowerCase();
+                      return pTitle === cleanItemTitle || (cleanItemTitle.length > 5 && pTitle.includes(cleanItemTitle));
+                    });
+                    const productImg = (item.product_image && !item.product_image.includes("no-image.svg"))
+                      ? item.product_image
+                      : (matchedProduct?.images?.[0] && !matchedProduct.images[0].includes("no-image.svg") ? matchedProduct.images[0] : '/no-image.svg');
 
                     return (
                       <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-gray-50/50 transition">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-11 h-11 rounded-lg bg-[#EAF1EF] p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
+                          <div className="w-11 h-11 rounded-lg bg-slate-50 p-1 border border-slate-200/80 shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
                             <img
                               src={productImg}
                               alt={item.product_title}

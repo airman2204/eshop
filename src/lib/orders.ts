@@ -78,10 +78,11 @@ export async function createOrderInDb(input: CreateOrderInput) {
 
   // 2. Insertar ítems del pedido
   if (input.items && input.items.length > 0) {
-    const orderItems = input.items.map(item => ({
+    const orderItemsWithImg = input.items.map(item => ({
       order_id: order.id,
       product_id: item.product.id && !item.product.id.startsWith("PROD-") ? item.product.id : null,
       product_title: item.product.title,
+      product_image: item.product.images?.[0] || null,
       quantity: item.quantity,
       price_at_purchase: item.product.publicPrice,
       cost_at_purchase: item.product.totalCostMxn,
@@ -89,10 +90,13 @@ export async function createOrderInDb(input: CreateOrderInput) {
 
     const { error: itemsError } = await supabase
       .from("order_items")
-      .insert(orderItems);
+      .insert(orderItemsWithImg);
 
     if (itemsError) {
-      console.warn("Advertencia al insertar ítems del pedido:", itemsError);
+      console.warn("Advertencia al insertar ítems con foto, reintentando básico:", itemsError);
+      // Fallback sin product_image por compatibilidad con esquemas que aún no tienen esa columna
+      const basicItems = orderItemsWithImg.map(({ product_image, ...rest }) => rest);
+      await supabase.from("order_items").insert(basicItems);
     }
 
     // 3. Descontar inventario en Supabase (soporta combos y productos individuales)
@@ -271,12 +275,17 @@ export async function createPhysicalSaleOrder(sale: {
         order_id: order.id,
         product_id: item.product.id && !item.product.id.startsWith("PROD-") ? item.product.id : null,
         product_title: item.product.title,
+        product_image: item.product.images?.[0] || null,
         quantity: item.quantity,
         price_at_purchase: item.product.publicPrice,
         cost_at_purchase: item.product.totalCostMxn,
       }));
 
-      await supabase.from("order_items").insert(orderItems);
+      const { error: insErr } = await supabase.from("order_items").insert(orderItems);
+      if (insErr) {
+        const basicItems = orderItems.map(({ product_image, ...rest }) => rest);
+        await supabase.from("order_items").insert(basicItems);
+      }
     }
 
     return {
