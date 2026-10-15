@@ -9810,27 +9810,51 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <button
                         type="button"
                         onClick={async () => {
-                          try {
-                            const res = await fetch(ticketImg);
-                            const blob = await res.blob();
-                            const file = new File([blob], `Ticket-${viewingTicketOrder.id}.png`, { type: "image/png" });
-                            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                              await navigator.share({
-                                files: [file],
-                                title: `Ticket ${viewingTicketOrder.id}`,
-                                text: `Foxdrop - Tu atajo al mundo\nComprobante oficial de compra ${viewingTicketOrder.id}`,
+                          const cleanPhone = (viewingTicketOrder.clientPhone || '').replace(/\D/g, '');
+                          if (cleanPhone && cleanPhone !== 'Mostrador' && cleanPhone.length >= 10) {
+                            try {
+                              await fetch("/api/whatsapp", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "status_update",
+                                  orderNumber: viewingTicketOrder.id,
+                                  clientName: viewingTicketOrder.clientName,
+                                  clientPhone: viewingTicketOrder.clientPhone,
+                                  newStatus: "delivered",
+                                  shippingType: "pos_in_store",
+                                  total: viewingTicketOrder.total,
+                                  ticketImageUrl: ticketImg,
+                                  loyaltyStars: Math.floor(viewingTicketOrder.total / 10),
+                                }),
                               });
-                              return;
+                            } catch (err) {
+                              console.warn("Aviso: reintento de envío de ticket por API:", err);
                             }
-                          } catch (err) {
-                            console.warn("Error en share:", err);
                           }
-                          window.open(`https://wa.me/${viewingTicketOrder.clientPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Foxdrop - Tu atajo al mundo\nComprobante de compra ${viewingTicketOrder.id}:\n${ticketImg}`)}`, '_blank');
+
+                          const msg = `🦊 *Foxdrop - Tu atajo al mundo*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 *COMPROBANTE OFICIAL DE COMPRA*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔖 *Folio de Venta:* ${viewingTicketOrder.id}
+👤 *Cliente:* ${viewingTicketOrder.clientName}
+📱 *Teléfono:* ${viewingTicketOrder.clientPhone}
+💰 *TOTAL PAGADO:* $${viewingTicketOrder.total.toFixed(2)} MXN
+⭐ *Puntos Club Ganados:* +${Math.floor(viewingTicketOrder.total / 10)} pts
+
+🧾 *Imagen oficial del ticket:*
+${ticketImg}
+
+✨ *¡Tus puntos Club FoxDrop están acreditados!*`;
+
+                          sendWhatsAppNotification(viewingTicketOrder.clientPhone, msg);
+                          setViewingTicketOrder(null);
                         }}
                         className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white font-black py-2.5 rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition"
                       >
                         <MessageSquare className="w-4 h-4" />
-                        <span>Re-enviar Imagen a WhatsApp</span>
+                        <span>Enviar Ticket por WhatsApp FoxDrop</span>
                       </button>
                     )}
 

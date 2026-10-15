@@ -115,6 +115,37 @@ export async function POST(req: NextRequest) {
         if (nameChat) {
           chat = nameChat;
           cleanPhone = nameChat.phone;
+        } else {
+          // 3. Heurística de Vinculación Automática por Interacción Reciente:
+          // Si el admin acaba de enviar un mensaje o ticket en las últimas 3 horas a un cliente
+          // que aún no tiene LID registrado
+          const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+          const { data: recentChats } = await supabase
+            .from("whatsapp_chats")
+            .select("id, phone, unread_count, client_name, notes, last_message_time")
+            .not("phone", "ilike", "_system_%")
+            .not("notes", "ilike", "%\"lid\"%")
+            .gte("last_message_time", threeHoursAgo)
+            .order("last_message_time", { ascending: false })
+            .limit(3);
+
+          if (recentChats && recentChats.length > 0) {
+            const candidate = recentChats[0];
+            chat = candidate;
+            cleanPhone = candidate.phone;
+
+            let updatedNotes: any = {};
+            try {
+              updatedNotes = typeof candidate.notes === "string" ? JSON.parse(candidate.notes) : (candidate.notes || {});
+            } catch {}
+            updatedNotes.lid = incomingLid;
+            updatedNotes.alias = clientName;
+
+            await (supabase as any)
+              .from("whatsapp_chats")
+              .update({ notes: JSON.stringify(updatedNotes) })
+              .eq("id", candidate.id);
+          }
         }
       }
     }

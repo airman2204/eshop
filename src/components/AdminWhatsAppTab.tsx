@@ -9,7 +9,7 @@ import {
   Smile, Image as ImageIcon, Video, PhoneCall, CircleDot, Radio,
   Users, Archive, MoreVertical, Plus, Info, ChevronDown, PhoneOutgoing,
   PhoneIncoming, PhoneMissed, Play, Paperclip, Zap, PanelLeftClose, PanelLeft,
-  ShoppingCart, Globe, Compass, DollarSign, Download
+  ShoppingCart, Globe, Compass, DollarSign, Download, Link2
 } from 'lucide-react';
 import { WhatsAppChat, WhatsAppMessage, Order, ClientProfile, WhatsAppStatusItem, WhatsAppCallRecord } from '@/types';
 import { 
@@ -121,6 +121,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   // Registro y Marcador de Llamadas - 100% Reales de los pedidos/clientes atendidos
   const [callLogs, setCallLogs] = useState<WhatsAppCallRecord[]>([]);
   const [callingModal, setCallingModal] = useState<{ clientName: string; phone: string; callType: 'voice' | 'video' } | null>(null);
+
+  // Fusión de chats LID temporales con contactos reales
+  const [selectedMergeTargetId, setSelectedMergeTargetId] = useState<string>('');
+  const [mergingChat, setMergingChat] = useState<boolean>(false);
 
   // Cargar historias reales desde el endpoint
   const fetchRealStories = async () => {
@@ -455,6 +459,16 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
       setQuickSuggestions([]);
     }
 
+    // Si este chat es un LID temporal de WhatsApp, auto-seleccionar el contacto real más reciente como destino
+    if (chat.phone.length > 12 && !chat.phone.startsWith('52')) {
+      const candidates = chats.filter(c => c.id !== chat.id && (c.phone.startsWith('52') || c.phone.length <= 12));
+      if (candidates.length > 0) {
+        setSelectedMergeTargetId(candidates[0].id);
+      }
+    } else {
+      setSelectedMergeTargetId('');
+    }
+
     // Suscribir al bridge para escuchar eventos de presence (escribiendo...) de este contacto
     try {
       const lidVal = parsedNotes?.lid;
@@ -464,6 +478,43 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
         body: JSON.stringify({ phone: chat.phone, lid: lidVal })
       }).catch(() => {});
     } catch {}
+  };
+
+  const handleMergeLidChat = async () => {
+    if (!activeChat || !selectedMergeTargetId || mergingChat) return;
+    const target = chats.find(c => c.id === selectedMergeTargetId);
+    if (!target) return;
+
+    if (!confirm(`¿Deseas unificar los mensajes de ${activeChat.clientName} dentro de ${target.clientName} (+${target.phone})?\nAmbas conversaciones se consolidarán en una sola.`)) {
+      return;
+    }
+
+    setMergingChat(true);
+    try {
+      const res = await fetch('/api/whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'merge_chats',
+          sourceChatId: activeChat.id,
+          targetChatId: target.id,
+          lid: activeChat.phone,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setChats(prev => prev.filter(c => c.id !== activeChat.id));
+        handleSelectChat(target);
+      } else {
+        alert(data.error || 'No se pudo unificar el chat.');
+      }
+    } catch (err) {
+      console.error('Error al unificar chats:', err);
+      alert('Error de conexión al unificar chats.');
+    } finally {
+      setMergingChat(false);
+    }
   };
 
   // Cargar perfil propio de FoxDrop al montar para mostrar logo y nombre
@@ -1552,6 +1603,44 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               </a>
             </div>
           </div>
+
+          {/* Banner para fusionar chat LID con contacto real */}
+          {activeChat.phone.length > 12 && !activeChat.phone.startsWith('52') && (
+            <div className="bg-amber-950/80 border-b border-amber-600/40 p-2.5 px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs text-amber-200 shrink-0">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-amber-400 shrink-0" />
+                <div>
+                  <span className="font-bold text-amber-300">Chat recibido por ID temporal (LID): </span>
+                  <span className="text-amber-100/90">¿Unificar mensajes con cliente registrado?</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={selectedMergeTargetId}
+                  onChange={(e) => setSelectedMergeTargetId(e.target.value)}
+                  className="bg-[#111B21] border border-amber-500/40 text-white rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-amber-400 flex-1 sm:flex-initial"
+                >
+                  <option value="">-- Seleccionar cliente a unificar --</option>
+                  {chats
+                    .filter(c => c.id !== activeChat.id && (c.phone.startsWith('52') || c.phone.length <= 12))
+                    .map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.clientName} (+{c.phone})
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!selectedMergeTargetId || mergingChat}
+                  onClick={handleMergeLidChat}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1 rounded-lg text-xs transition disabled:opacity-50 shrink-0 cursor-pointer flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${mergingChat ? 'animate-spin' : ''}`} />
+                  <span>{mergingChat ? 'Unificando...' : '🔗 Unificar'}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Área de Mensajes con Fondo Doodles Oscuro Oficial WhatsApp */}
           <div 

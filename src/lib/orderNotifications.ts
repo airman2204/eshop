@@ -99,7 +99,7 @@ async function sendWhatsAppNotification(params: {
     }
 
     // 3. Despachar texto por el bridge
-    await fetch(`${bridgeUrl}/message/sendText`, {
+    const sendRes = await fetch(`${bridgeUrl}/message/sendText`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,6 +110,21 @@ async function sendWhatsAppNotification(params: {
         text: params.text,
       }),
     });
+
+    if (sendRes.ok && chatId) {
+      try {
+        const sendJson = await sendRes.json();
+        if (sendJson?.lid) {
+          const { data: currChat } = await supabase.from("whatsapp_chats").select("notes").eq("id", chatId).maybeSingle();
+          let cNotes: any = {};
+          try {
+            cNotes = typeof currChat?.notes === "string" ? JSON.parse(currChat.notes) : (currChat?.notes || {});
+          } catch {}
+          cNotes.lid = sendJson.lid;
+          await supabase.from("whatsapp_chats").update({ notes: JSON.stringify(cNotes) }).eq("id", chatId);
+        }
+      } catch {}
+    }
 
     // 4. Si incluye Sticker oficial, registrarlo y despacharlo como sticker
     if (params.stickerUrl) {
