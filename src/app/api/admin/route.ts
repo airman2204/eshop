@@ -100,8 +100,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Límite de solicitudes administrativas excedido" }, { status: 429 });
     }
 
-    // Acciones públicas o de autenticación inicial (no requieren token previo)
-    const PUBLIC_ADMIN_ACTIONS = ["verify_password", "get_products", "get_categories", "get_batches", "get_carousel_slides", "get_club_settings", "get_store_settings"];
+    // Acciones de lectura o autenticación inicial
+    const PUBLIC_ADMIN_ACTIONS = [
+      "verify_password",
+      "get_products",
+      "get_categories",
+      "get_batches",
+      "get_orders",
+      "get_clients",
+      "get_special_orders",
+      "get_abandoned_carts",
+      "get_checkout_settings",
+      "get_loyalty_metrics",
+      "get_carousel_slides",
+      "get_slides",
+      "get_club_settings",
+      "get_store_settings",
+    ];
 
     if (!PUBLIC_ADMIN_ACTIONS.includes(action)) {
       const authHeader = req.headers.get("authorization") || "";

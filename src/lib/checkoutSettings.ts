@@ -40,13 +40,11 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   allowCashOnDelivery: true,
 };
 
+import { fetchAdminApi } from './adminAuth';
+
 export async function getCheckoutSettings(): Promise<CheckoutSettings> {
   try {
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'get_checkout_settings' }),
-    });
+    const res = await fetchAdminApi({ action: 'get_checkout_settings' });
     if (res.ok) {
       const data = await res.json();
       if (data.settings) return data.settings;
@@ -59,11 +57,7 @@ export async function getCheckoutSettings(): Promise<CheckoutSettings> {
 
 export async function saveCheckoutSettings(settings: CheckoutSettings): Promise<boolean> {
   try {
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_checkout_settings', settings }),
-    });
+    const res = await fetchAdminApi({ action: 'save_checkout_settings', settings });
     return res.ok;
   } catch (err) {
     console.error('Error guardando checkout settings:', err);

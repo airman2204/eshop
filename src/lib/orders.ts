@@ -9,6 +9,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { Product } from "@/types";
+import { fetchAdminApi } from "./adminAuth";
 
 /**
  * Payload requerido para formalizar un pedido de la tienda online.
@@ -307,11 +308,7 @@ export async function createPhysicalSaleOrder(sale: {
  */
 export async function getAdminOrders() {
   try {
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "get_orders" }),
-    });
+    const res = await fetchAdminApi({ action: "get_orders" });
 
     if (res.ok) {
       const json = await res.json();
@@ -340,15 +337,11 @@ export async function getAdminOrders() {
 
 export async function updateOrderStatusInDb(orderId: string, status: string, notes?: string) {
   try {
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "update_order_status",
-        orderId,
-        status,
-        notes,
-      }),
+    const res = await fetchAdminApi({
+      action: "update_order_status",
+      orderId,
+      status,
+      notes,
     });
 
     if (res.ok) {
@@ -402,13 +395,9 @@ export async function cancelOrderAsClient(orderId: string, reason: string) {
 
 export async function deleteOrderInDb(orderId: string) {
   try {
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "delete_order",
-        orderId,
-      }),
+    const res = await fetchAdminApi({
+      action: "delete_order",
+      orderId,
     });
 
     if (res.ok) {
@@ -629,11 +618,7 @@ export async function getClientOrderHistory(identifier: string, options?: { emai
  */
 export async function getSpecialOrders() {
   try {
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "get_special_orders" }),
-    });
+    const res = await fetchAdminApi({ action: "get_special_orders" });
 
     if (res.ok) {
       const json = await res.json();
