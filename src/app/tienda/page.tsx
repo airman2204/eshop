@@ -1868,20 +1868,19 @@ export default function TiendaFoxDrop() {
 
                     {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (MÁS CHICO Y PROPORCIONADO) */}
                     <div className="relative z-20 w-[55%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-0.5 max-w-[200px]">
-                        <span className="inline-block text-[7.5px] sm:text-[8.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                        </span>
-                        <h2 className="text-[11px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
+                      <div className="space-y-0.5 max-w-[180px]">
+                        {currentSlide.subtitle && (
+                          <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                            {currentSlide.subtitle}
+                          </span>
+                        )}
+                        <h2 className="text-[11px] sm:text-[12px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
                           {isDefaultSlide 
                             ? (user?.name 
                                 ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
                                 : '¡Hola! El mundo, directo a tu puerta.')
                             : currentSlide.title}
                         </h2>
-                        <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs">
-                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                        </p>
                       </div>
 
                       {/* 4. SOLO EL BOTÓN ES CLICKEABLE (MÁS CHICO) */}
@@ -1970,20 +1969,19 @@ export default function TiendaFoxDrop() {
 
                     {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (TAMAÑO MÁS CHICO Y CONTROLADO) */}
                     <div className="relative z-20 w-[50%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1.5 max-w-[340px]">
-                        <span className="inline-block text-[10px] lg:text-[11px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                          {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                        </span>
-                        <h1 className="text-lg lg:text-[24px] xl:text-[27px] font-black text-white leading-[1.18] drop-shadow-sm">
+                      <div className="space-y-1 max-w-[280px]">
+                        {currentSlide.subtitle && (
+                          <span className="inline-block text-[9px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                            {currentSlide.subtitle}
+                          </span>
+                        )}
+                        <h1 className="text-base sm:text-lg font-black text-white leading-tight drop-shadow-sm">
                           {isDefaultSlide 
                             ? (user?.name 
                                 ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
                                 : '¡Hola! El mundo, directo a tu puerta.')
                             : currentSlide.title}
                         </h1>
-                        <p className="text-xs lg:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[300px]">
-                          Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                        </p>
                       </div>
 
                       {/* 4. BOTÓN DEDICADO MÁS COMPACTO */}
