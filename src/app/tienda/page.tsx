@@ -1849,7 +1849,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-clean-composite.png',
+                  image_url: '/hero-master-clean.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1862,17 +1862,17 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[170px] w-full flex items-stretch">
-                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y CERO TEXTO DE FONDO */}
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                    {/* ARTE ORIGINAL MAESTRO LIMPIO (ZORRO COMPLETO EN SU TAMAÑO EXACTO) */}
                     <img 
-                      src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
+                      src={isDefaultSlide ? '/hero-master-clean.png' : (currentSlide.image_url || '/hero-master-clean.png')} 
                       alt="FoxDrop Hero Banner" 
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
                     {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (RESPONDE AL USUARIO REAL) */}
-                    <div className="relative z-10 w-[50%] p-3 sm:p-5 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1 max-w-[240px] sm:max-w-[320px]">
+                    <div className="relative z-10 w-[50%] p-3.5 sm:p-5 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-1 max-w-[230px] sm:max-w-[310px]">
                         <span className="inline-block text-[8px] sm:text-[10px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
@@ -1930,7 +1930,7 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* VERSIÓN ESCRITORIO (TEXTO VIVO DINÁMICO & BOTÓN DEDICADO) */}
+          {/* VERSIÓN ESCRITORIO (TEXTO VIVO DINÁMICO & BOTÓN DEDICADO SIN DEFORMAR) */}
           <section className="hidden md:block pt-4 pb-2 px-6 max-w-7xl mx-auto w-full">
             {(() => {
               const totalHeroSlides = slides.length > 0 ? slides : [
@@ -1940,7 +1940,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-clean-composite.png',
+                  image_url: '/hero-master-clean.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1953,28 +1953,28 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[280px] lg:max-h-[300px] w-full flex items-stretch">
-                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y 100% COMPLETO */}
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                    {/* ARTE ORIGINAL MAESTRO LIMPIO (PROPORCIONES PERFECTAS) */}
                     <img 
-                      src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
+                      src={isDefaultSlide ? '/hero-master-clean.png' : (currentSlide.image_url || '/hero-master-clean.png')} 
                       alt="FoxDrop Hero Banner" 
-                      className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
+                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
                     {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-10 w-[46%] lg:w-[45%] p-6 lg:p-9 xl:p-11 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-2 lg:space-y-3 max-w-[380px]">
+                    <div className="relative z-10 w-[48%] lg:w-[47%] p-6 lg:p-9 xl:p-12 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-2 lg:space-y-3 max-w-[420px]">
                         <span className="inline-block text-xs lg:text-[13px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
-                        <h1 className="text-xl sm:text-2xl lg:text-[32px] xl:text-[36px] font-black text-white leading-[1.15] drop-shadow-sm">
+                        <h1 className="text-xl sm:text-2xl lg:text-[34px] xl:text-[38px] font-black text-white leading-[1.14] drop-shadow-sm">
                           {isDefaultSlide 
                             ? (user?.name 
                                 ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
                                 : '¡Hola! El mundo, directo a tu puerta.')
                             : currentSlide.title}
                         </h1>
-                        <p className="text-xs sm:text-sm lg:text-[14.5px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[340px]">
+                        <p className="text-xs sm:text-sm lg:text-[15px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[360px]">
                           Descubre tesoros mundiales con envío rápido y calidad garantizada.
                         </p>
                       </div>
