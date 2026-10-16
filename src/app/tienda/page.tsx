@@ -1849,7 +1849,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-master-clean.png',
+                  image_url: '/banner-bg-official.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1863,16 +1863,25 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
-                    {/* ARTE ORIGINAL MAESTRO LIMPIO (ZORRO COMPLETO EN SU TAMAÑO EXACTO) */}
+                    {/* 1. FONDO LIMPIO CON MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS (SIN ZORRO, SIN TEXTO) */}
                     <img 
-                      src={isDefaultSlide ? '/hero-master-clean.png' : (currentSlide.image_url || '/hero-master-clean.png')} 
-                      alt="FoxDrop Hero Banner" 
+                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      alt="FoxDrop Banner Background" 
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (RESPONDE AL USUARIO REAL) */}
-                    <div className="relative z-10 w-[50%] p-3.5 sm:p-5 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1 max-w-[230px] sm:max-w-[310px]">
+                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (TAMAÑO REDUCIDO Y VISIBLE COMPLETO) */}
+                    <div className="absolute right-[5%] bottom-[4%] w-[38%] h-[82%] pointer-events-none z-10 flex items-end justify-center">
+                      <img 
+                        src="/fox-mascot-tight.png" 
+                        alt="FoxDrop Mascot" 
+                        className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
+                      />
+                    </div>
+
+                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (RESPONDE AL USUARIO REAL) */}
+                    <div className="relative z-20 w-[52%] p-3.5 sm:p-5 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-1 max-w-[220px] sm:max-w-[290px]">
                         <span className="inline-block text-[8px] sm:text-[10px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
@@ -1888,7 +1897,7 @@ export default function TiendaFoxDrop() {
                         </p>
                       </div>
 
-                      {/* SOLO EL BOTÓN ES CLICKEABLE (DEDICADO Y VIVO) */}
+                      {/* 4. SOLO EL BOTÓN ES CLICKEABLE (DEDICADO Y VIVO) */}
                       <div className="pt-1.5 sm:pt-2 pointer-events-auto">
                         <button
                           type="button"
@@ -1930,7 +1939,7 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* VERSIÓN ESCRITORIO (TEXTO VIVO DINÁMICO & BOTÓN DEDICADO SIN DEFORMAR) */}
+          {/* VERSIÓN ESCRITORIO (COMPONENTES INDEPENDIENTES SEPARADOS) */}
           <section className="hidden md:block pt-4 pb-2 px-6 max-w-7xl mx-auto w-full">
             {(() => {
               const totalHeroSlides = slides.length > 0 ? slides : [
@@ -1940,7 +1949,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-master-clean.png',
+                  image_url: '/banner-bg-official.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1954,16 +1963,25 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
-                    {/* ARTE ORIGINAL MAESTRO LIMPIO (PROPORCIONES PERFECTAS) */}
+                    {/* 1. FONDO LIMPIO (MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS) */}
                     <img 
-                      src={isDefaultSlide ? '/hero-master-clean.png' : (currentSlide.image_url || '/hero-master-clean.png')} 
-                      alt="FoxDrop Hero Banner" 
+                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      alt="FoxDrop Banner Background" 
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-10 w-[48%] lg:w-[47%] p-6 lg:p-9 xl:p-12 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-2 lg:space-y-3 max-w-[420px]">
+                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (MÁS PEQUEÑO Y 100% COMPLETO) */}
+                    <div className="absolute right-[6%] bottom-[5%] w-[38%] h-[82%] pointer-events-none z-10 flex items-end justify-center">
+                      <img 
+                        src="/fox-mascot-tight.png" 
+                        alt="FoxDrop Mascot" 
+                        className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
+                      />
+                    </div>
+
+                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (RESPONDE AL USUARIO REAL) */}
+                    <div className="relative z-20 w-[48%] lg:w-[47%] p-6 lg:p-9 xl:p-12 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-2 lg:space-y-3 max-w-[380px]">
                         <span className="inline-block text-xs lg:text-[13px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
@@ -1974,12 +1992,12 @@ export default function TiendaFoxDrop() {
                                 : '¡Hola! El mundo, directo a tu puerta.')
                             : currentSlide.title}
                         </h1>
-                        <p className="text-xs sm:text-sm lg:text-[15px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[360px]">
+                        <p className="text-xs sm:text-sm lg:text-[15px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[340px]">
                           Descubre tesoros mundiales con envío rápido y calidad garantizada.
                         </p>
                       </div>
 
-                      {/* SOLO EL BOTÓN ES CLICKEABLE (DEDICADO Y VIVO) */}
+                      {/* 4. SOLO EL BOTÓN ES CLICKEABLE (DEDICADO Y VIVO) */}
                       <div className="pt-3 lg:pt-5 pointer-events-auto">
                         <button
                           type="button"
@@ -1989,7 +2007,7 @@ export default function TiendaFoxDrop() {
                             const el = document.getElementById('catalog-section');
                             el?.scrollIntoView({ behavior: 'smooth' });
                           }}
-                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8A2E] hover:to-[#F05E00] text-white font-black px-6 py-2.5 rounded-full text-xs sm:text-sm shadow-[0_6px_24px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
+                          className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-6 py-2.5 rounded-full text-xs sm:text-sm shadow-[0_6px_24px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer w-fit group"
                         >
                           <span>{currentSlide.cta_text || 'Ver Catálogo Completo'}</span>
                           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
