@@ -1953,16 +1953,16 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[380px] w-full flex items-stretch">
-                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y CERO TEXTO DE FONDO */}
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y 100% COMPLETO */}
                     <img 
                       src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
                       alt="FoxDrop Hero Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
                     />
 
                     {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-10 w-[45%] lg:w-[44%] p-6 lg:p-9 xl:p-11 flex flex-col justify-between pointer-events-none">
+                    <div className="relative z-10 w-[46%] lg:w-[45%] p-6 lg:p-9 xl:p-11 flex flex-col justify-between pointer-events-none">
                       <div className="space-y-2 lg:space-y-3 max-w-[380px]">
                         <span className="inline-block text-xs lg:text-[13px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
