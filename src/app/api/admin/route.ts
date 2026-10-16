@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Acciones públicas o de autenticación inicial (no requieren token previo)
-    const PUBLIC_ADMIN_ACTIONS = ["verify_password", "get_products", "get_categories", "get_carousel_slides", "get_club_settings", "get_store_settings"];
+    const PUBLIC_ADMIN_ACTIONS = ["verify_password", "get_products", "get_categories", "get_batches", "get_carousel_slides", "get_club_settings", "get_store_settings"];
 
     if (!PUBLIC_ADMIN_ACTIONS.includes(action)) {
       const authHeader = req.headers.get("authorization") || "";
