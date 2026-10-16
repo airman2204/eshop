@@ -1849,7 +1849,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-clean-base.png',
+                  image_url: '/hero-clean-composite.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1863,16 +1863,16 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full min-h-[175px] flex items-stretch">
-                    {/* FONDO LIMPIO CON ILUSTRACIÓN COMPLETA DEL ZORRITO Y MUNDO (SIN TEXTO PEGADO) */}
+                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y CERO TEXTO DE FONDO */}
                     <img 
-                      src={isDefaultSlide ? '/hero-clean-base.png' : (currentSlide.image_url || '/hero-clean-base.png')} 
+                      src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
                       alt="FoxDrop Hero Banner" 
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
                     {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (RESPONDE AL USUARIO REAL) */}
-                    <div className="relative z-10 w-[55%] p-3 sm:p-5 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1">
+                    <div className="relative z-10 w-[50%] p-3 sm:p-5 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-1 max-w-[240px] sm:max-w-[320px]">
                         <span className="inline-block text-[8px] sm:text-[10px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
@@ -1940,7 +1940,7 @@ export default function TiendaFoxDrop() {
                     ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
                     : '¡Hola! El mundo, directo a tu puerta.',
                   subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/hero-clean-base.png',
+                  image_url: '/hero-clean-composite.png',
                   cta_text: 'Ver Catálogo Completo',
                   cta_category: 'Todas',
                   sort_order: 1,
@@ -1954,27 +1954,27 @@ export default function TiendaFoxDrop() {
               return (
                 <div>
                   <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[380px] w-full flex items-stretch">
-                    {/* FONDO LIMPIO CON ILUSTRACIÓN COMPLETA DEL ZORRITO Y MUNDO */}
+                    {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y CERO TEXTO DE FONDO */}
                     <img 
-                      src={isDefaultSlide ? '/hero-clean-base.png' : (currentSlide.image_url || '/hero-clean-base.png')} 
+                      src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
                       alt="FoxDrop Hero Banner" 
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
                     {/* CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-10 w-[48%] lg:w-[47%] p-6 lg:p-9 xl:p-11 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-2 lg:space-y-3">
+                    <div className="relative z-10 w-[45%] lg:w-[44%] p-6 lg:p-9 xl:p-11 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-2 lg:space-y-3 max-w-[380px]">
                         <span className="inline-block text-xs lg:text-[13px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
                           {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                         </span>
-                        <h1 className="text-xl sm:text-2xl lg:text-[34px] xl:text-[38px] font-black text-white leading-[1.15] drop-shadow-sm max-w-md">
+                        <h1 className="text-xl sm:text-2xl lg:text-[32px] xl:text-[36px] font-black text-white leading-[1.15] drop-shadow-sm">
                           {isDefaultSlide 
                             ? (user?.name 
                                 ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
                                 : '¡Hola! El mundo, directo a tu puerta.')
                             : currentSlide.title}
                         </h1>
-                        <p className="text-xs sm:text-sm lg:text-[15px] text-emerald-100/90 leading-snug max-w-sm font-medium drop-shadow-xs">
+                        <p className="text-xs sm:text-sm lg:text-[14.5px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[340px]">
                           Descubre tesoros mundiales con envío rápido y calidad garantizada.
                         </p>
                       </div>
