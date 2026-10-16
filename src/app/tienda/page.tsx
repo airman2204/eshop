@@ -1862,7 +1862,7 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] h-[135px] sm:h-[155px] w-full flex items-stretch">
                     {/* 1. FONDO LIMPIO CON MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS */}
                     <img 
                       src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
@@ -1962,7 +1962,7 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] h-[190px] lg:h-[220px] w-full flex items-stretch">
                     {/* 1. FONDO LIMPIO (MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS) */}
                     <img 
                       src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
