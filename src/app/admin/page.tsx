@@ -22,7 +22,7 @@ import { getActiveProducts } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, updateImportBatch, deleteImportBatch, getClientsWithMetrics,
-  getCarouselSlides, createCarouselSlide, deleteCarouselSlide, CarouselSlide,
+  getCarouselSlides, createCarouselSlide, updateCarouselSlide, deleteCarouselSlide, CarouselSlide,
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory, bulkUpdateProductsDiscount,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
@@ -299,6 +299,7 @@ export default function AdminCRM() {
   // Estado del Carrusel Hero
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
   const [showSlideModal, setShowSlideModal] = useState(false);
+  const [editingSlideId, setEditingSlideId] = useState<string | null>(null);
   const [slideTitle, setSlideTitle] = useState('');
   const [slideSubtitle, setSlideSubtitle] = useState('');
   const [slideImageUrl, setSlideImageUrl] = useState('');
@@ -2385,26 +2386,39 @@ export default function AdminCRM() {
   };
 
 
-  // Crear Slide del Carrusel
-  const handleCreateSlide = async (e: React.FormEvent) => {
+  // Crear o Editar Slide del Carrusel
+  const handleSaveSlide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!slideTitle.trim() || !slideImageUrl.trim()) return;
     setSavingSlide(true);
     try {
-      const created = await createCarouselSlide({
-        title: slideTitle,
-        subtitle: slideSubtitle,
-        image_url: slideImageUrl,
-        cta_text: slideCtaText,
-        cta_category: slideCtaCategory,
-        sort_order: slides.length + 1,
-      });
-      setSlides(prev => [...prev, created]);
+      if (editingSlideId) {
+        const updated = await updateCarouselSlide({
+          id: editingSlideId,
+          title: slideTitle,
+          subtitle: slideSubtitle,
+          image_url: slideImageUrl,
+          cta_text: slideCtaText,
+          cta_category: slideCtaCategory,
+        });
+        setSlides(prev => prev.map(s => s.id === editingSlideId ? { ...s, ...updated } : s));
+      } else {
+        const created = await createCarouselSlide({
+          title: slideTitle,
+          subtitle: slideSubtitle,
+          image_url: slideImageUrl,
+          cta_text: slideCtaText,
+          cta_category: slideCtaCategory,
+          sort_order: slides.length + 1,
+        });
+        setSlides(prev => [...prev, created]);
+      }
       setShowSlideModal(false);
+      setEditingSlideId(null);
       setSlideTitle(''); setSlideSubtitle(''); setSlideImageUrl('');
       setSlideCtaText('Ver Colección'); setSlideCtaCategory('Todas');
     } catch (err) {
-      console.error('Error al crear slide:', err);
+      console.error('Error al guardar slide:', err);
     } finally {
       setSavingSlide(false);
     }
@@ -6095,14 +6109,79 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               )}
             </div>
 
+            {/* PANEL DE CONTROL DE VELOCIDAD DEL CARRUSEL HERO */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-black">
+                    ⏱️
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Tiempo de Rotación del Carrusel</h3>
+                    <p className="text-xs text-slate-500">
+                      Define cuántos segundos permanece cada banner en pantalla antes de pasar al siguiente automáticamente.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                    <input
+                      type="number"
+                      min={3}
+                      max={60}
+                      value={storeSettings.carouselIntervalSeconds ?? 8}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        setStoreSettings({
+                          ...storeSettings,
+                          carouselIntervalSeconds: isNaN(val) ? 8 : val,
+                        });
+                      }}
+                      className="w-14 text-center font-black text-sm bg-transparent focus:outline-none text-[#0F3E36]"
+                    />
+                    <span className="text-xs font-bold text-slate-500">segundos</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setSavingStoreSettings(true);
+                      try {
+                        await saveStoreSettings(storeSettings);
+                        setStoreSettingsSavedNotice(true);
+                        setTimeout(() => setStoreSettingsSavedNotice(false), 3000);
+                      } catch {
+                        alert('Error al guardar el tiempo del carrusel');
+                      } finally {
+                        setSavingStoreSettings(false);
+                      }
+                    }}
+                    disabled={savingStoreSettings}
+                    className="bg-[#0F3E36] hover:bg-[#154E45] text-white text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer"
+                  >
+                    {savingStoreSettings ? '...' : 'Guardar Tiempo'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Carrusel Hero de la Tienda</h2>
                 <p className="text-xs text-slate-500">Imágenes y banners que se muestran en el carrusel de la tienda principal.</p>
               </div>
               <button
-                onClick={() => setShowSlideModal(true)}
-                className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm self-start sm:self-auto"
+                onClick={() => {
+                  setEditingSlideId(null);
+                  setSlideTitle('');
+                  setSlideSubtitle('');
+                  setSlideImageUrl('');
+                  setSlideCtaText('');
+                  setSlideCtaCategory('Todas');
+                  setShowSlideModal(true);
+                }}
+                className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm self-start sm:self-auto cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Agregar Slide al Carrusel
               </button>
@@ -6111,8 +6190,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             {slides.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-400 space-y-2">
                 <Sparkles className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="font-bold text-slate-600 text-sm">Sin imágenes en el carrusel</p>
-                <p className="text-xs text-slate-400">Si no configuras ningún slide, la tienda ocultará el banner superior automáticamente.</p>
+                <p className="font-bold text-slate-600 text-sm">Sin imágenes adicionales en el carrusel</p>
+                <p className="text-xs text-slate-400">El slide de bienvenida oficial de FoxDrop se mostrará de forma permanente.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -6122,31 +6201,54 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <img
                         src={slide.image_url}
                         alt={slide.title}
-                        className="w-full h-full object-cover opacity-80"
+                        className="w-full h-full object-cover opacity-90"
                       />
                       <span className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-white/10">
-                        Slide #{idx + 1}
+                        Slide #{idx + 2}
                       </span>
-                      <span className="absolute bottom-2 left-2 bg-[#E65F2B] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                        {slide.cta_category}
-                      </span>
+                      {slide.cta_category && (
+                        <span className="absolute bottom-2 left-2 bg-[#E65F2B] text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                          {slide.cta_category}
+                        </span>
+                      )}
                     </div>
 
                     <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-black text-slate-900 text-sm line-clamp-1">{slide.title}</h4>
-                        <p className="text-xs text-slate-500 line-clamp-2 mt-1">{slide.subtitle}</p>
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-1">{slide.subtitle || 'Sin subtítulo'}</p>
                       </div>
 
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-medium text-[11px]">Botón: "{slide.cta_text}"</span>
-                        <button
-                          onClick={() => handleDeleteSlide(slide.id)}
-                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition"
-                          title="Eliminar del carrusel"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <span className="text-slate-400 font-medium text-[11px]">
+                          {slide.cta_text && slide.cta_text.trim() ? `Botón: "${slide.cta_text}"` : 'Sin botón (Solo imagen)'}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSlideId(slide.id);
+                              setSlideTitle(slide.title);
+                              setSlideSubtitle(slide.subtitle || '');
+                              setSlideImageUrl(slide.image_url);
+                              setSlideCtaText(slide.cta_text || '');
+                              setSlideCtaCategory(slide.cta_category || 'Todas');
+                              setShowSlideModal(true);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                            title="Editar slide"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlide(slide.id)}
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition cursor-pointer"
+                            title="Eliminar del carrusel"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -6166,11 +6268,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </button>
 
                   <div className="border-b border-slate-100 pb-3">
-                    <h3 className="font-black text-base text-slate-900">Nuevo Slide del Carrusel</h3>
+                    <h3 className="font-black text-base text-slate-900">
+                      {editingSlideId ? 'Editar Slide del Carrusel' : 'Nuevo Slide del Carrusel'}
+                    </h3>
                     <p className="text-xs text-slate-500">Configura la imagen y texto del banner principal</p>
                   </div>
 
-                  <form onSubmit={handleCreateSlide} className="space-y-3.5 text-xs">
+                  <form onSubmit={handleSaveSlide} className="space-y-3.5 text-xs">
                     <div>
                       <label className="text-slate-700 font-bold block mb-1">Título del Banner *</label>
                       <input
@@ -6244,11 +6348,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-slate-700 font-bold block mb-1">Texto del Botón</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-slate-700 font-bold">Texto del Botón</label>
+                          <span className="text-[10px] text-slate-400 font-medium">(Opcional)</span>
+                        </div>
                         <input
                           type="text"
                           value={slideCtaText}
                           onChange={e => setSlideCtaText(e.target.value)}
+                          placeholder="Vacío = Sin botón"
                           className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
                         />
                       </div>
@@ -6282,7 +6390,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         disabled={savingSlide}
                         className="flex-1 py-2.5 rounded-xl bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold transition disabled:opacity-50"
                       >
-                        {savingSlide ? 'Guardando...' : 'Publicar Slide'}
+                        {savingSlide ? 'Guardando...' : (editingSlideId ? 'Guardar Cambios' : 'Publicar Slide')}
                       </button>
                     </div>
                   </form>

@@ -344,6 +344,20 @@ export async function createCarouselSlide(slide: Omit<CarouselSlide, "id" | "is_
   return json.data as CarouselSlide;
 }
 
+export async function updateCarouselSlide(slide: Partial<CarouselSlide> & { id: string }) {
+  const res = await fetchAdminApi( {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "update_slide", slide }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Error al actualizar slide");
+  }
+  const json = await res.json();
+  return json.data as CarouselSlide;
+}
+
 export async function deleteCarouselSlide(id: string) {
   const res = await fetchAdminApi( {
     method: "POST",
@@ -481,6 +495,7 @@ export interface StoreSettings {
   clearanceTitle: string;
   clearanceDiscountText: string;
   clearanceSubtitle: string;
+  carouselIntervalSeconds?: number;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -488,6 +503,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   clearanceTitle: "Liquidación de Importación",
   clearanceDiscountText: "Hasta 70% Menos",
   clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
+  carouselIntervalSeconds: 8,
 };
 
 export async function getStoreSettings(): Promise<StoreSettings> {

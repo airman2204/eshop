@@ -1444,6 +1444,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: savedSlide });
     }
 
+    if (action === "update_slide") {
+      const { slide } = body;
+      if (!slide || !slide.id) {
+        return NextResponse.json({ error: "Slide e ID requeridos" }, { status: 400 });
+      }
+
+      // 1. Intentar actualizar en tabla SQL
+      let updatedSlide = slide;
+      try {
+        const { data, error } = await supabase
+          .from("carousel_slides")
+          .update(slide)
+          .eq("id", slide.id)
+          .select()
+          .single();
+        if (!error && data) {
+          updatedSlide = data;
+        }
+      } catch (tableErr) {
+        console.warn("Tabla carousel_slides no disponible al actualizar:", tableErr);
+      }
+
+      // 2. Sincronizar en storage JSON
+      try {
+        let currentSlides: any[] = [];
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/carousel_slides.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          currentSlides = JSON.parse(raw || "[]");
+        }
+        const idx = currentSlides.findIndex((s: any) => s.id === slide.id);
+        if (idx !== -1) {
+          currentSlides[idx] = { ...currentSlides[idx], ...updatedSlide };
+        } else {
+          currentSlides.push(updatedSlide);
+        }
+        const buffer = Buffer.from(JSON.stringify(currentSlides, null, 2));
+        await supabase.storage
+          .from("product-images")
+          .upload("_system/carousel_slides.json", buffer, {
+            contentType: "application/json",
+            upsert: true,
+          });
+      } catch (storageErr) {
+        console.warn("Aviso actualizando slide en storage:", storageErr);
+      }
+
+      return NextResponse.json({ success: true, data: updatedSlide });
+    }
+
     if (action === "get_slides") {
       // 1. Intentar primero desde tabla SQL
       try {
@@ -1705,6 +1757,7 @@ export async function POST(req: NextRequest) {
         clearanceTitle: "Liquidación de Importación",
         clearanceDiscountText: "Hasta 70% Menos",
         clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
+        carouselIntervalSeconds: 8,
       };
 
       return NextResponse.json({ success: true, settings: defaultStoreSettings });
