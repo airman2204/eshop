@@ -1862,7 +1862,7 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full min-h-[175px] flex items-stretch">
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[170px] w-full flex items-stretch">
                     {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y CERO TEXTO DE FONDO */}
                     <img 
                       src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
@@ -1953,7 +1953,7 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
+                  <div className="relative rounded-2xl overflow-hidden shadow-xl border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-h-[280px] lg:max-h-[300px] w-full flex items-stretch">
                     {/* FONDO LIMPIO CON ZORRITO MÁS PEQUEÑO Y 100% COMPLETO */}
                     <img 
                       src={isDefaultSlide ? '/hero-clean-composite.png' : (currentSlide.image_url || '/hero-clean-composite.png')} 
