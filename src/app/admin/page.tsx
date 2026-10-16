@@ -2353,7 +2353,14 @@ export default function AdminCRM() {
         setBatchNotesInput('');
       } catch (err: any) {
         console.error("Error al crear lote en base de datos:", err);
-        alert(`Error al guardar el lote en la base de datos: ${err.message || 'Intente de nuevo'}`);
+        const errMsg = err.message || '';
+        if (errMsg.includes("No autorizado") || errMsg.includes("expirada")) {
+          alert("Tu sesión administrativa expiró. Por favor vuelve a ingresar tus credenciales para renovar la sesión.");
+          localStorage.removeItem('foxdrop_admin_session');
+          setAdminSession(null);
+        } else {
+          alert(`Error al guardar el lote en la base de datos: ${errMsg || 'Intente de nuevo'}`);
+        }
       } finally {
         setSavingBatch(false);
       }
