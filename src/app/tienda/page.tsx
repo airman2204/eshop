@@ -1451,21 +1451,6 @@ export default function TiendaFoxDrop() {
               <Heart className="w-3.5 h-3.5 text-[#DF7F2D]" />
               <span>favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
             </button>
-
-            {/* MI BOLSA / CARRITO */}
-            <button
-              type="button"
-              onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-1.5 text-white font-black hover:text-[#DF7F2D] transition cursor-pointer"
-            >
-              <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
-              <span>mi bolsa</span>
-              {cartItemCount > 0 && (
-                <span className="bg-[#DF7F2D] text-white text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">
-                  {cartItemCount}
-                </span>
-              )}
-            </button>
           </div>
         </div>
 
