@@ -493,17 +493,35 @@ export default function TiendaFoxDrop() {
     });
   }, []);
 
+  // Lista total de slides: El slide de bienvenida oficial SIEMPRE es el primero, seguido de los slides activos adicionales
+  const defaultWelcomeSlide: CarouselSlide = {
+    id: 'default-welcome',
+    title: user?.name 
+      ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
+      : '¡Hola! El mundo, directo a tu puerta.',
+    subtitle: 'TU ATAJO AL MUNDO',
+    image_url: '/banner-bg-official.png',
+    cta_text: 'Ver Catálogo Completo',
+    cta_category: 'Todas',
+    sort_order: 0,
+    is_active: true,
+  };
+
+  const totalHeroSlides: CarouselSlide[] = [
+    defaultWelcomeSlide,
+    ...slides.filter(s => s.is_active && s.id !== 'default-welcome')
+  ];
+
   // Avance automático suave de slides si hay más de 1 slide configurado
   useEffect(() => {
-    const totalCount = slides.length > 0 ? slides.length : 1;
-    if (totalCount <= 1) return;
+    if (totalHeroSlides.length <= 1) return;
 
     const interval = setInterval(() => {
-      setActiveSlide(prev => (prev + 1) % totalCount);
+      setActiveSlide(prev => (prev + 1) % totalHeroSlides.length);
     }, 5500);
 
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [totalHeroSlides.length]);
 
   // Sincronizar carrito abandonado en segundo plano cuando el cliente tiene artículos e información de contacto
   useEffect(() => {
@@ -1827,22 +1845,7 @@ export default function TiendaFoxDrop() {
           {/* VERSIÓN MÓVIL (NATIVA 100% NÍTIDA) */}
           <section className="md:hidden pt-4 pb-2 px-4 w-full">
             {(() => {
-              const totalHeroSlides = slides.length > 0 ? slides : [
-                {
-                  id: 'default-welcome',
-                  title: user?.name 
-                    ? `¡Hola, ${user.name.split(' ')[0]}! Descubre tesoros mundiales, calidad garantizada.`
-                    : '¡Hola! El mundo, directo a tu puerta.',
-                  subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/banner-bg-official.png',
-                  cta_text: 'Ver Catálogo Completo',
-                  cta_category: 'Todas',
-                  sort_order: 1,
-                  is_active: true,
-                }
-              ];
-
-              const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
+              const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
               const isDefaultSlide = currentSlide.id === 'default-welcome';
 
               return (
@@ -1928,22 +1931,7 @@ export default function TiendaFoxDrop() {
           {/* VERSIÓN ESCRITORIO (A LO LARGO DEL TAMAÑO DE LA TIENDA max-w-7xl) */}
           <section className="hidden md:block pt-3 pb-2 px-4 sm:px-6 max-w-7xl mx-auto w-full">
             {(() => {
-              const totalHeroSlides = slides.length > 0 ? slides : [
-                {
-                  id: 'default-welcome',
-                  title: user?.name 
-                    ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.`
-                    : '¡Hola! El mundo, directo a tu puerta.',
-                  subtitle: 'TU ATAJO AL MUNDO',
-                  image_url: '/banner-bg-official.png',
-                  cta_text: 'Ver Catálogo Completo',
-                  cta_category: 'Todas',
-                  sort_order: 1,
-                  is_active: true,
-                }
-              ];
-
-              const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length];
+              const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
               const isDefaultSlide = currentSlide.id === 'default-welcome';
 
               return (
