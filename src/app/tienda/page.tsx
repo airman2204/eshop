@@ -1862,7 +1862,7 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] max-w-md mx-auto w-full flex items-stretch">
+                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] aspect-[1024/434] w-full flex items-stretch">
                     {/* 1. FONDO LIMPIO CON MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS */}
                     <img 
                       src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
@@ -1939,8 +1939,8 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* VERSIÓN ESCRITORIO (MÁS CHICO, COMPACTO Y ELEGANTE) */}
-          <section className="hidden md:block pt-3 pb-2 px-6 max-w-5xl mx-auto w-full">
+          {/* VERSIÓN ESCRITORIO (A LO LARGO DEL TAMAÑO DE LA TIENDA max-w-7xl) */}
+          <section className="hidden md:block pt-3 pb-2 px-4 sm:px-6 max-w-7xl mx-auto w-full">
             {(() => {
               const totalHeroSlides = slides.length > 0 ? slides : [
                 {
