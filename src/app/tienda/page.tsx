@@ -1870,8 +1870,8 @@ export default function TiendaFoxDrop() {
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (MÁS CHICO Y COMPLETO) */}
-                    <div className="absolute right-[6%] bottom-[4%] w-[33%] h-[68%] pointer-events-none z-10 flex items-end justify-center">
+                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (TAMAÑO EQUILIBRADO Y COMPLETO) */}
+                    <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
                       <img 
                         src="/fox-mascot-tight.png" 
                         alt="FoxDrop Mascot" 
@@ -1970,8 +1970,8 @@ export default function TiendaFoxDrop() {
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (MÁS CHICO: 65% ALTURA, HOLGURA COMPLETA) */}
-                    <div className="absolute right-[7%] bottom-[5%] w-[33%] h-[68%] pointer-events-none z-10 flex items-end justify-center">
+                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (TAMAÑO EQUILIBRADO Y COMPLETO) */}
+                    <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
                       <img 
                         src="/fox-mascot-tight.png" 
                         alt="FoxDrop Mascot" 
