@@ -1855,14 +1855,16 @@ export default function TiendaFoxDrop() {
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (TAMAÑO EQUILIBRADO Y COMPLETO) */}
-                    <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
-                      <img 
-                        src="/fox-mascot-tight.png" 
-                        alt="FoxDrop Mascot" 
-                        className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
-                      />
-                    </div>
+                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (SOLO EN SLIDE POR DEFECTO PARA NO DUPLICAR EN SLIDES PERSONALIZADOS) */}
+                    {isDefaultSlide && (
+                      <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
+                        <img 
+                          src="/fox-mascot-tight.png" 
+                          alt="FoxDrop Mascot" 
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
+                        />
+                      </div>
+                    )}
 
                     {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (MÁS CHICO Y PROPORCIONADO) */}
                     <div className="relative z-20 w-[55%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
@@ -1955,14 +1957,16 @@ export default function TiendaFoxDrop() {
                       className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
                     />
 
-                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (TAMAÑO EQUILIBRADO Y COMPLETO) */}
-                    <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
-                      <img 
-                        src="/fox-mascot-tight.png" 
-                        alt="FoxDrop Mascot" 
-                        className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
-                      />
-                    </div>
+                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (SOLO EN SLIDE POR DEFECTO PARA NO DUPLICAR EN SLIDES PERSONALIZADOS) */}
+                    {isDefaultSlide && (
+                      <div className="absolute right-[5%] bottom-[3%] w-[38%] h-[88%] pointer-events-none z-10 flex items-end justify-center">
+                        <img 
+                          src="/fox-mascot-tight.png" 
+                          alt="FoxDrop Mascot" 
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
+                        />
+                      </div>
+                    )}
 
                     {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO (TAMAÑO MÁS CHICO Y CONTROLADO) */}
                     <div className="relative z-20 w-[50%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
