@@ -257,6 +257,7 @@ export default function AdminCRM() {
   // Estados de Mejora de Inventario (Filtro por stock, categoría, estado y carga masiva)
   const [stockFilter, setStockFilter] = useState<'all' | 'low_stock' | 'out_of_stock' | 'healthy' | 'combos' | 'inactive'>('all');
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('all');
+  const [inventoryBatchFilter, setInventoryBatchFilter] = useState<string>('all');
   const [updatingStockId, setUpdatingStockId] = useState<string | null>(null);
   const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null);
   const [showKardexModal, setShowKardexModal] = useState(false);
@@ -1615,6 +1616,17 @@ export default function AdminCRM() {
     // 2. Filtro por categoría seleccionada
     if (inventoryCategoryFilter !== 'all' && p.category.toLowerCase() !== inventoryCategoryFilter.toLowerCase()) {
       return false;
+    }
+
+    // 2.1 Filtro por lote de importación
+    if (inventoryBatchFilter !== 'all') {
+      const targetBatch = batches.find(b => b.id === inventoryBatchFilter);
+      if (targetBatch) {
+        const matchesBatchId = p.batchId === targetBatch.id;
+        const matchesCost = Math.abs(targetBatch.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05;
+        const matchesName = p.batchName && p.batchName === targetBatch.batchName;
+        if (!matchesBatchId && !matchesCost && !matchesName) return false;
+      }
     }
 
     // 3. Filtro por estado de stock / tipo
@@ -3593,6 +3605,65 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
               </div>
             </div>
+
+            {/* TABS DE FILTRADO POR LOTE DE IMPORTACIÓN */}
+            {batches.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
+                  <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote:
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setInventoryBatchFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                    inventoryBatchFilter === 'all'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>Todos los lotes</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    inventoryBatchFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {products.length}
+                  </span>
+                </button>
+
+                {batches.map(b => {
+                  const countForBatch = products.filter(p => 
+                    p.batchId === b.id || 
+                    Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05 || 
+                    (p.batchName && p.batchName === b.batchName)
+                  ).length;
+                  const isSelected = inventoryBatchFilter === b.id;
+
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setInventoryBatchFilter(b.id)}
+                      className={`px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#E65F2B] text-white shadow-xs border border-orange-600'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-orange-50/60 hover:text-orange-950 hover:border-orange-200'
+                      }`}
+                    >
+                      <Package className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-[#E65F2B]'}`} />
+                      <span>{b.batchName}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                        isSelected ? 'bg-black/20 text-white' : 'bg-orange-100 text-orange-900 font-bold'
+                      }`}>
+                        {countForBatch}
+                      </span>
+                      <span className={`text-[10px] hidden md:inline opacity-80 font-normal ${isSelected ? 'text-orange-100' : 'text-slate-400'}`}>
+                        (+${b.costPerUnit.toFixed(2)} flete)
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* BARRA DE FILTROS RÁPIDOS, SEMÁFORO DE STOCK & ORDENAMIENTO */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
