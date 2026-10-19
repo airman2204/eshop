@@ -8023,41 +8023,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         const currentHeadline = activeDayPlan.headline || activeDayPlan.title || (isStoreGlobal ? "Tu Atajo Seguro a lo Mejor de USA" : "Edición Limitada en Bodega");
                         const currentProduct = mktStrategy?.featuredProduct?.title || activeDayPlan.productFocus || "Colección Exclusiva FoxDrop";
 
-                        // PROMPT INTELIGENTE DIFERENCIADO (GENERADO POR EL DISEÑADOR O BASADO EN EL MANUAL):
+                        // PROMPT INTELIGENTE DIFERENCIADO (GENERADO POR EL DISEÑADOR O BASADO EN EL MANUAL FRESCO CON EL ZORRITO):
                         const customDayPrompt = mktDayPrompts[mktSelectedDayIndex];
-                        const dayVisualPrompt = customDayPrompt || (isStoreGlobal ? `Genera un póster publicitario institucional de alto prestigio para la plataforma de importaciones oficial FoxDrop México (foxdrop.mx).
+                        const dayVisualPrompt = customDayPrompt || (isStoreGlobal ? `Fotografía publicitaria comercial moderna, fresca y luminosa para la tienda online oficial FoxDrop México (foxdrop.mx).
 
-ESTE POST ES 100% INSTITUCIONAL DE LA TIENDA (NO ES DE UN PRODUCTO ESPECÍFICO):
-El objetivo es posicionar a foxdrop.mx como la tienda online mexicana más confiable, segura y veloz para conseguir lo mejor del extranjero sin aduanas ni riesgos.
+ESTÉTICA Y CONCEPTO VISUAL (MODERNO, JUVENIL Y FRESCO):
+1. PERSONAJE PROTAGONISTA:
+   - El Zorrito FoxDrop: adorable mascota zorro en estilo 3D estilizado tipo figura coleccionable moderna o animación tipo Pixar (pelaje color naranja vibrante #E65F2B, pecho y mejillas color crema suave, cola esponjada con punta blanca, expresión simpática y confiable).
+   - El zorrito está sentado alegremente sobre una caja de envío kraft abierta o asomándose con curiosidad desde adentro, transmitiendo emoción de unboxing.
+2. ENTORNO Y ELEMENTOS DE MARCA:
+   - Cajas de paquetería de cartón kraft limpio con cinta de empaque personalizada con el logo FoxDrop en naranja (#E65F2B).
+   - Papel de viruta ecológica protectora en tonos beige/crema (#FAF7F0), stickers coloridos y sello de garantía FoxDrop.
+   - Sobre la mesa: etiquetas de envío aéreo internacional directas a México, pasaporte o sello de viaje sutil.
+3. ILUMINACIÓN Y PALETA DE COLOR:
+   - Luz natural de mañana cálida y difusa entrando por una ventana amplia.
+   - Paleta: Blanco limpio, crema arena (#FAF7F0), acentos naranja FoxDrop (#E65F2B) y sutiles toques verde bosque contemporáneo (#0F3E36).
+   - Titular publicitario visual sugerido: "${currentHeadline}" y lema "TU ATAJO AL MUNDO".
+   - Calidad fotográfica realista 8k, nítida, sin oscuridad barroca, súper apetecible para redes sociales.` : `Fotografía comercial publicitaria moderna, luminosa y lifestyle para FoxDrop México destacando inventario exclusivo en bodega.
 
-ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
-1. IDENTIDAD Y LOGOTIPO OFICIAL:
-   - Encabezado: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888) + Lema institucional espaciado: "TU ATAJO AL MUNDO".
-   - Sello inferior de garantía oficial: "foxdrop.mx • Envíos Asegurados a Todo México".
-2. PALETA DE COLORES CORPORATIVA:
-   - Fondo y atmósfera: Verde Bosque Profundo (#0F3E36) con textura de iluminación de estudio de lujo.
-   - Acentos: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
-3. TIPOGRAFÍA EDITORIAL:
-   - Titular publicitario: "${currentHeadline}" en tipografía Serif contemporánea editorial de alta gama.
-   - Subtítulo en tipografía sans limpia: "Compras en el extranjero 100% auténticas, sin líos aduanales y directo a tu puerta".
-   - Badge superior: "PLATAFORMA OFICIAL • IMPORTACIÓN PROTEGIDA".
-4. COMPOSICIÓN VISUAL (CONCEPTO DE MARCA):
-   - Protagonista central: Una caja de envío premium de FoxDrop con acabado mate verde bosque (#0F3E36), sellada con cinta de seguridad holográfica dorada (#E3B888), etiquetas de paquetería de importación aérea de lujo y sello de lacre oficial con el zorro de FoxDrop. 
-   - A su alrededor: Destellos de luz cálida, mapa estilizado con líneas doradas de cobertura nacional y sensación de rapidez, lujo y absoluta seguridad comercial.` : `Genera un póster publicitario y fotografía comercial de alta gama para FoxDrop México destacando inventario exclusivo en bodega.
-
-ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
-1. IDENTIDAD Y LOGOTIPO:
-   - Texto de marca superior: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888), acompañado de su lema institucional: "TU ATAJO AL MUNDO".
-   - Sello inferior de garantía oficial: "foxdrop.mx • Envíos Asegurados a Todo México".
-2. PALETA DE COLORES CORPORATIVA:
-   - Fondo y atmósfera: Verde Bosque Profundo (#0F3E36) con textura de estudio fotográfico suave.
-   - Acentos: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
-3. TIPOGRAFÍA EDITORIAL:
-   - Titular publicitario: "${currentHeadline}" en tipografía Serif contemporánea elegante de revista de moda.
-   - Badge superior: "STOCK CONFIRMADO • ENTREGA INMEDIATA".
-4. PRODUCTO Y COMPOSICIÓN:
-   - Protagonista: ${currentProduct}.
-   - Montado sobre pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`);
+ESTÉTICA Y CONCEPTO VISUAL:
+1. PRODUCTO PROTAGONISTA:
+   - ${currentProduct}, colocado en primer plano con máxima nitidez y textura realista.
+2. PERSONAJE COMPAÑERO:
+   - La tierna mascota oficial "Zorrito FoxDrop" (estilo 3D moderno estilizado, pelaje naranja #E65F2B con crema) interactuando cariñosamente en la escena: sentado junto al producto o asomándose divertido detrás de la caja de empaque kraft.
+3. AMBIENTACIÓN:
+   - Superficie de madera clara moderna o mármol blanco mate minimalista, con una planta pequeña de interior (tipo suculenta o monstera) desenfocada al fondo.
+   - Caja kraft de FoxDrop con sticker de garantía "Stock Oficial • Entrega Inmediata".
+4. ILUMINACIÓN Y ESTILO:
+   - Luz de estudio suave y luminosa de estilo nórdico-cálido, sombras suaves, aspecto prémium pero accesible y fresco, calidad de catálogo moderno de Instagram 8k.`);
 
                         const activeDayImage = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
 

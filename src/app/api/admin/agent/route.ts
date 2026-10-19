@@ -405,13 +405,22 @@ Redacta la parrilla de los 7 días. Devuelve ÚNICAMENTE un JSON válido con est
         const dayName = dayPlan?.day || "Lunes";
         const headline = dayPlan?.headline || dayPlan?.title || "Importación Oficial";
 
-        const systemPrompt = `Eres el Director de Arte & Diseñador Gráfico de FoxDrop México.
-Tu trabajo es formular un prompt de alta precisión fotográfica para Gemini Imagen / FLUX respetando el Manual de Identidad de Marca:
-- Colores oficiales: Verde Bosque Profundo (#0F3E36), Dorado Caramelo (#E3B888) y Acentos Naranja Zorro (#E65F2B).
-- Logotipo y Marca: "FOXDROP" con relieve y lema "TU ATAJO AL MUNDO".
-- Sello oficial: "foxdrop.mx • Envíos Asegurados a todo México".
-Si el día es TIENDA_GLOBAL: El protagonista visual es la plataforma (caja prémium de unboxing, lazos satinados, sello lacrado de zorro, mapas dorados de cobertura nacional y envíos aéreos). NUNCA coloques frascos o productos de stock en días de Tienda Global.
-Si el día es PRODUCTO_STOCK: El protagonista visual es el producto específico ("${productTitle || 'Artículo Exclusivo'}") sobre pedestal de mármol esmeralda con iluminación de estudio comercial.`;
+        const systemPrompt = `Eres el Director Creativo y Diseñador Visual de FoxDrop México (foxdrop.mx).
+Tu trabajo es formular un prompt fotográfico y de diseño para Gemini Imagen / FLUX / Midjourney con un estilo MODERNO, FRESCO, CÁLIDO Y JUVENIL, incorporando siempre a la carismática mascota oficial: el ZORRITO FOXDROP.
+
+DIRECTRICES VISUALES Y DE IDENTIDAD FOXDROP:
+- MASCOTA OFICIAL (EL ZORRITO FOXDROP):
+  * Un zorro estilo 3D estilizado / cute / vinyl toy o ilustración 3D de alta gama (estilo Pixar o Pop-Mart tierno, amigable, pelaje naranja vibrante #E65F2B, pecho y punta de la cola color crema/blanco suave, ojos vivaces y simpáticos).
+  * Actúa de forma amigable e interactiva: asomándose curioso de una caja de envío kraft, durmiendo plácidamente sobre un paquete sellado, sosteniendo un sello de garantía, o celebrando con alegría un unboxing.
+- ESTÉTICA GENERAL (MODERNA, LIMPIA Y LIFESTYLE):
+  * Olvida la estética oscura, victoriana o de lujo pesado (NADA de caoba oscura, lacres barrocos pesados, ni pedestales de mármol de banco antiguo).
+  * Queremos un ambiente fresco, luminoso, minimalista y cálido: luz natural de mañana entrando por una ventana, escritorios modernos de madera clara o superficies color arena/marfil (#FAF7F0).
+  * Elementos de e-commerce real y unboxing: cajas de cartón kraft limpias con cinta de embalaje con la marca FoxDrop en naranja (#E65F2B), papel viruta ecológico, stickers con estilo moderno del zorrito, etiquetas de paquetería limpias y modernas.
+  * Toques sutiles de verde bosque (#0F3E36) y dorado cálido (#E3B888) en detalles gráficos, pero predominando la luz, la calidez y el naranja amigable (#E65F2B).
+- SI ES DÍA TIENDA_GLOBAL:
+  * El protagonista es la experiencia de importación FoxDrop: el zorrito FoxDrop junto a cajas de envío internacionales de paquetería express, pasaporte o stickers de viajes, unboxing alegre, transmitiendo que comprar de USA a México es súper fácil, rápido y seguro.
+- SI ES DÍA PRODUCTO_STOCK:
+  * El protagonista es el producto real ("${productTitle || 'Artículo Exclusivo'}"), presentado en una composición lifestyle moderna y aspiracional, con el zorrito FoxDrop a su lado en miniatura interactuando tiernamente con el empaque o producto, o un sticker troquelado del zorrito en la escena, con plantas frescas de interior e iluminación difusa de estudio moderno.`;
 
         const prompt = `Crea el prompt fotográfico editorial definitivo para el día ${dayName} (${dayPlan?.type}):
 - Tema de la semana: "${weeklyTheme || 'FoxDrop Oficial'}"
@@ -421,11 +430,11 @@ Si el día es PRODUCTO_STOCK: El protagonista visual es el producto específico 
 
 Devuelve ÚNICAMENTE un JSON con:
 {
-  "dayVisualPrompt": "Prompt visual detallado y descriptivo en español listo para pegar en Gemini Web...",
-  "eyebrowBadge": "Texto superior pequeño",
-  "headline": "Titular editorial",
-  "subheadline": "Subtítulo de soporte",
-  "trustTag": "Sello de confianza"
+  "dayVisualPrompt": "Prompt visual detallado y ultra descriptivo en español, listo para copiar y pegar en Gemini Web para generar la imagen perfecta...",
+  "eyebrowBadge": "Texto superior pequeño moderno (ej: 📦 IMPORTACIÓN EXPRESS | 🦊 COMPRAS SEGURAS)",
+  "headline": "Titular editorial fresco y llamativo",
+  "subheadline": "Subtítulo de soporte moderno y claro",
+  "trustTag": "foxdrop.mx • Tu Atajo Seguro a México 🇲🇽"
 }`;
 
         const aiResponse = await callGemini(prompt, systemPrompt, { responseJson: true });
@@ -444,17 +453,17 @@ Devuelve ÚNICAMENTE un JSON con:
           return NextResponse.json({ success: true, ...parsed });
         }
 
-        // Fallback robusto si Gemini devuelve texto plano
+        // Fallback robusto con el Zorrito FoxDrop y estética moderna fresca
         const fallbackPrompt = isStoreGlobal
-          ? `Fotografía publicitaria de estudio comercial para FoxDrop México. Caja prémium de importación verde bosque (#0F3E36) con sello lacrado dorado (#E3B888) y relieve "FOXDROP: TU ATAJO AL MUNDO", iluminación cinematográfica, sin productos específicos, atmósfera de plataforma de compras seguras a todo México 8k.`
-          : `Fotografía comercial publicitaria para FoxDrop México destacando ${productTitle || 'artículo exclusivo'}. Montado sobre pedestal de mármol esmeralda (#0F3E36), reflejos cálidos dorados (#E3B888), iluminación suave de estudio, ultra nítida 8k.`;
+          ? `Fotografía publicitaria moderna y luminosa para FoxDrop México (foxdrop.mx). Protagonista: el zorrito FoxDrop, una adorable mascota zorro en estilo 3D estilizado moderno (pelaje naranja brillante #E65F2B, pecho blanco cremoso, tierno y sonriente), sentado alegremente sobre una caja de envío kraft abierta con cinta adhesiva de marca FoxDrop. Alrededor hay papel de embalaje viruta ecológico, stickers coloridos y una etiqueta de paquetería de importación aérea directa a México. Iluminación natural suave de día, fondo desenfocado de habitación moderna y despejada en tonos cálidos arena (#FAF7F0) y toques sutiles verde bosque (#0F3E36). Estética limpia, juvenil, premium-amigable, 8k ultra detallada.`
+          : `Fotografía comercial publicitaria moderna y fresca para FoxDrop México destacando ${productTitle || 'artículo exclusivo'}. El producto se luce en primer plano sobre una mesa de madera clara minimalista, acompañado de una pequeña figura coleccionable 3D estilizada del zorrito FoxDrop (#E65F2B) asomándose con curiosidad detrás del producto. Al lado, una caja de envío kraft con sello oficial de garantía FoxDrop. Iluminación suave de mañana, planta monstera desenfocada de fondo, colores vivos, vibra fresca de unboxing de Instagram/TikTok, súper nítida 8k.`;
 
         return NextResponse.json({
           success: true,
           dayVisualPrompt: fallbackPrompt,
-          eyebrowBadge: isStoreGlobal ? "PLATAFORMA OFICIAL • IMPORTACIÓN PROTEGIDA" : "STOCK CONFIRMADO • ENTREGA INMEDIATA",
+          eyebrowBadge: isStoreGlobal ? "🦊 FOXDROP MÉXICO • TU ATAJO AL MUNDO" : "✨ STOCK OFICIAL • ENVÍO INMEDIATO",
           headline,
-          subheadline: isStoreGlobal ? "Garantía de entrega protegida a todo México sin trámites de aduana." : "Disponible en bodega para despacho prioritario a toda la República.",
+          subheadline: isStoreGlobal ? "Tus compras en USA auténticas, seguras y directas a tu casa en México." : "Disponible en bodega para entrega express a todo el país.",
           trustTag: "foxdrop.mx • Envíos Asegurados a todo México"
         });
       } catch (err: any) {
