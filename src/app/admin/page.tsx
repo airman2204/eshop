@@ -7744,10 +7744,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                         {/* SELECTOR DE PROPUESTAS DE DISEÑO GENERADAS */}
                         {mktDesignProposals.length > 0 && (
-                          <div className="pt-2 border-t border-white/10 space-y-2">
-                            <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest">
-                              Elige una propuesta de diseño para aplicar:
-                            </p>
+                          <div className="pt-2 border-t border-white/10 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest">
+                                Elige una propuesta de diseño para aplicar:
+                              </p>
+                              <span className="text-[10px] text-stone-400 font-medium">
+                                3 direcciones de arte únicas
+                              </span>
+                            </div>
+
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                               {mktDesignProposals.map((prop: any, idx: number) => {
                                 const isSelected = (mktSelectedProposalId === prop.id) || (!mktSelectedProposalId && idx === 0);
@@ -7780,6 +7786,98 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 );
                               })}
                             </div>
+
+                            {/* PUENTE DIRECTO CON GEMINI WEB (100% GRATIS) */}
+                            {(() => {
+                              const activeProp = mktDesignProposals.find(p => p.id === mktSelectedProposalId) || mktDesignProposals[0];
+                              const fullGeminiPrompt = `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México.
+Producto: ${mktStrategy?.featuredProduct?.title || "Perfume y cosmética exclusiva"}.
+Concepto y estilo: "${activeProp?.name || "Lujo contemporáneo"}" - ${activeProp?.conceptRationale || ""}.
+Titular en arte: "${activeProp?.typography?.headline || ""}".
+Atmósfera y encuadre: Fondo de estudio con tonos ${activeProp?.style?.primaryColor || "#0F3E36"} y acentos en dorado ${activeProp?.style?.accentColor || "#E3B888"}, pedestal de mármol pulido, iluminación de estudio suave con reflejos cristalinos, calidad Vogue/GQ comercial 8k, sin aberraciones ni marcas de agua.`;
+
+                              return (
+                                <div className="p-3 bg-black/40 rounded-xl border border-[#E3B888]/40 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-[#E3B888] flex items-center gap-1.5">
+                                      <span>⚡</span>
+                                      <span>Puente Gemini Web (Generación Gratuita de Imagen):</span>
+                                    </span>
+                                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                                      Sin costo
+                                    </span>
+                                  </div>
+
+                                  <p className="text-[10px] text-stone-300">
+                                    Copia el prompt optimizado de la <strong>{activeProp?.name || 'opción seleccionada'}</strong>, pídelo en tu Gemini habitual y pega aquí el resultado con 1 clic:
+                                  </p>
+
+                                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                                    {/* 1. Botón copiar prompt */}
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(fullGeminiPrompt);
+                                        alert("📋 ¡Prompt publicitario copiado al portapapeles!\n\nPégalo en tu Gemini Web para generar la imagen gratis.");
+                                      }}
+                                      className="px-3 py-1.5 bg-[#E3B888] hover:bg-[#d6a56e] text-stone-950 font-black text-[11px] rounded-lg transition shadow-xs flex items-center gap-1"
+                                    >
+                                      <span>📋</span>
+                                      <span>Copiar Prompt de {activeProp?.name ? `"${activeProp.name.split(' ')[0]}"` : 'la Opción'}</span>
+                                    </button>
+
+                                    {/* 2. Botón abrir Gemini Web */}
+                                    <a
+                                      href="https://gemini.google.com"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] rounded-lg border border-white/20 transition flex items-center gap-1"
+                                    >
+                                      <span>🚀</span>
+                                      <span>Abrir Gemini Web →</span>
+                                    </a>
+
+                                    {/* 3. Botón Pegar Imagen generada directamente */}
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          if (navigator.clipboard && navigator.clipboard.read) {
+                                            const items = await navigator.clipboard.read();
+                                            for (const item of items) {
+                                              const imageType = item.types.find(t => t.startsWith('image/'));
+                                              if (imageType) {
+                                                const blob = await item.getType(imageType);
+                                                const reader = new FileReader();
+                                                reader.onload = (e) => {
+                                                  if (e.target?.result) {
+                                                    setMktGeneratedImage(e.target.result as string);
+                                                    alert("✅ ¡Imagen de Gemini cargada en la propuesta con éxito!");
+                                                  }
+                                                };
+                                                reader.readAsDataURL(blob);
+                                                return;
+                                              }
+                                            }
+                                          }
+                                          const pastedText = await navigator.clipboard.readText();
+                                          if (pastedText && (pastedText.startsWith('http') || pastedText.startsWith('data:image/'))) {
+                                            setMktGeneratedImage(pastedText.trim());
+                                            alert("✅ ¡Enlace de imagen de Gemini cargado con éxito!");
+                                            return;
+                                          }
+                                          alert("Copia la imagen en Gemini (clic derecho -> Copiar imagen) y presiona este botón.");
+                                        } catch {
+                                          alert("Presiona Ctrl + V mientras estás en esta ventana para pegar la imagen que copiaste de Gemini.");
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 bg-[#0F3E36] hover:bg-[#15564b] border border-[#E3B888]/40 text-[#E3B888] font-black text-[11px] rounded-lg transition shadow-xs flex items-center gap-1 ml-auto"
+                                    >
+                                      <span>📥</span>
+                                      <span>Pegar Imagen de Gemini (1 Clic)</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         )}
                       </div>
