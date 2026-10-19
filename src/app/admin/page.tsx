@@ -7791,29 +7791,44 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           hashtags: ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"]
                         };
 
+                        const isStoreGlobal = activeDayPlan.type === 'TIENDA_GLOBAL';
+                        const currentHeadline = activeDayPlan.headline || activeDayPlan.title || (isStoreGlobal ? "Tu Atajo Seguro a lo Mejor de USA" : "Edición Limitada en Bodega");
                         const currentProduct = mktStrategy?.featuredProduct?.title || activeDayPlan.productFocus || "Colección Exclusiva FoxDrop";
-                        const currentHeadline = activeDayPlan.headline || activeDayPlan.title || "Tu Atajo Seguro al Mundo";
 
-                        // PROMPT RIGUROSO BASADO EN EL MANUAL DE MARCA OFICIAL FOXDROP:
-                        // 1. Logotipo oficial: FOXDROP • TU ATAJO AL MUNDO con relieve dorado (#CE8B54 / #E3B888)
-                        // 2. Colores de manual: Verde Bosque Profundo (#0F3E36), Acento Naranja Zorro (#E65F2B) y Dorado Caramelo (#E3B888)
-                        // 3. Tipografía: Serif editorial de lujo para titular, Sans limpia contemporánea para submarca
-                        // 4. Badges: 'IMPORTACIÓN EXCLUSIVA' y 'foxdrop.mx • Envíos Asegurados a todo México'
-                        const dayVisualPrompt = `Genera un póster publicitario y fotografía comercial de alta gama para la marca oficial FoxDrop México (e-commerce foxdrop.mx).
+                        // PROMPT INTELIGENTE DIFERENCIADO (TIENDA GLOBAL vs PRODUCTO DE STOCK):
+                        const dayVisualPrompt = isStoreGlobal ? `Genera un póster publicitario institucional de alto prestigio para la plataforma de importaciones oficial FoxDrop México (foxdrop.mx).
+
+ESTE POST ES 100% INSTITUCIONAL DE LA TIENDA (NO ES DE UN PRODUCTO ESPECÍFICO):
+El objetivo es posicionar a foxdrop.mx como la tienda online mexicana más confiable, segura y veloz para conseguir lo mejor del extranjero sin aduanas ni riesgos.
+
+ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
+1. IDENTIDAD Y LOGOTIPO OFICIAL:
+   - Encabezado: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888) + Lema institucional espaciado: "TU ATAJO AL MUNDO".
+   - Sello inferior de garantía oficial: "foxdrop.mx • Envíos Asegurados a Todo México".
+2. PALETA DE COLORES CORPORATIVA:
+   - Fondo y atmósfera: Verde Bosque Profundo (#0F3E36) con textura de iluminación de estudio de lujo.
+   - Acentos: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
+3. TIPOGRAFÍA EDITORIAL:
+   - Titular publicitario: "${currentHeadline}" en tipografía Serif contemporánea editorial de alta gama.
+   - Subtítulo en tipografía sans limpia: "Compras en el extranjero 100% auténticas, sin líos aduanales y directo a tu puerta".
+   - Badge superior: "PLATAFORMA OFICIAL • IMPORTACIÓN PROTEGIDA".
+4. COMPOSICIÓN VISUAL (CONCEPTO DE MARCA):
+   - Protagonista central: Una caja de envío premium de FoxDrop con acabado mate verde bosque (#0F3E36), sellada con cinta de seguridad holográfica dorada (#E3B888), etiquetas de paquetería de importación aérea de lujo y sello de lacre oficial con el zorro de FoxDrop. 
+   - A su alrededor: Destellos de luz cálida, mapa estilizado con líneas doradas de cobertura nacional y sensación de rapidez, lujo y absoluta seguridad comercial.` : `Genera un póster publicitario y fotografía comercial de alta gama para FoxDrop México destacando inventario exclusivo en bodega.
 
 ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
 1. IDENTIDAD Y LOGOTIPO:
-   - Texto de marca superior: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888), acompañado de su lema institucional en mayúsculas espaciadas: "TU ATAJO AL MUNDO".
+   - Texto de marca superior: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888), acompañado de su lema institucional: "TU ATAJO AL MUNDO".
    - Sello inferior de garantía oficial: "foxdrop.mx • Envíos Asegurados a Todo México".
 2. PALETA DE COLORES CORPORATIVA:
    - Fondo y atmósfera: Verde Bosque Profundo (#0F3E36) con textura de estudio fotográfico suave.
-   - Acentos y detalles de iluminación: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
+   - Acentos: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
 3. TIPOGRAFÍA EDITORIAL:
-   - Titular publicitario integrado en la composición: "${currentHeadline}" en tipografía Serif contemporánea elegante de revista de lujo (tipo Vogue/GQ o Harper's Bazaar), nítida y legible.
-   - Badge superior: "CURADURÍA FOXDROP • IMPORTACIÓN EXCLUSIVA".
+   - Titular publicitario: "${currentHeadline}" en tipografía Serif contemporánea elegante de revista de moda.
+   - Badge superior: "STOCK CONFIRMADO • ENTREGA INMEDIATA".
 4. PRODUCTO Y COMPOSICIÓN:
    - Protagonista: ${currentProduct}.
-   - Montado sobre un pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`;
+   - Montado sobre pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`;
 
                         const activeDayImage = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
 
