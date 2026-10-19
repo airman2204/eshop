@@ -7786,13 +7786,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           title: "Apertura & Garantía de Importación FoxDrop",
                           type: "TIENDA_GLOBAL",
                           productFocus: mktStrategy?.featuredProduct?.title || "Curaduría FoxDrop México",
-                          visualPrompt: `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México. Producto: ${mktStrategy?.featuredProduct?.title || "Perfume y cosmética exclusiva"}. Enfoque del día: Apertura y confianza de importación oficial en México. Fondo de estudio en tonos Verde Bosque Profundo (#0F3E36) con pedestal de mármol y destellos dorados (#E3B888). Iluminación de estudio suave con reflejos cristalinos, calidad Vogue/GQ comercial 8k, ultra nítida, sin marcas de agua.`,
+                          headline: "Tu Atajo Seguro a lo Mejor de USA",
                           copy: "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
                           hashtags: ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"]
                         };
 
-                        const dayVisualPrompt = activeDayPlan.visualPrompt || 
-                          `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México. Tema del post: ${activeDayPlan.title || 'Lanzamiento semanal'}. Producto: ${mktStrategy?.featuredProduct?.title || 'Cosmética exclusiva'}. Fondo de estudio lujoso con iluminación cinemática y pedestal de mármol, calidad 8k Vogue comercial.`;
+                        const currentProduct = mktStrategy?.featuredProduct?.title || activeDayPlan.productFocus || "Colección Exclusiva FoxDrop";
+                        const currentHeadline = activeDayPlan.headline || activeDayPlan.title || "Tu Atajo Seguro al Mundo";
+
+                        // PROMPT RIGUROSO BASADO EN EL MANUAL DE MARCA OFICIAL FOXDROP:
+                        // 1. Logotipo oficial: FOXDROP • TU ATAJO AL MUNDO con relieve dorado (#CE8B54 / #E3B888)
+                        // 2. Colores de manual: Verde Bosque Profundo (#0F3E36), Acento Naranja Zorro (#E65F2B) y Dorado Caramelo (#E3B888)
+                        // 3. Tipografía: Serif editorial de lujo para titular, Sans limpia contemporánea para submarca
+                        // 4. Badges: 'IMPORTACIÓN EXCLUSIVA' y 'foxdrop.mx • Envíos Asegurados a todo México'
+                        const dayVisualPrompt = `Genera un póster publicitario y fotografía comercial de alta gama para la marca oficial FoxDrop México (e-commerce foxdrop.mx).
+
+ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
+1. IDENTIDAD Y LOGOTIPO:
+   - Texto de marca superior: "FOXDROP" en tipografía bold con relieve y bisel dorado caramelo (#CE8B54 / #E3B888), acompañado de su lema institucional en mayúsculas espaciadas: "TU ATAJO AL MUNDO".
+   - Sello inferior de garantía oficial: "foxdrop.mx • Envíos Asegurados a Todo México".
+2. PALETA DE COLORES CORPORATIVA:
+   - Fondo y atmósfera: Verde Bosque Profundo (#0F3E36) con textura de estudio fotográfico suave.
+   - Acentos y detalles de iluminación: Dorado Caramelo (#E3B888) y sutiles destellos Naranja Zorro (#E65F2B).
+3. TIPOGRAFÍA EDITORIAL:
+   - Titular publicitario integrado en la composición: "${currentHeadline}" en tipografía Serif contemporánea elegante de revista de lujo (tipo Vogue/GQ o Harper's Bazaar), nítida y legible.
+   - Badge superior: "CURADURÍA FOXDROP • IMPORTACIÓN EXCLUSIVA".
+4. PRODUCTO Y COMPOSICIÓN:
+   - Protagonista: ${currentProduct}.
+   - Montado sobre un pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`;
 
                         const activeDayImage = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
 
