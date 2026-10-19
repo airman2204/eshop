@@ -477,6 +477,9 @@ export default function AdminCRM() {
   const [mktSelectedDayIndex, setMktSelectedDayIndex] = useState<number>(0);
   const [mktGeneratedImage, setMktGeneratedImage] = useState<string>('');
   const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
+  const [mktDesignProposals, setMktDesignProposals] = useState<any[]>([]);
+  const [mktSelectedProposalId, setMktSelectedProposalId] = useState<string>('propuesta_1');
+  const [mktCustomDesignPrompt, setMktCustomDesignPrompt] = useState<string>('');
   const [mktPublishing, setMktPublishing] = useState(false);
   const [mktPublishSuccess, setMktPublishSuccess] = useState<string | null>(null);
 
@@ -570,28 +573,25 @@ export default function AdminCRM() {
   const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string, overrideFormat?: '1:1' | '9:16') => {
     setMktGeneratingImage(true);
     try {
-      const promptToUse = customPrompt || mktStrategy?.nanoBananaPrompt || '';
-      const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
+      const promptToUse = customPrompt || mktCustomDesignPrompt || mktStrategy?.nanoBananaPrompt || '';
+      const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto Exclusivo FoxDrop';
       const formatToUse = overrideFormat || (mktPreviewFormat === 'tk' ? '9:16' : '1:1');
+      const curDayName = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex]?.day || 'Lunes';
 
       const res = await fetchAgentApi({
         action: 'mkt_visual_nanobanana',
         prompt: promptToUse,
         format: formatToUse,
         productTitle: titleToUse,
+        currentDay: curDayName,
       });
       const data = await res.json();
-      if (data.success && data.imageUrl) {
-        setMktGeneratedImage(data.imageUrl);
-      } else if (mktStrategy?.featuredProduct?.image) {
-        // Fallback inmediato con la fotografía real del catálogo de Supabase si la IA tarda
-        setMktGeneratedImage(mktStrategy.featuredProduct.image);
+      if (data.success && Array.isArray(data.proposals) && data.proposals.length > 0) {
+        setMktDesignProposals(data.proposals);
+        setMktSelectedProposalId(data.proposals[0].id);
       }
     } catch (err) {
-      console.warn('Error generando imagen Nano Banana:', err);
-      if (mktStrategy?.featuredProduct?.image) {
-        setMktGeneratedImage(mktStrategy.featuredProduct.image);
-      }
+      console.warn('Error generando propuestas visuales con Nano Banana / Gemini:', err);
     } finally {
       setMktGeneratingImage(false);
     }
@@ -7685,6 +7685,83 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </div>
                       )}
 
+                      {/* SECCIÓN CREATIVA: EL USUARIO DA UN PROMPT -> GEMINI DISEÑA 3 PROPUESTAS PARA ELEGIR */}
+                      <div className="p-4 bg-gradient-to-r from-stone-900 to-[#0F3E36] rounded-2xl text-white shadow-lg space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎨</span>
+                            <div>
+                              <h5 className="text-xs font-black uppercase tracking-wider text-[#E3B888]">
+                                Director de Arte Autónomo (Gemini + Nano Banana)
+                              </h5>
+                              <p className="text-[11px] text-stone-300">
+                                Dale cualquier instrucción visual o estilo, y el agente creará 3 propuestas de diseño distintas para que elijas la ganadora.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Input de prompt creativo para el diseñador */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            value={mktCustomDesignPrompt}
+                            onChange={(e) => setMktCustomDesignPrompt(e.target.value)}
+                            placeholder="Ej: Estilo revista Vogue con fondo crema y pedestal de mármol, o neón nocturno..."
+                            className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3.5 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#E3B888]"
+                          />
+                          <button
+                            onClick={() => handleGenerateNanoBananaImage(mktCustomDesignPrompt)}
+                            disabled={mktGeneratingImage}
+                            className="px-4 py-2 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0"
+                          >
+                            <span>✨</span>
+                            <span>{mktGeneratingImage ? 'Diseñando Opciones...' : 'Crear 3 Propuestas'}</span>
+                          </button>
+                        </div>
+
+                        {/* SELECTOR DE PROPUESTAS DE DISEÑO GENERADAS */}
+                        {mktDesignProposals.length > 0 && (
+                          <div className="pt-2 border-t border-white/10 space-y-2">
+                            <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest">
+                              Elige una propuesta de diseño para aplicar:
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              {mktDesignProposals.map((prop: any, idx: number) => {
+                                const isSelected = (mktSelectedProposalId === prop.id) || (!mktSelectedProposalId && idx === 0);
+                                return (
+                                  <div
+                                    key={prop.id || idx}
+                                    onClick={() => setMktSelectedProposalId(prop.id)}
+                                    className={`p-2.5 rounded-xl border cursor-pointer transition text-left flex flex-col justify-between ${
+                                      isSelected
+                                        ? 'bg-[#E3B888]/20 border-[#E3B888] ring-1 ring-[#E3B888] text-white'
+                                        : 'bg-black/30 border-white/10 hover:border-white/30 text-stone-300'
+                                    }`}
+                                  >
+                                    <div>
+                                      <div className="flex items-center justify-between text-[10px] font-black mb-1">
+                                        <span className="text-[#E3B888]">Opción {idx + 1}</span>
+                                        {isSelected && <span className="bg-[#E3B888] text-stone-950 px-1.5 py-0.2 rounded text-[9px]">Seleccionada</span>}
+                                      </div>
+                                      <div className="text-xs font-black truncate">{prop.name}</div>
+                                      <p className="text-[10px] text-stone-300 line-clamp-2 mt-0.5 leading-tight">
+                                        {prop.conceptRationale}
+                                      </p>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-1.5 text-[9px] text-stone-400">
+                                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: prop.style?.primaryColor || '#0F3E36' }} />
+                                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: prop.style?.accentColor || '#E3B888' }} />
+                                      <span className="truncate">{prop.typography?.headline}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       {/* MOCKUP 0: PLAN SEMANAL DE CONTENIDO EDITORIAL (ESTILO CUADERNO VISUAL CREATIVO) */}
                       {mktPreviewFormat === 'plan' && (
                         <div className="bg-[#fbf7ee] rounded-3xl p-5 border-4 border-[#e5dcc7] shadow-xl relative overflow-hidden">
@@ -7784,8 +7861,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           {(() => {
                             const currentDayPlan = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex];
                             const isStoreGlobal = currentDayPlan?.type === 'TIENDA_GLOBAL';
-                            const design = currentDayPlan?.designConcept;
-                            const bgAtmosphere = design?.backgroundAtmosphere || (isStoreGlobal ? 'Estudio institucional de lujo FoxDrop' : 'Spotlight de inventario en bodega');
+
+                            // Si el usuario eligió una de las propuestas de Gemini, aplicamos esa propuesta directamente
+                            const activeProposal = mktDesignProposals.find(p => p.id === mktSelectedProposalId) || mktDesignProposals[0];
+                            const design = activeProposal ? {
+                              primaryColor: activeProposal.style?.primaryColor,
+                              accentColor: activeProposal.style?.accentColor,
+                              textColor: activeProposal.style?.textColor,
+                              bigHeadline: activeProposal.typography?.headline,
+                              subHeadline: activeProposal.typography?.subheadline,
+                              eyebrowBadge: activeProposal.typography?.eyebrowBadge,
+                              trustTag: activeProposal.typography?.trustTag,
+                              backgroundStyle: activeProposal.style?.backgroundStyle,
+                              cardOverlay: activeProposal.style?.cardOverlay,
+                            } : currentDayPlan?.designConcept;
+
                             const primaryBg = design?.primaryColor || '#0a231e';
                             const accentColor = design?.accentColor || '#E3B888';
                             const textColor = design?.textColor || '#FBF9F5';
@@ -7793,11 +7883,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             const subtitle = design?.subHeadline || currentDayPlan?.copy || 'Importaciones auténticas sin trámites de aduana.';
                             const eyebrow = design?.eyebrowBadge || (isStoreGlobal ? 'CURADURÍA GLOBAL • FOXDROP.MX' : 'STOCK CONFIRMADO • ENTREGA INMEDIATA');
                             const trust = design?.trustTag || 'Envíos Asegurados a Toda la República Mexicana';
+                            const bgStyleCustom = design?.backgroundStyle;
 
                             return (
                               <div
                                 className="aspect-square relative overflow-hidden flex flex-col justify-between p-5 select-none border-b border-stone-200"
-                                style={{ backgroundColor: primaryBg }}
+                                style={{
+                                  backgroundColor: primaryBg,
+                                  background: bgStyleCustom || undefined,
+                                }}
                               >
                                 {/* Textura y atmósfera propuesta por el diseñador */}
                                 <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
@@ -7858,7 +7952,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 <div className="relative z-10 space-y-2 mt-auto">
                                   <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
                                     <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
-                                      {currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
+                                      {activeProposal?.name || currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
                                     </p>
                                     <h3 className="text-sm sm:text-base font-black text-white leading-tight">
                                       {headline}
@@ -7885,10 +7979,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                       onClick={() => handleGenerateNanoBananaImage()}
                                       disabled={mktGeneratingImage}
                                       className="px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-[#E3B888]/50 text-[#E3B888] text-[10px] font-black transition flex items-center gap-1 shadow-lg"
-                                      title="Generar nuevo render comercial con Nano Banana AI"
+                                      title="Generar nuevas propuestas con Gemini"
                                     >
-                                      <span>🍌</span>
-                                      <span>{mktGeneratingImage ? 'Creando arte...' : 'Nuevo Arte'}</span>
+                                      <span>🎨</span>
+                                      <span>{mktGeneratingImage ? 'Diseñando...' : 'Nuevas Propuestas'}</span>
                                     </button>
                                   </div>
 

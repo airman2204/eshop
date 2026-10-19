@@ -356,86 +356,93 @@ Formula una estrategia semanal completa que combine la visión global de la tien
       }
     }
 
-    // ── C. GENERADOR VISUAL NANO BANANA (HUGGING FACE FLUX + DIRECTOR DE ARTE GEMINI) ──
+    // ── C. GENERADOR VISUAL NANO BANANA: PROPUESTAS DE DISEÑO AUTÓNOMAS (GEMINI + DISEÑADOR) ──
     if (action === "mkt_visual_nanobanana") {
       try {
-        const { prompt, format, productTitle } = body; // format: '1:1' | '9:16'
+        const { prompt: userPrompt, format, productTitle, productImage, currentDay } = body;
         const isVertical = format === "9:16";
 
-        // 1. INTENTO CON HUGGING FACE FLUX / SDXL (Si existe HF_TOKEN en .env.local)
-        const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY;
-        if (hfToken) {
-          try {
-            const hfPrompt = `luxury commercial advertising photograph for FoxDrop México, featuring ${productTitle || "exclusive imported product"}, standing on an emerald green marble pedestal (#0F3E36), warm golden studio backlighting (#E3B888), crystal reflections, cinematic soft mist, 8k resolution, editorial Vogue/GQ commercial photography, ultra detailed, photorealistic, no text`;
+        // Gemini como Diseñador Gráfico & Director de Arte Autónomo
+        // Interpreta el prompt o genera 3 conceptos visuales únicos y profesionales
+        const designerPrompt = `Actúa como el Diseñador Gráfico y Director Creativo de FoxDrop México (tienda de importaciones exclusivas, lifestyle y cosmética de lujo).
+El CEO te ha dado esta instrucción / visión creativa:
+"${userPrompt || "Crea propuestas de diseño de alto impacto comercial, estética de revista de moda/editorial contemporánea, con iluminación de estudio, contrastes elegantes y balance tipográfico impecable"}"
 
-            const hfUrl = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell";
-            const hfRes = await fetch(hfUrl, {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${hfToken}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ inputs: hfPrompt }),
-            });
+Contexto del post:
+- Producto / Tema: ${productTitle || "Colección Exclusiva FoxDrop"}
+- Día de la semana: ${currentDay || "General"}
+- Formato: ${isVertical ? "TikTok / Reels (9:16 vertical)" : "Instagram / Facebook (1:1 cuadrado)"}
 
-            if (hfRes.ok) {
-              const buffer = await hfRes.arrayBuffer();
-              const base64Img = Buffer.from(buffer).toString("base64");
-              const mime = hfRes.headers.get("content-type") || "image/jpeg";
-              return NextResponse.json({
-                success: true,
-                imageUrl: `data:${mime};base64,${base64Img}`,
-                engine: "huggingface_flux",
-                format: format || "1:1",
-              });
-            }
-          } catch (hfErr) {
-            console.warn("Hugging Face inference error, falling back to Gemini vector poster:", hfErr);
-          }
-        }
+Como diseñador profesional, NO hagas una sola idea aburrida. Crea EXACTAMENTE 3 propuestas de diseño completamente distintas para que el CEO elija la mejor:
 
-        // 2. DIRECTOR DE ARTE NANO BANANA (GEMINI VECTOR POSTER - 100% CONFIABLE Y SIN COSTO)
+1. Propuesta 1 (Concepto A): Estilo Editorial de Lujo / High Fashion (tipografía serif elegante, fondos oscuros o cremas con reflejos dorados y pedestal de mármol).
+2. Propuesta 2 (Concepto B): Estilo Bold Moderno / Vibrant Trend (contraste llamativo, acentos naranja FoxDrop o tonos frescos, sombras duras o estética pop de alta gama).
+3. Propuesta 3 (Concepto C): Estilo Botánico Orgánico / Lifestyle Cálido (luz solar difusa, texturas de lino o madera clara, hojas verdes, atmósfera relajante y natural).
+
+Para CADA una de las 3 propuestas, debes definir:
+- id: "propuesta_1", "propuesta_2", "propuesta_3"
+- name: Nombre creativo del concepto de diseño (ej. "Vogue Emerald Glow", "Urban Neon Minimal", "Botanical Sunbeam")
+- conceptRationale: Explicación de por qué este diseño vende y qué emoción transmite (máx 2 oraciones)
+- style:
+    * backgroundStyle: CSS inline o clases de degradado (ej. "linear-gradient(135deg, #071e19 0%, #0F3E36 50%, #051411 100%)")
+    * primaryColor: Color hexadecimal principal
+    * accentColor: Color de acento
+    * textColor: Color de texto de alto contraste
+    * cardOverlay: Estilo de tarjeta de texto (ej. "bg-black/60 backdrop-blur-md border border-[#E3B888]/40")
+- typography:
+    * eyebrowBadge: "CURADURÍA FOXDROP" o "EDICIÓN LIMITADA" o "IMPORTACIÓN OFICIAL"
+    * headline: Titular impactante y persuasivo pensado para este concepto
+    * subheadline: Frase de soporte con propuesta de valor
+    * trustTag: Sello de garantía ("Envíos Asegurados a todo México" o "100% Auténtico Garantizado")
+    * ctaText: Texto del botón o llamado a la acción ("foxdrop.mx", "Comprar en foxdrop.mx", "Ver Lote")
+- visualDetails: Lista de 3 elementos gráficos distintivos (ej. ["Pedestal de mármol pulido", "Aura dorada detrás del producto", "Marco fino con filete dorado"])
+
+Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+{
+  "proposals": [
+    {
+      "id": "propuesta_1",
+      "name": "...",
+      "conceptRationale": "...",
+      "style": {
+        "backgroundStyle": "...",
+        "primaryColor": "...",
+        "accentColor": "...",
+        "textColor": "...",
+        "cardOverlay": "..."
+      },
+      "typography": {
+        "eyebrowBadge": "...",
+        "headline": "...",
+        "subheadline": "...",
+        "trustTag": "...",
+        "ctaText": "..."
+      },
+      "visualDetails": ["...", "...", "..."]
+    }
+  ]
+}`;
+
+        const systemPrompt = "Eres un Director de Arte y Diseñador Gráfico Senior en e-commerce de prestigio. Respondes con criterio estético impecable, colores combinados a la perfección y tipografías vendedoras. Devuelve ÚNICAMENTE JSON válido.";
+
+        const aiResponse = await callGemini(designerPrompt, systemPrompt, { responseJson: true });
+        let parsed: any = null;
         try {
-          const geminiPosterPrompt = `Act as Nano Banana, Executive Art Director for FoxDrop México (luxury curatorship brand).
-Generate a stunning, ultra-luxury commercial advertising poster for Instagram/TikTok featuring "${productTitle || "Exclusive Curated Import"}".
-Format: 1080x1080 square.
-Brand Colors: Deep Forest Green (#0F3E36), Fox Orange (#E65F2B), Soft Caramel Gold (#E3B888), Ivory (#FBF9F5).
-
-Design Specifications:
-1. Outer and inner elegant gold borders (#E3B888).
-2. Deep emerald background with subtle radial gradient (#0F3E36 to #061512).
-3. Sophisticated typography at top: "CURADURÍA FOXDROP • IMPORTACIÓN EXCLUSIVA".
-4. Centered luxury 3D product illustration or beauty bottle with golden caps, reflective glass, and soft luminous mist.
-5. Bottom badge: "foxdrop.mx • Envíos Asegurados a Todo México".
-
-Return ONLY the raw valid SVG inside <svg viewBox="0 0 1080 1080" ...> ... </svg> with no markdown backticks or commentary.`;
-
-          const svgResponse = await callGemini(geminiPosterPrompt, "You are a master SVG graphic designer and Art Director. Output ONLY raw SVG code.", { maxOutputTokens: 4096 });
-          const svgMatch = svgResponse.match(/<svg[\s\S]*<\/svg>/);
-          if (svgMatch) {
-            const cleanSvg = svgMatch[0].trim();
-            const base64Svg = Buffer.from(cleanSvg).toString("base64");
-            const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
-
-            return NextResponse.json({
-              success: true,
-              imageUrl: dataUri,
-              svgContent: cleanSvg,
-              engine: "gemini_vector",
-              format: format || "1:1",
-            });
-          }
-        } catch (svgErr) {
-          console.warn("Error generando póster SVG con Gemini:", svgErr);
+          parsed = JSON.parse(aiResponse);
+        } catch {
+          const match = aiResponse.match(/\{[\s\S]*\}/);
+          if (match) parsed = JSON.parse(match[0]);
         }
 
-        // Fallback a test-art.svg local
-        return NextResponse.json({
-          success: true,
-          imageUrl: "/test-art.svg",
-          engine: "local_master",
-          format: format || "1:1",
-        });
+        if (parsed && Array.isArray(parsed.proposals) && parsed.proposals.length > 0) {
+          return NextResponse.json({
+            success: true,
+            proposals: parsed.proposals,
+            format: format || "1:1",
+          });
+        }
+
+        throw new Error("No se pudieron generar las propuestas de diseño");
       } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });
       }
