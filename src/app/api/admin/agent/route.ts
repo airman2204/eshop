@@ -348,34 +348,44 @@ Formula una estrategia completa que combine la visión global de la tienda FoxDr
         const width = isVertical ? 720 : 1024;
         const height = isVertical ? 1280 : 1024;
 
-        // 1. Usar Gemini como Director de Arte de Nano Banana para componer el prompt de fotografía publicitaria
-        let enhancedPrompt = "";
+        // 1. Usar Gemini como Director de Arte Nano Banana para diseñar la pieza publicitaria vectorial
         try {
-          const artDirectorSystemPrompt = `You are Nano Banana, the elite Art Director for FoxDrop México (luxury curatorship brand). 
-Your specialty is high-fashion, high-end commercial advertising photography for Instagram and TikTok. 
-Rules:
-- NEVER output conversational text or introductions. Output ONLY the raw English prompt in a single paragraph.
-- Style: Luxury studio advertising photography, cinematic volumetric lighting, polished emerald green marble pedestal (#0F3E36), warm golden backlighting (#E3B888), crystal reflections, crisp shadows, 8k resolution, editorial Vogue/GQ commercial aesthetics, ultra-detailed, photorealistic, no watermarks, no distorted text.`;
+          const geminiPosterPrompt = `Act as Nano Banana, Executive Art Director for FoxDrop México (luxury curatorship brand).
+Generate a stunning, ultra-luxury commercial advertising poster for Instagram/TikTok featuring "${productTitle || "Exclusive Curated Import"}".
+Format: 1080x1080 square.
+Brand Colors: Deep Forest Green (#0F3E36), Fox Orange (#E65F2B), Soft Caramel Gold (#E3B888), Ivory (#FBF9F5).
 
-          const artDirectorUserPrompt = `Create a cinematic studio advertising photo prompt for this product: "${productTitle || "Exclusive imported beauty luxury item"}". Context: ${prompt || "Curated global import"}.`;
+Design Specifications:
+1. Outer and inner elegant gold borders (#E3B888).
+2. Deep emerald background with subtle radial gradient (#0F3E36 to #061512).
+3. Sophisticated typography at top: "CURADURÍA FOXDROP • IMPORTACIÓN EXCLUSIVA".
+4. Centered luxury 3D product illustration or beauty bottle with golden caps, reflective glass, and soft luminous mist.
+5. Bottom badge: "foxdrop.mx • Envíos Asegurados a Todo México".
 
-          enhancedPrompt = await callGemini(artDirectorUserPrompt, artDirectorSystemPrompt, { maxOutputTokens: 250 });
-        } catch {
-          enhancedPrompt = `Ultra-luxury commercial advertising photograph of ${productTitle || "exclusive imported product"} on an elegant emerald green marble podium, cinematic dramatic studio lighting with warm golden edge light, crystal clear reflections, high-end perfume and beauty brand campaign, photorealistic 8k, sharp focus.`;
+Return ONLY the raw valid SVG inside <svg viewBox="0 0 1080 1080" ...> ... </svg> with no markdown backticks or commentary.`;
+
+          const svgResponse = await callGemini(geminiPosterPrompt, "You are a master SVG graphic designer and Art Director. Output ONLY raw SVG code.", { maxOutputTokens: 4096 });
+          const svgMatch = svgResponse.match(/<svg[\s\S]*<\/svg>/);
+          if (svgMatch) {
+            const cleanSvg = svgMatch[0].trim();
+            const base64Svg = Buffer.from(cleanSvg).toString("base64");
+            const dataUri = `data:image/svg+xml;base64,${base64Svg}`;
+
+            return NextResponse.json({
+              success: true,
+              imageUrl: dataUri,
+              svgContent: cleanSvg,
+              format: format || "1:1",
+            });
+          }
+        } catch (svgErr) {
+          console.warn("Error generando póster SVG con Gemini:", svgErr);
         }
 
-        // Limpiar saltos de línea y comillas dobles innecesarias
-        const cleanPrompt = enhancedPrompt.replace(/[\r\n]+/g, " ").replace(/"/g, "").trim();
-
-        // 2. Generador de imagen publicitaria (alta resolución y confiabilidad inmediata)
-        const seed = Math.floor(Math.random() * 899999) + 100000;
-        const encoded = encodeURIComponent(cleanPrompt);
-        const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
-
+        // Fallback a test-art.svg local o URL segura
         return NextResponse.json({
           success: true,
-          imageUrl,
-          enhancedPrompt: cleanPrompt,
+          imageUrl: "/test-art.svg",
           format: format || "1:1",
         });
       } catch (err: any) {

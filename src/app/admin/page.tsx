@@ -7653,6 +7653,12 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 src={mktGeneratedImage}
                                 alt="Nano Banana Campaign Art"
                                 className="absolute inset-0 w-full h-full object-cover z-0"
+                                onError={(e) => {
+                                  // Fallback inmediato si una URL externa falla
+                                  if (e.currentTarget.src !== "/test-art.svg") {
+                                    e.currentTarget.src = "/test-art.svg";
+                                  }
+                                }}
                               />
                             ) : (
                               <>

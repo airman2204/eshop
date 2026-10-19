@@ -1,0 +1,81 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="1080" height="1080" fill="#0F3E36"/>
+
+  <!-- Gold Foil Geometric Frame -->
+  <!-- Outer gold band -->
+  <rect x="40" y="40" width="1000" height="1000" fill="#E3B888"/>
+  <!-- Inner emerald cutout (to create the gold border effect) -->
+  <rect x="45" y="45" width="990" height="990" fill="#0F3E36"/>
+  <!-- Second, thinner inner gold band -->
+  <rect x="70" y="70" width="940" height="940" fill="#E3B888"/>
+  <!-- Main content area background -->
+  <rect x="75" y="75" width="930" height="930" fill="#0F3E36"/>
+
+  <!-- Definitions for gradients and filters -->
+  <defs>
+    <!-- Gold gradient for the bottle cap -->
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="50%" stop-color="#E3B888"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </linearGradient>
+
+    <!-- Glass gradient for the bottle body -->
+    <linearGradient id="bottleGlassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="25%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="75%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Liquid gradient (emerald green, matching background) -->
+    <linearGradient id="liquidGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F3E36" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#0F3E36" stop-opacity="1"/>
+    </linearGradient>
+
+    <!-- Gaussian blur filter for mist effect -->
+    <filter id="mistBlur">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="15"/>
+    </filter>
+  </defs>
+
+  <!-- Perfume Bottle Illustration -->
+  <!-- The entire bottle group is scaled and translated to fit the poster -->
+  <g transform="translate(540, 650) scale(0.6)">
+
+    <!-- Bottle Cap -->
+    <rect x="-70" y="-320" width="140" height="90" rx="10" ry="10" fill="url(#capGradient)"/>
+    <ellipse cx="0" cy="-320" rx="70" ry="15" fill="url(#capGradient)"/> <!-- Top surface of the cap -->
+    <ellipse cx="0" cy="-230" rx="70" ry="15" fill="url(#capGradient)" opacity="0.8"/> <!-- Bottom surface of the cap -->
+    <ellipse cx="0" cy="-320" rx="50" ry="10" fill="#FFFFFF" opacity="0.6"/> <!-- Highlight on cap top -->
+
+    <!-- Bottle Neck -->
+    <rect x="-30" y="-230" width="60" height="50" fill="#C0C0C0" opacity="0.3"/>
+
+    <!-- Bottle Body - Outer glass layer (using a complex path for shape) -->
+    <path d="M-120 100 C-140 100 -160 80 -160 50 L -160 -100 C -160 -150 -120 -180 -80 -180 L 80 -180 C 120 -180 160 -150 160 -100 L 160 50 C 160 80 140 100 120 100 Z"
+          fill="url(#bottleGlassGradient)" stroke="#E3B888" stroke-width="2"/>
+
+    <!-- Liquid inside the bottle -->
+    <path d="M-110 90 C-130 90 -140 70 -140 50 L -140 -90 C -140 -130 -110 -160 -70 -160 L 70 -160 C 110 -160 140 -130 140 -90 L 140 50 C 140 70 130 90 110 90 Z"
+          fill="url(#liquidGradient)"/>
+
+    <!-- Lighting Reflections on glass body -->
+    <rect x="-140" y="-120" width="20" height="150" fill="#FFFFFF" opacity="0.4"/>
+    <rect x="120" y="-100" width="20" height="120" fill="#FFFFFF" opacity="0.3"/>
+    <path d="M-110 -150 Q -50 -180 0 -170 Q 50 -180 110 -150 L 90 -140 Q 50 -170 0 -160 Q -50 -170 -90 -140 Z" fill="#FFFFFF" opacity="0.2"/>
+    <ellipse cx="0" cy="-170" rx="60" ry="10" fill="#FFFFFF" opacity="0.3"/>
+
+    <!-- Mist effect around the bottle base -->
+    <ellipse cx="0" cy="100" rx="180" ry="40" fill="#FFFFFF" opacity="0.15" filter="url(#mistBlur)"/>
+    <ellipse cx="0" cy="110" rx="160" ry="30" fill="#FFFFFF" opacity="0.1" filter="url(#mistBlur)"/>
+  </g>
+
+  <!-- Elegant Typography: FOXDROP MÉXICO -->
+  <text x="540" y="250" text-anchor="middle" font-family="Playfair Display, Georgia, serif" font-size="80" fill="#E3B888" font-weight="bold">FOXDROP</text>
+  <text x="540" y="340" text-anchor="middle" font-family="Playfair Display, Georgia, serif" font-size="50" fill="#E3B888">MÉXICO</text>
+
+</svg>
