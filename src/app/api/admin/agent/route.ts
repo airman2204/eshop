@@ -121,9 +121,12 @@ export async function POST(req: NextRequest) {
     // ══════════════════════════════════════════════════════════════════════════════
 
 
-    // ── A. MÉTRICAS DEL EMBUDO Y CONTROL FINANCIERO HACIA $40,000 MXN ──
+    // ── A. MÉTRICAS DEL EMBUDO Y CONTROL FINANCIERO DINÁMICO (EJ. 10X, $40K, $100K) ──
     if (action === "mkt_get_funnel_metrics") {
       try {
+        const { targetMonthly: bodyTarget } = body;
+        const targetMonthly = Number(bodyTarget) > 0 ? Number(bodyTarget) : 40000;
+
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
@@ -141,8 +144,8 @@ export async function POST(req: NextRequest) {
         const monthlySales = paidOrders.reduce((acc: number, o: any) => acc + (Number(o.total) || 0), 0);
         const orderCount = paidOrders.length;
         const avgTicket = orderCount > 0 ? Math.round(monthlySales / orderCount) : 450;
-        const targetMonthly = 40000;
         const remainingToTarget = Math.max(0, targetMonthly - monthlySales);
+
         const estimatedOrdersNeeded = avgTicket > 0 ? Math.ceil(remainingToTarget / avgTicket) : 0;
         const pacingPercent = Number(((monthlySales / targetMonthly) * 100).toFixed(1));
 
@@ -184,7 +187,8 @@ export async function POST(req: NextRequest) {
     // ── B. DIRECTOR DE MARKETING (CRITERIO DE GERENTE HUMANO SENIOR + CONTROL DE APROBACIÓN) ──
     if (action === "mkt_director_strategy") {
       try {
-        const { feedback } = body;
+        const { feedback, targetMonthly: bodyTarget } = body;
+        const targetMonthly = Number(bodyTarget) > 0 ? Number(bodyTarget) : 40000;
 
         // 1. Obtener ventas del mes
         const startOfMonth = new Date();
@@ -227,7 +231,7 @@ export async function POST(req: NextRequest) {
 
         const systemPrompt = `Eres el Director de Marketing Ejecutivo de FoxDrop México (tienda online oficial: foxdrop.mx).
 Tu perfil es el de un Gerente de Marketing Senior con maestría en e-commerce y branding de lujo contemporáneo.
-Tu objetivo primordial es llevar y mantener las ventas de la tienda online en $40,000 MXN mensuales netos, convirtiendo el tráfico de Instagram y TikTok en compras directas en foxdrop.mx.
+Tu objetivo primordial es llevar y mantener las ventas de la tienda online hacia la meta fijada por el CEO de $${targetMonthly.toLocaleString()} MXN mensuales netos, convirtiendo el tráfico de Instagram y TikTok en compras directas en foxdrop.mx.
 
 REGLAS INQUEBRANTABLES:
 1. NUNCA menciones a Puebla, entregas locales ni puntos de encuentro. FoxDrop es una marca nacional con envíos garantizados y asegurados a toda la República Mexicana.
@@ -236,7 +240,8 @@ REGLAS INQUEBRANTABLES:
 4. Diagnostica por qué se están perdiendo ventas leyendo los carritos abandonados del embudo y los productos del catálogo.`;
 
         const prompt = `Analiza la situación comercial actual de FoxDrop:
-- Ventas acumuladas este mes: $${monthlySales} MXN (Meta mensual: $40,000 MXN).
+- Ventas acumuladas este mes: $${monthlySales} MXN (Meta mensual fijada: $${targetMonthly.toLocaleString()} MXN).
+
 - Carritos abandonados en el mes: ${abandonedCartsCount} carritos con un valor de $${abandonedCartsTotal} MXN en el aire.
 - Catálogo de productos disponibles con stock en bodega:
 ${JSON.stringify(catalog, null, 2)}

@@ -433,6 +433,17 @@ export default function AdminCRM() {
   const [flyerCustomBadge, setFlyerCustomBadge] = useState<string>('OFERTA ESPECIAL');
 
   // ─── ESTADOS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
+  const [targetSalesGoal, setTargetSalesGoal] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('foxdrop_mkt_sales_goal');
+      return saved ? Number(saved) : 50000;
+    } catch {
+      return 50000;
+    }
+  });
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoalInput, setTempGoalInput] = useState<string>('50000');
+
   const [mktFunnelMetrics, setMktFunnelMetrics] = useState<{
     monthlySales: number;
     targetMonthly: number;
@@ -447,12 +458,12 @@ export default function AdminCRM() {
     conversionRate: number;
   }>({
     monthlySales: 0,
-    targetMonthly: 40000,
+    targetMonthly: 50000,
     pacingPercent: 0,
     orderCount: 0,
     avgTicket: 450,
-    remainingToTarget: 40000,
-    estimatedOrdersNeeded: 88,
+    remainingToTarget: 50000,
+    estimatedOrdersNeeded: 110,
     abandonedCartsCount: 0,
     abandonedCartsTotal: 0,
     estimatedVisitors: 0,
@@ -467,6 +478,7 @@ export default function AdminCRM() {
   const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
   const [mktPublishing, setMktPublishing] = useState(false);
   const [mktPublishSuccess, setMktPublishSuccess] = useState<string | null>(null);
+
 
 
   // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
@@ -2199,13 +2211,17 @@ export default function AdminCRM() {
   };
 
   // ─── HANDLERS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
-  const handleLoadFunnelMetrics = async () => {
+  const handleLoadFunnelMetrics = async (overrideTarget?: number) => {
     setMktLoadingMetrics(true);
+    const targetToUse = overrideTarget || targetSalesGoal;
     try {
       const res = await fetch('/api/admin/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mkt_get_funnel_metrics' }),
+        body: JSON.stringify({
+          action: 'mkt_get_funnel_metrics',
+          targetMonthly: targetToUse,
+        }),
       });
       const data = await res.json();
       if (data.success && data.metrics) {
@@ -2218,6 +2234,16 @@ export default function AdminCRM() {
     }
   };
 
+  const handleUpdateSalesGoal = (newGoal: number) => {
+    const validGoal = Math.max(1000, newGoal);
+    setTargetSalesGoal(validGoal);
+    try {
+      localStorage.setItem('foxdrop_mkt_sales_goal', validGoal.toString());
+    } catch {}
+    setIsEditingGoal(false);
+    handleLoadFunnelMetrics(validGoal);
+  };
+
   const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
     setMktLoadingStrategy(true);
     try {
@@ -2227,6 +2253,7 @@ export default function AdminCRM() {
         body: JSON.stringify({
           action: 'mkt_director_strategy',
           feedback: userFeedbackParam || mktUserFeedback || '',
+          targetMonthly: targetSalesGoal,
         }),
       });
       const data = await res.json();
@@ -2245,6 +2272,7 @@ export default function AdminCRM() {
       setMktLoadingStrategy(false);
     }
   };
+
 
   const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string) => {
     setMktGeneratingImage(true);
@@ -7310,8 +7338,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         : 'text-emerald-300 hover:text-white hover:bg-slate-700/50'
                     }`}
                   >
-                    <span>🎯 Suite Marketing ($40K)</span>
+                    <span>🎯 Director de Marketing & Embudo</span>
                   </button>
+
                   <button
                     onClick={() => setAgentActiveTab('weekly_plan')}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -7376,14 +7405,81 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     </div>
                   </div>
 
-                  {/* Barra de progreso real */}
-                  <div className="bg-[#FBF9F5] border border-stone-200 rounded-2xl p-4 min-w-[320px]">
+                  {/* Barra de progreso con Meta Editable (ej. 10X, $40K, $100K) */}
+                  <div className="bg-[#FBF9F5] border border-stone-200 rounded-2xl p-4 min-w-[340px]">
                     <div className="flex justify-between items-center text-xs mb-1.5 font-bold">
-                      <span className="text-stone-600">Meta del Mes:</span>
-                      <span className="text-[#E65F2B] font-black text-sm">
-                        ${mktFunnelMetrics.monthlySales.toLocaleString()} / $40,000 MXN
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-stone-600">Meta del Mes:</span>
+                        {isEditingGoal ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              value={tempGoalInput}
+                              onChange={e => setTempGoalInput(e.target.value)}
+                              className="w-24 px-1.5 py-0.5 text-xs font-bold border border-stone-300 rounded focus:outline-none"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleUpdateSalesGoal(Number(tempGoalInput))}
+                              className="px-2 py-0.5 bg-[#0F3E36] text-white rounded text-[10px] font-bold"
+                            >
+                              Guardar
+                            </button>
+                            <button
+                              onClick={() => setIsEditingGoal(false)}
+                              className="px-1.5 py-0.5 text-stone-400 hover:text-stone-600 text-[10px]"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setTempGoalInput(targetSalesGoal.toString());
+                              setIsEditingGoal(true);
+                            }}
+                            className="text-[#E65F2B] hover:underline flex items-center gap-1 font-black text-sm"
+                            title="Haz clic para editar la meta del mes"
+                          >
+                            <span>${targetSalesGoal.toLocaleString()} MXN</span>
+                            <span className="text-[10px] text-stone-400">✏️</span>
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-stone-800 font-extrabold text-xs">
+                        ${mktFunnelMetrics.monthlySales.toLocaleString()}
                       </span>
                     </div>
+
+                    {/* Accesos rápidos de metas (5X, 10X, $40K, $100K) */}
+                    <div className="flex items-center gap-1.5 mb-2 text-[10px]">
+                      <span className="text-stone-400">Objetivos:</span>
+                      <button
+                        onClick={() => handleUpdateSalesGoal(40000)}
+                        className={`px-1.5 py-0.5 rounded font-bold transition ${
+                          targetSalesGoal === 40000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                        }`}
+                      >
+                        $40K
+                      </button>
+                      <button
+                        onClick={() => handleUpdateSalesGoal(75000)}
+                        className={`px-1.5 py-0.5 rounded font-bold transition ${
+                          targetSalesGoal === 75000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                        }`}
+                      >
+                        🚀 5X ($75K)
+                      </button>
+                      <button
+                        onClick={() => handleUpdateSalesGoal(150000)}
+                        className={`px-1.5 py-0.5 rounded font-bold transition ${
+                          targetSalesGoal === 150000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                        }`}
+                      >
+                        ⚡ 10X ($150K)
+                      </button>
+                    </div>
+
                     <div className="w-full bg-stone-200 h-2.5 rounded-full overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-[#0F3E36] to-[#E65F2B] h-full rounded-full transition-all duration-700"
@@ -7398,17 +7494,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                 </div>
 
+
                 {/* 2. EMBUDO DE CONVERSIÓN & LEADS (4 ETAPAS REALES DE SUPABASE) */}
                 <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
                   <div className="flex items-center justify-between mb-3 pb-2 border-b border-stone-100">
                     <span className="text-xs font-bold text-stone-700">Embudo de Conversión (Últimos 30 Días):</span>
                     <button
-                      onClick={handleLoadFunnelMetrics}
+                      onClick={() => handleLoadFunnelMetrics()}
                       disabled={mktLoadingMetrics}
                       className="text-xs text-[#0F3E36] font-bold hover:underline flex items-center gap-1"
                     >
                       <span>{mktLoadingMetrics ? 'Actualizando...' : '↻ Refrescar Datos Reales'}</span>
                     </button>
+
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
