@@ -1873,21 +1873,27 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* 3. SLIDE POR DEFECTO: TEXTO VIVO DINÁMICO & BOTÓN */}
-                    {isDefaultSlide ? (
+                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
+                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
                       <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
                         <div className="space-y-0.5 max-w-[210px]">
-                          <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                            {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                          </span>
+                          {(currentSlide.subtitle || isDefaultSlide) && (
+                            <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                            </span>
+                          )}
                           <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
-                            {user?.name 
-                              ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                              : '¡Hola! El mundo, directo a tu puerta.'}
+                            {isDefaultSlide 
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
+                              : currentSlide.title}
                           </h2>
-                          <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
-                            Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                          </p>
+                          {isDefaultSlide && (
+                            <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
+                              Descubre tesoros mundiales con envío rápido y calidad garantizada.
+                            </p>
+                          )}
                         </div>
 
                         {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
@@ -1908,19 +1914,6 @@ export default function TiendaFoxDrop() {
                           </div>
                         )}
                       </div>
-                    ) : (
-                      /* SLIDE PERSONALIZADO: TODO EL BANNER ES UN ENLACE DIRECTO SIN TEXTOS NI BOTONES ENCIMADOS */
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(currentSlide.cta_category || 'Todas');
-                          setActiveTab('all');
-                          const el = document.getElementById('catalog-section');
-                          el?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="absolute inset-0 w-full h-full z-20 cursor-pointer focus:outline-none"
-                        aria-label={currentSlide.title || 'Ver Promoción'}
-                      />
                     )}
                   </div>
 
@@ -1974,21 +1967,27 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* 3. SLIDE POR DEFECTO: TEXTO VIVO DINÁMICO & BOTÓN */}
-                    {isDefaultSlide ? (
+                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
+                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
                       <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
                         <div className="space-y-1.5 max-w-[340px]">
-                          <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                            {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                          </span>
+                          {(currentSlide.subtitle || isDefaultSlide) && (
+                            <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                            </span>
+                          )}
                           <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
-                            {user?.name 
-                              ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                              : '¡Hola! El mundo, directo a tu puerta.'}
+                            {isDefaultSlide 
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
+                              : currentSlide.title}
                           </h1>
-                          <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
-                            Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                          </p>
+                          {isDefaultSlide && (
+                            <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
+                              Descubre tesoros mundiales con envío rápido y calidad garantizada.
+                            </p>
+                          )}
                         </div>
 
                         {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
@@ -2009,19 +2008,6 @@ export default function TiendaFoxDrop() {
                           </div>
                         )}
                       </div>
-                    ) : (
-                      /* SLIDE PERSONALIZADO: TODO EL BANNER ES UN ENLACE DIRECTO SIN TEXTOS NI BOTONES ENCIMADOS */
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(currentSlide.cta_category || 'Todas');
-                          setActiveTab('all');
-                          const el = document.getElementById('catalog-section');
-                          el?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="absolute inset-0 w-full h-full z-20 cursor-pointer focus:outline-none"
-                        aria-label={currentSlide.title || 'Ver Promoción'}
-                      />
                     )}
                   </div>
 
