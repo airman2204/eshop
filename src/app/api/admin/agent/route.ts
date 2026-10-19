@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── B. DIRECTOR DE MARKETING (CRITERIO DE GERENTE HUMANO SENIOR + CONTROL DE APROBACIÓN) ──
+    // ── B1. FASE 1: DIRECTOR DE MARKETING (DIAGNÓSTICO COMERCIAL + EJE ESTRATÉGICO ÚNICAMENTE) ──
     if (action === "mkt_director_strategy") {
       try {
         const { feedback, targetMonthly: bodyTarget } = body;
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
         const abandonedCartsCount = carts.length;
         const abandonedCartsTotal = carts.reduce((acc: number, c: any) => acc + (Number(c.total) || 0), 0);
 
-        // 3. Catálogo real de productos
+        // 3. Catálogo real de productos con stock
         const { data: productsData } = await supabase
           .from("products")
           .select("id, title, public_price, stock, category_id, images, is_active")
@@ -230,108 +230,36 @@ export async function POST(req: NextRequest) {
         }));
 
         const systemPrompt = `Eres el Director de Marketing Ejecutivo de FoxDrop México (tienda online oficial: foxdrop.mx).
-Tu perfil es el de un Gerente de Marketing Senior con maestría en e-commerce internacional, branding de lujo contemporáneo y crecimiento multicanal.
-Tu objetivo primordial es llevar y mantener las ventas de la tienda online hacia la meta fijada por el CEO de $${targetMonthly.toLocaleString()} MXN mensuales netos, convirtiendo el tráfico de Instagram y TikTok en compras directas en foxdrop.mx.
+Tu perfil es el de un Gerente de Negocios Senior con maestría en e-commerce internacional.
+Tu trabajo en esta etapa es EXCLUSIVAMENTE analizar la salud comercial de la tienda y dictar el Tema Estratégico de la semana.
+NUNCA redactes copys para redes sociales ni diseñes prompts visuales en esta fase (eso lo hará tu equipo después).
+REGLAS OBLIGATORIAS:
+1. FoxDrop es una plataforma nacional de importación segura a todo México (nunca menciones entregas locales ni Puebla).
+2. FoxDrop NO es solo cosmética ni Bath & Body Works: es un catálogo curado multimarca de importaciones exclusivas.
+3. Habla con rigor de Gerente de Negocios analítico a tu CEO Mario.`;
 
-REGLAS INQUEBRANTABLES DE NEGOCIO Y MARCA:
-1. NUNCA menciones a Puebla, entregas locales ni puntos de encuentro. FoxDrop es una plataforma nacional con envíos asegurados y garantizados a toda la República Mexicana.
-2. FoxDrop NO es solo una tienda de Bath & Body Works ni de fragancias. FoxDrop es un hub curado de importaciones exclusivas multimarca (cuidado personal, accesorios de tendencia, belleza, artículos virales difíciles de conseguir en México).
-3. ESTRATEGIA SEMANAL DUAL OBLIGATORIA (CALENDARIO DE 7 DÍAS):
-   El Director debe proponer un plan semanal completo equilibrando con precisión:
-   - DÍAS DE TIENDA GLOBAL (Pilar institucional: Garantía de importación oficial 100%, compras seguras sin líos de aduanas, envíos asegurados a todo México, por qué comprar en foxdrop.mx).
-   - DÍAS DE PRODUCTO DE STOCK (Impulso directo del catálogo real con rotación de inventario y ticket promedio).
-4. LÍNEA GRÁFICA Y DE DISEÑO EDITORIAL (NANO BANANA BRAND SYSTEM):
-   - Cada pieza gráfica debe tener diseño de portada de revista de lujo.
-   - Paleta corporativa: Verde Bosque Profundo (#0F3E36), Acento Naranja Zorro (#E65F2B), Dorado Caramelo (#E3B888) y Marfil/Crema (#FBF9F5).
-   - Componentes visuales obligatorios en el diseño:
-     * Badge superior / Eyebrow: "IMPORTACIÓN EXCLUSIVA" o "CURADURÍA FOXDROP".
-     * Titular / Hook tipográfico integrado en el arte publicitario.
-     * Marco editorial con bordes dorados (#E3B888) y reflejo de iluminación de estudio sobre el producto.
-     * Sello de confianza oficial: "foxdrop.mx • Envíos Asegurados a todo México".
-5. Habla con rigor de Gerente de Negocios humano a tu CEO/Comandante (Mario). Sé analítico, empático, exigente y directo.`;
+        const prompt = `Analiza la situación comercial de FoxDrop:
+- Ventas del mes: $${monthlySales} MXN (Meta: $${targetMonthly.toLocaleString()} MXN).
+- Carritos abandonados: ${abandonedCartsCount} ($${abandonedCartsTotal} MXN en el aire).
+- Catálogo en bodega: ${JSON.stringify(catalog.map((c: any) => ({ id: c.id, title: c.title, price: c.price, stock: c.stock })), null, 2)}
+${feedback ? `- Indicación estratégica del CEO Mario: "${feedback}"` : ""}
 
-        const prompt = `Analiza la situación comercial actual de FoxDrop:
-- Ventas acumuladas este mes: $${monthlySales} MXN (Meta mensual fijada: $${targetMonthly.toLocaleString()} MXN).
-- Carritos abandonados en el mes: ${abandonedCartsCount} carritos con un valor de $${abandonedCartsTotal} MXN en el aire.
-- Catálogo de productos disponibles con stock en bodega:
-${JSON.stringify(catalog, null, 2)}
-${feedback ? `- INDICACIÓN O AJUSTE EXCLUSIVO DE MARIO (CEO): "${feedback}"` : ""}
-
-Formula una estrategia semanal completa que combine la visión global de la tienda FoxDrop y la rotación de stock del catálogo. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+Devuelve ÚNICAMENTE un JSON con este formato exacto:
 {
-  "weeklyTheme": "Título inspirador y conciso de la campaña semanal",
+  "weeklyTheme": "Nombre del eje estratégico semanal (ej. Confianza Total en Importaciones o Renueva tu Cuidado Personal)",
+  "funnelDiagnostic": "Diagnóstico claro y analítico explicando dónde está la fuga de ingresos este mes y qué ángulo la resolverá",
+  "strategicAngle": "Justificación estratégica de la campaña con criterio comercial",
   "storeWideStrategy": {
-    "pillar": "Pilar global de la tienda (ej. Confianza y Envíos Asegurados Nacionales / Descubrimiento Multimarca / Lotes Limitados de Temporada)",
-    "valueProposition": "Propuesta de valor global de la tienda explicada en 2 oraciones para posicionar a foxdrop.mx en la mente del comprador mexicano",
-    "callToAction": "Llamado a la acción institucional para descubrir todo el catálogo"
-  },
-  "weeklyParrilla": [
-    {
-      "day": "Lunes",
-      "type": "TIENDA_GLOBAL",
-      "title": "Apertura & Garantía de Importación FoxDrop",
-      "productFocus": "Garantía Oficial y Despacho Seguro a todo México",
-      "visualPrompt": "Fotografía publicitaria de estudio comercial de lujo para FoxDrop México. Caja de importación prémium entreabierta con listón satinado, sello de lacre dorado, iluminación suave de estudio sobre pedestal de mármol esmeralda (#0F3E36), reflejos dorados cálidos (#E3B888), estética editorial Vogue/GQ 8k, ultra nítida, sin textos borrosos.",
-      "designConcept": {
-        "layoutStyle": "editorial_luxury",
-        "primaryColor": "#0F3E36",
-        "accentColor": "#E3B888",
-        "textColor": "#FBF9F5",
-        "eyebrowBadge": "IMPORTACIÓN OFICIAL • 100% AUTÉNTICO",
-        "bigHeadline": "Tu Atajo Seguro a lo Mejor del Mundo",
-        "subHeadline": "Garantía de entrega protegida a todo México sin trámites de aduana.",
-        "trustTag": "Envíos Asegurados a Toda la República",
-        "ctaBadge": "foxdrop.mx"
-      },
-      "copy": "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
-      "cta": "Explora la tienda en foxdrop.mx",
-      "hashtags": ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"]
-    }
-  ],
-  "funnelDiagnostic": "Diagnóstico claro y profesional explicando por qué se están perdiendo ventas y cómo el contenido de la semana resolverá esa fuga.",
-  "strategicAngle": "Justificación estratégica de la campaña con criterio de gerente humano.",
-  "targetWeeklyGoal": 10000,
-  "teamTasks": {
-    "director": {
-      "role": "Director de Marketing",
-      "action": "Diagnóstico de embudo, diseño de parrilla semanal equilibrada (marca + stock) y supervisión del equipo"
-    },
-    "analyst": {
-      "role": "Analista de Lotes & Inventario",
-      "selectedProduct": "Nombre del producto o colección elegida del catálogo",
-      "marginInsight": "Análisis de rotación y justificación financiera de por qué este artículo impulsará el ticket promedio"
-    },
-    "copywriter": {
-      "role": "Copywriter Creativo",
-      "hook": "Gancho magnético de 3 segundos",
-      "angle": "Enfoque persuasivo que equilibra la confianza de FoxDrop y la deseabilidad del producto"
-    },
-    "designer": {
-      "role": "Estilista Visual & Diseñador Gráfico",
-      "artDirection": "Composición de diseño editorial publicitario: tipografía serif contemporánea, atmósfera, iluminación de estudio, bordes, sellos y paleta de color.",
-      "creativePrompt": "Prompt visual detallado y rico que describe exactamente el encuadre, iluminación, fondos, tipografía y sensaciones estéticas para convertirlo en propuestas de diseño"
-    },
-    "concierge": {
-      "role": "Concierge de Ventas & DMs",
-      "conversionStrategy": "Atención a objeciones frecuentes en comentarios (autenticidad, envíos a todo México) y cierre directo a foxdrop.mx"
-    }
+    "pillar": "Pilar institucional de la plataforma (ej. Envíos Seguros a Todo México / Garantía de Autenticidad / Compras sin Aduana)",
+    "valueProposition": "Propuesta de valor institucional para foxdrop.mx explicada en 2 oraciones"
   },
   "featuredProduct": {
-    "id": "id del producto seleccionado del catálogo",
-    "title": "nombre del producto",
-    "price": 599,
-    "image": "url de imagen"
+    "id": "${catalog[0]?.id || 'prod_1'}",
+    "title": "${catalog[0]?.title || 'Artículo Exclusivo FoxDrop'}",
+    "price": ${catalog[0]?.price || 499},
+    "image": "${catalog[0]?.image || ''}"
   },
-  "igPost": {
-    "headline": "Gancho elegante que detiene el scroll",
-    "caption": "Copy persuasivo estructurado que posiciona a FoxDrop como la tienda confiable de importación en México y cierra con enlace a foxdrop.mx/tienda",
-    "hashtags": ["#FoxDrop", "#ImportacionesMexico", "#TendenciasMexico", "#Exclusivo"]
-  },
-  "tiktokReel": {
-    "videoHook": "Frase impactante de 3 segundos en pantalla",
-    "audioConcept": "Propuesta sonora o de ritmo de edición dinámica",
-    "caption": "Copy conciso para TikTok destacando foxdrop.mx como tu atajo seguro al mundo"
-  }
+  "analystInsight": "Justificación de inventario de por qué este artículo o categoría impulsará el ticket promedio de compra esta semana"
 }`;
 
         const aiResponse = await callGemini(prompt, systemPrompt, { responseJson: true });
@@ -339,40 +267,198 @@ Formula una estrategia semanal completa que combine la visión global de la tien
         try {
           parsed = JSON.parse(aiResponse);
         } catch {
-          // Si el LLM devolvió markdown ```json ... ``` o saltos de línea / comas inválidas
-          try {
-            const clean = aiResponse
-              .replace(/^```json\s*/i, "")
-              .replace(/^```\s*/i, "")
-              .replace(/```$/i, "")
-              .trim();
-            parsed = JSON.parse(clean);
-          } catch {
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              try {
-                parsed = JSON.parse(jsonMatch[0]);
-              } catch {
-                // Limpieza de caracteres de control o comas finales
-                const sanitized = jsonMatch[0]
-                  .replace(/,\s*([}\]])/g, "$1") // remover trailing commas
-                  .replace(/[\u0000-\u001F]+/g, " "); // remover caracteres de control ASCII
-                parsed = JSON.parse(sanitized);
-              }
-            }
+          const clean = aiResponse.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+          const jsonMatch = clean.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0].replace(/,\s*([}\]])/g, "$1").replace(/[\u0000-\u001F]+/g, " "));
           }
         }
 
         if (parsed) {
           parsed.id = `mkt_strat_${Date.now()}`;
           parsed.createdAt = new Date().toISOString();
-          parsed.waitingApproval = true;
           return NextResponse.json({ success: true, strategy: parsed });
         }
 
-        throw new Error("No se pudo estructurar la propuesta estratégica en formato JSON");
+        throw new Error("No se pudo estructurar el diagnóstico del Director");
       } catch (err: any) {
         console.error("Error en mkt_director_strategy:", err);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
+    // ── B2. FASE 2: COPYWRITER & REDES (GENERA PARRILLA 7 DÍAS CON HOOKS Y COPYS BASADOS EN EL EJE APROBADO) ──
+    if (action === "mkt_generate_copys") {
+      try {
+        const { weeklyTheme, strategicAngle, storePillar, featuredProductTitle, featuredProductId } = body;
+
+        const systemPrompt = `Eres el Copywriter Senior & Gestor de Redes Sociales de FoxDrop México (foxdrop.mx).
+Tu función es redactar una parrilla editorial completa de 7 días (Lunes a Domingo) basada estrictamente en la estrategia aprobada por el Director: "${weeklyTheme || 'Curaduría FoxDrop'}".
+REGLAS:
+1. Equilibra la semana: 3 a 4 días de TIENDA_GLOBAL (posicionamiento de plataforma, unboxing, compras seguras a México) y 3 a 4 días de PRODUCTO_STOCK (impulso a producto de bodega).
+2. Redacta copys profesionales con hooks atrapantes, enlaces inteligentes a foxdrop.mx y hashtags relevantes.
+3. NO generes prompts visuales ni código de diseño gráfico en este paso; concéntrate 100% en el texto y persuasión.`;
+
+        const prompt = `Estrategia aprobada por el Director:
+- Eje: "${weeklyTheme}"
+- Justificación: "${strategicAngle}"
+- Pilar de Tienda: "${storePillar}"
+- Producto Clave de Stock: "${featuredProductTitle || 'Curaduría FoxDrop'}" (ID: "${featuredProductId || ''}")
+
+Redacta la parrilla de los 7 días. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+{
+  "weeklyParrilla": [
+    {
+      "day": "Lunes",
+      "type": "TIENDA_GLOBAL",
+      "title": "Apertura & Garantía FoxDrop",
+      "headline": "Tu atajo seguro a lo mejor de USA sin aduanas",
+      "copy": "Comprar tus marcas favoritas del extranjero nunca fue tan fácil. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta la puerta de tu casa en cualquier parte de México.",
+      "cta": "Explora el catálogo oficial en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"]
+    },
+    {
+      "day": "Martes",
+      "type": "PRODUCTO_STOCK",
+      "title": "Enfoque de Stock en Bodega",
+      "headline": "Edición limitada disponible para entrega inmediata",
+      "copy": "Si buscabas ${featuredProductTitle || 'este artículo'}, ya está disponible en México sin semanas de espera ni sorpresas aduanales. Pide hoy y recíbelo protegido en tu domicilio.",
+      "cta": "Compra antes de que se agote en foxdrop.mx/tienda",
+      "hashtags": ["#FoxDrop", "#StockReal", "#EntregaInmediata"]
+    },
+    {
+      "day": "Miércoles",
+      "type": "TIENDA_GLOBAL",
+      "title": "Empaca Conmigo & Seguridad",
+      "headline": "Así viaja tu pedido con protección total",
+      "copy": "Cada orden en FoxDrop se embala con triple protección y sellos de seguridad. Porque sabemos el valor de lo que esperas, tu paquete viaja asegurado de principio a fin.",
+      "cta": "Conoce nuestra garantía en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#Unboxing", "#EmpaqueSeguro"]
+    },
+    {
+      "day": "Jueves",
+      "type": "PRODUCTO_STOCK",
+      "title": "El Regalo Perfecto",
+      "headline": "¿Buscando un detalle inolvidable?",
+      "copy": "Sorprende con una pieza original que no se consigue fácilmente en tiendas convencionales de México. Disponible con despacho prioritario.",
+      "cta": "Ordena en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#RegalosExclusivos", "#LujoAccesible"]
+    },
+    {
+      "day": "Viernes",
+      "type": "PRODUCTO_STOCK",
+      "title": "Últimas Piezas del Lote",
+      "headline": "Inventario limitado en bodega nacional",
+      "copy": "Nuestros lotes de importación vuelan rápido. Aprovecha el stock disponible este fin de semana antes de que vuelva a estar bajo pedido.",
+      "cta": "Asegura el tuyo en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#UltimasPiezas"]
+    },
+    {
+      "day": "Sábado",
+      "type": "TIENDA_GLOBAL",
+      "title": "Lifestyle & Descubrimiento",
+      "headline": "Lo mejor del mundo a un clic de distancia",
+      "copy": "FoxDrop es tu concierge de importaciones. Traemos lo que marca tendencia en el extranjero directo a tu hogar con pago seguro y seguimiento en tiempo real.",
+      "cta": "Descubre novedades en foxdrop.mx/tienda",
+      "hashtags": ["#FoxDrop", "#Lifestyle", "#TendenciasGlobales"]
+    },
+    {
+      "day": "Domingo",
+      "type": "TIENDA_GLOBAL",
+      "title": "Ruta Nacional de Despachos",
+      "headline": "Preparando envíos para toda la República",
+      "copy": "Todo listo en nuestro centro de despacho para salir este lunes a cualquier rincón de México. Tu compra llega segura y a tiempo.",
+      "cta": "Haz tu pedido hoy en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#EnviosMexico", "#ComprasOnline"]
+    }
+  ]
+}`;
+
+        const aiResponse = await callGemini(prompt, systemPrompt, { responseJson: true });
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(aiResponse);
+        } catch {
+          const clean = aiResponse.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+          const jsonMatch = clean.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0].replace(/,\s*([}\]])/g, "$1").replace(/[\u0000-\u001F]+/g, " "));
+          }
+        }
+
+        if (parsed && Array.isArray(parsed.weeklyParrilla)) {
+          return NextResponse.json({ success: true, weeklyParrilla: parsed.weeklyParrilla });
+        }
+
+        throw new Error("No se pudo estructurar la parrilla de copys");
+      } catch (err: any) {
+        console.error("Error en mkt_generate_copys:", err);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+      }
+    }
+
+    // ── B3. FASE 3: DISEÑADOR VISUAL (FORMULA EL PROMPT DE GEMINI EXCLUSIVO PARA EL DÍA SELECCIONADO) ──
+    if (action === "mkt_design_day_prompt") {
+      try {
+        const { dayPlan, productTitle, weeklyTheme } = body;
+        const isStoreGlobal = dayPlan?.type === "TIENDA_GLOBAL";
+        const dayName = dayPlan?.day || "Lunes";
+        const headline = dayPlan?.headline || dayPlan?.title || "Importación Oficial";
+
+        const systemPrompt = `Eres el Director de Arte & Diseñador Gráfico de FoxDrop México.
+Tu trabajo es formular un prompt de alta precisión fotográfica para Gemini Imagen / FLUX respetando el Manual de Identidad de Marca:
+- Colores oficiales: Verde Bosque Profundo (#0F3E36), Dorado Caramelo (#E3B888) y Acentos Naranja Zorro (#E65F2B).
+- Logotipo y Marca: "FOXDROP" con relieve y lema "TU ATAJO AL MUNDO".
+- Sello oficial: "foxdrop.mx • Envíos Asegurados a todo México".
+Si el día es TIENDA_GLOBAL: El protagonista visual es la plataforma (caja prémium de unboxing, lazos satinados, sello lacrado de zorro, mapas dorados de cobertura nacional y envíos aéreos). NUNCA coloques frascos o productos de stock en días de Tienda Global.
+Si el día es PRODUCTO_STOCK: El protagonista visual es el producto específico ("${productTitle || 'Artículo Exclusivo'}") sobre pedestal de mármol esmeralda con iluminación de estudio comercial.`;
+
+        const prompt = `Crea el prompt fotográfico editorial definitivo para el día ${dayName} (${dayPlan?.type}):
+- Tema de la semana: "${weeklyTheme || 'FoxDrop Oficial'}"
+- Título del post: "${dayPlan?.title || ''}"
+- Titular / Gancho: "${headline}"
+- Copy del día: "${dayPlan?.copy || ''}"
+
+Devuelve ÚNICAMENTE un JSON con:
+{
+  "dayVisualPrompt": "Prompt visual detallado y descriptivo en español listo para pegar en Gemini Web...",
+  "eyebrowBadge": "Texto superior pequeño",
+  "headline": "Titular editorial",
+  "subheadline": "Subtítulo de soporte",
+  "trustTag": "Sello de confianza"
+}`;
+
+        const aiResponse = await callGemini(prompt, systemPrompt, { responseJson: true });
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(aiResponse);
+        } catch {
+          const clean = aiResponse.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+          const jsonMatch = clean.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0].replace(/,\s*([}\]])/g, "$1").replace(/[\u0000-\u001F]+/g, " "));
+          }
+        }
+
+        if (parsed && parsed.dayVisualPrompt) {
+          return NextResponse.json({ success: true, ...parsed });
+        }
+
+        // Fallback robusto si Gemini devuelve texto plano
+        const fallbackPrompt = isStoreGlobal
+          ? `Fotografía publicitaria de estudio comercial para FoxDrop México. Caja prémium de importación verde bosque (#0F3E36) con sello lacrado dorado (#E3B888) y relieve "FOXDROP: TU ATAJO AL MUNDO", iluminación cinematográfica, sin productos específicos, atmósfera de plataforma de compras seguras a todo México 8k.`
+          : `Fotografía comercial publicitaria para FoxDrop México destacando ${productTitle || 'artículo exclusivo'}. Montado sobre pedestal de mármol esmeralda (#0F3E36), reflejos cálidos dorados (#E3B888), iluminación suave de estudio, ultra nítida 8k.`;
+
+        return NextResponse.json({
+          success: true,
+          dayVisualPrompt: fallbackPrompt,
+          eyebrowBadge: isStoreGlobal ? "PLATAFORMA OFICIAL • IMPORTACIÓN PROTEGIDA" : "STOCK CONFIRMADO • ENTREGA INMEDIATA",
+          headline,
+          subheadline: isStoreGlobal ? "Garantía de entrega protegida a todo México sin trámites de aduana." : "Disponible en bodega para despacho prioritario a toda la República.",
+          trustTag: "foxdrop.mx • Envíos Asegurados a todo México"
+        });
+      } catch (err: any) {
+        console.error("Error en mkt_design_day_prompt:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
       }
     }

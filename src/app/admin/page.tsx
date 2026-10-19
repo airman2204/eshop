@@ -546,6 +546,7 @@ export default function AdminCRM() {
     handleLoadFunnelMetrics(validGoal);
   };
 
+  // FASE 1: CONSULTAR AL DIRECTOR (SOLO ESTRATEGIA Y ENFOQUE)
   const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
     setMktLoadingStrategy(true);
     try {
@@ -557,7 +558,7 @@ export default function AdminCRM() {
       const data = await res.json();
       if (data.success && data.strategy) {
         setMktStrategy(data.strategy);
-        setMktWorkflowStep(1); // Se queda en Paso 1 (Dirección Estratégica) para que el CEO apruebe el ángulo antes de pasar a copys o diseño
+        setMktWorkflowStep(1); // Se queda en Fase 1 para revisión del CEO
       } else {
         alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
       }
@@ -565,6 +566,69 @@ export default function AdminCRM() {
       alert(`Error al contactar con el Director: ${err.message || 'Intenta de nuevo'}`);
     } finally {
       setMktLoadingStrategy(false);
+    }
+  };
+
+  // FASE 2: CONVOCAR AL COPYWRITER (REDACTA PARRILLA DE 7 DÍAS CON COPYS BASADOS EN EL EJE APROBADO)
+  const [mktLoadingCopys, setMktLoadingCopys] = useState(false);
+  const handleGenerateParrillaCopys = async () => {
+    if (!mktStrategy) return;
+    setMktLoadingCopys(true);
+    try {
+      const res = await fetchAgentApi({
+        action: 'mkt_generate_copys',
+        weeklyTheme: mktStrategy.weeklyTheme,
+        strategicAngle: mktStrategy.strategicAngle,
+        storePillar: mktStrategy.storeWideStrategy?.pillar || 'Garantía Oficial FoxDrop',
+        featuredProductTitle: mktStrategy.featuredProduct?.title || 'Curaduría FoxDrop',
+        featuredProductId: mktStrategy.featuredProduct?.id || '',
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.weeklyParrilla) && data.weeklyParrilla.length > 0) {
+        setMktStrategy((prev: any) => ({
+          ...prev,
+          weeklyParrilla: data.weeklyParrilla,
+        }));
+        setMktWorkflowStep(2);
+      } else {
+        alert(`Aviso: ${data.error || 'No se pudo redactar la parrilla de copys'}`);
+      }
+    } catch (err: any) {
+      alert(`Error con el Copywriter: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktLoadingCopys(false);
+    }
+  };
+
+  // FASE 3: CONVOCAR AL DISEÑADOR GRÁFICO (GENERA EL PROMPT VISUAL DE GEMINI EXCLUSIVO PARA EL DÍA SELECCIONADO)
+  const [mktLoadingDayPrompt, setMktLoadingDayPrompt] = useState(false);
+  const [mktDayPrompts, setMktDayPrompts] = useState<Record<number, string>>({});
+
+  const handleGenerateDayVisualPrompt = async (dayIdx: number) => {
+    const targetDayPlan = mktStrategy?.weeklyParrilla?.[dayIdx];
+    if (!targetDayPlan) return;
+    setMktLoadingDayPrompt(true);
+    try {
+      const res = await fetchAgentApi({
+        action: 'mkt_design_day_prompt',
+        dayPlan: targetDayPlan,
+        productTitle: mktStrategy.featuredProduct?.title || 'Colección Exclusiva',
+        weeklyTheme: mktStrategy.weeklyTheme,
+      });
+      const data = await res.json();
+      if (data.success && data.dayVisualPrompt) {
+        setMktDayPrompts(prev => ({
+          ...prev,
+          [dayIdx]: data.dayVisualPrompt,
+        }));
+        setMktWorkflowStep(3);
+      } else {
+        alert(`Aviso: ${data.error || 'No se pudo generar el prompt visual'}`);
+      }
+    } catch (err: any) {
+      alert(`Error con el Diseñador: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktLoadingDayPrompt(false);
     }
   };
 
@@ -7822,11 +7886,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 ¿Te convence esta dirección comercial?
                               </span>
                               <button
-                                onClick={() => setMktWorkflowStep(2)}
-                                className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+                                onClick={() => handleGenerateParrillaCopys()}
+                                disabled={mktLoadingCopys}
+                                className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                               >
-                                <span>Aprobar y Ver Copys de la Semana (Paso 2)</span>
-                                <span>→</span>
+                                <span>{mktLoadingCopys ? 'Redactando Parrilla con Copywriter...' : 'Aprobar Estrategia y Redactar Copys (Paso 2) →'}</span>
                               </button>
                             </div>
                           </div>
@@ -7852,14 +7916,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               Parrilla Editorial & Copywriting de los 7 Días
                             </h4>
                             <p className="text-xs text-stone-500">
-                              Cada día tiene su gancho, copy persuasivo, hashtags y enfoque balanceado (Tienda Global vs Stock).
+                              Revisa y ajusta los textos antes de pasar a la dirección de arte visual.
                             </p>
                           </div>
                           <button
-                            onClick={() => setMktWorkflowStep(3)}
-                            className="px-4 py-2 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                            onClick={() => handleGenerateDayVisualPrompt(mktSelectedDayIndex)}
+                            disabled={mktLoadingDayPrompt}
+                            className="px-4 py-2 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                           >
-                            <span>Pasar a Diseño Visual (Paso 3) →</span>
+                            <span>{mktLoadingDayPrompt ? 'Diseñando...' : 'Pasar a Diseño Visual (Paso 3) →'}</span>
                           </button>
                         </div>
 
@@ -7954,12 +8019,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   Llamado a la acción: <strong className="text-[#0F3E36]">{curDay.cta || 'foxdrop.mx/tienda'}</strong>
                                 </span>
                                 <button
-                                  onClick={() => {
-                                    setMktWorkflowStep(3);
-                                  }}
-                                  className="px-3.5 py-1.5 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer"
+                                  onClick={() => handleGenerateDayVisualPrompt(mktSelectedDayIndex)}
+                                  disabled={mktLoadingDayPrompt}
+                                  className="px-3.5 py-1.5 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
                                 >
-                                  Diseñar Arte de {curDay.day} →
+                                  {mktLoadingDayPrompt ? 'Diseñando...' : `Diseñar Arte de ${curDay.day} →`}
                                 </button>
                               </div>
                             </div>
@@ -8102,8 +8166,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         const currentHeadline = activeDayPlan.headline || activeDayPlan.title || (isStoreGlobal ? "Tu Atajo Seguro a lo Mejor de USA" : "Edición Limitada en Bodega");
                         const currentProduct = mktStrategy?.featuredProduct?.title || activeDayPlan.productFocus || "Colección Exclusiva FoxDrop";
 
-                        // PROMPT INTELIGENTE DIFERENCIADO (TIENDA GLOBAL vs PRODUCTO DE STOCK):
-                        const dayVisualPrompt = isStoreGlobal ? `Genera un póster publicitario institucional de alto prestigio para la plataforma de importaciones oficial FoxDrop México (foxdrop.mx).
+                        // PROMPT INTELIGENTE DIFERENCIADO (GENERADO POR EL DISEÑADOR O BASADO EN EL MANUAL):
+                        const customDayPrompt = mktDayPrompts[mktSelectedDayIndex];
+                        const dayVisualPrompt = customDayPrompt || (isStoreGlobal ? `Genera un póster publicitario institucional de alto prestigio para la plataforma de importaciones oficial FoxDrop México (foxdrop.mx).
 
 ESTE POST ES 100% INSTITUCIONAL DE LA TIENDA (NO ES DE UN PRODUCTO ESPECÍFICO):
 El objetivo es posicionar a foxdrop.mx como la tienda online mexicana más confiable, segura y veloz para conseguir lo mejor del extranjero sin aduanas ni riesgos.
@@ -8135,7 +8200,7 @@ ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
    - Badge superior: "STOCK CONFIRMADO • ENTREGA INMEDIATA".
 4. PRODUCTO Y COMPOSICIÓN:
    - Protagonista: ${currentProduct}.
-   - Montado sobre pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`;
+   - Montado sobre pedestal de mármol pulido esmeralda con reflejos de iluminación de estudio suave, sin distorsiones, calidad comercial 8k ultra nítida.`);
 
                         const activeDayImage = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
 
