@@ -7685,30 +7685,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                           {/* LIENZO DE DISEÑO EDITORIAL NANO BANANA / BRAND SYSTEM */}
                           <div className="aspect-square bg-[#0a231e] relative overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none border-b border-stone-200">
-                            {/* IMAGEN DE FONDO / FOTOGRAFÍA GENERADA FULL BLEED */}
-                            {mktGeneratedImage ? (
+                            {/* IMAGEN DE FONDO O FOTOGRAFÍA REAL DE PRODUCTO */}
+                            {mktGeneratedImage && !mktGeneratedImage.startsWith("data:image/svg+xml") && !mktGeneratedImage.includes(".svg") ? (
                               <img
                                 src={mktGeneratedImage}
                                 alt="Nano Banana Campaign Art"
                                 className="absolute inset-0 w-full h-full object-cover z-0"
-                                onError={(e) => {
-                                  // Fallback inmediato si una URL externa falla
-                                  if (e.currentTarget.src !== "/test-art.svg") {
-                                    e.currentTarget.src = "/test-art.svg";
-                                  }
-                                }}
                               />
                             ) : (
                               <>
-                                <div className="absolute inset-0 bg-radial from-[#13493f]/80 via-[#0a231e] to-[#061512] z-0" />
-                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0" />
+                                <div className="absolute inset-0 bg-radial from-[#13493f]/90 via-[#0a231e] to-[#040e0c] z-0" />
+                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:28px_28px] opacity-15 z-0" />
+
+                                {/* Halo dorado de estudio publicitario */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-[#E3B888]/15 blur-3xl pointer-events-none z-0" />
+
+                                {/* Fotografía real de producto de catálogo (Supabase) recortada y con sombra flotante */}
                                 {mktStrategy?.featuredProduct?.image && (
-                                  <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
-                                    <img
-                                      src={mktStrategy.featuredProduct.image}
-                                      alt="Product"
-                                      className="max-w-full max-h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.65)]"
-                                    />
+                                  <div className="absolute inset-0 flex items-center justify-center z-1 p-12">
+                                    <div className="relative max-h-56 max-w-xs flex items-center justify-center">
+                                      {/* Sombra de contacto real */}
+                                      <div className="absolute -bottom-4 w-40 h-6 bg-black/60 rounded-full blur-lg" />
+                                      <img
+                                        src={mktStrategy.featuredProduct.image}
+                                        alt="Product"
+                                        className="max-w-full max-h-52 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.8)] transform hover:scale-105 transition duration-500"
+                                      />
+                                    </div>
                                   </div>
                                 )}
                               </>
