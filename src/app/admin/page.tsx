@@ -7633,127 +7633,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                             )}
 
-                            {/* PARRILLA SEMANAL CONTINUA (7 DÍAS: TIENDA + STOCK) */}
-                            {mktStrategy.weeklyParrilla && mktStrategy.weeklyParrilla.length > 0 && (
-                              <div className="pt-2 border-t border-stone-200 space-y-2">
-                                <span className="text-[11px] font-black uppercase text-stone-700 tracking-wider block">
-                                  📅 Parrilla Semanal Equilibrada (Tienda vs Stock):
-                                </span>
-                                <div className="grid grid-cols-1 gap-1.5 max-h-56 overflow-y-auto pr-1">
-                                  {mktStrategy.weeklyParrilla.map((dayPlan: any, idx: number) => {
-                                    const isSelected = mktSelectedDayIndex === idx;
-                                    return (
-                                      <button
-                                        key={idx}
-                                        onClick={() => setMktSelectedDayIndex(idx)}
-                                        className={`w-full text-left p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2 transition cursor-pointer ${
-                                          isSelected
-                                            ? 'ring-2 ring-[#0F3E36] bg-[#0F3E36]/10 border-[#0F3E36]'
-                                            : dayPlan.type === 'TIENDA_GLOBAL'
-                                            ? 'bg-[#0F3E36]/5 border-[#0F3E36]/20 hover:bg-[#0F3E36]/10'
-                                            : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
-                                        }`}
-                                      >
-                                        <div className="space-y-0.5">
-                                          <div className="flex items-center gap-1.5 font-bold">
-                                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${isSelected ? 'bg-[#0F3E36] text-white' : 'text-stone-900'}`}>{dayPlan.day}</span>
-                                            <span className="text-stone-800 font-bold">{dayPlan.title}</span>
-                                          </div>
-                                          <p className="text-stone-500 text-[10px] line-clamp-1">{dayPlan.headline || dayPlan.focus}</p>
-                                        </div>
-                                        <span
-                                          className={`px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${
-                                            dayPlan.type === 'TIENDA_GLOBAL'
-                                              ? 'bg-[#0F3E36] text-white'
-                                              : 'bg-[#E65F2B] text-white'
-                                          }`}
-                                        >
-                                          {dayPlan.type === 'TIENDA_GLOBAL' ? 'Tienda Global' : 'Stock Bodega'}
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
+                            {/* PRODUCTO SUGERIDO POR EL ANALISTA PARA REVISIÓN DEL CEO */}
                             {mktStrategy.featuredProduct && (
                               <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
                                 <div>
-                                  <span className="font-bold text-stone-800">Catálogo / Producto Foco: </span>
-                                  <span className="text-[#E65F2B] font-bold">{mktStrategy.featuredProduct.title}</span>
+                                  <span className="font-bold text-stone-800 text-[11px]">Sugerencia de Rotación: </span>
+                                  <span className="text-[#E65F2B] font-bold text-[11px]">{mktStrategy.featuredProduct.title}</span>
                                 </div>
                                 <span className="font-black text-xs text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-stone-200">${mktStrategy.featuredProduct.price} MXN</span>
                               </div>
                             )}
-                          </div>
-
-                          {/* DESGLOSE DEL TRABAJO POR MIEMBRO DEL EQUIPO DE MARKETING */}
-                          <div className="p-3.5 bg-white border border-stone-200 rounded-2xl space-y-2.5">
-                            <span className="text-[11px] font-black uppercase text-stone-700 tracking-wider block border-b border-stone-100 pb-1.5">
-                              Ejecución del Equipo de Marketing:
-                            </span>
-
-                            <div className="grid grid-cols-1 gap-2 text-[11px]">
-                              {/* 1. ANALISTA */}
-                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
-                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
-                                  <span>📊</span>
-                                  <span>Analista de Lotes & Inventario:</span>
-                                </div>
-                                <p className="text-stone-600">
-                                  {mktStrategy?.teamTasks?.analyst?.marginInsight || `Seleccionó ${mktStrategy?.featuredProduct?.title || 'artículo clave'} por rotación en bodega y margen para acelerar el ticket promedio.`}
-                                </p>
-                              </div>
-
-                              {/* 2. COPYWRITER */}
-                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
-                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
-                                  <span>✍️</span>
-                                  <span>Copywriter Creativo:</span>
-                                </div>
-                                <p className="text-stone-600">
-                                  {mktStrategy?.teamTasks?.copywriter?.hook ? `Gancho de 3s: "${mktStrategy.teamTasks.copywriter.hook}". ${mktStrategy.teamTasks.copywriter.angle || ''}` : `Redactó guion y copys con enlace inteligente directo a foxdrop.mx.`}
-                                </p>
-                              </div>
-
-                              {/* 3. ESTILISTA VISUAL NANO BANANA */}
-                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1.5">
-                                <div className="flex items-center justify-between font-bold text-stone-900">
-                                  <div className="flex items-center gap-1.5">
-                                    <span>🎨</span>
-                                    <span>Estilista Visual Nano Banana:</span>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      const p = mktStrategy?.teamTasks?.designer?.creativePrompt || mktStrategy?.teamTasks?.designer?.artDirection;
-                                      if (p) {
-                                        setMktCustomDesignPrompt(p);
-                                        handleGenerateNanoBananaImage(p);
-                                      }
-                                    }}
-                                    disabled={mktGeneratingImage}
-                                    className="px-2 py-0.5 rounded-md bg-[#0F3E36] hover:bg-[#185b50] text-[#E3B888] font-black text-[9px] transition"
-                                  >
-                                    {mktGeneratingImage ? 'Diseñando...' : '⚡ Convertir en Propuestas'}
-                                  </button>
-                                </div>
-                                <p className="text-stone-600">
-                                  {mktStrategy?.teamTasks?.designer?.artDirection || 'Diseño de producto en estudio con paleta corporativa (#0F3E36, #E65F2B, #E3B888) adaptado a 1:1 Feed y 9:16 Reels.'}
-                                </p>
-                              </div>
-
-                              {/* 4. CONCIERGE DE DMs & CIERRE */}
-                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
-                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
-                                  <span>💬</span>
-                                  <span>Concierge de Ventas & DMs:</span>
-                                </div>
-                                <p className="text-stone-600">
-                                  {mktStrategy?.teamTasks?.concierge?.conversionStrategy || 'Atención prioritaria para dudas sobre envíos a todo México y cierre guiado a la pasarela de compra.'}
-                                </p>
-                              </div>
-                            </div>
                           </div>
 
                           {/* CAMPO DE AJUSTE Y FEEDBACK DE MARIO */}
@@ -7764,25 +7653,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 type="text"
                                 value={mktUserFeedback}
                                 onChange={e => setMktUserFeedback(e.target.value)}
-                                placeholder="Escribe aquí tu ajuste..."
+                                placeholder="Ej: Enfocarse en paquetes de regalo o envíos gratis..."
                                 className="flex-1 text-xs p-2.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F3E36]"
                               />
                               <button
                                 onClick={() => handleGenerateDirectorStrategy(mktUserFeedback)}
                                 disabled={mktLoadingStrategy}
-                                className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl transition"
+                                className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl transition cursor-pointer"
                               >
                                 Ajustar
                               </button>
                             </div>
 
                             <button
-                              onClick={() => {
-                                setMktWorkflowStep(2);
-                              }}
-                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                              onClick={() => handleGenerateParrillaCopys()}
+                              disabled={mktLoadingCopys}
+                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                             >
-                              <span>Aprobar Estrategia y Pasar a Copys (Paso 2) →</span>
+                              <span>{mktLoadingCopys ? 'Convocando al Copywriter...' : 'Aprobar Estrategia y Redactar Copys (Paso 2) →'}</span>
                             </button>
                           </div>
                         </div>
