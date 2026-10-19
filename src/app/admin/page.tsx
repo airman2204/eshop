@@ -7486,6 +7486,44 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                             )}
 
+                            {/* PARRILLA SEMANAL CONTINUA (7 DÍAS: TIENDA + STOCK) */}
+                            {mktStrategy.weeklyParrilla && mktStrategy.weeklyParrilla.length > 0 && (
+                              <div className="pt-2 border-t border-stone-200 space-y-2">
+                                <span className="text-[11px] font-black uppercase text-stone-700 tracking-wider block">
+                                  📅 Parrilla Semanal Equilibrada (Tienda vs Stock):
+                                </span>
+                                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                                  {mktStrategy.weeklyParrilla.map((dayPlan: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className={`p-2 rounded-xl border text-[11px] flex items-center justify-between gap-2 ${
+                                        dayPlan.type === 'TIENDA_GLOBAL'
+                                          ? 'bg-[#0F3E36]/5 border-[#0F3E36]/20'
+                                          : 'bg-amber-500/5 border-amber-500/20'
+                                      }`}
+                                    >
+                                      <div className="space-y-0.5">
+                                        <div className="flex items-center gap-1.5 font-bold">
+                                          <span className="text-stone-900 font-black">{dayPlan.day}:</span>
+                                          <span className="text-stone-700">{dayPlan.title}</span>
+                                        </div>
+                                        <p className="text-stone-500 text-[10px] line-clamp-1">{dayPlan.focus}</p>
+                                      </div>
+                                      <span
+                                        className={`px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${
+                                          dayPlan.type === 'TIENDA_GLOBAL'
+                                            ? 'bg-[#0F3E36] text-white'
+                                            : 'bg-[#E65F2B] text-white'
+                                        }`}
+                                      >
+                                        {dayPlan.type === 'TIENDA_GLOBAL' ? 'Tienda Global' : 'Stock Bodega'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             {mktStrategy.featuredProduct && (
                               <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
                                 <div>

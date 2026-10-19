@@ -236,11 +236,12 @@ Tu objetivo primordial es llevar y mantener las ventas de la tienda online hacia
 REGLAS INQUEBRANTABLES DE NEGOCIO Y MARCA:
 1. NUNCA menciones a Puebla, entregas locales ni puntos de encuentro. FoxDrop es una plataforma nacional con envíos asegurados y garantizados a toda la República Mexicana.
 2. FoxDrop NO es solo una tienda de Bath & Body Works ni de fragancias. FoxDrop es un hub curado de importaciones exclusivas multimarca (cuidado personal, accesorios de tendencia, belleza, artículos virales difíciles de conseguir en México).
-3. ESTRATEGIA DUAL OBLIGATORIA: En cada propuesta debes formular:
-   a) ESTRATEGIA GLOBAL DE TIENDA (Value proposition, garantía de autenticidad 100%, envíos protegidos a todo México, por qué comprar en foxdrop.mx antes de buscar en marketplaces tradicionales, descubrimiento multimarca).
-   b) ESTRATEGIA TÁCTICA DE CATÁLOGO (Impulso del ticket promedio con un lote o producto curado del inventario disponible sin limitar la visión de la tienda).
+3. ESTRATEGIA SEMANAL DUAL OBLIGATORIA (CALENDARIO DE 7 DÍAS):
+   El Director debe proponer un plan semanal completo equilibrando con precisión:
+   - DÍAS DE TIENDA GLOBAL (Pilar institucional: Garantía de importación oficial 100%, compras seguras sin líos de aduanas, envíos asegurados a todo México, por qué comprar en foxdrop.mx).
+   - DÍAS DE PRODUCTO DE STOCK (Impulso directo del catálogo real con rotación de inventario y ticket promedio).
 4. LÍNEA GRÁFICA Y DE DISEÑO EDITORIAL (NANO BANANA BRAND SYSTEM):
-   - La creatividad NO es una simple foto de producto. Es una pieza de diseño editorial publicitario de alto impacto.
+   - Cada pieza gráfica debe tener diseño de portada de revista de lujo.
    - Paleta corporativa: Verde Bosque Profundo (#0F3E36), Acento Naranja Zorro (#E65F2B), Dorado Caramelo (#E3B888) y Marfil/Crema (#FBF9F5).
    - Componentes visuales obligatorios en el diseño:
      * Badge superior / Eyebrow: "IMPORTACIÓN EXCLUSIVA" o "CURADURÍA FOXDROP".
@@ -256,31 +257,82 @@ REGLAS INQUEBRANTABLES DE NEGOCIO Y MARCA:
 ${JSON.stringify(catalog, null, 2)}
 ${feedback ? `- INDICACIÓN O AJUSTE EXCLUSIVO DE MARIO (CEO): "${feedback}"` : ""}
 
-Formula una estrategia completa que combine la visión global de la tienda FoxDrop y la tracción de ventas directas. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+Formula una estrategia semanal completa que combine la visión global de la tienda FoxDrop y la rotación de stock del catálogo. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
 {
-  "weeklyTheme": "Título inspirador y conciso de la campaña",
+  "weeklyTheme": "Título inspirador y conciso de la campaña semanal",
   "storeWideStrategy": {
     "pillar": "Pilar global de la tienda (ej. Confianza y Envíos Asegurados Nacionales / Descubrimiento Multimarca / Lotes Limitados de Temporada)",
     "valueProposition": "Propuesta de valor global de la tienda explicada en 2 oraciones para posicionar a foxdrop.mx en la mente del comprador mexicano",
     "callToAction": "Llamado a la acción institucional para descubrir todo el catálogo"
   },
+  "weeklyParrilla": [
+    {
+      "day": "Lunes",
+      "type": "TIENDA_GLOBAL",
+      "title": "Por qué FoxDrop es tu atajo seguro al mundo",
+      "focus": "Garantía de importaciones originales sin trámites de aduana y envíos protegidos a todo México.",
+      "cta": "Visita foxdrop.mx"
+    },
+    {
+      "day": "Martes",
+      "type": "PRODUCTO_STOCK",
+      "title": "Spotlight de Inventario",
+      "focus": "Impulso de pieza destacada con entrega inmediata desde bodega.",
+      "cta": "Comprar pieza en foxdrop.mx/tienda"
+    },
+    {
+      "day": "Miércoles",
+      "type": "TIENDA_GLOBAL",
+      "title": "Curaduría Multimarca: Lo que no encuentras en tiendas tradicionales",
+      "focus": "Selección exclusiva de USA y el mundo con stock ya en México.",
+      "cta": "Explora el catálogo en foxdrop.mx"
+    },
+    {
+      "day": "Jueves",
+      "type": "PRODUCTO_STOCK",
+      "title": "Tracción de Ticket Promedio",
+      "focus": "Promoción o bundle de artículos de alta rotación en bodega.",
+      "cta": "Pide con envío asegurado"
+    },
+    {
+      "day": "Viernes",
+      "type": "TIENDA_GLOBAL",
+      "title": "Envíos Asegurados a Toda la República",
+      "focus": "Tranquilidad y empaque blindado de extremo a extremo sin pretextos.",
+      "cta": "Pide tu orden en foxdrop.mx"
+    },
+    {
+      "day": "Sábado",
+      "type": "PRODUCTO_STOCK",
+      "title": "Llegadas de Fin de Semana",
+      "focus": "Piezas limitadas listas para despachar lunes a primera hora.",
+      "cta": "Asegura tu pedido antes de que se agote"
+    },
+    {
+      "day": "Domingo",
+      "type": "TIENDA_GLOBAL",
+      "title": "Tu Estilo, Tu Curaduría",
+      "focus": "Comunidad FoxDrop México: clientes recibiendo sus paquetes en todo el país.",
+      "cta": "Únete a foxdrop.mx"
+    }
+  ],
   "funnelDiagnostic": "Diagnóstico claro y profesional explicando por qué se están perdiendo ventas y cómo el contenido de la semana resolverá esa fuga.",
   "strategicAngle": "Justificación estratégica de la campaña con criterio de gerente humano.",
   "targetWeeklyGoal": 10000,
   "teamTasks": {
     "director": {
       "role": "Director de Marketing",
-      "action": "Diagnóstico de embudo, selección de ángulo y asignación de tareas al equipo"
+      "action": "Diagnóstico de embudo, diseño de parrilla semanal equilibrada (marca + stock) y supervisión del equipo"
     },
     "analyst": {
       "role": "Analista de Lotes & Inventario",
       "selectedProduct": "Nombre del producto o colección elegida del catálogo",
-      "marginInsight": "Análisis de rotación y justificación financiera de por qué este artículo o categoría impulsará el ticket"
+      "marginInsight": "Análisis de rotación y justificación financiera de por qué este artículo impulsará el ticket promedio"
     },
     "copywriter": {
       "role": "Copywriter Creativo",
       "hook": "Gancho magnético de 3 segundos",
-      "angle": "Enfoque persuasivo que equilibra la marca FoxDrop y la deseabilidad del producto"
+      "angle": "Enfoque persuasivo que equilibra la confianza de FoxDrop y la deseabilidad del producto"
     },
     "designer": {
       "role": "Director de Arte & Línea de Diseño",
@@ -340,15 +392,45 @@ Formula una estrategia completa que combine la visión global de la tienda FoxDr
       }
     }
 
-    // ── C. GENERADOR VISUAL NANO BANANA (DIRECTOR DE ARTE GEMINI + GENERADOR PUBLICITARIO) ──
+    // ── C. GENERADOR VISUAL NANO BANANA (HUGGING FACE FLUX + DIRECTOR DE ARTE GEMINI) ──
     if (action === "mkt_visual_nanobanana") {
       try {
         const { prompt, format, productTitle } = body; // format: '1:1' | '9:16'
         const isVertical = format === "9:16";
-        const width = isVertical ? 720 : 1024;
-        const height = isVertical ? 1280 : 1024;
 
-        // 1. Usar Gemini como Director de Arte Nano Banana para diseñar la pieza publicitaria vectorial
+        // 1. INTENTO CON HUGGING FACE FLUX / SDXL (Si existe HF_TOKEN en .env.local)
+        const hfToken = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY;
+        if (hfToken) {
+          try {
+            const hfPrompt = `luxury commercial advertising photograph for FoxDrop México, featuring ${productTitle || "exclusive imported product"}, standing on an emerald green marble pedestal (#0F3E36), warm golden studio backlighting (#E3B888), crystal reflections, cinematic soft mist, 8k resolution, editorial Vogue/GQ commercial photography, ultra detailed, photorealistic, no text`;
+
+            const hfUrl = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell";
+            const hfRes = await fetch(hfUrl, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${hfToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ inputs: hfPrompt }),
+            });
+
+            if (hfRes.ok) {
+              const buffer = await hfRes.arrayBuffer();
+              const base64Img = Buffer.from(buffer).toString("base64");
+              const mime = hfRes.headers.get("content-type") || "image/jpeg";
+              return NextResponse.json({
+                success: true,
+                imageUrl: `data:${mime};base64,${base64Img}`,
+                engine: "huggingface_flux",
+                format: format || "1:1",
+              });
+            }
+          } catch (hfErr) {
+            console.warn("Hugging Face inference error, falling back to Gemini vector poster:", hfErr);
+          }
+        }
+
+        // 2. DIRECTOR DE ARTE NANO BANANA (GEMINI VECTOR POSTER - 100% CONFIABLE Y SIN COSTO)
         try {
           const geminiPosterPrompt = `Act as Nano Banana, Executive Art Director for FoxDrop México (luxury curatorship brand).
 Generate a stunning, ultra-luxury commercial advertising poster for Instagram/TikTok featuring "${productTitle || "Exclusive Curated Import"}".
@@ -375,6 +457,7 @@ Return ONLY the raw valid SVG inside <svg viewBox="0 0 1080 1080" ...> ... </svg
               success: true,
               imageUrl: dataUri,
               svgContent: cleanSvg,
+              engine: "gemini_vector",
               format: format || "1:1",
             });
           }
@@ -382,10 +465,11 @@ Return ONLY the raw valid SVG inside <svg viewBox="0 0 1080 1080" ...> ... </svg
           console.warn("Error generando póster SVG con Gemini:", svgErr);
         }
 
-        // Fallback a test-art.svg local o URL segura
+        // Fallback a test-art.svg local
         return NextResponse.json({
           success: true,
           imageUrl: "/test-art.svg",
+          engine: "local_master",
           format: format || "1:1",
         });
       } catch (err: any) {
