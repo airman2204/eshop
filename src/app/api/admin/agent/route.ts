@@ -340,7 +340,7 @@ Formula una estrategia completa que combine la visión global de la tienda FoxDr
       }
     }
 
-    // ── C. GENERADOR VISUAL NANO BANANA (FLUX / POLLINATIONS CON BRAND BOOK FOXDROP) ──
+    // ── C. GENERADOR VISUAL NANO BANANA (DIRECTOR DE ARTE GEMINI + GENERADOR PUBLICITARIO) ──
     if (action === "mkt_visual_nanobanana") {
       try {
         const { prompt, format, productTitle } = body; // format: '1:1' | '9:16'
@@ -348,16 +348,34 @@ Formula una estrategia completa que combine la visión global de la tienda FoxDr
         const width = isVertical ? 720 : 1024;
         const height = isVertical ? 1280 : 1024;
 
-        // Construir prompt enriquecido con el Brand Book oficial de FoxDrop
-        const brandPrompt = `Professional commercial advertising photograph for FoxDrop luxury lifestyle brand, featuring ${productTitle || "exclusive imported product"}. High-end cinematic studio lighting, deep forest green #0F3E36 and warm fox orange #E65F2B accents, pristine metallic finishes, sealed premium packaging box with elegant emblem, 8k resolution, editorial fashion and tech magazine aesthetic. ${prompt || ""}`;
+        // 1. Usar Gemini como Director de Arte de Nano Banana para componer el prompt de fotografía publicitaria
+        let enhancedPrompt = "";
+        try {
+          const artDirectorSystemPrompt = `You are Nano Banana, the elite Art Director for FoxDrop México (luxury curatorship brand). 
+Your specialty is high-fashion, high-end commercial advertising photography for Instagram and TikTok. 
+Rules:
+- NEVER output conversational text or introductions. Output ONLY the raw English prompt in a single paragraph.
+- Style: Luxury studio advertising photography, cinematic volumetric lighting, polished emerald green marble pedestal (#0F3E36), warm golden backlighting (#E3B888), crystal reflections, crisp shadows, 8k resolution, editorial Vogue/GQ commercial aesthetics, ultra-detailed, photorealistic, no watermarks, no distorted text.`;
 
-        const seed = Math.floor(Math.random() * 1000000);
-        const encoded = encodeURIComponent(brandPrompt);
-        const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&model=flux&seed=${seed}&nologo=true`;
+          const artDirectorUserPrompt = `Create a cinematic studio advertising photo prompt for this product: "${productTitle || "Exclusive imported beauty luxury item"}". Context: ${prompt || "Curated global import"}.`;
+
+          enhancedPrompt = await callGemini(artDirectorUserPrompt, artDirectorSystemPrompt, { maxOutputTokens: 250 });
+        } catch {
+          enhancedPrompt = `Ultra-luxury commercial advertising photograph of ${productTitle || "exclusive imported product"} on an elegant emerald green marble podium, cinematic dramatic studio lighting with warm golden edge light, crystal clear reflections, high-end perfume and beauty brand campaign, photorealistic 8k, sharp focus.`;
+        }
+
+        // Limpiar saltos de línea y comillas dobles innecesarias
+        const cleanPrompt = enhancedPrompt.replace(/[\r\n]+/g, " ").replace(/"/g, "").trim();
+
+        // 2. Generador de imagen publicitaria (alta resolución y confiabilidad inmediata)
+        const seed = Math.floor(Math.random() * 899999) + 100000;
+        const encoded = encodeURIComponent(cleanPrompt);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
 
         return NextResponse.json({
           success: true,
           imageUrl,
+          enhancedPrompt: cleanPrompt,
           format: format || "1:1",
         });
       } catch (err: any) {

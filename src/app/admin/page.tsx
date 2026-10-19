@@ -7647,35 +7647,35 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                           {/* LIENZO DE DISEÑO EDITORIAL NANO BANANA / BRAND SYSTEM */}
                           <div className="aspect-square bg-[#0a231e] relative overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none border-b border-stone-200">
-                            {/* Fondo texturizado y gradiente corporativo */}
-                            <div className="absolute inset-0 bg-radial from-[#13493f]/80 via-[#0a231e] to-[#061512] z-0" />
-                            <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0" />
-
-                            {/* Foto de producto como foco central con sombra flotante e iluminación */}
-                            <div className="absolute inset-0 flex items-center justify-center z-1 pointer-events-none p-8">
-                              <div className="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
-                                {/* Glow sutil de estudio */}
-                                <div className="absolute inset-0 rounded-full bg-[#E3B888]/15 blur-2xl transform scale-110" />
-                                {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
-                                  <img
-                                    src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
-                                    alt="Product Spotlight"
-                                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.65)] transform hover:scale-105 transition duration-500"
-                                    onError={(e) => {
-                                      if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
-                                        e.currentTarget.src = mktStrategy.featuredProduct.image;
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="text-6xl filter drop-shadow-lg animate-pulse">🦊📦</div>
+                            {/* IMAGEN DE FONDO / FOTOGRAFÍA GENERADA FULL BLEED */}
+                            {mktGeneratedImage ? (
+                              <img
+                                src={mktGeneratedImage}
+                                alt="Nano Banana Campaign Art"
+                                className="absolute inset-0 w-full h-full object-cover z-0"
+                              />
+                            ) : (
+                              <>
+                                <div className="absolute inset-0 bg-radial from-[#13493f]/80 via-[#0a231e] to-[#061512] z-0" />
+                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0" />
+                                {mktStrategy?.featuredProduct?.image && (
+                                  <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
+                                    <img
+                                      src={mktStrategy.featuredProduct.image}
+                                      alt="Product"
+                                      className="max-w-full max-h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.65)]"
+                                    />
+                                  </div>
                                 )}
-                              </div>
-                            </div>
+                              </>
+                            )}
+
+                            {/* Gradiente cinemático para legibilidad editorial */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
 
                             {/* CAPA SUPERIOR: BADGE Y HEADER DE MARCA */}
                             <div className="relative z-10 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0F3E36]/90 border border-[#E3B888]/40 backdrop-blur-md shadow-lg">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
                                 <span className="text-[#E3B888] text-[10px]">✦</span>
                                 <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
                                   {mktStrategy?.designSystem?.eyebrow || 'CURADURÍA FOXDROP • IMPORTACIÓN OFICIAL'}
@@ -7689,7 +7689,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                             {/* CAPA INFERIOR: TITULAR EDITORIAL, SELLO DE CONFIANZA Y PRECIO */}
                             <div className="relative z-10 space-y-2 mt-auto">
-                              <div className="bg-black/45 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-2xl">
+                              <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
                                 <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
                                   {mktStrategy?.storeWideStrategy?.pillar || 'Garantía Nacional foxdrop.mx'}
                                 </p>
@@ -7700,13 +7700,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   {mktStrategy?.designSystem?.subtitle || 'Autenticidad 100% garantizada • Sin trámites aduanales'}
                                 </p>
 
-                                <div className="mt-2 pt-2 border-t border-white/15 flex items-center justify-between text-[11px]">
-                                  <div className="flex items-center gap-1.5 text-stone-300 font-medium">
+                                <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-stone-200 font-medium">
                                     <span className="text-[#E3B888]">🛡️</span>
                                     <span>{mktStrategy?.designSystem?.trustBadge || 'Envíos Asegurados a Todo México'}</span>
                                   </div>
                                   {mktStrategy?.featuredProduct?.price && (
-                                    <span className="px-2 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                    <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
                                       ${mktStrategy.featuredProduct.price} MXN
                                     </span>
                                   )}
@@ -7714,11 +7714,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                             </div>
 
+                            {/* BOTÓN RE-GENERAR ARTE NANO BANANA CON GEMINI */}
+                            <div className="absolute top-14 right-4 z-20">
+                              <button
+                                onClick={() => handleGenerateNanoBananaImage()}
+                                disabled={mktGeneratingImage}
+                                className="px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-[#E3B888]/50 text-[#E3B888] text-[10px] font-black transition flex items-center gap-1 shadow-lg"
+                                title="Generar nuevo render comercial con Nano Banana AI"
+                              >
+                                <span>🍌</span>
+                                <span>{mktGeneratingImage ? 'Creando arte...' : 'Nuevo Arte'}</span>
+                              </button>
+                            </div>
+
                             {/* LOADING OVERLAY NANO BANANA */}
                             {mktGeneratingImage && (
-                              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-bold z-20 space-y-2">
+                              <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-bold z-30 space-y-2">
                                 <span className="animate-spin text-2xl">⚡</span>
-                                <span>Renderizando Arte con Nano Banana Engine...</span>
+                                <span>Nano Banana + Gemini creando fotografía publicitaria...</span>
                               </div>
                             )}
                           </div>
