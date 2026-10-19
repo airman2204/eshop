@@ -593,6 +593,9 @@ export default function AdminCRM() {
       if (data.success && Array.isArray(data.proposals) && data.proposals.length > 0) {
         setMktDesignProposals(data.proposals);
         setMktSelectedProposalId(data.proposals[0].id);
+        if (data.generatedAiImageUrl) {
+          setMktGeneratedImage(data.generatedAiImageUrl);
+        }
       }
     } catch (err) {
       console.warn('Error generando propuestas visuales con Nano Banana / Gemini:', err);

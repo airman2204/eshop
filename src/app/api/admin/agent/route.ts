@@ -425,6 +425,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura:
 
         const systemPrompt = "Eres un Director de Arte y Diseñador Gráfico Senior en e-commerce de prestigio. Respondes con criterio estético impecable, colores combinados a la perfección y tipografías vendedoras. Devuelve ÚNICAMENTE JSON válido.";
 
+        // Generar las propuestas conceptuales de diseño con Gemini
         const aiResponse = await callGemini(designerPrompt, systemPrompt, { responseJson: true });
         let parsed: any = null;
         try {
@@ -435,9 +436,53 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura:
         }
 
         if (parsed && Array.isArray(parsed.proposals) && parsed.proposals.length > 0) {
+          // Intentar generar la fotografía publicitaria real con el modelo de imagen de Gemini
+          const apiKey = process.env.GEMINI_API_KEY;
+          let generatedAiImageUrl: string | null = null;
+
+          if (apiKey && apiKey !== "TU_API_KEY_AQUI") {
+            const imageModels = [
+              "gemini-2.5-flash-image",
+              "gemini-3.1-flash-image",
+              "gemini-3-pro-image"
+            ];
+
+            const visualPrompt = `Professional commercial advertising studio photography for FoxDrop luxury store. Subject: ${productTitle || "Exclusive beauty and fragrance bottle"}. Setting: luxurious marble pedestal, warm golden studio lighting, soft reflections, high-end Vogue editorial aesthetic, crystal clear focus, 8k commercial photography.`;
+
+            for (const imgModel of imageModels) {
+              try {
+                const imgRes = await fetch(
+                  `https://generativelanguage.googleapis.com/v1beta/models/${imgModel}:generateContent?key=${apiKey}`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      contents: [{ parts: [{ text: visualPrompt }] }],
+                    }),
+                  }
+                );
+
+                if (imgRes.ok) {
+                  const imgData = await imgRes.json();
+                  const candidate = imgData.candidates?.[0];
+                  const part = candidate?.content?.parts?.find((p: any) => p.inlineData || p.inline_data);
+                  const inline = part?.inlineData || part?.inline_data;
+                  if (inline?.data) {
+                    const mime = inline.mimeType || inline.mime_type || "image/jpeg";
+                    generatedAiImageUrl = `data:${mime};base64,${inline.data}`;
+                    break;
+                  }
+                }
+              } catch (imgErr) {
+                console.warn(`Error llamando a modelo de imagen ${imgModel}:`, imgErr);
+              }
+            }
+          }
+
           return NextResponse.json({
             success: true,
             proposals: parsed.proposals,
+            generatedAiImageUrl,
             format: format || "1:1",
           });
         }
