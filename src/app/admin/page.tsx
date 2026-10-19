@@ -7467,13 +7467,29 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <p className="text-stone-700">{mktStrategy.funnelDiagnostic}</p>
                           </div>
 
-                          <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl">
-                            <span className="text-[11px] font-bold text-[#0F3E36] block mb-1">Estrategia Propuesta: "{mktStrategy.weeklyTheme}"</span>
-                            <p className="text-stone-600">{mktStrategy.strategicAngle}</p>
+                          <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
+                            <div>
+                              <span className="text-[11px] font-bold text-[#0F3E36] block mb-0.5">Estrategia Propuesta: "{mktStrategy.weeklyTheme}"</span>
+                              <p className="text-stone-600">{mktStrategy.strategicAngle}</p>
+                            </div>
+
+                            {/* PILAR GLOBAL DE TIENDA */}
+                            {mktStrategy.storeWideStrategy && (
+                              <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
+                                <div className="flex items-center gap-1.5 text-[#0F3E36] font-black text-[11px]">
+                                  <span>🌐</span>
+                                  <span>Pilar Global de Tienda: {mktStrategy.storeWideStrategy.pillar}</span>
+                                </div>
+                                <p className="text-stone-700 text-[11px]">
+                                  {mktStrategy.storeWideStrategy.valueProposition}
+                                </p>
+                              </div>
+                            )}
+
                             {mktStrategy.featuredProduct && (
-                              <div className="mt-2.5 pt-2 border-t border-stone-200 flex items-center justify-between">
+                              <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
                                 <div>
-                                  <span className="font-bold text-stone-800">Producto Foco: </span>
+                                  <span className="font-bold text-stone-800">Catálogo / Producto Foco: </span>
                                   <span className="text-[#E65F2B] font-bold">{mktStrategy.featuredProduct.title}</span>
                                 </div>
                                 <span className="font-black text-xs text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-stone-200">${mktStrategy.featuredProduct.price} MXN</span>
@@ -7629,36 +7645,80 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <span className="text-stone-400 text-sm">•••</span>
                           </div>
 
-                          {/* IMAGEN DE NANO BANANA */}
-                          <div className="aspect-square bg-gradient-to-br from-[#0F3E36] via-[#16564b] to-stone-900 flex items-center justify-center relative overflow-hidden">
-                            {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
-                              <img
-                                src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
-                                alt="Nano Banana Render"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  // Si la URL de IA falla o tarda, usar la foto real del producto de Supabase
-                                  if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
-                                    e.currentTarget.src = mktStrategy.featuredProduct.image;
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <div className="text-center text-white p-6 space-y-2">
-                                <span className="inline-block px-3 py-0.5 rounded-full bg-[#E65F2B] text-white text-[10px] font-bold uppercase tracking-wider">
-                                  Nano Banana Engine
-                                </span>
-                                <div className="text-6xl my-2">✨🦊📦</div>
-                                <h5 className="text-base font-black text-[#E3B888]">
-                                  {mktStrategy?.featuredProduct?.title || 'Selección Exclusiva FoxDrop'}
-                                </h5>
-                                <p className="text-[11px] text-stone-300">Generando render de alta definición...</p>
-                              </div>
-                            )}
+                          {/* LIENZO DE DISEÑO EDITORIAL NANO BANANA / BRAND SYSTEM */}
+                          <div className="aspect-square bg-[#0a231e] relative overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none border-b border-stone-200">
+                            {/* Fondo texturizado y gradiente corporativo */}
+                            <div className="absolute inset-0 bg-radial from-[#13493f]/80 via-[#0a231e] to-[#061512] z-0" />
+                            <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0" />
 
+                            {/* Foto de producto como foco central con sombra flotante e iluminación */}
+                            <div className="absolute inset-0 flex items-center justify-center z-1 pointer-events-none p-8">
+                              <div className="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
+                                {/* Glow sutil de estudio */}
+                                <div className="absolute inset-0 rounded-full bg-[#E3B888]/15 blur-2xl transform scale-110" />
+                                {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
+                                  <img
+                                    src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
+                                    alt="Product Spotlight"
+                                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.65)] transform hover:scale-105 transition duration-500"
+                                    onError={(e) => {
+                                      if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
+                                        e.currentTarget.src = mktStrategy.featuredProduct.image;
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="text-6xl filter drop-shadow-lg animate-pulse">🦊📦</div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* CAPA SUPERIOR: BADGE Y HEADER DE MARCA */}
+                            <div className="relative z-10 flex items-center justify-between">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0F3E36]/90 border border-[#E3B888]/40 backdrop-blur-md shadow-lg">
+                                <span className="text-[#E3B888] text-[10px]">✦</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
+                                  {mktStrategy?.designSystem?.eyebrow || 'CURADURÍA FOXDROP • IMPORTACIÓN OFICIAL'}
+                                </span>
+                              </div>
+
+                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#E65F2B] text-white shadow-md">
+                                {mktStrategy?.designSystem?.promoTag || 'Lote Limitado'}
+                              </span>
+                            </div>
+
+                            {/* CAPA INFERIOR: TITULAR EDITORIAL, SELLO DE CONFIANZA Y PRECIO */}
+                            <div className="relative z-10 space-y-2 mt-auto">
+                              <div className="bg-black/45 backdrop-blur-md p-3 rounded-2xl border border-white/10 shadow-2xl">
+                                <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
+                                  {mktStrategy?.storeWideStrategy?.pillar || 'Garantía Nacional foxdrop.mx'}
+                                </p>
+                                <h3 className="text-sm sm:text-base font-black text-white leading-tight">
+                                  {mktStrategy?.designSystem?.mainTitle || mktStrategy?.featuredProduct?.title || 'Lo Mejor de Importación en México'}
+                                </h3>
+                                <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
+                                  {mktStrategy?.designSystem?.subtitle || 'Autenticidad 100% garantizada • Sin trámites aduanales'}
+                                </p>
+
+                                <div className="mt-2 pt-2 border-t border-white/15 flex items-center justify-between text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-stone-300 font-medium">
+                                    <span className="text-[#E3B888]">🛡️</span>
+                                    <span>{mktStrategy?.designSystem?.trustBadge || 'Envíos Asegurados a Todo México'}</span>
+                                  </div>
+                                  {mktStrategy?.featuredProduct?.price && (
+                                    <span className="px-2 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                      ${mktStrategy.featuredProduct.price} MXN
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* LOADING OVERLAY NANO BANANA */}
                             {mktGeneratingImage && (
-                              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-xs font-bold">
-                                <span>🎨 Renderizando con Nano Banana Flux...</span>
+                              <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-bold z-20 space-y-2">
+                                <span className="animate-spin text-2xl">⚡</span>
+                                <span>Renderizando Arte con Nano Banana Engine...</span>
                               </div>
                             )}
                           </div>
@@ -7696,45 +7756,74 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                       {/* MOCKUP 2: TIKTOK (9:16) */}
                       {mktPreviewFormat === 'tk' && (
-                        <div className="max-w-xs mx-auto bg-black rounded-3xl overflow-hidden shadow-xl border border-stone-800 relative aspect-[9/16]">
-                          {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
-                            <img
-                              src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
-                              alt="TikTok Cover"
-                              className="absolute inset-0 w-full h-full object-cover opacity-60"
-                              onError={(e) => {
-                                if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
-                                  e.currentTarget.src = mktStrategy.featuredProduct.image;
-                                }
-                              }}
-                            />
-                          ) : null}
+                        <div className="max-w-xs mx-auto bg-[#0a231e] rounded-3xl overflow-hidden shadow-2xl border-4 border-stone-800 relative aspect-[9/16] flex flex-col justify-between p-4">
+                          {/* Fondo radial */}
+                          <div className="absolute inset-0 bg-radial from-[#13493f]/90 via-[#0a231e] to-black z-0" />
+                          <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:20px_20px] opacity-15 z-0" />
 
-                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-between p-4 text-white z-10">
-                            <div className="text-center text-xs font-bold pt-2">Para ti</div>
-                            <div className="text-center my-auto">
-                              <div className="text-6xl mb-2">🦊</div>
-                              <div className="bg-[#0F3E36]/90 border border-[#E65F2B] text-white px-3 py-1.5 rounded-xl text-xs font-black inline-block shadow-lg">
-                                {mktStrategy?.tiktokReel?.videoHook || '¡Lo que estabas esperando en México!'}
-                              </div>
-                            </div>
-                            <div className="space-y-2 pb-2 text-xs">
-                              <div className="font-bold">@foxdrop.mx</div>
-                              <p className="text-[11px] text-stone-200">
-                                {mktStrategy?.tiktokReel?.caption || 'Tu atajo seguro al mundo. Disponible en foxdrop.mx ⚡'}
-                              </p>
-                              <div className="bg-white/20 backdrop-blur-md rounded-lg p-2 flex items-center justify-between text-[11px]">
-                                <span className="font-bold text-[#E3B888]">foxdrop.mx/tienda</span>
-                                <span className="bg-[#0F3E36] px-2 py-0.5 rounded text-[10px] font-bold">Ver Catálogo</span>
-                              </div>
+                          {/* Foto de producto central */}
+                          <div className="absolute inset-0 flex items-center justify-center z-1 pointer-events-none p-10">
+                            <div className="relative w-44 h-44 flex items-center justify-center">
+                              <div className="absolute inset-0 rounded-full bg-[#E3B888]/20 blur-2xl" />
+                              {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
+                                <img
+                                  src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
+                                  alt="TikTok Cover"
+                                  className="max-w-full max-h-full object-contain drop-shadow-[0_20px_25px_rgba(0,0,0,0.8)]"
+                                  onError={(e) => {
+                                    if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
+                                      e.currentTarget.src = mktStrategy.featuredProduct.image;
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <div className="text-6xl">🦊📦</div>
+                              )}
                             </div>
                           </div>
 
-                          <div className="absolute bottom-2 inset-x-2 z-20">
+                          {/* Capa superior TikTok */}
+                          <div className="relative z-10 pt-2 flex items-center justify-between text-white">
+                            <div className="text-xs font-bold tracking-wider opacity-80">Para ti</div>
+                            <span className="px-2 py-0.5 rounded-full bg-[#E3B888]/20 border border-[#E3B888]/50 text-[10px] text-[#E3B888] font-black uppercase">
+                              foxdrop.mx
+                            </span>
+                          </div>
+
+                          {/* Hook de video impactante */}
+                          <div className="relative z-10 text-center my-auto px-2">
+                            <div className="inline-block bg-[#0F3E36]/95 border-2 border-[#E65F2B] text-white px-4 py-2 rounded-2xl text-xs font-black shadow-2xl backdrop-blur-md">
+                              🔥 {mktStrategy?.tiktokReel?.videoHook || mktStrategy?.designSystem?.mainTitle || '¡Lo que estabas esperando en México!'}
+                            </div>
+                          </div>
+
+                          {/* Capa inferior con datos de marca y CTA */}
+                          <div className="relative z-10 space-y-2 pb-1 text-white">
+                            <div className="font-bold text-xs flex items-center gap-1.5">
+                              <span>🦊</span>
+                              <span>@foxdrop.mx</span>
+                              <span className="text-[10px] text-[#E3B888]">✓ Oficial</span>
+                            </div>
+                            <p className="text-[11px] text-stone-200 leading-snug line-clamp-2">
+                              {mktStrategy?.tiktokReel?.caption || mktStrategy?.storeWideStrategy?.valueProposition || 'Tu atajo seguro al mundo. Envíos protegidos a todo México ⚡'}
+                            </p>
+                            <div className="bg-white/15 backdrop-blur-md rounded-xl p-2.5 flex items-center justify-between text-[11px] border border-white/10">
+                              <div>
+                                <span className="block font-black text-[#E3B888]">foxdrop.mx/tienda</span>
+                                <span className="text-[10px] text-stone-300">Envíos asegurados</span>
+                              </div>
+                              <span className="bg-[#E65F2B] text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-md">
+                                Comprar
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Botón de Publicación TikTok */}
+                          <div className="relative z-20 pt-2">
                             <button
                               onClick={() => handlePublishMarketingPost('tiktok')}
                               disabled={mktPublishing || !mktStrategy}
-                              className="w-full py-2 bg-[#E65F2B] hover:bg-[#d04f1f] text-white font-black text-xs rounded-xl shadow-lg transition disabled:opacity-50"
+                              className="w-full py-2.5 bg-[#E65F2B] hover:bg-[#d04f1f] text-white font-black text-xs rounded-xl shadow-lg transition disabled:opacity-50"
                             >
                               {mktPublishing ? 'Publicando...' : 'Publicar en TikTok'}
                             </button>

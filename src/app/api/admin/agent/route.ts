@@ -230,26 +230,40 @@ export async function POST(req: NextRequest) {
         }));
 
         const systemPrompt = `Eres el Director de Marketing Ejecutivo de FoxDrop México (tienda online oficial: foxdrop.mx).
-Tu perfil es el de un Gerente de Marketing Senior con maestría en e-commerce y branding de lujo contemporáneo.
+Tu perfil es el de un Gerente de Marketing Senior con maestría en e-commerce internacional, branding de lujo contemporáneo y crecimiento multicanal.
 Tu objetivo primordial es llevar y mantener las ventas de la tienda online hacia la meta fijada por el CEO de $${targetMonthly.toLocaleString()} MXN mensuales netos, convirtiendo el tráfico de Instagram y TikTok en compras directas en foxdrop.mx.
 
-REGLAS INQUEBRANTABLES:
-1. NUNCA menciones a Puebla, entregas locales ni puntos de encuentro. FoxDrop es una marca nacional con envíos garantizados y asegurados a toda la República Mexicana.
-2. NUNCA hagas comparaciones directas de guerrilla ni ataques a tiendas departamentales. FoxDrop se posiciona por su propio prestigio, originalidad de importación y diseño curado.
-3. Habla como un Gerente de Negocios humano a tu CEO/Comandante (Mario). Sé analítico, empático y directo.
-4. Diagnostica por qué se están perdiendo ventas leyendo los carritos abandonados del embudo y los productos del catálogo.`;
+REGLAS INQUEBRANTABLES DE NEGOCIO Y MARCA:
+1. NUNCA menciones a Puebla, entregas locales ni puntos de encuentro. FoxDrop es una plataforma nacional con envíos asegurados y garantizados a toda la República Mexicana.
+2. FoxDrop NO es solo una tienda de Bath & Body Works ni de fragancias. FoxDrop es un hub curado de importaciones exclusivas multimarca (cuidado personal, accesorios de tendencia, belleza, artículos virales difíciles de conseguir en México).
+3. ESTRATEGIA DUAL OBLIGATORIA: En cada propuesta debes formular:
+   a) ESTRATEGIA GLOBAL DE TIENDA (Value proposition, garantía de autenticidad 100%, envíos protegidos a todo México, por qué comprar en foxdrop.mx antes de buscar en marketplaces tradicionales, descubrimiento multimarca).
+   b) ESTRATEGIA TÁCTICA DE CATÁLOGO (Impulso del ticket promedio con un lote o producto curado del inventario disponible sin limitar la visión de la tienda).
+4. LÍNEA GRÁFICA Y DE DISEÑO EDITORIAL (NANO BANANA BRAND SYSTEM):
+   - La creatividad NO es una simple foto de producto. Es una pieza de diseño editorial publicitario de alto impacto.
+   - Paleta corporativa: Verde Bosque Profundo (#0F3E36), Acento Naranja Zorro (#E65F2B), Dorado Caramelo (#E3B888) y Marfil/Crema (#FBF9F5).
+   - Componentes visuales obligatorios en el diseño:
+     * Badge superior / Eyebrow: "IMPORTACIÓN EXCLUSIVA" o "CURADURÍA FOXDROP".
+     * Titular / Hook tipográfico integrado en el arte publicitario.
+     * Marco editorial con bordes dorados (#E3B888) y reflejo de iluminación de estudio sobre el producto.
+     * Sello de confianza oficial: "foxdrop.mx • Envíos Asegurados a todo México".
+5. Habla con rigor de Gerente de Negocios humano a tu CEO/Comandante (Mario). Sé analítico, empático, exigente y directo.`;
 
         const prompt = `Analiza la situación comercial actual de FoxDrop:
 - Ventas acumuladas este mes: $${monthlySales} MXN (Meta mensual fijada: $${targetMonthly.toLocaleString()} MXN).
-
 - Carritos abandonados en el mes: ${abandonedCartsCount} carritos con un valor de $${abandonedCartsTotal} MXN en el aire.
 - Catálogo de productos disponibles con stock en bodega:
 ${JSON.stringify(catalog, null, 2)}
 ${feedback ? `- INDICACIÓN O AJUSTE EXCLUSIVO DE MARIO (CEO): "${feedback}"` : ""}
 
-Devuelve ÚNICAMENTE un JSON válido con esta estructura completa del equipo de marketing:
+Formula una estrategia completa que combine la visión global de la tienda FoxDrop y la tracción de ventas directas. Devuelve ÚNICAMENTE un JSON válido con esta estructura:
 {
   "weeklyTheme": "Título inspirador y conciso de la campaña",
+  "storeWideStrategy": {
+    "pillar": "Pilar global de la tienda (ej. Confianza y Envíos Asegurados Nacionales / Descubrimiento Multimarca / Lotes Limitados de Temporada)",
+    "valueProposition": "Propuesta de valor global de la tienda explicada en 2 oraciones para posicionar a foxdrop.mx en la mente del comprador mexicano",
+    "callToAction": "Llamado a la acción institucional para descubrir todo el catálogo"
+  },
   "funnelDiagnostic": "Diagnóstico claro y profesional explicando por qué se están perdiendo ventas y cómo el contenido de la semana resolverá esa fuga.",
   "strategicAngle": "Justificación estratégica de la campaña con criterio de gerente humano.",
   "targetWeeklyGoal": 10000,
@@ -260,22 +274,22 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura completa del equipo de 
     },
     "analyst": {
       "role": "Analista de Lotes & Inventario",
-      "selectedProduct": "Nombre del producto elegido del catálogo con stock real",
-      "marginInsight": "Análisis de rotación y justificación financiera de por qué este producto impulsará el ticket"
+      "selectedProduct": "Nombre del producto o colección elegida del catálogo",
+      "marginInsight": "Análisis de rotación y justificación financiera de por qué este artículo o categoría impulsará el ticket"
     },
     "copywriter": {
       "role": "Copywriter Creativo",
       "hook": "Gancho magnético de 3 segundos",
-      "angle": "Enfoque persuasivo y solución a la objeción del cliente"
+      "angle": "Enfoque persuasivo que equilibra la marca FoxDrop y la deseabilidad del producto"
     },
     "designer": {
-      "role": "Estilista Visual Nano Banana",
-      "artDirection": "Composición de lujo, iluminación de estudio y paleta oficial FoxDrop (#0F3E36, #E65F2B, #E3B888)",
-      "format": "Feed 1:1 y TikTok 9:16"
+      "role": "Director de Arte & Línea de Diseño",
+      "artDirection": "Composición de diseño editorial publicitario: tipografía serif contemporánea, gradiente #0F3E36, acentos dorados #E3B888, badge superior e iluminación de estudio de lujo.",
+      "format": "Feed 1:1 y TikTok 9:16 con línea gráfica institucional"
     },
     "concierge": {
       "role": "Concierge de Ventas & DMs",
-      "conversionStrategy": "Atención a objeciones frecuentes en comentarios y cierre directo a foxdrop.mx"
+      "conversionStrategy": "Atención a objeciones frecuentes en comentarios (autenticidad, envíos a todo México) y cierre directo a foxdrop.mx"
     }
   },
   "featuredProduct": {
@@ -284,15 +298,22 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura completa del equipo de 
     "price": 599,
     "image": "url de imagen"
   },
+  "designSystem": {
+    "eyebrow": "IMPORTACIÓN EXCLUSIVA • FOXDROP",
+    "mainTitle": "Titular de diseño para la pieza gráfica (ej. 'Auténtico de USA en tu Puerta')",
+    "subtitle": "Subtítulo descriptivo elegante para la pieza",
+    "trustBadge": "Envíos Asegurados a Todo México",
+    "promoTag": "Lote Disponible • Stock Limitado"
+  },
   "igPost": {
     "headline": "Gancho elegante que detiene el scroll",
-    "caption": "Copy persuasivo estructurado con emojis sutiles, valor de marca y llamado a entrar a foxdrop.mx/tienda",
-    "hashtags": ["#FoxDrop", "#TendenciasMexico", "#Exclusivo"]
+    "caption": "Copy persuasivo estructurado que posiciona a FoxDrop como la tienda confiable de importación en México y cierra con enlace a foxdrop.mx/tienda",
+    "hashtags": ["#FoxDrop", "#ImportacionesMexico", "#TendenciasMexico", "#Exclusivo"]
   },
   "tiktokReel": {
     "videoHook": "Frase impactante de 3 segundos en pantalla",
-    "audioConcept": "Propuesta sonora o de ritmo de edición",
-    "caption": "Copy conciso para TikTok con enlace directo a foxdrop.mx"
+    "audioConcept": "Propuesta sonora o de ritmo de edición dinámica",
+    "caption": "Copy conciso para TikTok destacando foxdrop.mx como tu atajo seguro al mundo"
   },
   "nanoBananaPrompt": "Prompt cinematográfico y de lujo en inglés para FLUX/Nano Banana describiendo el producto con fondo #0F3E36, detalles dorados #E3B888, empaque sellado de lujo y mascota 3D Zorro FoxDrop si aplica."
 }`;
