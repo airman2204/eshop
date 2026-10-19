@@ -270,50 +270,85 @@ Formula una estrategia semanal completa que combine la visión global de la tien
       "day": "Lunes",
       "type": "TIENDA_GLOBAL",
       "title": "Por qué FoxDrop es tu atajo seguro al mundo",
-      "focus": "Garantía de importaciones originales sin trámites de aduana y envíos protegidos a todo México.",
-      "cta": "Visita foxdrop.mx"
+      "eyebrow": "IMPORTACIÓN OFICIAL • 100% AUTÉNTICO",
+      "hook": "Olvídate de pagar aduanas y esperar semanas.",
+      "headline": "Lo Mejor de USA y el Mundo en tu Puerta",
+      "copy": "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
+      "cta": "Explora la tienda en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"],
+      "imageTheme": "store_trust"
     },
     {
       "day": "Martes",
       "type": "PRODUCTO_STOCK",
       "title": "Spotlight de Inventario",
-      "focus": "Impulso de pieza destacada con entrega inmediata desde bodega.",
-      "cta": "Comprar pieza en foxdrop.mx/tienda"
+      "eyebrow": "LOTE LIMITADO • ENTREGA INMEDIATA",
+      "hook": "La pieza viral que todos buscan en bodega.",
+      "headline": "Descubre el Secreto Mejor Guardado",
+      "copy": "Piezas originales con stock confirmado en bodega para despacho express hoy mismo. Asegura la tuya antes de que se agote.",
+      "cta": "Comprar ahora en foxdrop.mx/tienda",
+      "hashtags": ["#FoxDrop", "#Exclusivo", "#LujoAccesible", "#Tendencia"],
+      "imageTheme": "product_spotlight"
     },
     {
       "day": "Miércoles",
       "type": "TIENDA_GLOBAL",
-      "title": "Curaduría Multimarca: Lo que no encuentras en tiendas tradicionales",
-      "focus": "Selección exclusiva de USA y el mundo con stock ya en México.",
-      "cta": "Explora el catálogo en foxdrop.mx"
+      "title": "Curaduría Multimarca Exclusiva",
+      "eyebrow": "CURADURÍA GLOBAL • FOXDROP.MX",
+      "hook": "¿Por qué conformarte con lo de siempre?",
+      "headline": "Más que una Tienda, tu Curaduría Personal",
+      "copy": "Desde cosmética viral hasta accesorios de tendencia internacional. En FoxDrop curamos los mejores lotes de USA para que disfrutes lo más nuevo sin salir de México.",
+      "cta": "Ver novedades en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#ModaMexico", "#BeautyLovers", "#Curaduria"],
+      "imageTheme": "store_curatorship"
     },
     {
       "day": "Jueves",
       "type": "PRODUCTO_STOCK",
-      "title": "Tracción de Ticket Promedio",
-      "focus": "Promoción o bundle de artículos de alta rotación en bodega.",
-      "cta": "Pide con envío asegurado"
+      "title": "Tracción de Ticket & Dúos",
+      "eyebrow": "STOCK DE BODEGA • COMBINA Y AHORRA",
+      "hook": "Eleva tu colección con el dúo perfecto.",
+      "headline": "Favoritos de la Temporada Listos para Enviar",
+      "copy": "Añade al carrito tus favoritos de importación directa y aprovecha el envío en un solo paquete protegido a todo el país.",
+      "cta": "Arma tu carrito en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#OfertaSemanal", "#Estilo", "#EnviosMexico"],
+      "imageTheme": "product_spotlight"
     },
     {
       "day": "Viernes",
       "type": "TIENDA_GLOBAL",
-      "title": "Envíos Asegurados a Toda la República",
-      "focus": "Tranquilidad y empaque blindado de extremo a extremo sin pretextos.",
-      "cta": "Pide tu orden en foxdrop.mx"
+      "title": "Garantía Nacional y Envíos Asegurados",
+      "eyebrow": "COBERTURA NACIONAL • PAQUETERÍA SEGURA",
+      "hook": "Tu paquete viaja 100% blindado y rastreable.",
+      "headline": "Envíos Protegidos a Toda la República",
+      "copy": "Cada orden se empaca con protección de grado premium para que llegue impecable a cualquier rincón de México. Compra con total confianza.",
+      "cta": "Haz tu pedido en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#GarantiaTotal", "#EnviosSeguros", "#Mexico"],
+      "imageTheme": "store_shipping"
     },
     {
       "day": "Sábado",
       "type": "PRODUCTO_STOCK",
       "title": "Llegadas de Fin de Semana",
-      "focus": "Piezas limitadas listas para despachar lunes a primera hora.",
-      "cta": "Asegura tu pedido antes de que se agote"
+      "eyebrow": "ÚLTIMAS PIEZAS • DISPONIBILIDAD INMEDIATA",
+      "hook": "Date el capricho que te mereces este fin de semana.",
+      "headline": "Edición Limitada de Importación",
+      "copy": "Piezas exclusivas con unidades contadas. Despachamos a primera hora el lunes para que disfrutes tu compra sin esperas.",
+      "cta": "Aparta la tuya en foxdrop.mx/tienda",
+      "hashtags": ["#FoxDrop", "#FinDeSemana", "#ComprasOnline", "#Trending"],
+      "imageTheme": "product_spotlight"
     },
     {
       "day": "Domingo",
       "type": "TIENDA_GLOBAL",
-      "title": "Tu Estilo, Tu Curaduría",
-      "focus": "Comunidad FoxDrop México: clientes recibiendo sus paquetes en todo el país.",
-      "cta": "Únete a foxdrop.mx"
+      "title": "Comunidad FoxDrop México",
+      "eyebrow": "EL MUNDO EN TUS MANOS • FOXDROP",
+      "hook": "Miles de clientes satisfechos en todo México.",
+      "headline": "Tu Destino Confiable de Importación",
+      "copy": "Conéctate con la experiencia de comprar lo que amas del extranjero con la cercanía y respaldo de FoxDrop México.",
+      "cta": "Conoce más en foxdrop.mx",
+      "hashtags": ["#FoxDrop", "#ClientesFelices", "#ComprasSeguras", "#Mexico"],
+      "imageTheme": "store_community"
     }
   ],
   "funnelDiagnostic": "Diagnóstico claro y profesional explicando por qué se están perdiendo ventas y cómo el contenido de la semana resolverá esa fuga.",

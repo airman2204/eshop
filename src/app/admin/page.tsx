@@ -474,6 +474,7 @@ export default function AdminCRM() {
   const [mktLoadingStrategy, setMktLoadingStrategy] = useState(false);
   const [mktUserFeedback, setMktUserFeedback] = useState('');
   const [mktPreviewFormat, setMktPreviewFormat] = useState<'ig' | 'tk'>('ig');
+  const [mktSelectedDayIndex, setMktSelectedDayIndex] = useState<number>(0);
   const [mktGeneratedImage, setMktGeneratedImage] = useState<string>('');
   const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
   const [mktPublishing, setMktPublishing] = useState(false);
@@ -7492,34 +7493,40 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 <span className="text-[11px] font-black uppercase text-stone-700 tracking-wider block">
                                   📅 Parrilla Semanal Equilibrada (Tienda vs Stock):
                                 </span>
-                                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                                  {mktStrategy.weeklyParrilla.map((dayPlan: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className={`p-2 rounded-xl border text-[11px] flex items-center justify-between gap-2 ${
-                                        dayPlan.type === 'TIENDA_GLOBAL'
-                                          ? 'bg-[#0F3E36]/5 border-[#0F3E36]/20'
-                                          : 'bg-amber-500/5 border-amber-500/20'
-                                      }`}
-                                    >
-                                      <div className="space-y-0.5">
-                                        <div className="flex items-center gap-1.5 font-bold">
-                                          <span className="text-stone-900 font-black">{dayPlan.day}:</span>
-                                          <span className="text-stone-700">{dayPlan.title}</span>
-                                        </div>
-                                        <p className="text-stone-500 text-[10px] line-clamp-1">{dayPlan.focus}</p>
-                                      </div>
-                                      <span
-                                        className={`px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${
-                                          dayPlan.type === 'TIENDA_GLOBAL'
-                                            ? 'bg-[#0F3E36] text-white'
-                                            : 'bg-[#E65F2B] text-white'
+                                <div className="grid grid-cols-1 gap-1.5 max-h-56 overflow-y-auto pr-1">
+                                  {mktStrategy.weeklyParrilla.map((dayPlan: any, idx: number) => {
+                                    const isSelected = mktSelectedDayIndex === idx;
+                                    return (
+                                      <button
+                                        key={idx}
+                                        onClick={() => setMktSelectedDayIndex(idx)}
+                                        className={`w-full text-left p-2.5 rounded-xl border text-[11px] flex items-center justify-between gap-2 transition cursor-pointer ${
+                                          isSelected
+                                            ? 'ring-2 ring-[#0F3E36] bg-[#0F3E36]/10 border-[#0F3E36]'
+                                            : dayPlan.type === 'TIENDA_GLOBAL'
+                                            ? 'bg-[#0F3E36]/5 border-[#0F3E36]/20 hover:bg-[#0F3E36]/10'
+                                            : 'bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10'
                                         }`}
                                       >
-                                        {dayPlan.type === 'TIENDA_GLOBAL' ? 'Tienda Global' : 'Stock Bodega'}
-                                      </span>
-                                    </div>
-                                  ))}
+                                        <div className="space-y-0.5">
+                                          <div className="flex items-center gap-1.5 font-bold">
+                                            <span className={`px-1.5 py-0.2 rounded text-[10px] font-black ${isSelected ? 'bg-[#0F3E36] text-white' : 'text-stone-900'}`}>{dayPlan.day}</span>
+                                            <span className="text-stone-800 font-bold">{dayPlan.title}</span>
+                                          </div>
+                                          <p className="text-stone-500 text-[10px] line-clamp-1">{dayPlan.headline || dayPlan.focus}</p>
+                                        </div>
+                                        <span
+                                          className={`px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${
+                                            dayPlan.type === 'TIENDA_GLOBAL'
+                                              ? 'bg-[#0F3E36] text-white'
+                                              : 'bg-[#E65F2B] text-white'
+                                          }`}
+                                        >
+                                          {dayPlan.type === 'TIENDA_GLOBAL' ? 'Tienda Global' : 'Stock Bodega'}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -7721,45 +7728,64 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
 
                             {/* CAPA SUPERIOR: BADGE Y HEADER DE MARCA */}
-                            <div className="relative z-10 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
-                                <span className="text-[#E3B888] text-[10px]">✦</span>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
-                                  {mktStrategy?.designSystem?.eyebrow || 'CURADURÍA FOXDROP • IMPORTACIÓN OFICIAL'}
-                                </span>
-                              </div>
+                            {(() => {
+                              const currentDayPlan = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex];
+                              const isStoreGlobal = currentDayPlan?.type === 'TIENDA_GLOBAL';
+                              const dayTitle = currentDayPlan?.title;
+                              const dayHeadline = currentDayPlan?.headline || mktStrategy?.designSystem?.mainTitle || mktStrategy?.featuredProduct?.title;
+                              const dayEyebrow = currentDayPlan?.eyebrow || (isStoreGlobal ? 'CURADURÍA GLOBAL • FOXDROP.MX' : 'LOTE LIMITADO • IMPORTACIÓN OFICIAL');
+                              const dayPillar = isStoreGlobal ? 'Garantía Nacional foxdrop.mx' : (mktStrategy?.storeWideStrategy?.pillar || 'Stock Confirmado en Bodega');
+                              const daySubtitle = currentDayPlan?.hook || 'Autenticidad 100% garantizada • Sin trámites aduanales';
 
-                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#E65F2B] text-white shadow-md">
-                                {mktStrategy?.designSystem?.promoTag || 'Lote Limitado'}
-                              </span>
-                            </div>
+                              return (
+                                <>
+                                  <div className="relative z-10 flex items-center justify-between">
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
+                                      <span className="text-[#E3B888] text-[10px]">✦</span>
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
+                                        {dayEyebrow}
+                                      </span>
+                                    </div>
 
-                            {/* CAPA INFERIOR: TITULAR EDITORIAL, SELLO DE CONFIANZA Y PRECIO */}
-                            <div className="relative z-10 space-y-2 mt-auto">
-                              <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
-                                <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
-                                  {mktStrategy?.storeWideStrategy?.pillar || 'Garantía Nacional foxdrop.mx'}
-                                </p>
-                                <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                                  {mktStrategy?.designSystem?.mainTitle || mktStrategy?.featuredProduct?.title || 'Lo Mejor de Importación en México'}
-                                </h3>
-                                <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
-                                  {mktStrategy?.designSystem?.subtitle || 'Autenticidad 100% garantizada • Sin trámites aduanales'}
-                                </p>
-
-                                <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
-                                  <div className="flex items-center gap-1.5 text-stone-200 font-medium">
-                                    <span className="text-[#E3B888]">🛡️</span>
-                                    <span>{mktStrategy?.designSystem?.trustBadge || 'Envíos Asegurados a Todo México'}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
+                                        {currentDayPlan?.day || 'Lunes'}
+                                      </span>
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
+                                        {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
+                                      </span>
+                                    </div>
                                   </div>
-                                  {mktStrategy?.featuredProduct?.price && (
-                                    <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
-                                      ${mktStrategy.featuredProduct.price} MXN
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+
+                                  {/* CAPA INFERIOR: TITULAR EDITORIAL, SELLO DE CONFIANZA Y PRECIO */}
+                                  <div className="relative z-10 space-y-2 mt-auto">
+                                    <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
+                                      <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
+                                        {dayPillar}
+                                      </p>
+                                      <h3 className="text-sm sm:text-base font-black text-white leading-tight">
+                                        {dayHeadline}
+                                      </h3>
+                                      <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
+                                        {daySubtitle}
+                                      </p>
+
+                                      <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
+                                        <div className="flex items-center gap-1.5 text-stone-200 font-medium">
+                                          <span className="text-[#E3B888]">🛡️</span>
+                                          <span>{mktStrategy?.designSystem?.trustBadge || 'Envíos Asegurados a Todo México'}</span>
+                                        </div>
+                                        {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
+                                          <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                            ${mktStrategy.featuredProduct.price} MXN
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
+                              );
+                            })()}
 
                             {/* BOTÓN RE-GENERAR ARTE NANO BANANA CON GEMINI */}
                             <div className="absolute top-14 right-4 z-20">
@@ -7783,23 +7809,37 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             )}
                           </div>
 
-                          {/* CAPTION Y ENLACE */}
-                          <div className="p-3.5 space-y-2 text-xs">
-                            <div className="flex items-center gap-3 text-base text-stone-700">
-                              <span>❤️</span>
-                              <span>💬</span>
-                              <span>🚀</span>
-                            </div>
-                            <p className="text-stone-700 leading-relaxed">
-                              <strong className="text-stone-900">foxdrop.mx</strong> {mktStrategy?.igPost?.caption || '¿Buscando lo mejor de importación en México? Descubre las piezas disponibles esta semana en nuestra tienda oficial con garantía y envíos protegidos.'}
-                            </p>
-                            <p className="text-[#0F3E36] font-bold">
-                              👉 {mktStrategy?.featuredProduct?.id ? `foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}` : 'foxdrop.mx/tienda'}
-                            </p>
-                            <p className="text-[11px] text-stone-400">
-                              {(mktStrategy?.igPost?.hashtags || ['#FoxDrop', '#Tendencias', '#ComprasSeguras']).join(' ')}
-                            </p>
-                          </div>
+                          {/* CAPTION Y ENLACE DEDICADOS AL DÍA SELECCIONADO */}
+                          {(() => {
+                            const curDay = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex];
+                            const curCopy = curDay?.copy || mktStrategy?.igPost?.caption || '¿Buscando lo mejor de importación en México? Descubre las piezas disponibles esta semana en nuestra tienda oficial con garantía y envíos protegidos.';
+                            const curTags = curDay?.hashtags || mktStrategy?.igPost?.hashtags || ['#FoxDrop', '#Tendencias', '#ComprasSeguras'];
+                            const isStoreGlobal = curDay?.type === 'TIENDA_GLOBAL';
+
+                            return (
+                              <div className="p-3.5 space-y-2 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3 text-base text-stone-700">
+                                    <span>❤️</span>
+                                    <span>💬</span>
+                                    <span>🚀</span>
+                                  </div>
+                                  <span className="text-[10px] font-bold text-stone-400">
+                                    Día programado: <strong className="text-stone-800">{curDay?.day || 'Lunes'}</strong>
+                                  </span>
+                                </div>
+                                <p className="text-stone-700 leading-relaxed">
+                                  <strong className="text-stone-900">foxdrop.mx</strong> {curCopy}
+                                </p>
+                                <p className="text-[#0F3E36] font-bold">
+                                  👉 {isStoreGlobal ? 'foxdrop.mx/tienda' : (mktStrategy?.featuredProduct?.id ? `foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}` : 'foxdrop.mx/tienda')}
+                                </p>
+                                <p className="text-[11px] text-stone-400">
+                                  {curTags.join(' ')}
+                                </p>
+                              </div>
+                            );
+                          })()}
 
                           {/* BOTÓN DIRECTO DE PUBLICACIÓN */}
                           <div className="p-3 bg-stone-50 border-t border-stone-200 flex justify-end">
