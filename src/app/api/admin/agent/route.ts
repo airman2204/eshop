@@ -339,8 +339,28 @@ Formula una estrategia semanal completa que combine la visión global de la tien
         try {
           parsed = JSON.parse(aiResponse);
         } catch {
-          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-          if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
+          // Si el LLM devolvió markdown ```json ... ``` o saltos de línea / comas inválidas
+          try {
+            const clean = aiResponse
+              .replace(/^```json\s*/i, "")
+              .replace(/^```\s*/i, "")
+              .replace(/```$/i, "")
+              .trim();
+            parsed = JSON.parse(clean);
+          } catch {
+            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                parsed = JSON.parse(jsonMatch[0]);
+              } catch {
+                // Limpieza de caracteres de control o comas finales
+                const sanitized = jsonMatch[0]
+                  .replace(/,\s*([}\]])/g, "$1") // remover trailing commas
+                  .replace(/[\u0000-\u001F]+/g, " "); // remover caracteres de control ASCII
+                parsed = JSON.parse(sanitized);
+              }
+            }
+          }
         }
 
         if (parsed) {
@@ -350,8 +370,9 @@ Formula una estrategia semanal completa que combine la visión global de la tien
           return NextResponse.json({ success: true, strategy: parsed });
         }
 
-        throw new Error("No se pudo estructurar la propuesta estratégica");
+        throw new Error("No se pudo estructurar la propuesta estratégica en formato JSON");
       } catch (err: any) {
+        console.error("Error en mkt_director_strategy:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
       }
     }
