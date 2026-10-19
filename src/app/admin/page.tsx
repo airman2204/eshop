@@ -7584,8 +7584,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 {/* 3. COLUMNA DOBLE: CONSEJO ESTRATÉGICO A LA IZQUIERDA + SIMULADOR DE REDES A LA DERECHA */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                  {/* COLUMNA IZQUIERDA: EL DIRECTOR DE MARKETING */}
-                  <div className="lg:col-span-5 space-y-4">
+                  {/* COLUMNA IZQUIERDA: CONTROL DE DIRECCIÓN Y FEEDBACK */}
+                  <div className="lg:col-span-4 space-y-4">
                     <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                         <div className="flex items-center gap-3">
@@ -7594,83 +7594,44 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </div>
                           <div>
                             <h4 className="text-sm font-black text-stone-900">Director de Marketing</h4>
-                            <p className="text-[11px] text-stone-400">Diagnóstico & Estrategia Semanal</p>
+                            <p className="text-[11px] text-stone-400">Inteligencia Comercial</p>
                           </div>
                         </div>
                         <button
                           onClick={() => handleGenerateDirectorStrategy()}
                           disabled={mktLoadingStrategy}
-                          className="px-3 py-1.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-xs transition"
+                          className="px-3 py-1.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                         >
                           {mktLoadingStrategy ? 'Analizando...' : (mktStrategy ? '↻ Re-evaluar' : 'Consultar Director')}
                         </button>
                       </div>
 
-                      {/* CONTENIDO DEL DIRECTOR */}
+                      {/* ESTADO O INSTRUCCIÓN */}
                       {mktStrategy ? (
                         <div className="space-y-3 text-xs leading-relaxed">
-                          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl">
-                            <span className="text-[11px] font-black text-amber-900 block mb-1">Diagnóstico del Embudo:</span>
-                            <p className="text-stone-700">{mktStrategy.funnelDiagnostic}</p>
-                          </div>
-
-                          <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
-                            <div>
-                              <span className="text-[11px] font-bold text-[#0F3E36] block mb-0.5">Estrategia Propuesta: "{mktStrategy.weeklyTheme}"</span>
-                              <p className="text-stone-600">{mktStrategy.strategicAngle}</p>
-                            </div>
-
-                            {/* PILAR GLOBAL DE TIENDA */}
-                            {mktStrategy.storeWideStrategy && (
-                              <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1">
-                                <div className="flex items-center gap-1.5 text-[#0F3E36] font-black text-[11px]">
-                                  <span>🌐</span>
-                                  <span>Pilar Global de Tienda: {mktStrategy.storeWideStrategy.pillar}</span>
-                                </div>
-                                <p className="text-stone-700 text-[11px]">
-                                  {mktStrategy.storeWideStrategy.valueProposition}
-                                </p>
-                              </div>
-                            )}
-
-                            {/* PRODUCTO SUGERIDO POR EL ANALISTA PARA REVISIÓN DEL CEO */}
-                            {mktStrategy.featuredProduct && (
-                              <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
-                                <div>
-                                  <span className="font-bold text-stone-800 text-[11px]">Sugerencia de Rotación: </span>
-                                  <span className="text-[#E65F2B] font-bold text-[11px]">{mktStrategy.featuredProduct.title}</span>
-                                </div>
-                                <span className="font-black text-xs text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-stone-200">${mktStrategy.featuredProduct.price} MXN</span>
-                              </div>
-                            )}
+                          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900">
+                            <span className="font-black text-[11px] block">✓ Propuesta Lista</span>
+                            <p className="text-[11px] text-stone-600 mt-0.5">
+                              Revisa el diagnóstico y ángulo en el panel derecho. Si estás conforme, aprueba para pasar a la redacción de copys.
+                            </p>
                           </div>
 
                           {/* CAMPO DE AJUSTE Y FEEDBACK DE MARIO */}
-                          <div className="pt-2 border-t border-stone-200 space-y-2.5">
-                            <label className="text-[11px] font-bold text-stone-600 block">¿Tienes otra idea o enfoque para la semana?</label>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={mktUserFeedback}
-                                onChange={e => setMktUserFeedback(e.target.value)}
-                                placeholder="Ej: Enfocarse en paquetes de regalo o envíos gratis..."
-                                className="flex-1 text-xs p-2.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F3E36]"
-                              />
-                              <button
-                                onClick={() => handleGenerateDirectorStrategy(mktUserFeedback)}
-                                disabled={mktLoadingStrategy}
-                                className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl transition cursor-pointer"
-                              >
-                                Ajustar
-                              </button>
-                            </div>
-
+                          <div className="pt-2 border-t border-stone-200 space-y-2">
+                            <label className="text-[11px] font-bold text-stone-700 block">¿Deseas orientar la estrategia a otro objetivo?</label>
+                            <textarea
+                              rows={3}
+                              value={mktUserFeedback}
+                              onChange={e => setMktUserFeedback(e.target.value)}
+                              placeholder="Ej: Esta semana quiero enfocarme en los lotes con más tiempo en bodega o promover regalos..."
+                              className="w-full text-xs p-2.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F3E36] resize-none"
+                            />
                             <button
-                              onClick={() => handleGenerateParrillaCopys()}
-                              disabled={mktLoadingCopys}
-                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                              onClick={() => handleGenerateDirectorStrategy(mktUserFeedback)}
+                              disabled={mktLoadingStrategy}
+                              className="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl transition cursor-pointer"
                             >
-                              <span>{mktLoadingCopys ? 'Convocando al Copywriter...' : 'Aprobar Estrategia y Redactar Copys (Paso 2) →'}</span>
+                              {mktLoadingStrategy ? 'Reajustando...' : 'Re-analizar con este Enfoque'}
                             </button>
                           </div>
                         </div>
@@ -7680,7 +7641,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           <button
                             onClick={() => handleGenerateDirectorStrategy()}
                             disabled={mktLoadingStrategy}
-                            className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-sm transition"
+                            className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer"
                           >
                             {mktLoadingStrategy ? 'Analizando Catálogo y Ventas...' : 'Iniciar Consulta con el Director'}
                           </button>
@@ -7690,7 +7651,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
 
                   {/* COLUMNA DERECHA: ADAPTATIVA SEGÚN LA ETAPA DEL FLUJO (PASO 1, 2 O 3) */}
-                  <div className="lg:col-span-7 space-y-4">
+                  <div className="lg:col-span-8 space-y-4">
                     {/* ETAPA 1: REVISIÓN Y APROBACIÓN DEL DIAGNÓSTICO Y ÁNGULO DEL DIRECTOR */}
                     {mktWorkflowStep === 1 && (
                       <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-5">
@@ -7759,7 +7720,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                     {mktStrategy.featuredProduct.title}
                                   </h4>
                                   <p className="text-[11px] text-stone-500">
-                                    {mktStrategy?.teamTasks?.analyst?.marginInsight || "Seleccionado para elevar el ticket promedio y acelerar rotación."}
+                                    {mktStrategy.analystInsight || "Seleccionado para elevar el ticket promedio y acelerar rotación."}
                                   </p>
                                 </div>
                                 <span className="px-3 py-1 bg-white border border-stone-200 rounded-xl font-black text-xs text-stone-900 shrink-0">
