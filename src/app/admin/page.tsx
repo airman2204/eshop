@@ -7916,34 +7916,45 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
                                 <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
 
-                                {/* 1. SI ES TIENDA GLOBAL: Composición visual institucional de marca (sin foto descontextualizada) */}
-                                {isStoreGlobal ? (
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-1 text-center space-y-3">
-                                    <div className="w-20 h-20 rounded-3xl bg-black/40 border-2 border-[#E3B888] flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">
-                                      🦊
-                                    </div>
-                                    <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#E3B888] text-[10px] font-black uppercase tracking-widest">
-                                      foxdrop.mx • Tu Atajo al Mundo
-                                    </div>
-                                    <div className="text-stone-300 text-[11px] max-w-xs leading-relaxed font-medium">
-                                      Importamos lo más exclusivo de USA y el mundo directo a tus manos. Sin esperas de semanas, sin trámites aduanales.
-                                    </div>
-                                  </div>
-                                ) : (
-                                  /* 2. SI ES PRODUCTO DE STOCK: Bodegón de producto real */
-                                  mktStrategy?.featuredProduct?.image && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-1 p-10">
-                                      <div className="relative max-h-56 max-w-xs flex items-center justify-center">
-                                        <div className="absolute -bottom-4 w-44 h-7 bg-black/70 rounded-full blur-xl" />
-                                        <img
-                                          src={mktStrategy.featuredProduct.image}
-                                          alt="Product Spotlight"
-                                          className="max-w-full max-h-52 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] transform hover:scale-105 transition duration-500"
-                                        />
+                                {/* FOTO DEL PRODUCTO DESTACADO / BODEGÓN COMERCIAL */}
+                                {(() => {
+                                  const displayImg = mktGeneratedImage || mktStrategy?.featuredProduct?.image;
+                                  if (displayImg) {
+                                    return (
+                                      <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
+                                        <div className="relative max-h-60 max-w-xs flex flex-col items-center justify-center">
+                                          {/* Halo luminoso y pedestal detrás del producto */}
+                                          <div
+                                            className="absolute w-52 h-52 rounded-full blur-2xl opacity-40 -z-10 pointer-events-none"
+                                            style={{ backgroundColor: accentColor || '#E3B888' }}
+                                          />
+                                          <div className="absolute -bottom-3 w-48 h-6 bg-black/80 rounded-full blur-lg -z-10" />
+                                          <img
+                                            src={displayImg}
+                                            alt={mktStrategy?.featuredProduct?.title || "Producto"}
+                                            className="max-w-full max-h-56 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transform hover:scale-105 transition duration-500"
+                                            onError={(e) => {
+                                              if (mktStrategy?.featuredProduct?.image && e.currentTarget.src !== mktStrategy.featuredProduct.image) {
+                                                e.currentTarget.src = mktStrategy.featuredProduct.image;
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-1 text-center space-y-3">
+                                      <div className="w-20 h-20 rounded-3xl bg-black/40 border-2 border-[#E3B888] flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">
+                                        🦊
+                                      </div>
+                                      <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#E3B888] text-[10px] font-black uppercase tracking-widest">
+                                        foxdrop.mx • Tu Atajo al Mundo
                                       </div>
                                     </div>
-                                  )
-                                )}
+                                  );
+                                })()}
 
                                 {/* Gradiente cinemático inferior para lectura óptima */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
