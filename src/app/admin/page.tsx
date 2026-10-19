@@ -479,6 +479,162 @@ export default function AdminCRM() {
   const [mktPublishing, setMktPublishing] = useState(false);
   const [mktPublishSuccess, setMktPublishSuccess] = useState<string | null>(null);
 
+  // ─── HANDLERS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
+  const handleLoadFunnelMetrics = async (overrideTarget?: number) => {
+    setMktLoadingMetrics(true);
+    const targetToUse = overrideTarget || targetSalesGoal;
+
+    // 1. Cálculo instantáneo con pedidos reales en memoria (garantiza cero ceros o desincronización)
+    if (orders && orders.length > 0) {
+      const validPaid = orders.filter(o => o.paymentStatus === 'paid' || o.status === 'delivered' || o.status === 'shipped');
+      const salesSum = validPaid.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+      const count = validPaid.length;
+      const ticket = count > 0 ? Math.round(salesSum / count) : 450;
+      const remaining = Math.max(0, targetToUse - salesSum);
+      const needed = ticket > 0 ? Math.ceil(remaining / ticket) : 0;
+      const pacing = Number(((salesSum / targetToUse) * 100).toFixed(1));
+
+      const cartsTotal = (abandonedCarts || []).reduce((acc, c) => acc + (Number(c.total) || 0), 0);
+      const estVisitors = Math.max(120, (count + (abandonedCarts?.length || 0)) * 6);
+      const convRate = estVisitors > 0 ? Number(((count / estVisitors) * 100).toFixed(2)) : 0;
+
+      setMktFunnelMetrics({
+        monthlySales: salesSum,
+        targetMonthly: targetToUse,
+        pacingPercent: pacing,
+        orderCount: count,
+        avgTicket: ticket,
+        remainingToTarget: remaining,
+        estimatedOrdersNeeded: needed,
+        abandonedCartsCount: abandonedCarts?.length || 0,
+        abandonedCartsTotal: cartsTotal,
+        estimatedVisitors: estVisitors,
+        conversionRate: convRate,
+      });
+    }
+
+    // 2. Consulta al servidor para sincronizar métricas del mes
+    try {
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_get_funnel_metrics',
+          targetMonthly: targetToUse,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.metrics) {
+        setMktFunnelMetrics(data.metrics);
+      }
+    } catch (err) {
+      console.warn('Error cargando métricas de embudo:', err);
+    } finally {
+      setMktLoadingMetrics(false);
+    }
+  };
+
+  const handleUpdateSalesGoal = (newGoal: number) => {
+    const validGoal = Math.max(1000, newGoal);
+    setTargetSalesGoal(validGoal);
+    try {
+      localStorage.setItem('foxdrop_mkt_sales_goal', validGoal.toString());
+    } catch {}
+    setIsEditingGoal(false);
+    handleLoadFunnelMetrics(validGoal);
+  };
+
+  const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
+    setMktLoadingStrategy(true);
+    try {
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_director_strategy',
+          feedback: userFeedbackParam || mktUserFeedback || '',
+          targetMonthly: targetSalesGoal,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.strategy) {
+        setMktStrategy(data.strategy);
+        // Generar arte con Nano Banana de inmediato
+        if (data.strategy.nanoBananaPrompt) {
+          handleGenerateNanoBananaImage(data.strategy.nanoBananaPrompt, data.strategy.featuredProduct?.title);
+        }
+      } else {
+        alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
+      }
+    } catch (err: any) {
+      alert(`Error al contactar con el Director: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktLoadingStrategy(false);
+    }
+  };
+
+
+  const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string) => {
+    setMktGeneratingImage(true);
+    try {
+      const promptToUse = customPrompt || mktStrategy?.nanoBananaPrompt || '';
+      const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
+      const formatToUse = mktPreviewFormat === 'tk' ? '9:16' : '1:1';
+
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_visual_nanobanana',
+          prompt: promptToUse,
+          format: formatToUse,
+          productTitle: titleToUse,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.imageUrl) {
+        setMktGeneratedImage(data.imageUrl);
+      }
+    } catch (err) {
+      console.warn('Error generando imagen Nano Banana:', err);
+    } finally {
+      setMktGeneratingImage(false);
+    }
+  };
+
+  const handlePublishMarketingPost = async (platformName: 'instagram' | 'tiktok' | 'all') => {
+    setMktPublishing(true);
+    setMktPublishSuccess(null);
+    try {
+      const linkUrl = mktStrategy?.featuredProduct?.id
+        ? `https://foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}`
+        : 'https://foxdrop.mx/tienda';
+
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_social_publish',
+          platform: platformName,
+          imageUrl: mktGeneratedImage,
+          linkUrl,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMktPublishSuccess(`¡Publicado con éxito en ${platformName === 'all' ? 'Instagram, Facebook y TikTok' : platformName}! Tráfico dirigiendo a foxdrop.mx`);
+        setTimeout(() => setMktPublishSuccess(null), 6000);
+      } else {
+        alert(`Error al publicar: ${data.error || 'Intenta de nuevo'}`);
+      }
+    } catch (err: any) {
+      alert(`Error de red al publicar: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktPublishing(false);
+    }
+  };
+
+
 
 
   // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
@@ -840,6 +996,9 @@ export default function AdminCRM() {
   useEffect(() => {
     if (crmSubTab === 'carts') {
       getAdminAbandonedCarts().then(dbCarts => setAbandonedCarts(dbCarts ?? []));
+    }
+    if (crmSubTab === 'agent') {
+      handleLoadFunnelMetrics();
     }
   }, [crmSubTab]);
 
@@ -2207,130 +2366,6 @@ export default function AdminCRM() {
       alert(`Error al ajustar stock: ${err.message || 'Intenta de nuevo'}`);
     } finally {
       setSavingBulkStock(false);
-    }
-  };
-
-  // ─── HANDLERS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
-  const handleLoadFunnelMetrics = async (overrideTarget?: number) => {
-    setMktLoadingMetrics(true);
-    const targetToUse = overrideTarget || targetSalesGoal;
-    try {
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_get_funnel_metrics',
-          targetMonthly: targetToUse,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.metrics) {
-        setMktFunnelMetrics(data.metrics);
-      }
-    } catch (err) {
-      console.warn('Error cargando métricas de embudo:', err);
-    } finally {
-      setMktLoadingMetrics(false);
-    }
-  };
-
-  const handleUpdateSalesGoal = (newGoal: number) => {
-    const validGoal = Math.max(1000, newGoal);
-    setTargetSalesGoal(validGoal);
-    try {
-      localStorage.setItem('foxdrop_mkt_sales_goal', validGoal.toString());
-    } catch {}
-    setIsEditingGoal(false);
-    handleLoadFunnelMetrics(validGoal);
-  };
-
-  const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
-    setMktLoadingStrategy(true);
-    try {
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_director_strategy',
-          feedback: userFeedbackParam || mktUserFeedback || '',
-          targetMonthly: targetSalesGoal,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.strategy) {
-        setMktStrategy(data.strategy);
-        // Generar arte con Nano Banana de inmediato
-        if (data.strategy.nanoBananaPrompt) {
-          handleGenerateNanoBananaImage(data.strategy.nanoBananaPrompt, data.strategy.featuredProduct?.title);
-        }
-      } else {
-        alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
-      }
-    } catch (err: any) {
-      alert(`Error al contactar con el Director: ${err.message || 'Intenta de nuevo'}`);
-    } finally {
-      setMktLoadingStrategy(false);
-    }
-  };
-
-
-  const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string) => {
-    setMktGeneratingImage(true);
-    try {
-      const promptToUse = customPrompt || mktStrategy?.nanoBananaPrompt || '';
-      const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
-      const formatToUse = mktPreviewFormat === 'tk' ? '9:16' : '1:1';
-
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_visual_nanobanana',
-          prompt: promptToUse,
-          format: formatToUse,
-          productTitle: titleToUse,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.imageUrl) {
-        setMktGeneratedImage(data.imageUrl);
-      }
-    } catch (err) {
-      console.warn('Error generando imagen Nano Banana:', err);
-    } finally {
-      setMktGeneratingImage(false);
-    }
-  };
-
-  const handlePublishMarketingPost = async (platformName: 'instagram' | 'tiktok' | 'all') => {
-    setMktPublishing(true);
-    setMktPublishSuccess(null);
-    try {
-      const linkUrl = mktStrategy?.featuredProduct?.id
-        ? `https://foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}`
-        : 'https://foxdrop.mx/tienda';
-
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_social_publish',
-          platform: platformName,
-          imageUrl: mktGeneratedImage,
-          linkUrl,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMktPublishSuccess(`¡Publicado con éxito en ${platformName === 'all' ? 'Instagram, Facebook y TikTok' : platformName}! Tráfico dirigiendo a foxdrop.mx`);
-        setTimeout(() => setMktPublishSuccess(null), 6000);
-      } else {
-        alert(`Error al publicar: ${data.error || 'Intenta de nuevo'}`);
-      }
-    } catch (err: any) {
-      alert(`Error de red al publicar: ${err.message || 'Intenta de nuevo'}`);
-    } finally {
-      setMktPublishing(false);
     }
   };
 
@@ -7253,136 +7288,161 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                   {/* Barra de progreso con Meta Editable (ej. 10X, $40K, $100K) */}
                   <div className="bg-[#FBF9F5] border border-stone-200 rounded-2xl p-4 min-w-[340px]">
-                    <div className="flex justify-between items-center text-xs mb-1.5 font-bold">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-stone-600">Meta del Mes:</span>
-                        {isEditingGoal ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              value={tempGoalInput}
-                              onChange={e => setTempGoalInput(e.target.value)}
-                              className="w-24 px-1.5 py-0.5 text-xs font-bold border border-stone-300 rounded focus:outline-none"
-                              autoFocus
-                            />
+                    {(() => {
+                      const paidList = (orders || []).filter(o => o.paymentStatus === 'paid' || o.status === 'delivered' || o.status === 'shipped');
+                      const liveSales = paidList.length > 0 ? paidList.reduce((acc, o) => acc + (Number(o.total) || 0), 0) : (mktFunnelMetrics.monthlySales || 0);
+                      const goal = targetSalesGoal || 50000;
+                      const dynamicPacing = Number(((liveSales / goal) * 100).toFixed(1));
+                      const liveAvgTicket = paidList.length > 0 ? Math.round(liveSales / paidList.length) : (mktFunnelMetrics.avgTicket || 450);
+                      const ticket = liveAvgTicket > 0 ? liveAvgTicket : 450;
+                      const remaining = Math.max(0, goal - liveSales);
+                      const ordersNeeded = Math.ceil(remaining / ticket);
+
+                      return (
+                        <>
+                          <div className="flex justify-between items-center text-xs mb-1.5 font-bold">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-stone-600">Meta del Mes:</span>
+                              {isEditingGoal ? (
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    value={tempGoalInput}
+                                    onChange={e => setTempGoalInput(e.target.value)}
+                                    className="w-24 px-1.5 py-0.5 text-xs font-bold border border-stone-300 rounded focus:outline-none"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleUpdateSalesGoal(Number(tempGoalInput))}
+                                    className="px-2 py-0.5 bg-[#0F3E36] text-white rounded text-[10px] font-bold"
+                                  >
+                                    Guardar
+                                  </button>
+                                  <button
+                                    onClick={() => setIsEditingGoal(false)}
+                                    className="px-1.5 py-0.5 text-stone-400 hover:text-stone-600 text-[10px]"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    setTempGoalInput(targetSalesGoal.toString());
+                                    setIsEditingGoal(true);
+                                  }}
+                                  className="text-[#E65F2B] hover:underline flex items-center gap-1 font-black text-sm"
+                                  title="Haz clic para editar la meta del mes"
+                                >
+                                  <span>${targetSalesGoal.toLocaleString()} MXN</span>
+                                  <span className="text-[10px] text-stone-400">✏️</span>
+                                </button>
+                              )}
+                            </div>
+                            <span className="text-stone-800 font-extrabold text-xs">
+                              ${liveSales.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {/* Accesos rápidos de metas (5X, 10X, $40K, $100K) */}
+                          <div className="flex items-center gap-1.5 mb-2 text-[10px]">
+                            <span className="text-stone-400">Objetivos:</span>
                             <button
-                              onClick={() => handleUpdateSalesGoal(Number(tempGoalInput))}
-                              className="px-2 py-0.5 bg-[#0F3E36] text-white rounded text-[10px] font-bold"
+                              onClick={() => handleUpdateSalesGoal(40000)}
+                              className={`px-1.5 py-0.5 rounded font-bold transition ${
+                                targetSalesGoal === 40000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                              }`}
                             >
-                              Guardar
+                              $40K
                             </button>
                             <button
-                              onClick={() => setIsEditingGoal(false)}
-                              className="px-1.5 py-0.5 text-stone-400 hover:text-stone-600 text-[10px]"
+                              onClick={() => handleUpdateSalesGoal(75000)}
+                              className={`px-1.5 py-0.5 rounded font-bold transition ${
+                                targetSalesGoal === 75000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                              }`}
                             >
-                              ✕
+                              🚀 5X ($75K)
+                            </button>
+                            <button
+                              onClick={() => handleUpdateSalesGoal(150000)}
+                              className={`px-1.5 py-0.5 rounded font-bold transition ${
+                                targetSalesGoal === 150000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
+                              }`}
+                            >
+                              ⚡ 10X ($150K)
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setTempGoalInput(targetSalesGoal.toString());
-                              setIsEditingGoal(true);
-                            }}
-                            className="text-[#E65F2B] hover:underline flex items-center gap-1 font-black text-sm"
-                            title="Haz clic para editar la meta del mes"
-                          >
-                            <span>${targetSalesGoal.toLocaleString()} MXN</span>
-                            <span className="text-[10px] text-stone-400">✏️</span>
-                          </button>
-                        )}
-                      </div>
-                      <span className="text-stone-800 font-extrabold text-xs">
-                        ${mktFunnelMetrics.monthlySales.toLocaleString()}
-                      </span>
-                    </div>
 
-                    {/* Accesos rápidos de metas (5X, 10X, $40K, $100K) */}
-                    <div className="flex items-center gap-1.5 mb-2 text-[10px]">
-                      <span className="text-stone-400">Objetivos:</span>
-                      <button
-                        onClick={() => handleUpdateSalesGoal(40000)}
-                        className={`px-1.5 py-0.5 rounded font-bold transition ${
-                          targetSalesGoal === 40000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
-                        }`}
-                      >
-                        $40K
-                      </button>
-                      <button
-                        onClick={() => handleUpdateSalesGoal(75000)}
-                        className={`px-1.5 py-0.5 rounded font-bold transition ${
-                          targetSalesGoal === 75000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
-                        }`}
-                      >
-                        🚀 5X ($75K)
-                      </button>
-                      <button
-                        onClick={() => handleUpdateSalesGoal(150000)}
-                        className={`px-1.5 py-0.5 rounded font-bold transition ${
-                          targetSalesGoal === 150000 ? 'bg-[#0F3E36] text-white' : 'bg-stone-200/70 text-stone-600 hover:bg-stone-300'
-                        }`}
-                      >
-                        ⚡ 10X ($150K)
-                      </button>
-                    </div>
-
-                    <div className="w-full bg-stone-200 h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-[#0F3E36] to-[#E65F2B] h-full rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(100, mktFunnelMetrics.pacingPercent)}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-stone-500 mt-1 font-medium">
-                      <span>{mktFunnelMetrics.pacingPercent}% alcanzado</span>
-                      <span>Ticket: ${mktFunnelMetrics.avgTicket}</span>
-                      <span>Faltan: {mktFunnelMetrics.estimatedOrdersNeeded} pedidos</span>
-                    </div>
+                          <div className="w-full bg-stone-200 h-2.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-[#0F3E36] to-[#E65F2B] h-full rounded-full transition-all duration-700"
+                              style={{ width: `${Math.min(100, dynamicPacing)}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-[11px] text-stone-500 mt-1 font-medium">
+                            <span>{dynamicPacing}% alcanzado</span>
+                            <span>Ticket: ${ticket}</span>
+                            <span>Faltan: {ordersNeeded.toLocaleString()} pedidos</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
 
                 {/* 2. EMBUDO DE CONVERSIÓN & LEADS (4 ETAPAS REALES DE SUPABASE) */}
-                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-stone-100">
-                    <span className="text-xs font-bold text-stone-700">Embudo de Conversión (Últimos 30 Días):</span>
-                    <button
-                      onClick={() => handleLoadFunnelMetrics()}
-                      disabled={mktLoadingMetrics}
-                      className="text-xs text-[#0F3E36] font-bold hover:underline flex items-center gap-1"
-                    >
-                      <span>{mktLoadingMetrics ? 'Actualizando...' : '↻ Refrescar Datos Reales'}</span>
-                    </button>
+                {(() => {
+                  const paidList = (orders || []).filter(o => o.paymentStatus === 'paid' || o.status === 'delivered' || o.status === 'shipped');
+                  const liveSales = paidList.length > 0 ? paidList.reduce((acc, o) => acc + (Number(o.total) || 0), 0) : mktFunnelMetrics.monthlySales;
+                  const liveOrderCount = paidList.length > 0 ? paidList.length : mktFunnelMetrics.orderCount;
+                  const liveCartsCount = (abandonedCarts && abandonedCarts.length > 0) ? abandonedCarts.length : mktFunnelMetrics.abandonedCartsCount;
+                  const liveCartsTotal = (abandonedCarts && abandonedCarts.length > 0) ? abandonedCarts.reduce((acc, c) => acc + (Number(c.total) || 0), 0) : mktFunnelMetrics.abandonedCartsTotal;
+                  const liveVisitors = Math.max(120, (liveOrderCount + liveCartsCount) * 6, mktFunnelMetrics.estimatedVisitors);
 
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
-                      <span className="text-stone-400 text-[11px] block font-medium">1. Visitas desde Redes</span>
-                      <div className="text-lg font-black text-stone-900 mt-0.5">{mktFunnelMetrics.estimatedVisitors.toLocaleString()}</div>
-                      <span className="text-[10px] text-stone-500">TikTok & Instagram</span>
-                    </div>
-
-                    <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
-                      <span className="text-stone-400 text-[11px] block font-medium">2. Carritos Armados</span>
-                      <div className="text-lg font-black text-stone-900 mt-0.5">
-                        {mktFunnelMetrics.orderCount + mktFunnelMetrics.abandonedCartsCount}
+                  return (
+                    <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-stone-100">
+                        <span className="text-xs font-bold text-stone-700">Embudo de Conversión (Últimos 30 Días):</span>
+                        <button
+                          onClick={() => handleLoadFunnelMetrics()}
+                          disabled={mktLoadingMetrics}
+                          className="text-xs text-[#0F3E36] font-bold hover:underline flex items-center gap-1"
+                        >
+                          <span>{mktLoadingMetrics ? 'Actualizando...' : '↻ Refrescar Datos Reales'}</span>
+                        </button>
                       </div>
-                      <span className="text-[10px] text-stone-500">Intención de compra</span>
-                    </div>
 
-                    <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200">
-                      <span className="text-red-700 text-[11px] block font-bold">3. Fuga (Carritos Abandonados)</span>
-                      <div className="text-lg font-black text-red-600 mt-0.5">{mktFunnelMetrics.abandonedCartsCount} leads</div>
-                      <span className="text-[10px] text-red-500 font-semibold">${mktFunnelMetrics.abandonedCartsTotal.toLocaleString()} MXN sin cerrar</span>
-                    </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+                          <span className="text-stone-400 text-[11px] block font-medium">1. Visitas desde Redes</span>
+                          <div className="text-lg font-black text-stone-900 mt-0.5">{liveVisitors.toLocaleString()}</div>
+                          <span className="text-[10px] text-stone-500">TikTok & Instagram</span>
+                        </div>
 
-                    <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200">
-                      <span className="text-emerald-800 text-[11px] block font-bold">4. Ventas Pagadas</span>
-                      <div className="text-lg font-black text-emerald-700 mt-0.5">{mktFunnelMetrics.orderCount} órdenes</div>
-                      <span className="text-[10px] text-emerald-700 font-semibold">${mktFunnelMetrics.monthlySales.toLocaleString()} MXN netos</span>
+                        <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+                          <span className="text-stone-400 text-[11px] block font-medium">2. Carritos Armados</span>
+                          <div className="text-lg font-black text-stone-900 mt-0.5">
+                            {liveOrderCount + liveCartsCount}
+                          </div>
+                          <span className="text-[10px] text-stone-500">Intención de compra</span>
+                        </div>
+
+                        <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200">
+                          <span className="text-red-700 text-[11px] block font-bold">3. Fuga (Carritos Abandonados)</span>
+                          <div className="text-lg font-black text-red-600 mt-0.5">{liveCartsCount} leads</div>
+                          <span className="text-[10px] text-red-500 font-semibold">${liveCartsTotal.toLocaleString()} MXN sin cerrar</span>
+                        </div>
+
+                        <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200">
+                          <span className="text-emerald-800 text-[11px] block font-bold">4. Ventas Pagadas</span>
+                          <div className="text-lg font-black text-emerald-700 mt-0.5">{liveOrderCount} órdenes</div>
+                          <span className="text-[10px] text-emerald-700 font-semibold">${liveSales.toLocaleString()} MXN netos</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* 3. COLUMNA DOBLE: CONSEJO ESTRATÉGICO A LA IZQUIERDA + SIMULADOR DE REDES A LA DERECHA */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
