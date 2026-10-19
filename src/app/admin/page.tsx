@@ -432,6 +432,42 @@ export default function AdminCRM() {
   const [flyerFormat, setFlyerFormat] = useState<'square' | 'story'>('square');
   const [flyerCustomBadge, setFlyerCustomBadge] = useState<string>('OFERTA ESPECIAL');
 
+  // ─── ESTADOS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
+  const [mktFunnelMetrics, setMktFunnelMetrics] = useState<{
+    monthlySales: number;
+    targetMonthly: number;
+    pacingPercent: number;
+    orderCount: number;
+    avgTicket: number;
+    remainingToTarget: number;
+    estimatedOrdersNeeded: number;
+    abandonedCartsCount: number;
+    abandonedCartsTotal: number;
+    estimatedVisitors: number;
+    conversionRate: number;
+  }>({
+    monthlySales: 0,
+    targetMonthly: 40000,
+    pacingPercent: 0,
+    orderCount: 0,
+    avgTicket: 450,
+    remainingToTarget: 40000,
+    estimatedOrdersNeeded: 88,
+    abandonedCartsCount: 0,
+    abandonedCartsTotal: 0,
+    estimatedVisitors: 0,
+    conversionRate: 0,
+  });
+  const [mktLoadingMetrics, setMktLoadingMetrics] = useState(false);
+  const [mktStrategy, setMktStrategy] = useState<any | null>(null);
+  const [mktLoadingStrategy, setMktLoadingStrategy] = useState(false);
+  const [mktUserFeedback, setMktUserFeedback] = useState('');
+  const [mktPreviewFormat, setMktPreviewFormat] = useState<'ig' | 'tk'>('ig');
+  const [mktGeneratedImage, setMktGeneratedImage] = useState<string>('');
+  const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
+  const [mktPublishing, setMktPublishing] = useState(false);
+  const [mktPublishSuccess, setMktPublishSuccess] = useState<string | null>(null);
+
 
   // Soporte PWA WebApp (Instalar aplicación en celular / escritorio)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2159,6 +2195,114 @@ export default function AdminCRM() {
       alert(`Error al ajustar stock: ${err.message || 'Intenta de nuevo'}`);
     } finally {
       setSavingBulkStock(false);
+    }
+  };
+
+  // ─── HANDLERS DE LA SUITE DE MARKETING (DATOS 100% REALES SUPABASE) ───
+  const handleLoadFunnelMetrics = async () => {
+    setMktLoadingMetrics(true);
+    try {
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mkt_get_funnel_metrics' }),
+      });
+      const data = await res.json();
+      if (data.success && data.metrics) {
+        setMktFunnelMetrics(data.metrics);
+      }
+    } catch (err) {
+      console.warn('Error cargando métricas de embudo:', err);
+    } finally {
+      setMktLoadingMetrics(false);
+    }
+  };
+
+  const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
+    setMktLoadingStrategy(true);
+    try {
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_director_strategy',
+          feedback: userFeedbackParam || mktUserFeedback || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.strategy) {
+        setMktStrategy(data.strategy);
+        // Generar arte con Nano Banana de inmediato
+        if (data.strategy.nanoBananaPrompt) {
+          handleGenerateNanoBananaImage(data.strategy.nanoBananaPrompt, data.strategy.featuredProduct?.title);
+        }
+      } else {
+        alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
+      }
+    } catch (err: any) {
+      alert(`Error al contactar con el Director: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktLoadingStrategy(false);
+    }
+  };
+
+  const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string) => {
+    setMktGeneratingImage(true);
+    try {
+      const promptToUse = customPrompt || mktStrategy?.nanoBananaPrompt || '';
+      const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
+      const formatToUse = mktPreviewFormat === 'tk' ? '9:16' : '1:1';
+
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_visual_nanobanana',
+          prompt: promptToUse,
+          format: formatToUse,
+          productTitle: titleToUse,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.imageUrl) {
+        setMktGeneratedImage(data.imageUrl);
+      }
+    } catch (err) {
+      console.warn('Error generando imagen Nano Banana:', err);
+    } finally {
+      setMktGeneratingImage(false);
+    }
+  };
+
+  const handlePublishMarketingPost = async (platformName: 'instagram' | 'tiktok' | 'all') => {
+    setMktPublishing(true);
+    setMktPublishSuccess(null);
+    try {
+      const linkUrl = mktStrategy?.featuredProduct?.id
+        ? `https://foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}`
+        : 'https://foxdrop.mx/tienda';
+
+      const res = await fetch('/api/admin/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mkt_social_publish',
+          platform: platformName,
+          imageUrl: mktGeneratedImage,
+          linkUrl,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMktPublishSuccess(`¡Publicado con éxito en ${platformName === 'all' ? 'Instagram, Facebook y TikTok' : platformName}! Tráfico dirigiendo a foxdrop.mx`);
+        setTimeout(() => setMktPublishSuccess(null), 6000);
+      } else {
+        alert(`Error al publicar: ${data.error || 'Intenta de nuevo'}`);
+      }
+    } catch (err: any) {
+      alert(`Error de red al publicar: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setMktPublishing(false);
     }
   };
 
@@ -7156,6 +7300,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 {/* Subtabs del Agente */}
                 <div className="flex flex-wrap bg-slate-800/80 p-1 rounded-2xl border border-slate-700/60 self-start md:self-auto gap-1">
                   <button
+                    onClick={() => {
+                      setAgentActiveTab('marketing_suite' as any);
+                      handleLoadFunnelMetrics();
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      (agentActiveTab as any) === 'marketing_suite'
+                        ? 'bg-[#0F3E36] text-white shadow-sm ring-2 ring-emerald-400/40'
+                        : 'text-emerald-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <span>🎯 Suite Marketing ($40K)</span>
+                  </button>
+                  <button
                     onClick={() => setAgentActiveTab('weekly_plan')}
                     className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                       agentActiveTab === 'weekly_plan'
@@ -7202,6 +7359,335 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
             </div>
+
+            {/* VISTA PREMIER: SUITE DE MARKETING AUTÓNOMA (META $40,000 MXN & EMBUDO REAL) */}
+            {(agentActiveTab as any) === 'marketing_suite' && (
+              <div className="space-y-6">
+
+                {/* 1. TERMÓMETRO SUPERIOR HACIA $40,000 MXN */}
+                <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0F3E36] text-white flex items-center justify-center text-2xl shadow-sm">
+                      🦊
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-[#0F3E36] tracking-tight">Marketing Suite</h3>
+                      <p className="text-xs text-stone-500">Dirección de Marca & Publicación en Redes • Tráfico a foxdrop.mx</p>
+                    </div>
+                  </div>
+
+                  {/* Barra de progreso real */}
+                  <div className="bg-[#FBF9F5] border border-stone-200 rounded-2xl p-4 min-w-[320px]">
+                    <div className="flex justify-between items-center text-xs mb-1.5 font-bold">
+                      <span className="text-stone-600">Meta del Mes:</span>
+                      <span className="text-[#E65F2B] font-black text-sm">
+                        ${mktFunnelMetrics.monthlySales.toLocaleString()} / $40,000 MXN
+                      </span>
+                    </div>
+                    <div className="w-full bg-stone-200 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-[#0F3E36] to-[#E65F2B] h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, mktFunnelMetrics.pacingPercent)}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-stone-500 mt-1 font-medium">
+                      <span>{mktFunnelMetrics.pacingPercent}% alcanzado</span>
+                      <span>Ticket: ${mktFunnelMetrics.avgTicket}</span>
+                      <span>Faltan: {mktFunnelMetrics.estimatedOrdersNeeded} pedidos</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. EMBUDO DE CONVERSIÓN & LEADS (4 ETAPAS REALES DE SUPABASE) */}
+                <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-stone-100">
+                    <span className="text-xs font-bold text-stone-700">Embudo de Conversión (Últimos 30 Días):</span>
+                    <button
+                      onClick={handleLoadFunnelMetrics}
+                      disabled={mktLoadingMetrics}
+                      className="text-xs text-[#0F3E36] font-bold hover:underline flex items-center gap-1"
+                    >
+                      <span>{mktLoadingMetrics ? 'Actualizando...' : '↻ Refrescar Datos Reales'}</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+                      <span className="text-stone-400 text-[11px] block font-medium">1. Visitas desde Redes</span>
+                      <div className="text-lg font-black text-stone-900 mt-0.5">{mktFunnelMetrics.estimatedVisitors.toLocaleString()}</div>
+                      <span className="text-[10px] text-stone-500">TikTok & Instagram</span>
+                    </div>
+
+                    <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
+                      <span className="text-stone-400 text-[11px] block font-medium">2. Carritos Armados</span>
+                      <div className="text-lg font-black text-stone-900 mt-0.5">
+                        {mktFunnelMetrics.orderCount + mktFunnelMetrics.abandonedCartsCount}
+                      </div>
+                      <span className="text-[10px] text-stone-500">Intención de compra</span>
+                    </div>
+
+                    <div className="p-3.5 bg-red-50/70 rounded-2xl border border-red-200">
+                      <span className="text-red-700 text-[11px] block font-bold">3. Fuga (Carritos Abandonados)</span>
+                      <div className="text-lg font-black text-red-600 mt-0.5">{mktFunnelMetrics.abandonedCartsCount} leads</div>
+                      <span className="text-[10px] text-red-500 font-semibold">${mktFunnelMetrics.abandonedCartsTotal.toLocaleString()} MXN sin cerrar</span>
+                    </div>
+
+                    <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200">
+                      <span className="text-emerald-800 text-[11px] block font-bold">4. Ventas Pagadas</span>
+                      <div className="text-lg font-black text-emerald-700 mt-0.5">{mktFunnelMetrics.orderCount} órdenes</div>
+                      <span className="text-[10px] text-emerald-700 font-semibold">${mktFunnelMetrics.monthlySales.toLocaleString()} MXN netos</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. COLUMNA DOBLE: CONSEJO ESTRATÉGICO A LA IZQUIERDA + SIMULADOR DE REDES A LA DERECHA */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                  {/* COLUMNA IZQUIERDA: EL DIRECTOR DE MARKETING */}
+                  <div className="lg:col-span-5 space-y-4">
+                    <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#0F3E36] text-white flex items-center justify-center text-lg shadow-sm">
+                            👑
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-stone-900">Director de Marketing</h4>
+                            <p className="text-[11px] text-stone-400">Diagnóstico & Estrategia Semanal</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleGenerateDirectorStrategy()}
+                          disabled={mktLoadingStrategy}
+                          className="px-3 py-1.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-xs transition"
+                        >
+                          {mktLoadingStrategy ? 'Analizando...' : (mktStrategy ? '↻ Re-evaluar' : 'Consultar Director')}
+                        </button>
+                      </div>
+
+                      {/* CONTENIDO DEL DIRECTOR */}
+                      {mktStrategy ? (
+                        <div className="space-y-3 text-xs leading-relaxed">
+                          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                            <span className="text-[11px] font-black text-amber-900 block mb-1">Diagnóstico del Embudo:</span>
+                            <p className="text-stone-700">{mktStrategy.funnelDiagnostic}</p>
+                          </div>
+
+                          <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl">
+                            <span className="text-[11px] font-bold text-[#0F3E36] block mb-1">Estrategia Propuesta: "{mktStrategy.weeklyTheme}"</span>
+                            <p className="text-stone-600">{mktStrategy.strategicAngle}</p>
+                            {mktStrategy.featuredProduct && (
+                              <div className="mt-2.5 pt-2 border-t border-stone-200 flex items-center gap-2">
+                                <span className="font-bold text-stone-800">Producto Foco:</span>
+                                <span className="text-[#E65F2B] font-bold">{mktStrategy.featuredProduct.title} (${mktStrategy.featuredProduct.price} MXN)</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* CAMPO DE AJUSTE Y FEEDBACK DE MARIO */}
+                          <div className="pt-2 border-t border-stone-200 space-y-2.5">
+                            <label className="text-[11px] font-bold text-stone-600 block">¿Tienes otra idea o enfoque para la semana?</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={mktUserFeedback}
+                                onChange={e => setMktUserFeedback(e.target.value)}
+                                placeholder="Escribe aquí tu ajuste..."
+                                className="flex-1 text-xs p-2.5 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F3E36]"
+                              />
+                              <button
+                                onClick={() => handleGenerateDirectorStrategy(mktUserFeedback)}
+                                disabled={mktLoadingStrategy}
+                                className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs rounded-xl transition"
+                              >
+                                Ajustar
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                alert("✅ Estrategia aprobada. El contenido final está listo para publicarse.");
+                              }}
+                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+                            >
+                              <span>Aprobar Estrategia de Campaña</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6 text-center text-xs text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-3">
+                          <p>Haz clic en <strong>"Consultar Director"</strong> para que el agente analice las ventas del mes hacia los $40,000 MXN, revise los carritos abandonados y formule la estrategia de la semana.</p>
+                          <button
+                            onClick={() => handleGenerateDirectorStrategy()}
+                            disabled={mktLoadingStrategy}
+                            className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-bold text-xs rounded-xl shadow-sm transition"
+                          >
+                            {mktLoadingStrategy ? 'Analizando Catálogo y Ventas...' : 'Iniciar Consulta con el Director'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* COLUMNA DERECHA: EL SIMULADOR DE REDES SOCIALES EN VIVO */}
+                  <div className="lg:col-span-7 space-y-4">
+                    <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+                        <div>
+                          <h4 className="text-sm font-black text-[#0F3E36]">Vista Previa de Publicación</h4>
+                          <p className="text-[11px] text-stone-400">Producto final antes de publicar</p>
+                        </div>
+
+                        {/* SELECTOR DE FORMATO */}
+                        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+                          <button
+                            onClick={() => setMktPreviewFormat('ig')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                              mktPreviewFormat === 'ig' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
+                            }`}
+                          >
+                            Instagram (1:1)
+                          </button>
+                          <button
+                            onClick={() => setMktPreviewFormat('tk')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                              mktPreviewFormat === 'tk' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
+                            }`}
+                          >
+                            TikTok (9:16)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* MENSAJE DE ÉXITO DE PUBLICACIÓN */}
+                      {mktPublishSuccess && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-800 font-bold text-center">
+                          {mktPublishSuccess}
+                        </div>
+                      )}
+
+                      {/* MOCKUP 1: INSTAGRAM FEED (1:1) */}
+                      {mktPreviewFormat === 'ig' && (
+                        <div className="max-w-md mx-auto bg-white border border-stone-300 rounded-2xl overflow-hidden shadow-sm">
+                          <div className="p-3 flex items-center justify-between border-b border-stone-100">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-[#0F3E36] text-white flex items-center justify-center font-bold text-xs">
+                                🦊
+                              </div>
+                              <span className="font-bold text-xs text-stone-900">foxdrop.mx</span>
+                            </div>
+                            <span className="text-stone-400 text-sm">•••</span>
+                          </div>
+
+                          {/* IMAGEN DE NANO BANANA */}
+                          <div className="aspect-square bg-gradient-to-br from-[#0F3E36] via-[#16564b] to-stone-900 flex items-center justify-center relative overflow-hidden">
+                            {mktGeneratedImage ? (
+                              <img
+                                src={mktGeneratedImage}
+                                alt="Nano Banana Render"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-center text-white p-6 space-y-2">
+                                <span className="inline-block px-3 py-0.5 rounded-full bg-[#E65F2B] text-white text-[10px] font-bold uppercase tracking-wider">
+                                  Nano Banana Engine
+                                </span>
+                                <div className="text-6xl my-2">✨🦊📦</div>
+                                <h5 className="text-base font-black text-[#E3B888]">
+                                  {mktStrategy?.featuredProduct?.title || 'Selección Exclusiva FoxDrop'}
+                                </h5>
+                                <p className="text-[11px] text-stone-300">Generando render de alta definición...</p>
+                              </div>
+                            )}
+
+                            {mktGeneratingImage && (
+                              <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-xs font-bold">
+                                <span>🎨 Renderizando con Nano Banana Flux...</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* CAPTION Y ENLACE */}
+                          <div className="p-3.5 space-y-2 text-xs">
+                            <div className="flex items-center gap-3 text-base text-stone-700">
+                              <span>❤️</span>
+                              <span>💬</span>
+                              <span>🚀</span>
+                            </div>
+                            <p className="text-stone-700 leading-relaxed">
+                              <strong className="text-stone-900">foxdrop.mx</strong> {mktStrategy?.igPost?.caption || '¿Buscando lo mejor de importación en México? Descubre las piezas disponibles esta semana en nuestra tienda oficial con garantía y envíos protegidos.'}
+                            </p>
+                            <p className="text-[#0F3E36] font-bold">
+                              👉 {mktStrategy?.featuredProduct?.id ? `foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}` : 'foxdrop.mx/tienda'}
+                            </p>
+                            <p className="text-[11px] text-stone-400">
+                              {(mktStrategy?.igPost?.hashtags || ['#FoxDrop', '#Tendencias', '#ComprasSeguras']).join(' ')}
+                            </p>
+                          </div>
+
+                          {/* BOTÓN DIRECTO DE PUBLICACIÓN */}
+                          <div className="p-3 bg-stone-50 border-t border-stone-200 flex justify-end">
+                            <button
+                              onClick={() => handlePublishMarketingPost('instagram')}
+                              disabled={mktPublishing || !mktStrategy}
+                              className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-xs transition disabled:opacity-50"
+                            >
+                              {mktPublishing ? 'Publicando...' : 'Publicar en Instagram y Facebook'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* MOCKUP 2: TIKTOK (9:16) */}
+                      {mktPreviewFormat === 'tk' && (
+                        <div className="max-w-xs mx-auto bg-black rounded-3xl overflow-hidden shadow-xl border border-stone-800 relative aspect-[9/16]">
+                          {mktGeneratedImage ? (
+                            <img
+                              src={mktGeneratedImage}
+                              alt="TikTok Cover"
+                              className="absolute inset-0 w-full h-full object-cover opacity-60"
+                            />
+                          ) : null}
+
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent flex flex-col justify-between p-4 text-white z-10">
+                            <div className="text-center text-xs font-bold pt-2">Para ti</div>
+                            <div className="text-center my-auto">
+                              <div className="text-6xl mb-2">🦊</div>
+                              <div className="bg-[#0F3E36]/90 border border-[#E65F2B] text-white px-3 py-1.5 rounded-xl text-xs font-black inline-block shadow-lg">
+                                {mktStrategy?.tiktokReel?.videoHook || '¡Lo que estabas esperando en México!'}
+                              </div>
+                            </div>
+                            <div className="space-y-2 pb-2 text-xs">
+                              <div className="font-bold">@foxdrop.mx</div>
+                              <p className="text-[11px] text-stone-200">
+                                {mktStrategy?.tiktokReel?.caption || 'Tu atajo seguro al mundo. Disponible en foxdrop.mx ⚡'}
+                              </p>
+                              <div className="bg-white/20 backdrop-blur-md rounded-lg p-2 flex items-center justify-between text-[11px]">
+                                <span className="font-bold text-[#E3B888]">foxdrop.mx/tienda</span>
+                                <span className="bg-[#0F3E36] px-2 py-0.5 rounded text-[10px] font-bold">Ver Catálogo</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="absolute bottom-2 inset-x-2 z-20">
+                            <button
+                              onClick={() => handlePublishMarketingPost('tiktok')}
+                              disabled={mktPublishing || !mktStrategy}
+                              className="w-full py-2 bg-[#E65F2B] hover:bg-[#d04f1f] text-white font-black text-xs rounded-xl shadow-lg transition disabled:opacity-50"
+                            >
+                              {mktPublishing ? 'Publicando...' : 'Publicar en TikTok'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            )}
 
             {/* VISTA 0: DIFUSIÓN CONTINUA / PLAN SEMANAL (7 DÍAS) */}
             {agentActiveTab === 'weekly_plan' && (
