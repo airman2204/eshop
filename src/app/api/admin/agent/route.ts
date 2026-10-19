@@ -307,9 +307,9 @@ Formula una estrategia semanal completa que combine la visión global de la tien
       "angle": "Enfoque persuasivo que equilibra la confianza de FoxDrop y la deseabilidad del producto"
     },
     "designer": {
-      "role": "Director de Arte & Diseñador Gráfico",
-      "designPhilosophy": "El diseñador define la dirección estética de cada día: paletas, tipografía, composición visual, fondos y balance de contrastes.",
-      "artDirection": "Justificación de las propuestas de diseño para los 7 días de la semana"
+      "role": "Estilista Visual & Diseñador Gráfico",
+      "artDirection": "Composición de diseño editorial publicitario: tipografía serif contemporánea, atmósfera, iluminación de estudio, bordes, sellos y paleta de color.",
+      "creativePrompt": "Prompt visual detallado y rico que describe exactamente el encuadre, iluminación, fondos, tipografía y sensaciones estéticas para convertirlo en propuestas de diseño"
     },
     "concierge": {
       "role": "Concierge de Ventas & DMs",

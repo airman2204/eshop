@@ -555,9 +555,13 @@ export default function AdminCRM() {
       const data = await res.json();
       if (data.success && data.strategy) {
         setMktStrategy(data.strategy);
-        // Generar arte con Nano Banana de inmediato
-        if (data.strategy.nanoBananaPrompt) {
-          handleGenerateNanoBananaImage(data.strategy.nanoBananaPrompt, data.strategy.featuredProduct?.title);
+        // El texto del Estilista Visual / Diseñador se convierte en el prompt de diseño para generar las propuestas
+        const stylistPrompt = data.strategy.teamTasks?.designer?.creativePrompt || 
+                              data.strategy.teamTasks?.designer?.artDirection || 
+                              data.strategy.nanoBananaPrompt || '';
+        if (stylistPrompt) {
+          setMktCustomDesignPrompt(stylistPrompt);
+          handleGenerateNanoBananaImage(stylistPrompt, data.strategy.featuredProduct?.title);
         }
       } else {
         alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
@@ -7572,10 +7576,25 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
 
                               {/* 3. ESTILISTA VISUAL NANO BANANA */}
-                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
-                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
-                                  <span>🎨</span>
-                                  <span>Estilista Visual Nano Banana:</span>
+                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80 space-y-1.5">
+                                <div className="flex items-center justify-between font-bold text-stone-900">
+                                  <div className="flex items-center gap-1.5">
+                                    <span>🎨</span>
+                                    <span>Estilista Visual Nano Banana:</span>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const p = mktStrategy?.teamTasks?.designer?.creativePrompt || mktStrategy?.teamTasks?.designer?.artDirection;
+                                      if (p) {
+                                        setMktCustomDesignPrompt(p);
+                                        handleGenerateNanoBananaImage(p);
+                                      }
+                                    }}
+                                    disabled={mktGeneratingImage}
+                                    className="px-2 py-0.5 rounded-md bg-[#0F3E36] hover:bg-[#185b50] text-[#E3B888] font-black text-[9px] transition"
+                                  >
+                                    {mktGeneratingImage ? 'Diseñando...' : '⚡ Convertir en Propuestas'}
+                                  </button>
                                 </div>
                                 <p className="text-stone-600">
                                   {mktStrategy?.teamTasks?.designer?.artDirection || 'Diseño de producto en estudio con paleta corporativa (#0F3E36, #E65F2B, #E3B888) adaptado a 1:1 Feed y 9:16 Reels.'}
