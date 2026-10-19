@@ -1873,47 +1873,55 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-0.5 max-w-[210px]">
-                        {currentSlide.subtitle && (
+                    {/* 3. SLIDE POR DEFECTO: TEXTO VIVO DINÁMICO & BOTÓN */}
+                    {isDefaultSlide ? (
+                      <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
+                        <div className="space-y-0.5 max-w-[210px]">
                           <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                            {currentSlide.subtitle}
+                            {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                           </span>
-                        )}
-                        <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
-                          {isDefaultSlide 
-                            ? (user?.name 
-                                ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                                : '¡Hola! El mundo, directo a tu puerta.')
-                            : currentSlide.title}
-                        </h2>
-                        {isDefaultSlide && (
+                          <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
+                            {user?.name 
+                              ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                              : '¡Hola! El mundo, directo a tu puerta.'}
+                          </h2>
                           <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
                             Descubre tesoros mundiales con envío rápido y calidad garantizada.
                           </p>
+                        </div>
+
+                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                          <div className="pt-1 pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(currentSlide.cta_category || 'Todas');
+                                setActiveTab('all');
+                                const el = document.getElementById('catalog-section');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[8.5px] sm:text-[9.5px] font-black px-2.5 sm:px-3 py-1 rounded-full shadow-[0_2px_8px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
+                            >
+                              <span>{currentSlide.cta_text}</span>
+                              <ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
-
-                      {/* 4. SOLO EL BOTÓN ES CLICKEABLE (OPCIONAL: SI NO TIENE TEXTO O ESTÁ VACÍO NO SE MUESTRA) */}
-                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                        <div className="pt-1 pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(currentSlide.cta_category || 'Todas');
-                              setActiveTab('all');
-                              const el = document.getElementById('catalog-section');
-                              el?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[8.5px] sm:text-[9.5px] font-black px-2.5 sm:px-3 py-1 rounded-full shadow-[0_2px_8px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
-                          >
-                            <span>{currentSlide.cta_text}</span>
-                            <ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    ) : (
+                      /* SLIDE PERSONALIZADO: TODO EL BANNER ES UN ENLACE DIRECTO SIN TEXTOS NI BOTONES ENCIMADOS */
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(currentSlide.cta_category || 'Todas');
+                          setActiveTab('all');
+                          const el = document.getElementById('catalog-section');
+                          el?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="absolute inset-0 w-full h-full z-20 cursor-pointer focus:outline-none"
+                        aria-label={currentSlide.title || 'Ver Promoción'}
+                      />
+                    )}
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
@@ -1966,47 +1974,55 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1.5 max-w-[340px]">
-                        {currentSlide.subtitle && (
+                    {/* 3. SLIDE POR DEFECTO: TEXTO VIVO DINÁMICO & BOTÓN */}
+                    {isDefaultSlide ? (
+                      <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
+                        <div className="space-y-1.5 max-w-[340px]">
                           <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                            {currentSlide.subtitle}
+                            {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                           </span>
-                        )}
-                        <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
-                          {isDefaultSlide 
-                            ? (user?.name 
-                                ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                                : '¡Hola! El mundo, directo a tu puerta.')
-                            : currentSlide.title}
-                        </h1>
-                        {isDefaultSlide && (
+                          <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
+                            {user?.name 
+                              ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                              : '¡Hola! El mundo, directo a tu puerta.'}
+                          </h1>
                           <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
                             Descubre tesoros mundiales con envío rápido y calidad garantizada.
                           </p>
+                        </div>
+
+                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                          <div className="pt-2 pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(currentSlide.cta_category || 'Todas');
+                                setActiveTab('all');
+                                const el = document.getElementById('catalog-section');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-4.5 py-2 rounded-full text-xs shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer w-fit group"
+                            >
+                              <span>{currentSlide.cta_text}</span>
+                              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
                         )}
                       </div>
-
-                      {/* 4. BOTÓN DEDICADO OPCIONAL (SI ESTÁ VACÍO NO SE MUESTRA) */}
-                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                        <div className="pt-2 pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(currentSlide.cta_category || 'Todas');
-                              setActiveTab('all');
-                              const el = document.getElementById('catalog-section');
-                              el?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-4.5 py-2 rounded-full text-xs shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer w-fit group"
-                          >
-                            <span>{currentSlide.cta_text}</span>
-                            <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    ) : (
+                      /* SLIDE PERSONALIZADO: TODO EL BANNER ES UN ENLACE DIRECTO SIN TEXTOS NI BOTONES ENCIMADOS */
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(currentSlide.cta_category || 'Todas');
+                          setActiveTab('all');
+                          const el = document.getElementById('catalog-section');
+                          el?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="absolute inset-0 w-full h-full z-20 cursor-pointer focus:outline-none"
+                        aria-label={currentSlide.title || 'Ver Promoción'}
+                      />
+                    )}
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
