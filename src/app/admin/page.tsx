@@ -8087,8 +8087,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                       <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
                                       <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
 
-                                      {/* FOTO DEL PRODUCTO DESTACADO */}
-                                      {mktStrategy?.featuredProduct?.image && (
+                                      {/* FOTO DEL PRODUCTO DESTACADO O BOTÓN DIRECTO DE CARGA */}
+                                      {mktStrategy?.featuredProduct?.image ? (
                                         <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
                                           <div className="relative max-h-60 max-w-xs flex flex-col items-center justify-center">
                                             <div
@@ -8102,6 +8102,35 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                               className="max-w-full max-h-56 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transform hover:scale-105 transition duration-500"
                                             />
                                           </div>
+                                        </div>
+                                      ) : (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-1 text-center space-y-3">
+                                          <label className="cursor-pointer group flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#E3B888]/40 hover:border-[#E3B888] rounded-2xl bg-black/30 hover:bg-black/50 transition">
+                                            <span className="text-3xl mb-1 group-hover:scale-110 transition">📸</span>
+                                            <span className="text-xs font-black text-[#E3B888]">
+                                              Pegar o Cargar Imagen de Gemini
+                                            </span>
+                                            <span className="text-[10px] text-stone-300 mt-0.5">
+                                              Haz clic para subir o presiona Ctrl + V
+                                            </span>
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              className="hidden"
+                                              onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                  const reader = new FileReader();
+                                                  reader.onload = (ev) => {
+                                                    const img = ev.target?.result as string;
+                                                    setMktGeneratedImage(img);
+                                                    setMktDayImages(prev => ({ ...prev, [mktSelectedDayIndex]: img }));
+                                                  };
+                                                  reader.readAsDataURL(file);
+                                                }
+                                              }}
+                                            />
+                                          </label>
                                         </div>
                                       )}
 
