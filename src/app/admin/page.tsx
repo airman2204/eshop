@@ -473,7 +473,7 @@ export default function AdminCRM() {
   const [mktStrategy, setMktStrategy] = useState<any | null>(null);
   const [mktLoadingStrategy, setMktLoadingStrategy] = useState(false);
   const [mktUserFeedback, setMktUserFeedback] = useState('');
-  const [mktPreviewFormat, setMktPreviewFormat] = useState<'ig' | 'tk'>('ig');
+  const [mktPreviewFormat, setMktPreviewFormat] = useState<'ig' | 'tk' | 'plan'>('plan');
   const [mktSelectedDayIndex, setMktSelectedDayIndex] = useState<number>(0);
   const [mktGeneratedImage, setMktGeneratedImage] = useState<string>('');
   const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
@@ -7652,6 +7652,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         {/* SELECTOR DE FORMATO */}
                         <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
                           <button
+                            onClick={() => setMktPreviewFormat('plan')}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                              mktPreviewFormat === 'plan' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-stone-600'
+                            }`}
+                          >
+                            📖 Cuaderno Semanal (7 Días)
+                          </button>
+                          <button
                             onClick={() => setMktPreviewFormat('ig')}
                             className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
                               mktPreviewFormat === 'ig' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
@@ -7674,6 +7682,88 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       {mktPublishSuccess && (
                         <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-800 font-bold text-center">
                           {mktPublishSuccess}
+                        </div>
+                      )}
+
+                      {/* MOCKUP 0: PLAN SEMANAL DE CONTENIDO EDITORIAL (ESTILO CUADERNO VISUAL CREATIVO) */}
+                      {mktPreviewFormat === 'plan' && (
+                        <div className="bg-[#fbf7ee] rounded-3xl p-5 border-4 border-[#e5dcc7] shadow-xl relative overflow-hidden">
+                          {/* Encabezado del Cuaderno Creativo */}
+                          <div className="flex items-center justify-between pb-4 border-b-2 border-dashed border-[#d8cdb5] mb-4">
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">🦊</span>
+                              <div>
+                                <h3 className="text-lg font-black tracking-wide text-stone-900 uppercase font-serif">
+                                  Plan Semanal de Contenido
+                                </h3>
+                                <p className="text-[11px] font-bold text-[#E65F2B]">FoxDrop México • Curaduría y Despacho</p>
+                              </div>
+                            </div>
+                            <div className="bg-[#0F3E36] text-[#E3B888] px-3.5 py-1.5 rounded-2xl text-[11px] font-black shadow-sm">
+                              ✨ Semana Aprobada
+                            </div>
+                          </div>
+
+                          {/* Rejilla de los 7 Días con Estilo Creativo y Storytelling */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {(mktStrategy?.weeklyParrilla || [
+                              { day: "Lunes", title: "Lunes de Unboxing", type: "TIENDA_GLOBAL", focus: "Caja oficial sellada FoxDrop" },
+                              { day: "Martes", title: "Notas Olfativas & Lotes", type: "PRODUCTO_STOCK", focus: "Notas de fragancia y detalle de producto" },
+                              { day: "Miércoles", title: "Empaca Conmigo", type: "TIENDA_GLOBAL", focus: "Proceso de embalaje protegido y seguro" },
+                              { day: "Jueves", title: "¿Buscas un Regalo?", type: "PRODUCTO_STOCK", focus: "Kit listo para regalar con presentación premium" },
+                              { day: "Viernes", title: "¡Últimas Piezas!", type: "PRODUCTO_STOCK", focus: "Reloj de arena y stock limitado por agotarse" },
+                              { day: "Sábado", title: "Momento Relax (Lifestyle)", type: "TIENDA_GLOBAL", focus: "Spray en slow motion y ambiente de fin de semana" },
+                              { day: "Domingo", title: "Preparando Pedidos Lunes", type: "TIENDA_GLOBAL", focus: "Mascota FoxDrop organizando paquetes para ruta nacional" }
+                            ]).map((planItem: any, pIdx: number) => {
+                              const isGlobal = planItem.type === "TIENDA_GLOBAL";
+                              const icons = ["📦", "🌸", "🏷️", "🎁", "⏳", "✨", "🦊"];
+                              return (
+                                <div
+                                  key={pIdx}
+                                  onClick={() => {
+                                    setMktSelectedDayIndex(pIdx);
+                                    setMktPreviewFormat('ig');
+                                  }}
+                                  className={`p-3 rounded-2xl border-2 transition transform hover:-translate-y-1 hover:shadow-md cursor-pointer flex flex-col justify-between h-44 ${
+                                    isGlobal
+                                      ? "bg-[#FAF7F0] border-[#0F3E36]/30 text-stone-900"
+                                      : "bg-[#FFF9F2] border-[#E65F2B]/30 text-stone-900"
+                                  }`}
+                                >
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <span className="px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider bg-white border border-stone-200">
+                                        {planItem.day}
+                                      </span>
+                                      <span className="text-xl">{icons[pIdx % icons.length]}</span>
+                                    </div>
+                                    <h4 className="text-xs font-black leading-tight text-stone-800 line-clamp-2">
+                                      {planItem.title}
+                                    </h4>
+                                    <p className="text-[10px] text-stone-500 mt-1 line-clamp-2 leading-relaxed">
+                                      {planItem.focus || planItem.headline || "Contenido de impacto"}
+                                    </p>
+                                  </div>
+
+                                  <div className="pt-2 border-t border-stone-200/60 flex items-center justify-between text-[9px] font-bold">
+                                    <span className={isGlobal ? "text-[#0F3E36]" : "text-[#E65F2B]"}>
+                                      {isGlobal ? "🌐 Tienda Global" : "🛍️ Stock Bodega"}
+                                    </span>
+                                    <span className="text-stone-400">Ver post →</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Post-it amarillo estilo boceto */}
+                          <div className="mt-4 p-3 bg-[#fff9c4] rounded-xl border border-[#fbc02d] text-stone-800 text-[11px] font-bold flex items-center justify-between shadow-xs">
+                            <div className="flex items-center gap-2">
+                              <span>📌</span>
+                              <span>Haz clic en cualquiera de los días para abrir su arte publicitario final en Instagram o TikTok.</span>
+                            </div>
+                            <span className="text-[#0F3E36] font-black text-xs">Pide por WhatsApp & foxdrop.mx</span>
+                          </div>
                         </div>
                       )}
 
