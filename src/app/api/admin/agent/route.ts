@@ -159,9 +159,9 @@ export async function POST(req: NextRequest) {
         const abandonedCartsCount = carts.length;
         const abandonedCartsTotal = carts.reduce((acc: number, c: any) => acc + (Number(c.total) || 0), 0);
 
-        // 3. Estimación de tráfico / visitas desde redes (o fallback proporcional a las órdenes)
-        const estimatedVisitors = Math.max(120, (orderCount * 38) + (abandonedCartsCount * 8));
-        const conversionRate = estimatedVisitors > 0 ? Number(((orderCount / estimatedVisitors) * 100).toFixed(1)) : 0;
+        // 3. Tráfico / visitas desde redes (0 hasta que se conecte el pixel o la API de redes)
+        const estimatedVisitors = 0;
+        const conversionRate = 0;
 
         return NextResponse.json({
           success: true,

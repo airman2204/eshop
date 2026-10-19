@@ -32,7 +32,7 @@ import {
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
-import { authenticateAdmin, updateAdminPassword, AdminSession } from '@/lib/adminAuth';
+import { authenticateAdmin, updateAdminPassword, AdminSession, fetchAgentApi } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCategoryIconEmoji } from '@/lib/constants';
@@ -495,8 +495,8 @@ export default function AdminCRM() {
       const pacing = Number(((salesSum / targetToUse) * 100).toFixed(1));
 
       const cartsTotal = (abandonedCarts || []).reduce((acc, c) => acc + (Number(c.total) || 0), 0);
-      const estVisitors = Math.max(120, (count + (abandonedCarts?.length || 0)) * 6);
-      const convRate = estVisitors > 0 ? Number(((count / estVisitors) * 100).toFixed(2)) : 0;
+      const estVisitors = 0; // Sin redes o pixel conectado: 0 datos ficticios
+      const convRate = 0;
 
       setMktFunnelMetrics({
         monthlySales: salesSum,
@@ -513,15 +513,11 @@ export default function AdminCRM() {
       });
     }
 
-    // 2. Consulta al servidor para sincronizar métricas del mes
+    // 2. Consulta al servidor para sincronizar métricas del mes con token de administrador
     try {
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_get_funnel_metrics',
-          targetMonthly: targetToUse,
-        }),
+      const res = await fetchAgentApi({
+        action: 'mkt_get_funnel_metrics',
+        targetMonthly: targetToUse,
       });
       const data = await res.json();
       if (data.success && data.metrics) {
@@ -547,14 +543,10 @@ export default function AdminCRM() {
   const handleGenerateDirectorStrategy = async (userFeedbackParam?: string) => {
     setMktLoadingStrategy(true);
     try {
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_director_strategy',
-          feedback: userFeedbackParam || mktUserFeedback || '',
-          targetMonthly: targetSalesGoal,
-        }),
+      const res = await fetchAgentApi({
+        action: 'mkt_director_strategy',
+        feedback: userFeedbackParam || mktUserFeedback || '',
+        targetMonthly: targetSalesGoal,
       });
       const data = await res.json();
       if (data.success && data.strategy) {
@@ -581,15 +573,11 @@ export default function AdminCRM() {
       const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
       const formatToUse = mktPreviewFormat === 'tk' ? '9:16' : '1:1';
 
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_visual_nanobanana',
-          prompt: promptToUse,
-          format: formatToUse,
-          productTitle: titleToUse,
-        }),
+      const res = await fetchAgentApi({
+        action: 'mkt_visual_nanobanana',
+        prompt: promptToUse,
+        format: formatToUse,
+        productTitle: titleToUse,
       });
       const data = await res.json();
       if (data.success && data.imageUrl) {
@@ -610,15 +598,11 @@ export default function AdminCRM() {
         ? `https://foxdrop.mx/tienda?highlight=${mktStrategy.featuredProduct.id}`
         : 'https://foxdrop.mx/tienda';
 
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mkt_social_publish',
-          platform: platformName,
-          imageUrl: mktGeneratedImage,
-          linkUrl,
-        }),
+      const res = await fetchAgentApi({
+        action: 'mkt_social_publish',
+        platform: platformName,
+        imageUrl: mktGeneratedImage,
+        linkUrl,
       });
       const data = await res.json();
       if (data.success) {
@@ -7398,7 +7382,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   const liveOrderCount = paidList.length > 0 ? paidList.length : mktFunnelMetrics.orderCount;
                   const liveCartsCount = (abandonedCarts && abandonedCarts.length > 0) ? abandonedCarts.length : mktFunnelMetrics.abandonedCartsCount;
                   const liveCartsTotal = (abandonedCarts && abandonedCarts.length > 0) ? abandonedCarts.reduce((acc, c) => acc + (Number(c.total) || 0), 0) : mktFunnelMetrics.abandonedCartsTotal;
-                  const liveVisitors = Math.max(120, (liveOrderCount + liveCartsCount) * 6, mktFunnelMetrics.estimatedVisitors);
+                  const liveVisitors = mktFunnelMetrics.estimatedVisitors || 0;
 
                   return (
                     <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
@@ -7416,8 +7400,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
                           <span className="text-stone-400 text-[11px] block font-medium">1. Visitas desde Redes</span>
-                          <div className="text-lg font-black text-stone-900 mt-0.5">{liveVisitors.toLocaleString()}</div>
-                          <span className="text-[10px] text-stone-500">TikTok & Instagram</span>
+                          <div className="text-lg font-black text-stone-900 mt-0.5">{liveVisitors}</div>
+                          <span className="text-[10px] text-stone-400 font-semibold">Sin vincular API</span>
                         </div>
 
                         <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200">
