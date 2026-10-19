@@ -182,6 +182,18 @@ export default function TiendaFoxDrop() {
         ]);
         setProducts(remoteProducts ?? []);
         if (settings) setStoreSettings(settings);
+
+        // Si viene con parámetro ?highlight=[id] desde redes sociales, abrir el producto de inmediato
+        if (typeof window !== 'undefined' && remoteProducts && remoteProducts.length > 0) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const highlightId = urlParams.get('highlight');
+          if (highlightId) {
+            const found = remoteProducts.find(p => p.id === highlightId);
+            if (found) {
+              setSelectedProduct(found);
+            }
+          }
+        }
       } catch (err) {
         console.error("Error loading products from Supabase:", err);
       } finally {
@@ -189,6 +201,7 @@ export default function TiendaFoxDrop() {
       }
     }
     loadData();
+
 
     // Cargar sesión y puntos reales del usuario desde Supabase
     async function checkAuthSession() {
