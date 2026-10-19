@@ -7536,20 +7536,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                       <span className="text-stone-300">→</span>
 
+                      {/* PASO 2: COMPLETAMENTE BLOQUEADO/DESHABILITADO HASTA QUE SE HAYAN REDACTADO LOS COPYS */}
                       <button
                         onClick={() => {
-                          if (!mktStrategy) {
-                            alert("Primero consulta y genera la estrategia con el Director en el Paso 1.");
+                          if (!mktStrategy?.weeklyParrilla || mktStrategy.weeklyParrilla.length === 0) {
+                            alert("El Paso 2 está bloqueado. Primero debes aprobar la estrategia en el Paso 1 para que el Copywriter redacte la parrilla.");
                             return;
                           }
                           setMktWorkflowStep(2);
                         }}
-                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        disabled={!mktStrategy?.weeklyParrilla || mktStrategy.weeklyParrilla.length === 0}
+                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
                           mktWorkflowStep === 2
                             ? 'bg-[#0F3E36] text-white shadow-xs'
-                            : !mktStrategy
-                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed opacity-60'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                            : (!mktStrategy?.weeklyParrilla || mktStrategy.weeklyParrilla.length === 0)
+                            ? 'bg-stone-100 text-stone-400 opacity-40 cursor-not-allowed'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200 cursor-pointer'
                         }`}
                       >
                         <span>2. Copys & Parrilla</span>
@@ -7558,24 +7560,30 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                       <span className="text-stone-300">→</span>
 
+                      {/* PASO 3: COMPLETAMENTE BLOQUEADO/DESHABILITADO HASTA QUE EL DISEÑADOR HAYA GENERADO PROMPTS */}
                       <button
                         onClick={() => {
-                          if (!mktStrategy) {
-                            alert("Primero consulta y genera la estrategia con el Director en el Paso 1.");
+                          if (!mktStrategy?.weeklyParrilla || mktStrategy.weeklyParrilla.length === 0) {
+                            alert("El Paso 3 está bloqueado. Primero deben estar listos los copys en el Paso 2.");
+                            return;
+                          }
+                          if (Object.keys(mktDayPrompts).length === 0) {
+                            alert("El Paso 3 se activará cuando elijas un día y presiones 'Diseñar Arte de [Día]'.");
                             return;
                           }
                           setMktWorkflowStep(3);
                         }}
-                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        disabled={!mktStrategy?.weeklyParrilla || mktStrategy.weeklyParrilla.length === 0 || Object.keys(mktDayPrompts).length === 0}
+                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
                           mktWorkflowStep === 3
                             ? 'bg-[#0F3E36] text-white shadow-xs'
-                            : !mktStrategy
-                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed opacity-60'
-                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                            : (Object.keys(mktDayPrompts).length === 0)
+                            ? 'bg-stone-100 text-stone-400 opacity-40 cursor-not-allowed'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200 cursor-pointer'
                         }`}
                       >
                         <span>3. Diseño & Prompts</span>
-                        {Object.keys(mktDayImages).length > 0 && <span className="text-[10px] text-emerald-400">✓</span>}
+                        {Object.keys(mktDayPrompts).length > 0 && <span className="text-[10px] text-emerald-400">✓</span>}
                       </button>
                     </div>
                   </div>
