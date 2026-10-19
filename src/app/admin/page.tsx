@@ -8013,109 +8013,103 @@ Atmósfera y encuadre: Fondo de estudio con tonos ${activeProp?.style?.primaryCo
                                   background: bgStyleCustom || undefined,
                                 }}
                               >
-                                {/* Textura y atmósfera propuesta por el diseñador */}
-                                <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
-                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
+                                {/* CASO A: SI YA SE PEGÓ/GENERÓ LA IMAGEN COMPLETA DE GEMINI (FULL BLEED LIMPIO) */}
+                                {mktGeneratedImage ? (
+                                  <>
+                                    <div className="absolute inset-0 z-0">
+                                      <img
+                                        src={mktGeneratedImage}
+                                        alt="Post Publicitario"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
 
-                                {/* FOTO DEL PRODUCTO DESTACADO / BODEGÓN COMERCIAL */}
-                                {(() => {
-                                  const displayImg = mktGeneratedImage || mktStrategy?.featuredProduct?.image;
-                                  if (displayImg) {
-                                    return (
+                                    {/* Botón flotante sutil para cambiar imagen si se desea */}
+                                    <div className="absolute top-3 right-3 z-20">
+                                      <button
+                                        onClick={() => setMktGeneratedImage('')}
+                                        className="px-2 py-1 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-md text-stone-200 hover:text-white text-[10px] font-bold transition border border-white/20"
+                                        title="Quitar imagen actual"
+                                      >
+                                        ✕ Cambiar Arte
+                                      </button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  /* CASO B: PREVIEW DE PROPUESTA ANTES DE GENERAR LA FOTO */
+                                  <>
+                                    {/* Textura y atmósfera propuesta por el diseñador */}
+                                    <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
+
+                                    {/* FOTO DEL PRODUCTO DESTACADO */}
+                                    {mktStrategy?.featuredProduct?.image && (
                                       <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
                                         <div className="relative max-h-60 max-w-xs flex flex-col items-center justify-center">
-                                          {/* Halo luminoso y pedestal detrás del producto */}
                                           <div
                                             className="absolute w-52 h-52 rounded-full blur-2xl opacity-40 -z-10 pointer-events-none"
                                             style={{ backgroundColor: accentColor || '#E3B888' }}
                                           />
                                           <div className="absolute -bottom-3 w-48 h-6 bg-black/80 rounded-full blur-lg -z-10" />
                                           <img
-                                            src={displayImg}
+                                            src={mktStrategy.featuredProduct.image}
                                             alt={mktStrategy?.featuredProduct?.title || "Producto"}
                                             className="max-w-full max-h-56 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transform hover:scale-105 transition duration-500"
-                                            onError={(e) => {
-                                              if (mktStrategy?.featuredProduct?.image && e.currentTarget.src !== mktStrategy.featuredProduct.image) {
-                                                e.currentTarget.src = mktStrategy.featuredProduct.image;
-                                              }
-                                            }}
                                           />
                                         </div>
                                       </div>
-                                    );
-                                  }
+                                    )}
 
-                                  return (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-1 text-center space-y-3">
-                                      <div className="w-20 h-20 rounded-3xl bg-black/40 border-2 border-[#E3B888] flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">
-                                        🦊
-                                      </div>
-                                      <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#E3B888] text-[10px] font-black uppercase tracking-widest">
-                                        foxdrop.mx • Tu Atajo al Mundo
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
+                                    {/* Gradiente cinemático inferior */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
 
-                                {/* Gradiente cinemático inferior para lectura óptima */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
-
-                                {/* HEADER DE LA PIEZA: Eyebrow + Badge del Día */}
-                                <div className="relative z-10 flex items-center justify-between">
-                                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
-                                    <span className="text-[#E3B888] text-[10px]">✦</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
-                                      {eyebrow}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
-                                      {currentDayPlan?.day || 'Lunes'}
-                                    </span>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
-                                      {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* FOOTER DE LA PIEZA: Titular propuesto por el agente, Subtítulo y Badge de Confianza */}
-                                <div className="relative z-10 space-y-2 mt-auto">
-                                  <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
-                                    <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
-                                      {activeProposal?.name || currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
-                                    </p>
-                                    <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                                      {headline}
-                                    </h3>
-                                    <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
-                                      {subtitle}
-                                    </p>
-
-                                    <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
-                                      <div className="flex items-center gap-1.5 text-stone-200 font-medium">
-                                        <span className="text-[#E3B888]">🛡️</span>
-                                        <span>{trust}</span>
-                                      </div>
-                                      {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
-                                        <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
-                                          ${mktStrategy.featuredProduct.price} MXN
+                                    {/* HEADER DE LA PIEZA: Eyebrow + Badge del Día */}
+                                    <div className="relative z-10 flex items-center justify-between">
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
+                                        <span className="text-[#E3B888] text-[10px]">✦</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
+                                          {eyebrow}
                                         </span>
-                                      )}
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
+                                          {currentDayPlan?.day || 'Lunes'}
+                                        </span>
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
+                                          {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
+                                        </span>
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                                  <div className="absolute top-14 right-4 z-20">
-                                    <button
-                                      onClick={() => handleGenerateNanoBananaImage()}
-                                      disabled={mktGeneratingImage}
-                                      className="px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-[#E3B888]/50 text-[#E3B888] text-[10px] font-black transition flex items-center gap-1 shadow-lg"
-                                      title="Generar nuevas propuestas con Gemini"
-                                    >
-                                      <span>🎨</span>
-                                      <span>{mktGeneratingImage ? 'Diseñando...' : 'Nuevas Propuestas'}</span>
-                                    </button>
-                                  </div>
+
+                                    {/* FOOTER DE LA PIEZA */}
+                                    <div className="relative z-10 space-y-2 mt-auto">
+                                      <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
+                                        <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
+                                          {activeProposal?.name || currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
+                                        </p>
+                                        <h3 className="text-sm sm:text-base font-black text-white leading-tight">
+                                          {headline}
+                                        </h3>
+                                        <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
+                                          {subtitle}
+                                        </p>
+
+                                        <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
+                                          <div className="flex items-center gap-1.5 text-stone-200 font-medium">
+                                            <span className="text-[#E3B888]">🛡️</span>
+                                            <span>{trust}</span>
+                                          </div>
+                                          {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
+                                            <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                              ${mktStrategy.featuredProduct.price} MXN
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
 
                                   {/* LOADING OVERLAY NANO BANANA */}
                                   {mktGeneratingImage && (
