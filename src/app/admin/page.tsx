@@ -566,12 +566,12 @@ export default function AdminCRM() {
   };
 
 
-  const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string) => {
+  const handleGenerateNanoBananaImage = async (customPrompt?: string, prodTitle?: string, overrideFormat?: '1:1' | '9:16') => {
     setMktGeneratingImage(true);
     try {
       const promptToUse = customPrompt || mktStrategy?.nanoBananaPrompt || '';
       const titleToUse = prodTitle || mktStrategy?.featuredProduct?.title || 'Producto FoxDrop';
-      const formatToUse = mktPreviewFormat === 'tk' ? '9:16' : '1:1';
+      const formatToUse = overrideFormat || (mktPreviewFormat === 'tk' ? '9:16' : '1:1');
 
       const res = await fetchAgentApi({
         action: 'mkt_visual_nanobanana',
@@ -582,9 +582,15 @@ export default function AdminCRM() {
       const data = await res.json();
       if (data.success && data.imageUrl) {
         setMktGeneratedImage(data.imageUrl);
+      } else if (mktStrategy?.featuredProduct?.image) {
+        // Fallback inmediato con la fotografía real del catálogo de Supabase si la IA tarda
+        setMktGeneratedImage(mktStrategy.featuredProduct.image);
       }
     } catch (err) {
       console.warn('Error generando imagen Nano Banana:', err);
+      if (mktStrategy?.featuredProduct?.image) {
+        setMktGeneratedImage(mktStrategy.featuredProduct.image);
+      }
     } finally {
       setMktGeneratingImage(false);
     }
@@ -7465,11 +7471,67 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <span className="text-[11px] font-bold text-[#0F3E36] block mb-1">Estrategia Propuesta: "{mktStrategy.weeklyTheme}"</span>
                             <p className="text-stone-600">{mktStrategy.strategicAngle}</p>
                             {mktStrategy.featuredProduct && (
-                              <div className="mt-2.5 pt-2 border-t border-stone-200 flex items-center gap-2">
-                                <span className="font-bold text-stone-800">Producto Foco:</span>
-                                <span className="text-[#E65F2B] font-bold">{mktStrategy.featuredProduct.title} (${mktStrategy.featuredProduct.price} MXN)</span>
+                              <div className="mt-2.5 pt-2 border-t border-stone-200 flex items-center justify-between">
+                                <div>
+                                  <span className="font-bold text-stone-800">Producto Foco: </span>
+                                  <span className="text-[#E65F2B] font-bold">{mktStrategy.featuredProduct.title}</span>
+                                </div>
+                                <span className="font-black text-xs text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-stone-200">${mktStrategy.featuredProduct.price} MXN</span>
                               </div>
                             )}
+                          </div>
+
+                          {/* DESGLOSE DEL TRABAJO POR MIEMBRO DEL EQUIPO DE MARKETING */}
+                          <div className="p-3.5 bg-white border border-stone-200 rounded-2xl space-y-2.5">
+                            <span className="text-[11px] font-black uppercase text-stone-700 tracking-wider block border-b border-stone-100 pb-1.5">
+                              Ejecución del Equipo de Marketing:
+                            </span>
+
+                            <div className="grid grid-cols-1 gap-2 text-[11px]">
+                              {/* 1. ANALISTA */}
+                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
+                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
+                                  <span>📊</span>
+                                  <span>Analista de Lotes & Inventario:</span>
+                                </div>
+                                <p className="text-stone-600">
+                                  {mktStrategy?.teamTasks?.analyst?.marginInsight || `Seleccionó ${mktStrategy?.featuredProduct?.title || 'artículo clave'} por rotación en bodega y margen para acelerar el ticket promedio.`}
+                                </p>
+                              </div>
+
+                              {/* 2. COPYWRITER */}
+                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
+                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
+                                  <span>✍️</span>
+                                  <span>Copywriter Creativo:</span>
+                                </div>
+                                <p className="text-stone-600">
+                                  {mktStrategy?.teamTasks?.copywriter?.hook ? `Gancho de 3s: "${mktStrategy.teamTasks.copywriter.hook}". ${mktStrategy.teamTasks.copywriter.angle || ''}` : `Redactó guion y copys con enlace inteligente directo a foxdrop.mx.`}
+                                </p>
+                              </div>
+
+                              {/* 3. ESTILISTA VISUAL NANO BANANA */}
+                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
+                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
+                                  <span>🎨</span>
+                                  <span>Estilista Visual Nano Banana:</span>
+                                </div>
+                                <p className="text-stone-600">
+                                  {mktStrategy?.teamTasks?.designer?.artDirection || 'Diseño de producto en estudio con paleta corporativa (#0F3E36, #E65F2B, #E3B888) adaptado a 1:1 Feed y 9:16 Reels.'}
+                                </p>
+                              </div>
+
+                              {/* 4. CONCIERGE DE DMs & CIERRE */}
+                              <div className="p-2.5 rounded-xl bg-stone-50 border border-stone-200/80">
+                                <div className="flex items-center gap-1.5 font-bold text-stone-900 mb-0.5">
+                                  <span>💬</span>
+                                  <span>Concierge de Ventas & DMs:</span>
+                                </div>
+                                <p className="text-stone-600">
+                                  {mktStrategy?.teamTasks?.concierge?.conversionStrategy || 'Atención prioritaria para dudas sobre envíos a todo México y cierre guiado a la pasarela de compra.'}
+                                </p>
+                              </div>
+                            </div>
                           </div>
 
                           {/* CAMPO DE AJUSTE Y FEEDBACK DE MARIO */}
@@ -7569,11 +7631,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                           {/* IMAGEN DE NANO BANANA */}
                           <div className="aspect-square bg-gradient-to-br from-[#0F3E36] via-[#16564b] to-stone-900 flex items-center justify-center relative overflow-hidden">
-                            {mktGeneratedImage ? (
+                            {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
                               <img
-                                src={mktGeneratedImage}
+                                src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
                                 alt="Nano Banana Render"
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  // Si la URL de IA falla o tarda, usar la foto real del producto de Supabase
+                                  if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
+                                    e.currentTarget.src = mktStrategy.featuredProduct.image;
+                                  }
+                                }}
                               />
                             ) : (
                               <div className="text-center text-white p-6 space-y-2">
@@ -7629,11 +7697,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       {/* MOCKUP 2: TIKTOK (9:16) */}
                       {mktPreviewFormat === 'tk' && (
                         <div className="max-w-xs mx-auto bg-black rounded-3xl overflow-hidden shadow-xl border border-stone-800 relative aspect-[9/16]">
-                          {mktGeneratedImage ? (
+                          {mktGeneratedImage || mktStrategy?.featuredProduct?.image ? (
                             <img
-                              src={mktGeneratedImage}
+                              src={mktGeneratedImage || mktStrategy?.featuredProduct?.image}
                               alt="TikTok Cover"
                               className="absolute inset-0 w-full h-full object-cover opacity-60"
+                              onError={(e) => {
+                                if (mktStrategy?.featuredProduct?.image && (e.currentTarget.src !== mktStrategy.featuredProduct.image)) {
+                                  e.currentTarget.src = mktStrategy.featuredProduct.image;
+                                }
+                              }}
                             />
                           ) : null}
 

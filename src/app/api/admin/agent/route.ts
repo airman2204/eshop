@@ -247,12 +247,37 @@ REGLAS INQUEBRANTABLES:
 ${JSON.stringify(catalog, null, 2)}
 ${feedback ? `- INDICACIÓN O AJUSTE EXCLUSIVO DE MARIO (CEO): "${feedback}"` : ""}
 
-Devuelve ÚNICAMENTE un JSON válido con esta estructura:
+Devuelve ÚNICAMENTE un JSON válido con esta estructura completa del equipo de marketing:
 {
   "weeklyTheme": "Título inspirador y conciso de la campaña",
   "funnelDiagnostic": "Diagnóstico claro y profesional explicando por qué se están perdiendo ventas y cómo el contenido de la semana resolverá esa fuga.",
   "strategicAngle": "Justificación estratégica de la campaña con criterio de gerente humano.",
   "targetWeeklyGoal": 10000,
+  "teamTasks": {
+    "director": {
+      "role": "Director de Marketing",
+      "action": "Diagnóstico de embudo, selección de ángulo y asignación de tareas al equipo"
+    },
+    "analyst": {
+      "role": "Analista de Lotes & Inventario",
+      "selectedProduct": "Nombre del producto elegido del catálogo con stock real",
+      "marginInsight": "Análisis de rotación y justificación financiera de por qué este producto impulsará el ticket"
+    },
+    "copywriter": {
+      "role": "Copywriter Creativo",
+      "hook": "Gancho magnético de 3 segundos",
+      "angle": "Enfoque persuasivo y solución a la objeción del cliente"
+    },
+    "designer": {
+      "role": "Estilista Visual Nano Banana",
+      "artDirection": "Composición de lujo, iluminación de estudio y paleta oficial FoxDrop (#0F3E36, #E65F2B, #E3B888)",
+      "format": "Feed 1:1 y TikTok 9:16"
+    },
+    "concierge": {
+      "role": "Concierge de Ventas & DMs",
+      "conversionStrategy": "Atención a objeciones frecuentes en comentarios y cierre directo a foxdrop.mx"
+    }
+  },
   "featuredProduct": {
     "id": "id del producto seleccionado del catálogo",
     "title": "nombre del producto",
