@@ -269,19 +269,19 @@ Formula una estrategia semanal completa que combine la visión global de la tien
     {
       "day": "Lunes",
       "type": "TIENDA_GLOBAL",
-      "title": "Por qué FoxDrop es tu atajo seguro al mundo",
+      "title": "Apertura & Garantía de Importación FoxDrop",
+      "productFocus": "Garantía Oficial y Despacho Seguro a todo México",
+      "visualPrompt": "Fotografía publicitaria de estudio comercial de lujo para FoxDrop México. Caja de importación prémium entreabierta con listón satinado, sello de lacre dorado, iluminación suave de estudio sobre pedestal de mármol esmeralda (#0F3E36), reflejos dorados cálidos (#E3B888), estética editorial Vogue/GQ 8k, ultra nítida, sin textos borrosos.",
       "designConcept": {
-        "layoutStyle": "editorial_luxury | minimal_bold | neon_cyber | gold_pedestal | lifestyle_warm",
-        "backgroundAtmosphere": "Descripción visual de la atmósfera de fondo propuesta por el diseñador",
+        "layoutStyle": "editorial_luxury",
         "primaryColor": "#0F3E36",
         "accentColor": "#E3B888",
         "textColor": "#FBF9F5",
         "eyebrowBadge": "IMPORTACIÓN OFICIAL • 100% AUTÉNTICO",
-        "bigHeadline": "Tu Atajo Seguro a lo Mejor de USA",
-        "subHeadline": "Garantía de entrega protegida a todo México sin pagar aduanas.",
+        "bigHeadline": "Tu Atajo Seguro a lo Mejor del Mundo",
+        "subHeadline": "Garantía de entrega protegida a todo México sin trámites de aduana.",
         "trustTag": "Envíos Asegurados a Toda la República",
-        "ctaBadge": "foxdrop.mx",
-        "graphicElements": ["sello_holografico_autenticidad", "caja_premium_sellada", "mapa_cobertura_nacional"]
+        "ctaBadge": "foxdrop.mx"
       },
       "copy": "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
       "cta": "Explora la tienda en foxdrop.mx",

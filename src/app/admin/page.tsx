@@ -476,6 +476,7 @@ export default function AdminCRM() {
   const [mktPreviewFormat, setMktPreviewFormat] = useState<'ig' | 'tk' | 'plan'>('plan');
   const [mktSelectedDayIndex, setMktSelectedDayIndex] = useState<number>(0);
   const [mktGeneratedImage, setMktGeneratedImage] = useState<string>('');
+  const [mktDayImages, setMktDayImages] = useState<Record<number, string>>({});
   const [mktGeneratingImage, setMktGeneratingImage] = useState(false);
   const [mktDesignProposals, setMktDesignProposals] = useState<any[]>([]);
   const [mktSelectedProposalId, setMktSelectedProposalId] = useState<string>('propuesta_1');
@@ -595,6 +596,7 @@ export default function AdminCRM() {
         setMktSelectedProposalId(data.proposals[0].id);
         if (data.generatedAiImageUrl) {
           setMktGeneratedImage(data.generatedAiImageUrl);
+          setMktDayImages(prev => ({ ...prev, [mktSelectedDayIndex]: data.generatedAiImageUrl }));
         }
       }
     } catch (err) {
@@ -7707,180 +7709,211 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </div>
                       )}
 
-                      {/* SECCIÓN CREATIVA: EL USUARIO DA UN PROMPT -> GEMINI DISEÑA 3 PROPUESTAS PARA ELEGIR */}
-                      <div className="p-4 bg-gradient-to-r from-stone-900 to-[#0F3E36] rounded-2xl text-white shadow-lg space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">🎨</span>
-                            <div>
-                              <h5 className="text-xs font-black uppercase tracking-wider text-[#E3B888]">
-                                Director de Arte Autónomo (Gemini + Nano Banana)
-                              </h5>
-                              <p className="text-[11px] text-stone-300">
-                                Dale cualquier instrucción visual o estilo, y el agente creará 3 propuestas de diseño distintas para que elijas la ganadora.
-                              </p>
-                            </div>
+                      {/* SELECTOR DE LOS 7 DÍAS DE LA SEMANA (CADA DÍA TIENE SU TEMA, PROMPT Y VISUAL PROPIO) */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-black uppercase tracking-wider text-[#0F3E36] flex items-center gap-1.5">
+                              <span>📅</span>
+                              <span>Parrilla Semanal Editorial (7 Días)</span>
+                            </span>
+                            <p className="text-[11px] text-stone-500">
+                              Selecciona un día para ver su enfoque, copiar su prompt visual para Gemini o subir su imagen final:
+                            </p>
                           </div>
+                          {mktStrategy?.weeklyTheme && (
+                            <span className="px-2.5 py-1 bg-[#0F3E36]/10 text-[#0F3E36] rounded-xl text-[10px] font-black border border-[#0F3E36]/20">
+                              {mktStrategy.weeklyTheme}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Input de prompt creativo para el diseñador */}
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <input
-                            type="text"
-                            value={mktCustomDesignPrompt}
-                            onChange={(e) => setMktCustomDesignPrompt(e.target.value)}
-                            placeholder="Ej: Estilo revista Vogue con fondo crema y pedestal de mármol, o neón nocturno..."
-                            className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3.5 py-2 text-xs text-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#E3B888]"
-                          />
-                          <button
-                            onClick={() => handleGenerateNanoBananaImage(mktCustomDesignPrompt)}
-                            disabled={mktGeneratingImage}
-                            className="px-4 py-2 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0"
-                          >
-                            <span>✨</span>
-                            <span>{mktGeneratingImage ? 'Diseñando Opciones...' : 'Crear 3 Propuestas'}</span>
-                          </button>
+                        {/* Barra interactiva de 7 Días */}
+                        <div className="grid grid-cols-7 gap-1.5">
+                          {(mktStrategy?.weeklyParrilla || [
+                            { day: "Lun", title: "Unboxing", type: "TIENDA_GLOBAL" },
+                            { day: "Mar", title: "Detalle Stock", type: "PRODUCTO_STOCK" },
+                            { day: "Mié", title: "Empaque", type: "TIENDA_GLOBAL" },
+                            { day: "Jue", title: "Regalos", type: "PRODUCTO_STOCK" },
+                            { day: "Vie", title: "Últimas Pzas", type: "PRODUCTO_STOCK" },
+                            { day: "Sáb", title: "Lifestyle", type: "TIENDA_GLOBAL" },
+                            { day: "Dom", title: "Ruta Envíos", type: "TIENDA_GLOBAL" },
+                          ]).map((dayItem: any, dIdx: number) => {
+                            const isSelected = mktSelectedDayIndex === dIdx;
+                            const hasImage = !!mktDayImages[dIdx];
+                            const isGlobal = dayItem.type === "TIENDA_GLOBAL";
+                            const dayShort = (dayItem.day || "").slice(0, 3);
+
+                            return (
+                              <button
+                                key={dIdx}
+                                onClick={() => {
+                                  setMktSelectedDayIndex(dIdx);
+                                  // Cambiar la imagen activa a la de ese día si existe
+                                  if (mktDayImages[dIdx]) {
+                                    setMktGeneratedImage(mktDayImages[dIdx]);
+                                  } else {
+                                    setMktGeneratedImage('');
+                                  }
+                                }}
+                                className={`p-2 rounded-xl text-center transition flex flex-col items-center justify-between min-h-[58px] cursor-pointer border ${
+                                  isSelected
+                                    ? 'bg-[#0F3E36] text-white border-[#0F3E36] ring-2 ring-[#0F3E36]/30 shadow-sm'
+                                    : hasImage
+                                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
+                                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                                }`}
+                              >
+                                <span className={`text-[9px] font-black uppercase tracking-wider ${isSelected ? 'text-[#E3B888]' : 'text-stone-500'}`}>
+                                  {dayShort}
+                                </span>
+                                <span className="text-[10px] font-bold truncate max-w-full">
+                                  {hasImage ? '✅ Listo' : (dayItem.title ? dayItem.title.split(' ')[0] : `Día ${dIdx + 1}`)}
+                                </span>
+                                <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                                  hasImage ? 'bg-emerald-400' : isGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'
+                                }`} />
+                              </button>
+                            );
+                          })}
                         </div>
-
-                        {/* SELECTOR DE PROPUESTAS DE DISEÑO GENERADAS */}
-                        {mktDesignProposals.length > 0 && (
-                          <div className="pt-2 border-t border-white/10 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest">
-                                Elige una propuesta de diseño para aplicar:
-                              </p>
-                              <span className="text-[10px] text-stone-400 font-medium">
-                                3 direcciones de arte únicas
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                              {mktDesignProposals.map((prop: any, idx: number) => {
-                                const isSelected = (mktSelectedProposalId === prop.id) || (!mktSelectedProposalId && idx === 0);
-                                return (
-                                  <div
-                                    key={prop.id || idx}
-                                    onClick={() => setMktSelectedProposalId(prop.id)}
-                                    className={`p-2.5 rounded-xl border cursor-pointer transition text-left flex flex-col justify-between ${
-                                      isSelected
-                                        ? 'bg-[#E3B888]/20 border-[#E3B888] ring-1 ring-[#E3B888] text-white'
-                                        : 'bg-black/30 border-white/10 hover:border-white/30 text-stone-300'
-                                    }`}
-                                  >
-                                    <div>
-                                      <div className="flex items-center justify-between text-[10px] font-black mb-1">
-                                        <span className="text-[#E3B888]">Opción {idx + 1}</span>
-                                        {isSelected && <span className="bg-[#E3B888] text-stone-950 px-1.5 py-0.2 rounded text-[9px]">Seleccionada</span>}
-                                      </div>
-                                      <div className="text-xs font-black truncate">{prop.name}</div>
-                                      <p className="text-[10px] text-stone-300 line-clamp-2 mt-0.5 leading-tight">
-                                        {prop.conceptRationale}
-                                      </p>
-                                    </div>
-                                    <div className="mt-2 flex items-center gap-1.5 text-[9px] text-stone-400">
-                                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: prop.style?.primaryColor || '#0F3E36' }} />
-                                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: prop.style?.accentColor || '#E3B888' }} />
-                                      <span className="truncate">{prop.typography?.headline}</span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* PUENTE DIRECTO CON GEMINI WEB (100% GRATIS) */}
-                            {(() => {
-                              const activeProp = mktDesignProposals.find(p => p.id === mktSelectedProposalId) || mktDesignProposals[0];
-                              const fullGeminiPrompt = `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México.
-Producto: ${mktStrategy?.featuredProduct?.title || "Perfume y cosmética exclusiva"}.
-Concepto y estilo: "${activeProp?.name || "Lujo contemporáneo"}" - ${activeProp?.conceptRationale || ""}.
-Titular en arte: "${activeProp?.typography?.headline || ""}".
-Atmósfera y encuadre: Fondo de estudio con tonos ${activeProp?.style?.primaryColor || "#0F3E36"} y acentos en dorado ${activeProp?.style?.accentColor || "#E3B888"}, pedestal de mármol pulido, iluminación de estudio suave con reflejos cristalinos, calidad Vogue/GQ comercial 8k, sin aberraciones ni marcas de agua.`;
-
-                              return (
-                                <div className="p-3 bg-black/40 rounded-xl border border-[#E3B888]/40 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-[#E3B888] flex items-center gap-1.5">
-                                      <span>⚡</span>
-                                      <span>Puente Gemini Web (Generación Gratuita de Imagen):</span>
-                                    </span>
-                                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
-                                      Sin costo
-                                    </span>
-                                  </div>
-
-                                  <p className="text-[10px] text-stone-300">
-                                    Copia el prompt optimizado de la <strong>{activeProp?.name || 'opción seleccionada'}</strong>, pídelo en tu Gemini habitual y pega aquí el resultado con 1 clic:
-                                  </p>
-
-                                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                                    {/* 1. Botón copiar prompt */}
-                                    <button
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(fullGeminiPrompt);
-                                        alert("📋 ¡Prompt publicitario copiado al portapapeles!\n\nPégalo en tu Gemini Web para generar la imagen gratis.");
-                                      }}
-                                      className="px-3 py-1.5 bg-[#E3B888] hover:bg-[#d6a56e] text-stone-950 font-black text-[11px] rounded-lg transition shadow-xs flex items-center gap-1"
-                                    >
-                                      <span>📋</span>
-                                      <span>Copiar Prompt de {activeProp?.name ? `"${activeProp.name.split(' ')[0]}"` : 'la Opción'}</span>
-                                    </button>
-
-                                    {/* 2. Botón abrir Gemini Web */}
-                                    <a
-                                      href="https://gemini.google.com"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] rounded-lg border border-white/20 transition flex items-center gap-1"
-                                    >
-                                      <span>🚀</span>
-                                      <span>Abrir Gemini Web →</span>
-                                    </a>
-
-                                    {/* 3. Botón Pegar Imagen generada directamente */}
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          if (navigator.clipboard && navigator.clipboard.read) {
-                                            const items = await navigator.clipboard.read();
-                                            for (const item of items) {
-                                              const imageType = item.types.find(t => t.startsWith('image/'));
-                                              if (imageType) {
-                                                const blob = await item.getType(imageType);
-                                                const reader = new FileReader();
-                                                reader.onload = (e) => {
-                                                  if (e.target?.result) {
-                                                    setMktGeneratedImage(e.target.result as string);
-                                                    alert("✅ ¡Imagen de Gemini cargada en la propuesta con éxito!");
-                                                  }
-                                                };
-                                                reader.readAsDataURL(blob);
-                                                return;
-                                              }
-                                            }
-                                          }
-                                          const pastedText = await navigator.clipboard.readText();
-                                          if (pastedText && (pastedText.startsWith('http') || pastedText.startsWith('data:image/'))) {
-                                            setMktGeneratedImage(pastedText.trim());
-                                            alert("✅ ¡Enlace de imagen de Gemini cargado con éxito!");
-                                            return;
-                                          }
-                                          alert("Copia la imagen en Gemini (clic derecho -> Copiar imagen) y presiona este botón.");
-                                        } catch {
-                                          alert("Presiona Ctrl + V mientras estás en esta ventana para pegar la imagen que copiaste de Gemini.");
-                                        }
-                                      }}
-                                      className="px-3 py-1.5 bg-[#0F3E36] hover:bg-[#15564b] border border-[#E3B888]/40 text-[#E3B888] font-black text-[11px] rounded-lg transition shadow-xs flex items-center gap-1 ml-auto"
-                                    >
-                                      <span>📥</span>
-                                      <span>Pegar Imagen de Gemini (1 Clic)</span>
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
                       </div>
+
+                      {/* TARJETA DEL DÍA ACTIVO: DETALLE, PROMPT VISUAL DE GEMINI Y ACCIÓN DE IMAGEN */}
+                      {(() => {
+                        const activeDayPlan = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex] || {
+                          day: "Lunes",
+                          title: "Apertura & Garantía de Importación FoxDrop",
+                          type: "TIENDA_GLOBAL",
+                          productFocus: mktStrategy?.featuredProduct?.title || "Curaduría FoxDrop México",
+                          visualPrompt: `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México. Producto: ${mktStrategy?.featuredProduct?.title || "Perfume y cosmética exclusiva"}. Enfoque del día: Apertura y confianza de importación oficial en México. Fondo de estudio en tonos Verde Bosque Profundo (#0F3E36) con pedestal de mármol y destellos dorados (#E3B888). Iluminación de estudio suave con reflejos cristalinos, calidad Vogue/GQ comercial 8k, ultra nítida, sin marcas de agua.`,
+                          copy: "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
+                          hashtags: ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico", "#Tendencias"]
+                        };
+
+                        const dayVisualPrompt = activeDayPlan.visualPrompt || 
+                          `Genera una fotografía publicitaria comercial ultra realista para FoxDrop México. Tema del post: ${activeDayPlan.title || 'Lanzamiento semanal'}. Producto: ${mktStrategy?.featuredProduct?.title || 'Cosmética exclusiva'}. Fondo de estudio lujoso con iluminación cinemática y pedestal de mármol, calidad 8k Vogue comercial.`;
+
+                        const activeDayImage = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
+
+                        return (
+                          <div className="bg-gradient-to-r from-stone-900 via-[#0d2a24] to-[#0F3E36] rounded-2xl p-4 text-white shadow-md space-y-3 border border-white/10">
+                            {/* Cabecera del día */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-1 rounded-lg bg-[#E3B888] text-stone-950 font-black text-xs uppercase tracking-wider">
+                                  {activeDayPlan.day || 'Lunes'}
+                                </span>
+                                <div>
+                                  <h4 className="text-sm font-black text-white leading-tight">
+                                    {activeDayPlan.title || 'Estrategia del Día'}
+                                  </h4>
+                                  <p className="text-[11px] text-[#E3B888] font-medium">
+                                    {activeDayPlan.type === 'TIENDA_GLOBAL' ? '🌐 Enfoque: Tienda Global & Confianza' : '🛍️ Enfoque: Impulso de Stock de Bodega'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {activeDayImage ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-400/30 flex items-center gap-1">
+                                    <span>✓</span>
+                                    <span>Arte Guardado para este día</span>
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-400/30">
+                                    Pendiente de Imagen
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Prompt visual de este día específico para Gemini */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-bold text-[#E3B888] flex items-center gap-1">
+                                  <span>🎨</span>
+                                  <span>Prompt Visual para Gemini (Específico para {activeDayPlan.day}):</span>
+                                </span>
+                                <span className="text-[10px] text-stone-400">100% Gratis en Gemini Web</span>
+                              </div>
+
+                              <div className="p-2.5 bg-black/50 rounded-xl border border-white/10 text-[11px] text-stone-300 font-mono leading-relaxed max-h-24 overflow-y-auto selection:bg-[#E3B888] selection:text-stone-950">
+                                {dayVisualPrompt}
+                              </div>
+                            </div>
+
+                            {/* Botones de acción del día */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              {/* 1. Copiar Prompt de este día */}
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(dayVisualPrompt);
+                                  alert(`📋 ¡Prompt de ${activeDayPlan.day} copiado al portapapeles!\n\nPégalo en tu Gemini Web para generar la imagen gratis.`);
+                                }}
+                                className="px-3 py-2 bg-[#E3B888] hover:bg-[#d6a56e] text-stone-950 font-black text-xs rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <span>📋</span>
+                                <span>Copiar Prompt de {activeDayPlan.day}</span>
+                              </button>
+
+                              {/* 2. Abrir Gemini Web */}
+                              <a
+                                href="https://gemini.google.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <span>🚀</span>
+                                <span>Abrir Gemini Web →</span>
+                              </a>
+
+                              {/* 3. Pegar Imagen generada para este día */}
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    if (navigator.clipboard && navigator.clipboard.read) {
+                                      const items = await navigator.clipboard.read();
+                                      for (const item of items) {
+                                        const imageType = item.types.find(t => t.startsWith('image/'));
+                                        if (imageType) {
+                                          const blob = await item.getType(imageType);
+                                          const reader = new FileReader();
+                                          reader.onload = (e) => {
+                                            if (e.target?.result) {
+                                              const imgStr = e.target.result as string;
+                                              setMktGeneratedImage(imgStr);
+                                              setMktDayImages(prev => ({ ...prev, [mktSelectedDayIndex]: imgStr }));
+                                              alert(`✅ ¡Imagen de ${activeDayPlan.day} guardada con éxito!`);
+                                            }
+                                          };
+                                          reader.readAsDataURL(blob);
+                                          return;
+                                        }
+                                      }
+                                    }
+                                    const pastedText = await navigator.clipboard.readText();
+                                    if (pastedText && (pastedText.startsWith('http') || pastedText.startsWith('data:image/'))) {
+                                      const cleanUrl = pastedText.trim();
+                                      setMktGeneratedImage(cleanUrl);
+                                      setMktDayImages(prev => ({ ...prev, [mktSelectedDayIndex]: cleanUrl }));
+                                      alert(`✅ ¡Imagen de ${activeDayPlan.day} guardada con éxito!`);
+                                      return;
+                                    }
+                                    alert("Copia la imagen en Gemini (clic derecho -> Copiar imagen) y presiona este botón.");
+                                  } catch {
+                                    alert("Presiona Ctrl + V mientras estás en esta ventana para pegar la imagen copiada.");
+                                  }
+                                }}
+                                className="px-3.5 py-2 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl transition shadow-md flex items-center gap-1.5 ml-auto cursor-pointer"
+                              >
+                                <span>📥</span>
+                                <span>Pegar Imagen de {activeDayPlan.day} (1 Clic)</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* MOCKUP 0: PLAN SEMANAL DE CONTENIDO EDITORIAL (ESTILO CUADERNO VISUAL CREATIVO) */}
                       {mktPreviewFormat === 'plan' && (
@@ -8014,102 +8047,115 @@ Atmósfera y encuadre: Fondo de estudio con tonos ${activeProp?.style?.primaryCo
                                 }}
                               >
                                 {/* CASO A: SI YA SE PEGÓ/GENERÓ LA IMAGEN COMPLETA DE GEMINI (FULL BLEED LIMPIO) */}
-                                {mktGeneratedImage ? (
-                                  <>
-                                    <div className="absolute inset-0 z-0">
-                                      <img
-                                        src={mktGeneratedImage}
-                                        alt="Post Publicitario"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-
-                                    {/* Botón flotante sutil para cambiar imagen si se desea */}
-                                    <div className="absolute top-3 right-3 z-20">
-                                      <button
-                                        onClick={() => setMktGeneratedImage('')}
-                                        className="px-2 py-1 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-md text-stone-200 hover:text-white text-[10px] font-bold transition border border-white/20"
-                                        title="Quitar imagen actual"
-                                      >
-                                        ✕ Cambiar Arte
-                                      </button>
-                                    </div>
-                                  </>
-                                ) : (
-                                  /* CASO B: PREVIEW DE PROPUESTA ANTES DE GENERAR LA FOTO */
-                                  <>
-                                    {/* Textura y atmósfera propuesta por el diseñador */}
-                                    <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
-                                    <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
-
-                                    {/* FOTO DEL PRODUCTO DESTACADO */}
-                                    {mktStrategy?.featuredProduct?.image && (
-                                      <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
-                                        <div className="relative max-h-60 max-w-xs flex flex-col items-center justify-center">
-                                          <div
-                                            className="absolute w-52 h-52 rounded-full blur-2xl opacity-40 -z-10 pointer-events-none"
-                                            style={{ backgroundColor: accentColor || '#E3B888' }}
-                                          />
-                                          <div className="absolute -bottom-3 w-48 h-6 bg-black/80 rounded-full blur-lg -z-10" />
+                                {(() => {
+                                  const currentDayImg = mktDayImages[mktSelectedDayIndex] || mktGeneratedImage;
+                                  if (currentDayImg) {
+                                    return (
+                                      <>
+                                        <div className="absolute inset-0 z-0">
                                           <img
-                                            src={mktStrategy.featuredProduct.image}
-                                            alt={mktStrategy?.featuredProduct?.title || "Producto"}
-                                            className="max-w-full max-h-56 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transform hover:scale-105 transition duration-500"
+                                            src={currentDayImg}
+                                            alt={`Post Publicitario - Día ${mktSelectedDayIndex + 1}`}
+                                            className="w-full h-full object-cover"
                                           />
                                         </div>
-                                      </div>
-                                    )}
 
-                                    {/* Gradiente cinemático inferior */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
+                                        {/* Botón flotante sutil para cambiar imagen del día */}
+                                        <div className="absolute top-3 right-3 z-20">
+                                          <button
+                                            onClick={() => {
+                                              setMktGeneratedImage('');
+                                              setMktDayImages(prev => {
+                                                const copy = { ...prev };
+                                                delete copy[mktSelectedDayIndex];
+                                                return copy;
+                                              });
+                                            }}
+                                            className="px-2 py-1 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-md text-stone-200 hover:text-white text-[10px] font-bold transition border border-white/20"
+                                            title="Quitar imagen de este día"
+                                          >
+                                            ✕ Cambiar Arte de {currentDayPlan?.day || 'este día'}
+                                          </button>
+                                        </div>
+                                      </>
+                                    );
+                                  }
 
-                                    {/* HEADER DE LA PIEZA: Eyebrow + Badge del Día */}
-                                    <div className="relative z-10 flex items-center justify-between">
-                                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
-                                        <span className="text-[#E3B888] text-[10px]">✦</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
-                                          {eyebrow}
-                                        </span>
-                                      </div>
+                                  return (
+                                    <>
+                                      {/* Textura y atmósfera propuesta por el diseñador */}
+                                      <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
+                                      <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
 
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
-                                          {currentDayPlan?.day || 'Lunes'}
-                                        </span>
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
-                                          {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* FOOTER DE LA PIEZA */}
-                                    <div className="relative z-10 space-y-2 mt-auto">
-                                      <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
-                                        <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
-                                          {activeProposal?.name || currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
-                                        </p>
-                                        <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                                          {headline}
-                                        </h3>
-                                        <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
-                                          {subtitle}
-                                        </p>
-
-                                        <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
-                                          <div className="flex items-center gap-1.5 text-stone-200 font-medium">
-                                            <span className="text-[#E3B888]">🛡️</span>
-                                            <span>{trust}</span>
+                                      {/* FOTO DEL PRODUCTO DESTACADO */}
+                                      {mktStrategy?.featuredProduct?.image && (
+                                        <div className="absolute inset-0 flex items-center justify-center z-1 p-8">
+                                          <div className="relative max-h-60 max-w-xs flex flex-col items-center justify-center">
+                                            <div
+                                              className="absolute w-52 h-52 rounded-full blur-2xl opacity-40 -z-10 pointer-events-none"
+                                              style={{ backgroundColor: accentColor || '#E3B888' }}
+                                            />
+                                            <div className="absolute -bottom-3 w-48 h-6 bg-black/80 rounded-full blur-lg -z-10" />
+                                            <img
+                                              src={mktStrategy.featuredProduct.image}
+                                              alt={mktStrategy?.featuredProduct?.title || "Producto"}
+                                              className="max-w-full max-h-56 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transform hover:scale-105 transition duration-500"
+                                            />
                                           </div>
-                                          {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
-                                            <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
-                                              ${mktStrategy.featuredProduct.price} MXN
-                                            </span>
-                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Gradiente cinemático inferior */}
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
+
+                                      {/* HEADER DE LA PIEZA: Eyebrow + Badge del Día */}
+                                      <div className="relative z-10 flex items-center justify-between">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
+                                          <span className="text-[#E3B888] text-[10px]">✦</span>
+                                          <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
+                                            {eyebrow}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
+                                            {currentDayPlan?.day || 'Lunes'}
+                                          </span>
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
+                                            {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
+                                          </span>
                                         </div>
                                       </div>
-                                    </div>
-                                  </>
-                                )}
+
+                                      {/* FOOTER DE LA PIEZA */}
+                                      <div className="relative z-10 space-y-2 mt-auto">
+                                        <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
+                                          <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
+                                            {currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
+                                          </p>
+                                          <h3 className="text-sm sm:text-base font-black text-white leading-tight">
+                                            {headline}
+                                          </h3>
+                                          <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
+                                            {subtitle}
+                                          </p>
+
+                                          <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
+                                            <div className="flex items-center gap-1.5 text-stone-200 font-medium">
+                                              <span className="text-[#E3B888]">🛡️</span>
+                                              <span>{trust}</span>
+                                            </div>
+                                            {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
+                                              <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                                ${mktStrategy.featuredProduct.price} MXN
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
 
                                   {/* LOADING OVERLAY NANO BANANA */}
                                   {mktGeneratingImage && (
