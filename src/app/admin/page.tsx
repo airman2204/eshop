@@ -7690,124 +7690,128 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <span className="text-stone-400 text-sm">•••</span>
                           </div>
 
-                          {/* LIENZO DE DISEÑO EDITORIAL NANO BANANA / BRAND SYSTEM */}
-                          <div className="aspect-square bg-[#0a231e] relative overflow-hidden flex flex-col justify-between p-4 sm:p-5 select-none border-b border-stone-200">
-                            {/* IMAGEN DE FONDO O FOTOGRAFÍA REAL DE PRODUCTO */}
-                            {mktGeneratedImage && !mktGeneratedImage.startsWith("data:image/svg+xml") && !mktGeneratedImage.includes(".svg") ? (
-                              <img
-                                src={mktGeneratedImage}
-                                alt="Nano Banana Campaign Art"
-                                className="absolute inset-0 w-full h-full object-cover z-0"
-                              />
-                            ) : (
-                              <>
-                                <div className="absolute inset-0 bg-radial from-[#13493f]/90 via-[#0a231e] to-[#040e0c] z-0" />
-                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:28px_28px] opacity-15 z-0" />
+                          {/* LIENZO DE DISEÑO AUTÓNOMO CREADO POR EL AGENTE */}
+                          {(() => {
+                            const currentDayPlan = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex];
+                            const isStoreGlobal = currentDayPlan?.type === 'TIENDA_GLOBAL';
+                            const design = currentDayPlan?.designConcept;
+                            const bgAtmosphere = design?.backgroundAtmosphere || (isStoreGlobal ? 'Estudio institucional de lujo FoxDrop' : 'Spotlight de inventario en bodega');
+                            const primaryBg = design?.primaryColor || '#0a231e';
+                            const accentColor = design?.accentColor || '#E3B888';
+                            const textColor = design?.textColor || '#FBF9F5';
+                            const headline = design?.bigHeadline || currentDayPlan?.headline || (isStoreGlobal ? 'Tu Atajo al Mundo' : mktStrategy?.featuredProduct?.title);
+                            const subtitle = design?.subHeadline || currentDayPlan?.copy || 'Importaciones auténticas sin trámites de aduana.';
+                            const eyebrow = design?.eyebrowBadge || (isStoreGlobal ? 'CURADURÍA GLOBAL • FOXDROP.MX' : 'STOCK CONFIRMADO • ENTREGA INMEDIATA');
+                            const trust = design?.trustTag || 'Envíos Asegurados a Toda la República Mexicana';
 
-                                {/* Halo dorado de estudio publicitario */}
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-[#E3B888]/15 blur-3xl pointer-events-none z-0" />
+                            return (
+                              <div
+                                className="aspect-square relative overflow-hidden flex flex-col justify-between p-5 select-none border-b border-stone-200"
+                                style={{ backgroundColor: primaryBg }}
+                              >
+                                {/* Textura y atmósfera propuesta por el diseñador */}
+                                <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-black/60 z-0 pointer-events-none" />
+                                <div className="absolute inset-0 bg-[radial-gradient(#E3B888_1px,transparent_1px)] [background-size:24px_24px] opacity-10 z-0 pointer-events-none" />
 
-                                {/* Fotografía real de producto de catálogo (Supabase) recortada y con sombra flotante */}
-                                {mktStrategy?.featuredProduct?.image && (
-                                  <div className="absolute inset-0 flex items-center justify-center z-1 p-12">
-                                    <div className="relative max-h-56 max-w-xs flex items-center justify-center">
-                                      {/* Sombra de contacto real */}
-                                      <div className="absolute -bottom-4 w-40 h-6 bg-black/60 rounded-full blur-lg" />
-                                      <img
-                                        src={mktStrategy.featuredProduct.image}
-                                        alt="Product"
-                                        className="max-w-full max-h-52 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.8)] transform hover:scale-105 transition duration-500"
-                                      />
+                                {/* 1. SI ES TIENDA GLOBAL: Composición visual institucional de marca (sin foto descontextualizada) */}
+                                {isStoreGlobal ? (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-1 text-center space-y-3">
+                                    <div className="w-20 h-20 rounded-3xl bg-black/40 border-2 border-[#E3B888] flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md">
+                                      🦊
+                                    </div>
+                                    <div className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#E3B888] text-[10px] font-black uppercase tracking-widest">
+                                      foxdrop.mx • Tu Atajo al Mundo
+                                    </div>
+                                    <div className="text-stone-300 text-[11px] max-w-xs leading-relaxed font-medium">
+                                      Importamos lo más exclusivo de USA y el mundo directo a tus manos. Sin esperas de semanas, sin trámites aduanales.
                                     </div>
                                   </div>
-                                )}
-                              </>
-                            )}
-
-                            {/* Gradiente cinemático para legibilidad editorial */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
-
-                            {/* CAPA SUPERIOR: BADGE Y HEADER DE MARCA */}
-                            {(() => {
-                              const currentDayPlan = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex];
-                              const isStoreGlobal = currentDayPlan?.type === 'TIENDA_GLOBAL';
-                              const dayTitle = currentDayPlan?.title;
-                              const dayHeadline = currentDayPlan?.headline || mktStrategy?.designSystem?.mainTitle || mktStrategy?.featuredProduct?.title;
-                              const dayEyebrow = currentDayPlan?.eyebrow || (isStoreGlobal ? 'CURADURÍA GLOBAL • FOXDROP.MX' : 'LOTE LIMITADO • IMPORTACIÓN OFICIAL');
-                              const dayPillar = isStoreGlobal ? 'Garantía Nacional foxdrop.mx' : (mktStrategy?.storeWideStrategy?.pillar || 'Stock Confirmado en Bodega');
-                              const daySubtitle = currentDayPlan?.hook || 'Autenticidad 100% garantizada • Sin trámites aduanales';
-
-                              return (
-                                <>
-                                  <div className="relative z-10 flex items-center justify-between">
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
-                                      <span className="text-[#E3B888] text-[10px]">✦</span>
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
-                                        {dayEyebrow}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
-                                        {currentDayPlan?.day || 'Lunes'}
-                                      </span>
-                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
-                                        {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* CAPA INFERIOR: TITULAR EDITORIAL, SELLO DE CONFIANZA Y PRECIO */}
-                                  <div className="relative z-10 space-y-2 mt-auto">
-                                    <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
-                                      <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
-                                        {dayPillar}
-                                      </p>
-                                      <h3 className="text-sm sm:text-base font-black text-white leading-tight">
-                                        {dayHeadline}
-                                      </h3>
-                                      <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
-                                        {daySubtitle}
-                                      </p>
-
-                                      <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
-                                        <div className="flex items-center gap-1.5 text-stone-200 font-medium">
-                                          <span className="text-[#E3B888]">🛡️</span>
-                                          <span>{mktStrategy?.designSystem?.trustBadge || 'Envíos Asegurados a Todo México'}</span>
-                                        </div>
-                                        {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
-                                          <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
-                                            ${mktStrategy.featuredProduct.price} MXN
-                                          </span>
-                                        )}
+                                ) : (
+                                  /* 2. SI ES PRODUCTO DE STOCK: Bodegón de producto real */
+                                  mktStrategy?.featuredProduct?.image && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-1 p-10">
+                                      <div className="relative max-h-56 max-w-xs flex items-center justify-center">
+                                        <div className="absolute -bottom-4 w-44 h-7 bg-black/70 rounded-full blur-xl" />
+                                        <img
+                                          src={mktStrategy.featuredProduct.image}
+                                          alt="Product Spotlight"
+                                          className="max-w-full max-h-52 object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)] transform hover:scale-105 transition duration-500"
+                                        />
                                       </div>
                                     </div>
+                                  )
+                                )}
+
+                                {/* Gradiente cinemático inferior para lectura óptima */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 z-1 pointer-events-none" />
+
+                                {/* HEADER DE LA PIEZA: Eyebrow + Badge del Día */}
+                                <div className="relative z-10 flex items-center justify-between">
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#E3B888]/60 backdrop-blur-md shadow-lg">
+                                    <span className="text-[#E3B888] text-[10px]">✦</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-[#FBF9F5]">
+                                      {eyebrow}
+                                    </span>
                                   </div>
-                                </>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-[#0F3E36] text-[#E3B888] border border-[#E3B888]/40 shadow-xs">
+                                      {currentDayPlan?.day || 'Lunes'}
+                                    </span>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-md ${isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'}`}>
+                                      {isStoreGlobal ? 'Tienda Global' : 'Stock Bodega'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* FOOTER DE LA PIEZA: Titular propuesto por el agente, Subtítulo y Badge de Confianza */}
+                                <div className="relative z-10 space-y-2 mt-auto">
+                                  <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
+                                    <p className="text-[10px] uppercase font-bold text-[#E3B888] tracking-wider mb-0.5">
+                                      {currentDayPlan?.title || (isStoreGlobal ? 'Garantía Oficial FoxDrop' : 'Llegada de Inventario')}
+                                    </p>
+                                    <h3 className="text-sm sm:text-base font-black text-white leading-tight">
+                                      {headline}
+                                    </h3>
+                                    <p className="text-[11px] text-stone-200 line-clamp-1 mt-0.5">
+                                      {subtitle}
+                                    </p>
+
+                                    <div className="mt-2.5 pt-2 border-t border-white/20 flex items-center justify-between text-[11px]">
+                                      <div className="flex items-center gap-1.5 text-stone-200 font-medium">
+                                        <span className="text-[#E3B888]">🛡️</span>
+                                        <span>{trust}</span>
+                                      </div>
+                                      {!isStoreGlobal && mktStrategy?.featuredProduct?.price && (
+                                        <span className="px-2.5 py-0.5 rounded-lg bg-[#E65F2B] text-white font-black text-xs shadow-xs">
+                                          ${mktStrategy.featuredProduct.price} MXN
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                  <div className="absolute top-14 right-4 z-20">
+                                    <button
+                                      onClick={() => handleGenerateNanoBananaImage()}
+                                      disabled={mktGeneratingImage}
+                                      className="px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-[#E3B888]/50 text-[#E3B888] text-[10px] font-black transition flex items-center gap-1 shadow-lg"
+                                      title="Generar nuevo render comercial con Nano Banana AI"
+                                    >
+                                      <span>🍌</span>
+                                      <span>{mktGeneratingImage ? 'Creando arte...' : 'Nuevo Arte'}</span>
+                                    </button>
+                                  </div>
+
+                                  {/* LOADING OVERLAY NANO BANANA */}
+                                  {mktGeneratingImage && (
+                                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-bold z-30 space-y-2">
+                                      <span className="animate-spin text-2xl">⚡</span>
+                                      <span>Nano Banana + Gemini creando fotografía publicitaria...</span>
+                                    </div>
+                                  )}
+                                </div>
                               );
                             })()}
-
-                            {/* BOTÓN RE-GENERAR ARTE NANO BANANA CON GEMINI */}
-                            <div className="absolute top-14 right-4 z-20">
-                              <button
-                                onClick={() => handleGenerateNanoBananaImage()}
-                                disabled={mktGeneratingImage}
-                                className="px-2.5 py-1 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-[#E3B888]/50 text-[#E3B888] text-[10px] font-black transition flex items-center gap-1 shadow-lg"
-                                title="Generar nuevo render comercial con Nano Banana AI"
-                              >
-                                <span>🍌</span>
-                                <span>{mktGeneratingImage ? 'Creando arte...' : 'Nuevo Arte'}</span>
-                              </button>
-                            </div>
-
-                            {/* LOADING OVERLAY NANO BANANA */}
-                            {mktGeneratingImage && (
-                              <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center text-white text-xs font-bold z-30 space-y-2">
-                                <span className="animate-spin text-2xl">⚡</span>
-                                <span>Nano Banana + Gemini creando fotografía publicitaria...</span>
-                              </div>
-                            )}
-                          </div>
 
                           {/* CAPTION Y ENLACE DEDICADOS AL DÍA SELECCIONADO */}
                           {(() => {
