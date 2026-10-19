@@ -481,6 +481,7 @@ export default function AdminCRM() {
   const [mktDesignProposals, setMktDesignProposals] = useState<any[]>([]);
   const [mktSelectedProposalId, setMktSelectedProposalId] = useState<string>('propuesta_1');
   const [mktCustomDesignPrompt, setMktCustomDesignPrompt] = useState<string>('');
+  const [mktWorkflowStep, setMktWorkflowStep] = useState<1 | 2 | 3>(1); // 1: Dirección Estratégica, 2: Parrilla & Copys, 3: Dirección Visual & Prompts
   const [mktPublishing, setMktPublishing] = useState(false);
   const [mktPublishSuccess, setMktPublishSuccess] = useState<string | null>(null);
 
@@ -556,14 +557,7 @@ export default function AdminCRM() {
       const data = await res.json();
       if (data.success && data.strategy) {
         setMktStrategy(data.strategy);
-        // El texto del Estilista Visual / Diseñador se convierte en el prompt de diseño para generar las propuestas
-        const stylistPrompt = data.strategy.teamTasks?.designer?.creativePrompt || 
-                              data.strategy.teamTasks?.designer?.artDirection || 
-                              data.strategy.nanoBananaPrompt || '';
-        if (stylistPrompt) {
-          setMktCustomDesignPrompt(stylistPrompt);
-          handleGenerateNanoBananaImage(stylistPrompt, data.strategy.featuredProduct?.title);
-        }
+        setMktWorkflowStep(1); // Se queda en Paso 1 (Dirección Estratégica) para que el CEO apruebe el ángulo antes de pasar a copys o diseño
       } else {
         alert(`Aviso: ${data.error || 'No se pudo generar la estrategia'}`);
       }
@@ -7444,6 +7438,85 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   );
                 })()}
 
+                {/* BARRA DE NAVEGACIÓN DEL FLUJO AUTÓNOMO PASO A PASO (DIRECTOR -> COPYS -> DISEÑO) */}
+                <div className="bg-white rounded-3xl p-4 border border-stone-200 shadow-sm">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-xl bg-[#0F3E36] text-white flex items-center justify-center font-black text-xs">
+                        {mktWorkflowStep}
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-stone-900">
+                          Flujo Autónomo por Etapas
+                        </h4>
+                        <p className="text-[11px] text-stone-500">
+                          {mktWorkflowStep === 1 && 'Paso 1: Diagnóstico de Ventas y Aprobación de la Estrategia del Director'}
+                          {mktWorkflowStep === 2 && 'Paso 2: Copywriting y Parrilla Editorial de 7 Días (Tienda vs Stock)'}
+                          {mktWorkflowStep === 3 && 'Paso 3: Dirección de Arte Visual y Generación de Prompts para Gemini'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                      <button
+                        onClick={() => setMktWorkflowStep(1)}
+                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          mktWorkflowStep === 1
+                            ? 'bg-[#0F3E36] text-white shadow-xs'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                        }`}
+                      >
+                        <span>1. Estrategia</span>
+                        {mktStrategy && <span className="text-[10px] text-emerald-400">✓</span>}
+                      </button>
+
+                      <span className="text-stone-300">→</span>
+
+                      <button
+                        onClick={() => {
+                          if (!mktStrategy) {
+                            alert("Primero consulta y genera la estrategia con el Director en el Paso 1.");
+                            return;
+                          }
+                          setMktWorkflowStep(2);
+                        }}
+                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          mktWorkflowStep === 2
+                            ? 'bg-[#0F3E36] text-white shadow-xs'
+                            : !mktStrategy
+                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed opacity-60'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                        }`}
+                      >
+                        <span>2. Copys & Parrilla</span>
+                        {mktStrategy?.weeklyParrilla?.length > 0 && <span className="text-[10px] text-emerald-400">✓</span>}
+                      </button>
+
+                      <span className="text-stone-300">→</span>
+
+                      <button
+                        onClick={() => {
+                          if (!mktStrategy) {
+                            alert("Primero consulta y genera la estrategia con el Director en el Paso 1.");
+                            return;
+                          }
+                          setMktWorkflowStep(3);
+                        }}
+                        className={`flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          mktWorkflowStep === 3
+                            ? 'bg-[#0F3E36] text-white shadow-xs'
+                            : !mktStrategy
+                            ? 'bg-stone-100 text-stone-400 cursor-not-allowed opacity-60'
+                            : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                        }`}
+                      >
+                        <span>3. Diseño & Prompts</span>
+                        {Object.keys(mktDayImages).length > 0 && <span className="text-[10px] text-emerald-400">✓</span>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* 3. COLUMNA DOBLE: CONSEJO ESTRATÉGICO A LA IZQUIERDA + SIMULADOR DE REDES A LA DERECHA */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
@@ -7641,11 +7714,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                             <button
                               onClick={() => {
-                                alert("✅ Estrategia aprobada. El contenido final está listo para publicarse.");
+                                setMktWorkflowStep(2);
                               }}
-                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+                              className="w-full py-3 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
                             >
-                              <span>Aprobar Estrategia de Campaña</span>
+                              <span>Aprobar Estrategia y Pasar a Copys (Paso 2) →</span>
                             </button>
                           </div>
                         </div>
@@ -7664,43 +7737,277 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     </div>
                   </div>
 
-                  {/* COLUMNA DERECHA: EL SIMULADOR DE REDES SOCIALES EN VIVO */}
+                  {/* COLUMNA DERECHA: ADAPTATIVA SEGÚN LA ETAPA DEL FLUJO (PASO 1, 2 O 3) */}
                   <div className="lg:col-span-7 space-y-4">
-                    <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-stone-200">
-                        <div>
-                          <h4 className="text-sm font-black text-[#0F3E36]">Vista Previa de Publicación</h4>
-                          <p className="text-[11px] text-stone-400">Producto final antes de publicar</p>
+                    {/* ETAPA 1: REVISIÓN Y APROBACIÓN DEL DIAGNÓSTICO Y ÁNGULO DEL DIRECTOR */}
+                    {mktWorkflowStep === 1 && (
+                      <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-5">
+                        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[#E65F2B] bg-[#E65F2B]/10 px-2 py-0.5 rounded-md">
+                              Etapa 1 de 3
+                            </span>
+                            <h4 className="text-base font-black text-[#0F3E36] mt-1">
+                              Diagnóstico Estratégico & Propuesta Comercial
+                            </h4>
+                            <p className="text-xs text-stone-500">
+                              El Director analiza las fugas de dinero, carritos abandonados e inventario para definir el tema de la semana.
+                            </p>
+                          </div>
+                          <span className="text-2xl">🧠</span>
                         </div>
 
-                        {/* SELECTOR DE FORMATO */}
-                        <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+                        {mktStrategy ? (
+                          <div className="space-y-4">
+                            {/* Tema Central Propuesto */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-r from-[#0F3E36] to-[#175248] text-white space-y-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[#E3B888]">
+                                Eje Estratégico Propuesto por el Director
+                              </span>
+                              <h3 className="text-lg font-black leading-tight text-white">
+                                "{mktStrategy.weeklyTheme}"
+                              </h3>
+                              <p className="text-xs text-stone-200 leading-relaxed">
+                                {mktStrategy.strategicAngle}
+                              </p>
+                            </div>
+
+                            {/* Comparativa: Diagnóstico del Embudo vs Foco de Tienda */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 block">
+                                  🚨 Fuga Detectada en el Embudo:
+                                </span>
+                                <p className="text-stone-700 leading-relaxed">
+                                  {mktStrategy.funnelDiagnostic}
+                                </p>
+                              </div>
+
+                              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 block">
+                                  🌐 Pilar Global a Posicionar:
+                                </span>
+                                <p className="font-bold text-[#0F3E36]">
+                                  {mktStrategy.storeWideStrategy?.pillar || "Confianza y Envíos Asegurados a México"}
+                                </p>
+                                <p className="text-stone-600 text-[11px] leading-relaxed">
+                                  {mktStrategy.storeWideStrategy?.valueProposition || "Garantía de importación oficial 100% auténtica directo a tu hogar."}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Producto Foco Seleccionado para Impulsar Margen */}
+                            {mktStrategy.featuredProduct && (
+                              <div className="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block">
+                                    Producto de Stock Seleccionado por el Analista:
+                                  </span>
+                                  <h4 className="text-xs font-bold text-stone-900">
+                                    {mktStrategy.featuredProduct.title}
+                                  </h4>
+                                  <p className="text-[11px] text-stone-500">
+                                    {mktStrategy?.teamTasks?.analyst?.marginInsight || "Seleccionado para elevar el ticket promedio y acelerar rotación."}
+                                  </p>
+                                </div>
+                                <span className="px-3 py-1 bg-white border border-stone-200 rounded-xl font-black text-xs text-stone-900 shrink-0">
+                                  ${mktStrategy.featuredProduct.price} MXN
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Botón de Aprobación para Pasar a Etapa 2 */}
+                            <div className="pt-2 flex items-center justify-between gap-3">
+                              <span className="text-xs text-stone-500">
+                                ¿Te convence esta dirección comercial?
+                              </span>
+                              <button
+                                onClick={() => setMktWorkflowStep(2)}
+                                className="px-5 py-2.5 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer"
+                              >
+                                <span>Aprobar y Ver Copys de la Semana (Paso 2)</span>
+                                <span>→</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center text-xs text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200 space-y-3">
+                            <span className="text-3xl block">⏳</span>
+                            <p className="font-bold text-stone-700">Aún no se ha generado la estrategia de esta semana.</p>
+                            <p>Presiona <strong>"Consultar Director"</strong> en la columna izquierda para que el agente examine los números del negocio y proponga la dirección.</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ETAPA 2: PARRILLA EDITORIAL DE 7 DÍAS & COPYS ESPECÍFICOS */}
+                    {mktWorkflowStep === 2 && (
+                      <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-[#0F3E36] bg-[#0F3E36]/10 px-2 py-0.5 rounded-md">
+                              Etapa 2 de 3
+                            </span>
+                            <h4 className="text-base font-black text-[#0F3E36] mt-1">
+                              Parrilla Editorial & Copywriting de los 7 Días
+                            </h4>
+                            <p className="text-xs text-stone-500">
+                              Cada día tiene su gancho, copy persuasivo, hashtags y enfoque balanceado (Tienda Global vs Stock).
+                            </p>
+                          </div>
                           <button
-                            onClick={() => setMktPreviewFormat('plan')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
-                              mktPreviewFormat === 'plan' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-stone-600'
-                            }`}
+                            onClick={() => setMktWorkflowStep(3)}
+                            className="px-4 py-2 bg-[#0F3E36] hover:bg-[#16564b] text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
                           >
-                            📖 Cuaderno Semanal (7 Días)
-                          </button>
-                          <button
-                            onClick={() => setMktPreviewFormat('ig')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
-                              mktPreviewFormat === 'ig' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
-                            }`}
-                          >
-                            Instagram (1:1)
-                          </button>
-                          <button
-                            onClick={() => setMktPreviewFormat('tk')}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
-                              mktPreviewFormat === 'tk' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
-                            }`}
-                          >
-                            TikTok (9:16)
+                            <span>Pasar a Diseño Visual (Paso 3) →</span>
                           </button>
                         </div>
+
+                        {/* Barra interactiva de 7 Días */}
+                        <div className="grid grid-cols-7 gap-1.5">
+                          {(mktStrategy?.weeklyParrilla || [
+                            { day: "Lun", title: "Unboxing", type: "TIENDA_GLOBAL" },
+                            { day: "Mar", title: "Detalle Stock", type: "PRODUCTO_STOCK" },
+                            { day: "Mié", title: "Empaque", type: "TIENDA_GLOBAL" },
+                            { day: "Jue", title: "Regalos", type: "PRODUCTO_STOCK" },
+                            { day: "Vie", title: "Últimas Pzas", type: "PRODUCTO_STOCK" },
+                            { day: "Sáb", title: "Lifestyle", type: "TIENDA_GLOBAL" },
+                            { day: "Dom", title: "Ruta Envíos", type: "TIENDA_GLOBAL" },
+                          ]).map((dayItem: any, dIdx: number) => {
+                            const isSelected = mktSelectedDayIndex === dIdx;
+                            const isGlobal = dayItem.type === "TIENDA_GLOBAL";
+                            const dayShort = (dayItem.day || "").slice(0, 3);
+
+                            return (
+                              <button
+                                key={dIdx}
+                                onClick={() => setMktSelectedDayIndex(dIdx)}
+                                className={`p-2 rounded-xl text-center transition flex flex-col items-center justify-between min-h-[58px] cursor-pointer border ${
+                                  isSelected
+                                    ? 'bg-[#0F3E36] text-white border-[#0F3E36] ring-2 ring-[#0F3E36]/30 shadow-sm'
+                                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                                }`}
+                              >
+                                <span className={`text-[9px] font-black uppercase tracking-wider ${isSelected ? 'text-[#E3B888]' : 'text-stone-500'}`}>
+                                  {dayShort}
+                                </span>
+                                <span className="text-[10px] font-bold truncate max-w-full">
+                                  {dayItem.title ? dayItem.title.split(' ')[0] : `Día ${dIdx + 1}`}
+                                </span>
+                                <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                                  isGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'
+                                }`} />
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Detalle del Copywriting para el Día Seleccionado */}
+                        {(() => {
+                          const curDay = mktStrategy?.weeklyParrilla?.[mktSelectedDayIndex] || {
+                            day: "Lunes",
+                            title: "Apertura & Garantía de Importación FoxDrop",
+                            type: "TIENDA_GLOBAL",
+                            headline: "Tu Atajo Seguro a lo Mejor de USA",
+                            copy: "Comprar en el extranjero no tiene por qué ser complicado. En FoxDrop seleccionamos las piezas más codiciadas, garantizamos autenticidad al 100% y te las enviamos aseguradas hasta tu hogar en cualquier parte de México.",
+                            cta: "Explora la tienda en foxdrop.mx",
+                            hashtags: ["#FoxDrop", "#ComprasSeguras", "#ImportacionesMexico"]
+                          };
+                          const isStoreGlobal = curDay.type === 'TIENDA_GLOBAL';
+
+                          return (
+                            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+                              <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded-md bg-[#0F3E36] text-white text-[10px] font-black uppercase">
+                                    {curDay.day}
+                                  </span>
+                                  <h4 className="font-bold text-stone-900 text-xs">{curDay.title}</h4>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black text-white ${
+                                  isStoreGlobal ? 'bg-[#0F3E36]' : 'bg-[#E65F2B]'
+                                }`}>
+                                  {isStoreGlobal ? '🌐 Tienda Global' : '🛍️ Stock Bodega'}
+                                </span>
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block mb-0.5">
+                                  Titular / Gancho Visual:
+                                </span>
+                                <p className="text-xs font-bold text-stone-800">
+                                  "{curDay.headline || curDay.title}"
+                                </p>
+                              </div>
+
+                              <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-stone-500 block mb-0.5">
+                                  Copy Persuasivo Completo para Redes:
+                                </span>
+                                <p className="text-xs text-stone-700 bg-white p-3 rounded-xl border border-stone-200 leading-relaxed whitespace-pre-line">
+                                  {curDay.copy}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[11px] pt-1">
+                                <span className="text-stone-500">
+                                  Llamado a la acción: <strong className="text-[#0F3E36]">{curDay.cta || 'foxdrop.mx/tienda'}</strong>
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setMktWorkflowStep(3);
+                                  }}
+                                  className="px-3.5 py-1.5 bg-[#E65F2B] hover:bg-[#ff7138] text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer"
+                                >
+                                  Diseñar Arte de {curDay.day} →
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
+                    )}
+
+                    {/* ETAPA 3: DIRECCIÓN DE ARTE, PROMPTS Y SIMULADOR DE REDES */}
+                    {mktWorkflowStep === 3 && (
+                      <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+                          <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                              Etapa 3 de 3
+                            </span>
+                            <h4 className="text-sm font-black text-[#0F3E36] mt-1">Dirección de Arte & Vista Previa Final</h4>
+                            <p className="text-[11px] text-stone-400">Prompt visual para Gemini y previsualización de publicación</p>
+                          </div>
+
+                          {/* SELECTOR DE FORMATO */}
+                          <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200">
+                            <button
+                              onClick={() => setMktPreviewFormat('plan')}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                                mktPreviewFormat === 'plan' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-stone-600'
+                              }`}
+                            >
+                              📖 Cuaderno Semanal (7 Días)
+                            </button>
+                            <button
+                              onClick={() => setMktPreviewFormat('ig')}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                                mktPreviewFormat === 'ig' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
+                              }`}
+                            >
+                              Instagram (1:1)
+                            </button>
+                            <button
+                              onClick={() => setMktPreviewFormat('tk')}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-black transition ${
+                                mktPreviewFormat === 'tk' ? 'bg-white text-[#0F3E36] shadow-xs' : 'text-stone-600'
+                              }`}
+                            >
+                              TikTok (9:16)
+                            </button>
+                          </div>
+                        </div>
 
                       {/* MENSAJE DE ÉXITO DE PUBLICACIÓN */}
                       {mktPublishSuccess && (
@@ -8356,6 +8663,7 @@ ESPECIFICACIONES DE IDENTIDAD Y MANUAL DE MARCA (OBLIGATORIAS):
                       )}
 
                     </div>
+                    )}
                   </div>
 
                 </div>
