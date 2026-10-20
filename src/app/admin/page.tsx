@@ -1932,8 +1932,13 @@ export default function AdminCRM() {
   });
 
   const totalInventoryUnits = products.reduce((acc, p) => acc + (p.stock || 0), 0);
-  const totalInvestment = products.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
-  const totalExpectedRevenue = products.reduce((acc, p) => acc + ((p.publicPrice || 0) * (p.stock || 0)), 0);
+
+  // Excluir del cálculo de rentabilidad los productos con precio en $0 (pendientes de asignar precio)
+  const pricedProducts = products.filter(p => (Number(p.publicPrice) || 0) > 0);
+  const unpricedProducts = products.filter(p => (Number(p.publicPrice) || 0) <= 0);
+
+  const totalInvestment = pricedProducts.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
+  const totalExpectedRevenue = pricedProducts.reduce((acc, p) => acc + ((p.publicPrice || 0) * (p.stock || 0)), 0);
   const totalExpectedProfit = totalExpectedRevenue - totalInvestment;
   const avgMargin = totalExpectedRevenue > 0 ? (totalExpectedProfit / totalExpectedRevenue) * 100 : 0;
 
@@ -3830,7 +3835,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-slate-400 block">
-                  Costo de adquisición
+                  {unpricedProducts.length > 0 ? `${pricedProducts.length} art. con precio` : 'Costo de adquisición'}
                 </span>
               </div>
 
@@ -3842,7 +3847,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-emerald-300/80 block">
-                  Venta total proyectada
+                  {unpricedProducts.length > 0 ? `${unpricedProducts.length} art. pendientes de precio` : 'Venta total proyectada'}
                 </span>
               </div>
 
