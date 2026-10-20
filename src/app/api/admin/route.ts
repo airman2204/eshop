@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
       "verify_password",
       "get_products",
       "get_categories",
+      "get_client_bootstrap",
       "get_batches",
       "get_orders",
       "get_clients",
@@ -400,6 +401,102 @@ export async function POST(req: NextRequest) {
     }
 
     // ─── CONSULTAS GLOBALES (BYPASS RLS PARA COMPARTIR ENTRE TODOS) ───
+    if (action === "get_client_bootstrap") {
+      const includeInactive = Boolean(body.includeInactive);
+      
+      // Consultas paralelas en un solo roundtrip para velocidad óptima
+      const [productsRes, storeSettingsRes, checkoutSettingsRes, slidesRes, clubSettingsRes] = await Promise.all([
+        (async () => {
+          let query = supabase
+            .from("products")
+            .select("*, categories(id, name, slug, icon)")
+            .order("created_at", { ascending: false });
+          if (!includeInactive) {
+            query = query.eq("is_active", true);
+          }
+          const { data, error } = await query;
+          if (error) throw error;
+          return data || [];
+        })(),
+        (async () => {
+          try {
+            const { data: fileData } = await supabase.storage
+              .from("product-images")
+              .download("_system/store_settings.json");
+            if (fileData) {
+              const rawText = await fileData.text();
+              return JSON.parse(rawText || "{}");
+            }
+          } catch {}
+          return {
+            showClearanceBanner: false,
+            clearanceTitle: "Liquidación de Importación",
+            clearanceDiscountText: "Hasta 70% Menos",
+            clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
+            carouselIntervalSeconds: 8,
+          };
+        })(),
+        (async () => {
+          try {
+            const { data: fileData } = await supabase.storage
+              .from("product-images")
+              .download("_system/checkout_settings.json");
+            if (fileData) {
+              const rawText = await fileData.text();
+              const parsed = JSON.parse(rawText || "{}");
+              if (parsed && Array.isArray(parsed.shippingMethods)) return parsed;
+            }
+          } catch {}
+          return null;
+        })(),
+        (async () => {
+          try {
+            const { data, error } = await supabase
+              .from("carousel_slides")
+              .select("*")
+              .eq("is_active", true)
+              .order("sort_order", { ascending: true });
+            if (!error && Array.isArray(data) && data.length > 0) return data;
+          } catch {}
+          try {
+            const { data: fileData } = await supabase.storage
+              .from("product-images")
+              .download("_system/carousel_slides.json");
+            if (fileData) {
+              const raw = await fileData.text();
+              const parsed = JSON.parse(raw || "[]");
+              if (Array.isArray(parsed)) return parsed.filter((s: any) => s.is_active !== false);
+            }
+          } catch {}
+          return [];
+        })(),
+        (async () => {
+          try {
+            const { data: fileData } = await supabase.storage
+              .from("product-images")
+              .download("_system/club_settings.json");
+            if (fileData) {
+              const rawText = await fileData.text();
+              const parsed = JSON.parse(rawText || "{}");
+              if (parsed && parsed.tiers && parsed.tiers.length > 0) return parsed;
+            }
+          } catch {}
+          return null;
+        })(),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          products: productsRes,
+          storeSettings: storeSettingsRes,
+          checkoutSettings: checkoutSettingsRes,
+          slides: slidesRes,
+          clubSettings: clubSettingsRes,
+        }
+      });
+    }
+
     if (action === "get_products") {
       const includeInactive = Boolean(body.includeInactive);
       let query = supabase

@@ -14,7 +14,7 @@ import {
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
 import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
-import { getActiveProducts } from '@/lib/products';
+import { getActiveProducts, getClientBootstrap } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
   lookupUserByEmail, FullUserProfile, getUserFullProfile, saveUserAddress, deleteUserAddress, 
@@ -176,12 +176,21 @@ export default function TiendaFoxDrop() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [remoteProducts, settings] = await Promise.all([
-          getActiveProducts(),
-          getStoreSettings(),
-        ]);
-        setProducts(remoteProducts ?? []);
-        if (settings) setStoreSettings(settings);
+        // Carga bootstrap consolidada en 1 sola petición paralela
+        const bootstrap = await getClientBootstrap();
+        const remoteProducts = bootstrap?.products || [];
+        setProducts(remoteProducts);
+
+        if (bootstrap?.storeSettings) setStoreSettings(bootstrap.storeSettings);
+        if (bootstrap?.checkoutSettings) {
+          setCheckoutSettings(bootstrap.checkoutSettings);
+          const firstActive = bootstrap.checkoutSettings.shippingMethods?.find((m: any) => m.enabled);
+          if (firstActive) setSelectedShippingId(firstActive.id);
+        }
+        if (bootstrap?.slides && Array.isArray(bootstrap.slides) && bootstrap.slides.length > 0) {
+          setSlides(bootstrap.slides);
+        }
+        if (bootstrap?.clubSettings) setClubSettings(bootstrap.clubSettings);
 
         // Si viene con parámetro ?highlight=[id] desde redes sociales, abrir el producto de inmediato
         if (typeof window !== 'undefined' && remoteProducts && remoteProducts.length > 0) {
@@ -500,10 +509,10 @@ export default function TiendaFoxDrop() {
   const [clubSettings, setClubSettings] = useState<ClubFoxDropSettings>(DEFAULT_CLUB_SETTINGS);
 
   useEffect(() => {
-    getCarouselSlides().then(setSlides);
-    getClubSettings().then(cfg => {
-      if (cfg) setClubSettings(cfg);
-    });
+    // Fallback diferido solo si el bootstrap inicial no trajo slides
+    if (slides.length === 0) {
+      getCarouselSlides().then(s => { if (s && s.length > 0) setSlides(s); });
+    }
   }, []);
 
   // Lista total de slides: El slide de bienvenida oficial SIEMPRE es el primero, seguido de los slides activos adicionales

@@ -77,6 +77,49 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
   };
 }
 
+export interface ClientBootstrapData {
+  products: Product[];
+  storeSettings?: any;
+  checkoutSettings?: any;
+  slides?: any[];
+  clubSettings?: any;
+}
+
+/**
+ * Carga inicial consolidada de toda la información pública de la tienda
+ * en una sola petición paralela ultrarrápida.
+ */
+export async function getClientBootstrap(includeInactive = false): Promise<ClientBootstrapData | null> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_client_bootstrap", includeInactive }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data && json.data.products) {
+        return {
+          products: (json.data.products as DatabaseProduct[]).map(mapDbProductToApp),
+          storeSettings: json.data.storeSettings,
+          checkoutSettings: json.data.checkoutSettings,
+          slides: json.data.slides || [],
+          clubSettings: json.data.clubSettings,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Fallo en getClientBootstrap, recurriendo a getActiveProducts:", err);
+  }
+
+  // Fallback seguro si falla el bootstrap
+  const fallbackProds = await getActiveProducts(includeInactive);
+  return {
+    products: fallbackProds || [],
+  };
+}
+
 /**
  * Obtener todos los productos desde Supabase de forma sincronizada.
  * @param includeInactive - Si es true, incluye los productos apagados (para el panel admin).
