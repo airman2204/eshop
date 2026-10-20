@@ -4097,6 +4097,19 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span>Oferta / Descuento</span>
                   </button>
 
+                  {/* Asignar Tienda / Marca Masivo */}
+                  <button
+                    onClick={() => {
+                      setBulkTargetBrand(officialBrands[0]?.name || 'Bath & Body Works');
+                      setShowBulkBrandModal(true);
+                    }}
+                    className="bg-gradient-to-r from-amber-600 to-[#DF7F2D] hover:from-amber-500 hover:to-[#e68835] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Asignar tienda/marca a todos los seleccionados de un jalón"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-white" />
+                    <span>🏬 Tienda ({selectedProductIds.length})</span>
+                  </button>
+
                   {/* Cambiar Categoría */}
                   <button
                     onClick={handleOpenBulkCategoryModal}
