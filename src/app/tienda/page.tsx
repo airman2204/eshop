@@ -2524,6 +2524,7 @@ export default function TiendaFoxDrop() {
               );
             })}
           </div>
+        )}
 
           {activeTab === 'new' && filteredProducts.length > 0 && (
             <div className="pt-6 pb-2 flex justify-center">
@@ -2541,7 +2542,6 @@ export default function TiendaFoxDrop() {
               </button>
             </div>
           )}
-        )}
       </section>
     </>
       ) : currentView === 'account' ? (
