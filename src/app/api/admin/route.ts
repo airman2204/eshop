@@ -450,25 +450,79 @@ export async function POST(req: NextRequest) {
           return null;
         })(),
         (async () => {
+          let slidesList: any[] = [];
           try {
             const { data, error } = await supabase
               .from("carousel_slides")
               .select("*")
               .eq("is_active", true)
               .order("sort_order", { ascending: true });
-            if (!error && Array.isArray(data) && data.length > 0) return data;
-          } catch {}
-          try {
-            const { data: fileData } = await supabase.storage
-              .from("product-images")
-              .download("_system/carousel_slides.json");
-            if (fileData) {
-              const raw = await fileData.text();
-              const parsed = JSON.parse(raw || "[]");
-              if (Array.isArray(parsed)) return parsed.filter((s: any) => s.is_active !== false);
+            if (!error && Array.isArray(data) && data.length > 0) {
+              slidesList = data;
             }
           } catch {}
-          return [];
+
+          if (slidesList.length === 0) {
+            try {
+              const { data: fileData } = await supabase.storage
+                .from("product-images")
+                .download("_system/carousel_slides.json");
+              if (fileData) {
+                const raw = await fileData.text();
+                const parsed = JSON.parse(raw || "[]");
+                if (Array.isArray(parsed)) slidesList = parsed.filter((s: any) => s.is_active !== false);
+              }
+            } catch {}
+          }
+
+          // Optimización de imágenes en slides: si alguna contiene data:image base64 pesada,
+          // se sube automáticamente a Supabase Storage y se sustituye por la URL pública ultra liviana.
+          let hasMigrated = false;
+          for (let i = 0; i < slidesList.length; i++) {
+            const s = slidesList[i];
+            if (s.image_url && s.image_url.startsWith("data:")) {
+              try {
+                const matches = s.image_url.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                if (matches && matches.length === 3) {
+                  const mime = matches[1];
+                  const ext = mime.split("/")[1] || "png";
+                  const buf = Buffer.from(matches[2], "base64");
+                  const fileName = `slides/slide-${s.id || Date.now()}.${ext}`;
+
+                  const { error: upErr } = await supabase.storage
+                    .from("product-images")
+                    .upload(fileName, buf, { contentType: mime, upsert: true });
+
+                  if (!upErr) {
+                    const { data: pubData } = supabase.storage
+                      .from("product-images")
+                      .getPublicUrl(fileName);
+                    if (pubData?.publicUrl) {
+                      s.image_url = pubData.publicUrl;
+                      hasMigrated = true;
+                    }
+                  }
+                }
+              } catch (upErr) {
+                console.warn("No se pudo migrar imagen base64 de slide:", upErr);
+              }
+            }
+          }
+
+          // Si migró alguna imagen a Storage, guardar la versión limpia en JSON y SQL para que quede permanente
+          if (hasMigrated) {
+            try {
+              const buffer = Buffer.from(JSON.stringify(slidesList, null, 2));
+              await supabase.storage
+                .from("product-images")
+                .upload("_system/carousel_slides.json", buffer, {
+                  contentType: "application/json",
+                  upsert: true,
+                });
+            } catch {}
+          }
+
+          return slidesList;
         })(),
         (async () => {
           try {
