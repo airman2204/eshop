@@ -2263,11 +2263,6 @@ export default function TiendaFoxDrop() {
                   {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
                     <div className="flex flex-wrap items-center gap-1">
-                      {product.brand && product.brand !== 'FoxDrop Oficial' && (
-                        <span className="bg-stone-900/90 text-[#E3B888] font-black text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded shadow-xs">
-                          {product.brand}
-                        </span>
-                      )}
                       {product.isCombo && (
                         <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
                           <Sparkles className="w-2.5 h-2.5" /> COMBO

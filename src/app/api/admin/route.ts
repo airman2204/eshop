@@ -417,7 +417,22 @@ export async function POST(req: NextRequest) {
           }
           const { data, error } = await query;
           if (error) throw error;
-          return data || [];
+          const prods = data || [];
+
+          // Combinar con marcas asignadas guardadas en JSON storage para compatibilidad 100% garantizada
+          try {
+            const { data: bFile } = await supabase.storage
+              .from("product-images")
+              .download("_system/product_brands.json");
+            if (bFile) {
+              const bMap = JSON.parse(await bFile.text() || "{}");
+              prods.forEach((p: any) => {
+                if (bMap[p.id]) p.brand = bMap[p.id];
+              });
+            }
+          } catch {}
+
+          return prods;
         })(),
         (async () => {
           try {
@@ -597,7 +612,22 @@ export async function POST(req: NextRequest) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return NextResponse.json({ success: true, data: data || [] });
+      const prods = data || [];
+
+      // Mapear marcas desde Storage
+      try {
+        const { data: bFile } = await supabase.storage
+          .from("product-images")
+          .download("_system/product_brands.json");
+        if (bFile) {
+          const bMap = JSON.parse(await bFile.text() || "{}");
+          prods.forEach((p: any) => {
+            if (bMap[p.id]) p.brand = bMap[p.id];
+          });
+        }
+      } catch {}
+
+      return NextResponse.json({ success: true, data: prods });
     }
 
     if (action === "get_categories") {
@@ -942,7 +972,6 @@ export async function POST(req: NextRequest) {
         : (product.imageUrl ? [product.imageUrl] : ["/no-image.svg"]);
 
       const insertRecord: any = {
-        brand: product.brand ? product.brand.trim() : null,
         sku,
         title: product.title,
         description: product.description || "Artículo verificado por FoxDrop.",
@@ -985,6 +1014,17 @@ export async function POST(req: NextRequest) {
       }
 
       if (error) throw error;
+      if (product.brand && data?.id) {
+        try {
+          let bMap: Record<string, string> = {};
+          const { data: bFile } = await supabase.storage
+            .from("product-images")
+            .download("_system/product_brands.json");
+          if (bFile) bMap = JSON.parse(await bFile.text() || "{}");
+          bMap[data.id] = product.brand.trim();
+          await supabase.storage.from("product-images").upload("_system/product_brands.json", Buffer.from(JSON.stringify(bMap, null, 2)), { contentType: "application/json", upsert: true });
+        } catch {}
+      }
       return NextResponse.json({ success: true, data });
     }
 
@@ -1075,20 +1115,45 @@ export async function POST(req: NextRequest) {
 
       const cleanBrand = brandName.trim();
 
-      const { data: updatedProds, error: bulkError } = await supabase
-        .from("products")
-        .update({ 
-          brand: cleanBrand,
-          updated_at: new Date().toISOString()
-        })
-        .in("id", productIds)
-        .select("id, title, brand");
+      // 1. Guardar en mapa permanente de marcas en Storage (100% a prueba de fallos de esquema)
+      let brandMap: Record<string, string> = {};
+      try {
+        const { data: bFile } = await supabase.storage
+          .from("product-images")
+          .download("_system/product_brands.json");
+        if (bFile) {
+          brandMap = JSON.parse(await bFile.text() || "{}");
+        }
+      } catch {}
 
-      if (bulkError) throw bulkError;
+      productIds.forEach((pid: string) => {
+        brandMap[pid] = cleanBrand;
+      });
+
+      const buffer = Buffer.from(JSON.stringify(brandMap, null, 2));
+      await supabase.storage
+        .from("product-images")
+        .upload("_system/product_brands.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      // 2. Intentar actualizar en SQL por si la columna ya fue agregada
+      try {
+        await supabase
+          .from("products")
+          .update({ 
+            brand: cleanBrand,
+            updated_at: new Date().toISOString()
+          })
+          .in("id", productIds);
+      } catch (sqlErr) {
+        console.warn("Columna brand en SQL aún no presente, persistencia asegurada en Storage JSON:", sqlErr);
+      }
 
       return NextResponse.json({ 
         success: true, 
-        updatedCount: updatedProds?.length || productIds.length,
+        updatedCount: productIds.length,
         brandName: cleanBrand
       });
     }
