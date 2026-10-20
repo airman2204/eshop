@@ -23,7 +23,7 @@ import {
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, updateImportBatch, deleteImportBatch, getClientsWithMetrics,
   getCarouselSlides, createCarouselSlide, updateCarouselSlide, deleteCarouselSlide, CarouselSlide,
-  fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory, bulkUpdateProductsDiscount,
+  fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory, bulkUpdateProductsDiscount, bulkUpdateProductsBrand,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
   deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS, getOfficialBrands, saveOfficialBrand, OfficialStoreBrand,
@@ -276,6 +276,9 @@ export default function AdminCRM() {
   const [isBulkCustomCategory, setIsBulkCustomCategory] = useState(false);
   const [bulkCustomCategoryName, setBulkCustomCategoryName] = useState('');
   const [savingBulkCategory, setSavingBulkCategory] = useState(false);
+  const [showBulkBrandModal, setShowBulkBrandModal] = useState(false);
+  const [bulkTargetBrand, setBulkTargetBrand] = useState('Bath & Body Works');
+  const [savingBulkBrand, setSavingBulkBrand] = useState(false);
   const [bulkStockDeltaInput, setBulkStockDeltaInput] = useState<number>(5);
   const [showBulkStockModal, setShowBulkStockModal] = useState(false);
   const [savingBulkStock, setSavingBulkStock] = useState(false);
@@ -2382,6 +2385,27 @@ export default function AdminCRM() {
   };
 
   // 8. ACTIVAR / PAUSAR EN LOTE
+  const handleApplyBulkBrand = async () => {
+    if (selectedProductIds.length === 0 || !bulkTargetBrand.trim()) return;
+    setSavingBulkBrand(true);
+    try {
+      await bulkUpdateProductsBrand(selectedProductIds, bulkTargetBrand.trim());
+      setProducts(prev => prev.map(p => {
+        if (selectedProductIds.includes(p.id)) {
+          return { ...p, brand: bulkTargetBrand.trim() };
+        }
+        return p;
+      }));
+      setShowBulkBrandModal(false);
+      setSelectedProductIds([]);
+      alert(`✅ ¡Tienda asignada con éxito a ${selectedProductIds.length} artículos!`);
+    } catch (err: any) {
+      alert(err.message || 'Error al asignar tienda en lote');
+    } finally {
+      setSavingBulkBrand(false);
+    }
+  };
+
   const handleBulkToggleActive = async (targetActive: boolean) => {
     if (selectedProductIds.length === 0) return;
     const count = selectedProductIds.length;
@@ -10698,6 +10722,77 @@ ${ticketImg}
       {/* ======================================================== */}
       {/* MODAL CAMBIO MASIVO DE CATEGORÍA PARA ARTÍCULOS SELECCIONADOS */}
       {/* ======================================================== */}
+      {showBulkBrandModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#DF7F2D] to-amber-500 flex items-center justify-center text-white shadow-md">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">Asignar Tienda / Marca en Lote</h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Se aplicará a <strong>{selectedProductIds.length}</strong> artículos seleccionados
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBulkBrandModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Selecciona la Tienda Oficial a asignar:
+                </label>
+                <select
+                  value={bulkTargetBrand}
+                  onChange={e => setBulkTargetBrand(e.target.value)}
+                  className="w-full bg-amber-50/50 border-2 border-amber-300 rounded-xl p-3 text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#DF7F2D] cursor-pointer"
+                >
+                  {Array.from(new Set([
+                    ...officialBrands.map(b => b.name),
+                    'Bath & Body Works',
+                    'FoxDrop Oficial',
+                  ])).map(brandName => (
+                    <option key={brandName} value={brandName}>{brandName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p className="font-bold text-slate-800">💡 Tip de organización:</p>
+                <p>Todos los productos seleccionados quedarán clasificados bajo <strong>{bulkTargetBrand}</strong> de forma permanente.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowBulkBrandModal(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingBulkBrand || !bulkTargetBrand.trim()}
+                onClick={handleApplyBulkBrand}
+                className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-amber-600 to-[#DF7F2D] hover:from-amber-500 hover:to-[#e68835] transition shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {savingBulkBrand ? 'Asignando...' : `Asignar a ${selectedProductIds.length} artículos`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showBulkCategoryModal && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative border border-slate-200 animate-in fade-in zoom-in-95">

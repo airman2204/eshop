@@ -100,6 +100,23 @@ export async function updateProductInDb(id: string, updates: Partial<NewProductI
 /**
  * Cambia la categoría de múltiples productos de forma simultánea.
  */
+
+export async function bulkUpdateProductsBrand(productIds: string[], brandName: string) {
+  const res = await fetchAdminApi({
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "bulk_update_brand", productIds, brandName }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Error al actualizar tiendas/marcas en lote");
+  }
+
+  const json = await res.json();
+  return json;
+}
+
 export async function bulkUpdateProductsCategory(productIds: string[], categoryName: string) {
   const res = await fetchAdminApi( {
     method: "POST",
