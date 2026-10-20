@@ -2102,6 +2102,165 @@ export default function TiendaFoxDrop() {
 
 
       {/* ======================================================== */}
+      {/* 3.5 SECCIÓN: NUESTRAS TIENDAS OFICIALES (LOGOS ELEGANTES) */}
+      {/* ======================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm sm:text-base font-black text-[#0F3E36] tracking-tight flex items-center gap-1.5">
+              <span>Nuestras Tiendas Oficiales</span>
+              <span className="text-[10px] bg-emerald-100 text-[#0F3E36] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                100% Auténticas
+              </span>
+            </h3>
+            <p className="text-[11px] text-gray-500 font-medium">
+              Elige tu tienda favorita para explorar su catálogo exclusivo con un solo envío a todo México
+            </p>
+          </div>
+
+          {selectedBrand !== 'Todas' && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrand('Todas');
+                setSelectedCategory('Todas');
+              }}
+              className="text-xs text-[#DF7F2D] hover:text-[#b55e16] font-bold flex items-center gap-1 cursor-pointer transition bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl border border-orange-200"
+            >
+              <span>Ver todas las tiendas</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* CÍRCULOS DE MARCAS / LOGOS MINIMALISTAS Y ATRACTIVOS */}
+        <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar py-2">
+          {/* Todas las tiendas */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedBrand('Todas');
+              setSelectedCategory('Todas');
+            }}
+            className={`flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group transition transform ${
+              selectedBrand === 'Todas' ? 'scale-105' : 'hover:scale-105 opacity-85 hover:opacity-100'
+            }`}
+          >
+            <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex items-center justify-center p-2 transition-all shadow-sm border ${
+              selectedBrand === 'Todas'
+                ? 'bg-[#0F3E36] text-white border-[#0F3E36] ring-3 ring-[#0F3E36]/25 shadow-md'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-[#0F3E36]'
+            }`}>
+              <div className="flex flex-col items-center justify-center text-center">
+                <span className="text-xl">🌐</span>
+                <span className="text-[9px] font-black tracking-wider uppercase mt-0.5">Todas</span>
+              </div>
+            </div>
+            <span className={`text-xs font-bold ${selectedBrand === 'Todas' ? 'text-[#0F3E36] font-black' : 'text-gray-600'}`}>
+              Todas ({products.length})
+            </span>
+          </button>
+
+          {/* Tienda 1: Bath & Body Works con su logo oficial cuadrado */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedBrand('Bath & Body Works');
+              setSelectedCategory('Todas');
+              const el = document.getElementById('catalog-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group transition transform ${
+              selectedBrand === 'Bath & Body Works' ? 'scale-105' : 'hover:scale-105 opacity-85 hover:opacity-100'
+            }`}
+          >
+            <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl flex items-center justify-center overflow-hidden transition-all shadow-sm border bg-[#005696] ${
+              selectedBrand === 'Bath & Body Works'
+                ? 'ring-3 ring-[#005696]/40 shadow-lg border-white scale-102'
+                : 'border-gray-200 hover:border-[#005696]'
+            }`}>
+              <img
+                src="/bath-and-body-works-logo.png"
+                alt="Bath & Body Works"
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              />
+            </div>
+            <span className={`text-xs font-bold text-center max-w-[85px] leading-tight line-clamp-1 ${
+              selectedBrand === 'Bath & Body Works' ? 'text-[#005696] font-black' : 'text-gray-700'
+            }`}>
+              Bath & Body Works
+            </span>
+          </button>
+
+          {/* Tiendas dadas de alta en el Admin dinámicamente */}
+          {storeBrands
+            .filter(b => b.name !== 'Bath & Body Works' && b.name !== 'FoxDrop Oficial')
+            .map(b => {
+              const isSelected = selectedBrand === b.name;
+              return (
+                <button
+                  key={b.id || b.name}
+                  type="button"
+                  onClick={() => {
+                    setSelectedBrand(b.name);
+                    setSelectedCategory('Todas');
+                    const el = document.getElementById('catalog-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className={`flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group transition transform ${
+                    isSelected ? 'scale-105' : 'hover:scale-105 opacity-85 hover:opacity-100'
+                  }`}
+                >
+                  <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white border flex items-center justify-center p-2.5 shadow-sm transition-all overflow-hidden ${
+                    isSelected
+                      ? 'ring-3 ring-[#DF7F2D]/40 border-[#DF7F2D] shadow-md'
+                      : 'border-gray-200 hover:border-gray-400'
+                  }`}>
+                    {b.logo_url ? (
+                      <img src={b.logo_url} alt={b.name} className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-xl">🏬</span>
+                    )}
+                  </div>
+                  <span className={`text-xs font-bold text-center max-w-[85px] leading-tight line-clamp-1 ${
+                    isSelected ? 'text-[#DF7F2D] font-black' : 'text-gray-700'
+                  }`}>
+                    {b.name}
+                  </span>
+                </button>
+              );
+            })}
+
+          {/* FoxDrop Oficial */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedBrand('FoxDrop Oficial');
+              setSelectedCategory('Todas');
+              const el = document.getElementById('catalog-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className={`flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group transition transform ${
+              selectedBrand === 'FoxDrop Oficial' ? 'scale-105' : 'hover:scale-105 opacity-85 hover:opacity-100'
+            }`}
+          >
+            <div className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#FAF7F0] border flex items-center justify-center p-2 shadow-sm transition-all overflow-hidden ${
+              selectedBrand === 'FoxDrop Oficial'
+                ? 'ring-3 ring-[#E65F2B]/40 border-[#E65F2B] shadow-md'
+                : 'border-gray-200 hover:border-gray-400'
+            }`}>
+              <img src="/fox-logo-head-3d.png" alt="FoxDrop Oficial" className="w-full h-full object-contain" />
+            </div>
+            <span className={`text-xs font-bold text-center max-w-[85px] leading-tight line-clamp-1 ${
+              selectedBrand === 'FoxDrop Oficial' ? 'text-[#E65F2B] font-black' : 'text-gray-700'
+            }`}>
+              FoxDrop Oficial
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* ======================================================== */}
       {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
       {/* ======================================================== */}
       <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
@@ -2111,10 +2270,14 @@ export default function TiendaFoxDrop() {
               <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
               <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
                 {activeTab === 'new' 
-                  ? (selectedCategory === 'Todas' ? 'Lo Más Nuevo en FoxDrop' : `Lo Nuevo en ${selectedCategory}`)
+                  ? (selectedBrand !== 'Todas' 
+                      ? (selectedCategory === 'Todas' ? `Lo Más Nuevo de ${selectedBrand}` : `Lo Nuevo de ${selectedBrand} en ${selectedCategory}`)
+                      : (selectedCategory === 'Todas' ? 'Lo Más Nuevo en FoxDrop' : `Lo Nuevo en ${selectedCategory}`))
                   : activeTab === 'deals'
-                  ? 'Ofertas & Descuentos Activos'
-                  : (selectedCategory === 'Todas' ? 'Catálogo Completo' : `Departamento: ${selectedCategory}`)
+                  ? (selectedBrand !== 'Todas' ? `Ofertas de ${selectedBrand}` : 'Ofertas & Descuentos Activos')
+                  : (selectedBrand !== 'Todas'
+                      ? (selectedCategory === 'Todas' ? `Catálogo ${selectedBrand}` : `${selectedBrand} • ${selectedCategory}`)
+                      : (selectedCategory === 'Todas' ? 'Catálogo Completo' : `Departamento: ${selectedCategory}`))
                 }
               </h3>
             </div>
@@ -2361,6 +2524,23 @@ export default function TiendaFoxDrop() {
               );
             })}
           </div>
+
+          {activeTab === 'new' && filteredProducts.length > 0 && (
+            <div className="pt-6 pb-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('all');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-white hover:bg-stone-50 text-[#0F3E36] font-black text-xs sm:text-sm px-6 py-3 rounded-2xl border-2 border-[#0F3E36] transition shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer group"
+              >
+                <span>{selectedBrand !== 'Todas' ? `Ver Catálogo Completo de ${selectedBrand} →` : 'Ver Catálogo Completo FoxDrop →'}</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          )}
         )}
       </section>
     </>
