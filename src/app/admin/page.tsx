@@ -26,7 +26,7 @@ import {
   fetchAdminCategories, createAdminCategory, bulkUpdateProductsCategory, bulkUpdateProductsDiscount,
   getAdminAbandonedCarts, updateAdminAbandonedCart, deleteAdminAbandonedCart,
   getClubSettings, saveClubSettings, getLoyaltyMetrics, generateTicketImage,
-  deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS,
+  deleteClientFromDb, getStoreSettings, saveStoreSettings, StoreSettings, DEFAULT_STORE_SETTINGS, getOfficialBrands, saveOfficialBrand, OfficialStoreBrand,
   generateAgentSocialPost, generateAgentWeeklyCalendar, generateAgentOrderFollowup, generateAgentCartRecovery, chatWithFoxBot, executeAgentAction,
   getAgentChatHistory, saveAgentChatHistory
 } from '@/lib/admin';
@@ -132,6 +132,12 @@ export default function AdminCRM() {
   const [newTitle, setNewTitle] = useState('');
   const [newSku, setNewSku] = useState('');
   const [newCategory, setNewCategory] = useState('Cosmética');
+  const [newBrand, setNewBrand] = useState('Bath & Body Works');
+  const [officialBrands, setOfficialBrands] = useState<any[]>([]);
+  const [isAddingNewBrand, setIsAddingNewBrand] = useState(false);
+  const [customNewBrandName, setCustomNewBrandName] = useState('');
+  const [customNewBrandLogo, setCustomNewBrandLogo] = useState('');
+  const [creatingBrandLoading, setCreatingBrandLoading] = useState(false);
   const [dbCategories, setDbCategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   const [customNewCategoryName, setCustomNewCategoryName] = useState('');
@@ -2025,6 +2031,7 @@ export default function AdminCRM() {
           title: newTitle,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
+          brand: newBrand,
           baseCostUsd: calculatedCostUsd,
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
@@ -2070,6 +2077,7 @@ export default function AdminCRM() {
           title: newTitle,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
+          brand: newBrand,
           baseCostUsd: calculatedCostUsd,
           baseCostMxn: costMxn,
           shippingCostAllocated: shippingPerUnit,
@@ -8803,8 +8811,83 @@ ESTÉTICA Y CONCEPTO VISUAL:
 
                 {/* 2. Categoría, Stock y Encendido/Apagado */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                  {/* Tienda / Marca Oficial */}
+                  <div className="sm:col-span-6">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-bold block text-xs">🏬 Tienda / Marca Oficial</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingNewBrand(!isAddingNewBrand)}
+                        className="text-[#DF7F2D] text-[10px] font-bold hover:underline cursor-pointer"
+                      >
+                        {isAddingNewBrand ? '✕ Cancelar' : '+ Nueva Tienda'}
+                      </button>
+                    </div>
+                    {isAddingNewBrand ? (
+                      <div className="space-y-1 bg-amber-50/50 p-2 rounded-xl border border-amber-200">
+                        <input
+                          type="text"
+                          placeholder="Nombre de la tienda (ej. Bath & Body Works, Nike, Zara)..."
+                          value={customNewBrandName}
+                          onChange={e => setCustomNewBrandName(e.target.value)}
+                          className="w-full bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs text-slate-900"
+                        />
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            placeholder="URL del logo (opcional)..."
+                            value={customNewBrandLogo}
+                            onChange={e => setCustomNewBrandLogo(e.target.value)}
+                            className="flex-1 bg-white border border-amber-200 rounded-lg px-2 py-1 text-[11px] text-slate-900"
+                          />
+                          <button
+                            type="button"
+                            disabled={creatingBrandLoading || !customNewBrandName.trim()}
+                            onClick={async () => {
+                              if (!customNewBrandName.trim()) return;
+                              setCreatingBrandLoading(true);
+                              try {
+                                const saved = await saveOfficialBrand({
+                                  name: customNewBrandName.trim(),
+                                  logo_url: customNewBrandLogo.trim() || undefined,
+                                });
+                                setOfficialBrands(prev => [...prev.filter(b => b.id !== saved.id), saved]);
+                                setNewBrand(saved.name);
+                                setCustomNewBrandName('');
+                                setCustomNewBrandLogo('');
+                                setIsAddingNewBrand(false);
+                                alert('✅ ¡Tienda dada de alta con éxito!');
+                              } catch (err: any) {
+                                alert(err.message || 'Error guardando tienda');
+                              } finally {
+                                setCreatingBrandLoading(false);
+                              }
+                            }}
+                            className="bg-[#0F3E36] hover:bg-[#0b2f29] text-white font-bold px-3 py-1 rounded-lg text-xs cursor-pointer"
+                          >
+                            {creatingBrandLoading ? '...' : 'Guardar'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <select
+                        value={newBrand}
+                        onChange={e => setNewBrand(e.target.value)}
+                        className="w-full bg-amber-50/30 border border-amber-200 rounded-xl p-2 text-slate-900 font-bold text-xs focus:ring-2 focus:ring-[#DF7F2D] cursor-pointer"
+                      >
+                        {Array.from(new Set([
+                          ...officialBrands.map(b => b.name),
+                          'Bath & Body Works',
+                          'FoxDrop Oficial',
+                        ])).map(brandName => (
+                          <option key={brandName} value={brandName}>{brandName}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
                   {/* Categoría */}
-                  <div className="sm:col-span-5">
+                  <div className="sm:col-span-6">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-slate-700 font-bold block">Categoría</label>
                       <button

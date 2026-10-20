@@ -107,6 +107,7 @@ export interface ClientBootstrapData {
   checkoutSettings?: any;
   slides?: any[];
   clubSettings?: any;
+  brands?: any[];
 }
 
 /**
@@ -130,6 +131,7 @@ export async function getClientBootstrap(includeInactive = false): Promise<Clien
           checkoutSettings: json.data.checkoutSettings,
           slides: json.data.slides || [],
           clubSettings: json.data.clubSettings,
+          brands: json.data.brands || [],
         };
       }
     }

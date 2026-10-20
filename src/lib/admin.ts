@@ -44,6 +44,7 @@ export async function getLiveExchangeRate(): Promise<number> {
 export interface NewProductInput {
   title: string;
   categoryName: string;
+  brand?: string;
   baseCostUsd: number;
   baseCostMxn: number;
   shippingCostAllocated: number;
@@ -716,3 +717,75 @@ export async function saveAgentChatHistory(messages: any[]): Promise<boolean> {
 
 
 
+
+
+export interface OfficialStoreBrand {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url?: string;
+  banner_url?: string;
+  description?: string;
+  is_active: boolean;
+}
+
+export const DEFAULT_OFFICIAL_BRANDS: OfficialStoreBrand[] = [
+  {
+    id: 'brand-bbw',
+    name: 'Bath & Body Works',
+    slug: 'bath-and-body-works',
+    logo_url: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=200&auto=format&fit=crop&q=80',
+    description: 'Fragancias icónicas, cremas corporales de hidratación profunda y velas de 3 mechas importadas de USA.',
+    is_active: true,
+  },
+  {
+    id: 'brand-foxdrop',
+    name: 'FoxDrop Oficial',
+    slug: 'foxdrop-oficial',
+    logo_url: '/fox-logo-head-3d.png',
+    description: 'Productos y combos oficiales seleccionados directamente por FoxDrop.',
+    is_active: true,
+  }
+];
+
+export async function getOfficialBrands(): Promise<OfficialStoreBrand[]> {
+  try {
+    const res = await fetchAdminApi({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_brands' }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+        return json.data;
+      }
+    }
+  } catch (err) {
+    console.warn('Fallo consultando tiendas oficiales, usando defaults:', err);
+  }
+  return DEFAULT_OFFICIAL_BRANDS;
+}
+
+export async function saveOfficialBrand(brand: Partial<OfficialStoreBrand> & { name: string }): Promise<OfficialStoreBrand> {
+  const res = await fetchAdminApi({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'save_brand', brand }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Error al guardar tienda oficial');
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export async function deleteOfficialBrand(id: string): Promise<boolean> {
+  const res = await fetchAdminApi({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'delete_brand', id }),
+  });
+  return res.ok;
+}

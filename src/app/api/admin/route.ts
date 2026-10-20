@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
     const PUBLIC_ADMIN_ACTIONS = [
       "verify_password",
       "get_products",
+      "get_brands",
       "get_categories",
       "get_client_bootstrap",
       "get_batches",
@@ -405,7 +406,7 @@ export async function POST(req: NextRequest) {
       const includeInactive = Boolean(body.includeInactive);
       
       // Consultas paralelas en un solo roundtrip para velocidad óptima
-      const [productsRes, storeSettingsRes, checkoutSettingsRes, slidesRes, clubSettingsRes] = await Promise.all([
+      const [productsRes, storeSettingsRes, checkoutSettingsRes, slidesRes, clubSettingsRes, brandsRes] = await Promise.all([
         (async () => {
           let query = supabase
             .from("products")
@@ -537,6 +538,36 @@ export async function POST(req: NextRequest) {
           } catch {}
           return null;
         })(),
+        (async () => {
+          try {
+            const { data: fileData } = await supabase.storage
+              .from("product-images")
+              .download("_system/official_brands.json");
+            if (fileData) {
+              const raw = await fileData.text();
+              const parsed = JSON.parse(raw || "[]");
+              if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+          } catch {}
+          return [
+            {
+              id: 'brand-bbw',
+              name: 'Bath & Body Works',
+              slug: 'bath-and-body-works',
+              logo_url: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=200&auto=format&fit=crop&q=80',
+              description: 'Velas 3 mechas, cremas corporales y aromas de importación.',
+              is_active: true
+            },
+            {
+              id: 'brand-foxdrop',
+              name: 'FoxDrop Oficial',
+              slug: 'foxdrop-oficial',
+              logo_url: '/fox-logo-head-3d.png',
+              description: 'Colección oficial FoxDrop.',
+              is_active: true
+            }
+          ];
+        })(),
       ]);
 
       return NextResponse.json({
@@ -547,6 +578,7 @@ export async function POST(req: NextRequest) {
           checkoutSettings: checkoutSettingsRes,
           slides: slidesRes,
           clubSettings: clubSettingsRes,
+          brands: brandsRes,
         }
       });
     }
@@ -760,6 +792,121 @@ export async function POST(req: NextRequest) {
     }
 
     // ─── PRODUCTOS ───────────────────────────────────────────────
+    
+    // ─── GESTIÓN DE TIENDAS OFICIALES / MARCAS (BRAND BOUTIQUES) ───
+    if (action === "get_brands") {
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/official_brands.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          const parsed = JSON.parse(raw || "[]");
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return NextResponse.json({ success: true, data: parsed });
+          }
+        }
+      } catch (err) {
+        console.warn("Aviso consultando official_brands.json:", err);
+      }
+      return NextResponse.json({
+        success: true,
+        data: [
+          {
+            id: 'brand-bbw',
+            name: 'Bath & Body Works',
+            slug: 'bath-and-body-works',
+            logo_url: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?w=200&auto=format&fit=crop&q=80',
+            description: 'Velas 3 mechas, cremas corporales y fragancias de importación.',
+            is_active: true
+          },
+          {
+            id: 'brand-foxdrop',
+            name: 'FoxDrop Oficial',
+            slug: 'foxdrop-oficial',
+            logo_url: '/fox-logo-head-3d.png',
+            description: 'Colección oficial FoxDrop.',
+            is_active: true
+          }
+        ]
+      });
+    }
+
+    if (action === "save_brand") {
+      const { brand } = body;
+      if (!brand || !brand.name || !brand.name.trim()) {
+        return NextResponse.json({ error: "Nombre de la tienda/marca requerido" }, { status: 400 });
+      }
+
+      let currentBrands: any[] = [];
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/official_brands.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          currentBrands = JSON.parse(raw || "[]");
+        }
+      } catch {}
+
+      const cleanName = brand.name.trim();
+      const slug = cleanName.toLowerCase().replace(/[^a-z0-9]/g, "-") || "brand";
+      const brandId = brand.id || `brand-${Date.now()}`;
+
+      const existingIndex = currentBrands.findIndex(b => b.id === brandId || b.name.toLowerCase() === cleanName.toLowerCase());
+      const brandObj = {
+        id: brandId,
+        name: cleanName,
+        slug,
+        logo_url: brand.logo_url || "",
+        banner_url: brand.banner_url || "",
+        description: brand.description || "",
+        is_active: brand.is_active ?? true,
+      };
+
+      if (existingIndex >= 0) {
+        currentBrands[existingIndex] = { ...currentBrands[existingIndex], ...brandObj };
+      } else {
+        currentBrands.push(brandObj);
+      }
+
+      const buffer = Buffer.from(JSON.stringify(currentBrands, null, 2));
+      await supabase.storage
+        .from("product-images")
+        .upload("_system/official_brands.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      return NextResponse.json({ success: true, data: brandObj, brands: currentBrands });
+    }
+
+    if (action === "delete_brand") {
+      if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+
+      let currentBrands: any[] = [];
+      try {
+        const { data: fileData } = await supabase.storage
+          .from("product-images")
+          .download("_system/official_brands.json");
+        if (fileData) {
+          const raw = await fileData.text();
+          currentBrands = JSON.parse(raw || "[]");
+        }
+      } catch {}
+
+      const filtered = currentBrands.filter((b: any) => b.id !== id);
+      const buffer = Buffer.from(JSON.stringify(filtered, null, 2));
+      await supabase.storage
+        .from("product-images")
+        .upload("_system/official_brands.json", buffer, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      return NextResponse.json({ success: true, deletedId: id });
+    }
+
     if (action === "create_product") {
       if (!product || !product.title) {
         return NextResponse.json({ error: "Datos de producto incompletos" }, { status: 400 });
@@ -795,6 +942,7 @@ export async function POST(req: NextRequest) {
         : (product.imageUrl ? [product.imageUrl] : ["/no-image.svg"]);
 
       const insertRecord: any = {
+        brand: product.brand ? product.brand.trim() : null,
         sku,
         title: product.title,
         description: product.description || "Artículo verificado por FoxDrop.",
@@ -847,6 +995,7 @@ export async function POST(req: NextRequest) {
 
       const payload: any = { updated_at: new Date().toISOString() };
       if (product.title !== undefined) payload.title = product.title;
+      if (product.brand !== undefined) payload.brand = product.brand ? product.brand.trim() : null;
       if (product.sku !== undefined) payload.sku = product.sku;
       if (product.description !== undefined) payload.description = product.description;
       if (product.baseCostUsd !== undefined) payload.base_cost_usd = product.baseCostUsd;
