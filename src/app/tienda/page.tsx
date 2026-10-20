@@ -80,6 +80,7 @@ export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -195,6 +196,10 @@ export default function TiendaFoxDrop() {
         // Si viene con parámetro ?highlight=[id] desde redes sociales, abrir el producto de inmediato
         if (typeof window !== 'undefined' && remoteProducts && remoteProducts.length > 0) {
           const urlParams = new URLSearchParams(window.location.search);
+          const brandParam = urlParams.get('brand') || urlParams.get('tienda');
+          if (brandParam) {
+            setSelectedBrand(brandParam);
+          }
           const highlightId = urlParams.get('highlight');
           if (highlightId) {
             const found = remoteProducts.find(p => p.id === highlightId);
@@ -611,6 +616,7 @@ export default function TiendaFoxDrop() {
   // Filtrado dinámico por búsqueda de palabras clave (sin acentos, flexible) y categoría
   const baseFilteredProducts = products.filter(p => {
     const matchSearch = matchesProductSearch(p, searchTerm);
+    const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
     
     // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
@@ -622,7 +628,7 @@ export default function TiendaFoxDrop() {
     else if (priceFilter === '150to350') matchPrice = p.publicPrice >= 150 && p.publicPrice <= 350;
     else if (priceFilter === 'above350') matchPrice = p.publicPrice > 350;
 
-    return matchSearch && matchCat && matchStock && matchPrice;
+    return matchSearch && matchBrand && matchCat && matchStock && matchPrice;
   });
 
   // Sugerencias rápidas para el buscador predictivo (máximo 5 productos)
@@ -2189,6 +2195,15 @@ export default function TiendaFoxDrop() {
             </div>
 
 
+            {selectedBrand !== 'Todas' && (
+              <button
+                onClick={() => setSelectedBrand('Todas')}
+                className="bg-amber-50 hover:bg-amber-100 text-[#DF7F2D] text-xs font-bold px-3 py-1.5 rounded-lg transition border border-amber-200 flex items-center gap-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Tienda: {selectedBrand}</span>
+              </button>
+            )}
             {selectedCategory !== 'Todas' && (
               <button
                 onClick={() => setSelectedCategory('Todas')}
@@ -2252,7 +2267,12 @@ export default function TiendaFoxDrop() {
                 >
                   {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {product.brand && product.brand !== 'FoxDrop Oficial' && (
+                        <span className="bg-stone-900/90 text-[#E3B888] font-black text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded shadow-xs">
+                          {product.brand}
+                        </span>
+                      )}
                       {product.isCombo && (
                         <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
                           <Sparkles className="w-2.5 h-2.5" /> COMBO

@@ -21,6 +21,8 @@ export interface Product {
   description: string;
   /** Nombre de la categoría (ej. Cosmética, Electrónica, Hogar) */
   category: string;
+  /** Marca o Tienda Oficial de origen (ej. Bath & Body Works, Victoria's Secret, Nike, FoxDrop) */
+  brand?: string;
   /** Costo base de adquisición en Dólares USD */
   baseCostUsd: number;
   /** Costo base de adquisición convertido a Pesos MXN */

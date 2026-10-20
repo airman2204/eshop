@@ -30,6 +30,7 @@ export interface DatabaseProduct {
   is_active: boolean;
   days_in_stock: number;
   expiration_date: string | null;
+  brand?: string | null;
   is_combo?: boolean;
   combo_product_ids?: string[] | null;
   discount_percent?: number | null;
@@ -45,6 +46,28 @@ export interface DatabaseProduct {
  * Mapea un registro crudo de Supabase a la estructura limpia de Product en React.
  * Calcula automáticamente el margen porcentual y provee fallbacks para imágenes.
  */
+
+export function detectProductBrand(title: string, currentBrand?: string | null): string {
+  if (currentBrand && currentBrand.trim()) return currentBrand.trim();
+  const lower = (title || '').toLowerCase();
+  if (lower.includes('bath & body') || lower.includes('bath and body') || lower.includes('bbw') || lower.includes('gingham') || lower.includes('champagne toast') || lower.includes('japanese cherry') || lower.includes('warm vanilla sugar') || lower.includes('3-wick') || lower.includes('mahogany teakwood')) {
+    return 'Bath & Body Works';
+  }
+  if (lower.includes('victoria') || lower.includes('pink ') || lower.includes('bare vanilla') || lower.includes('pure seduction') || lower.includes('velvet petals') || lower.includes('love spell')) {
+    return "Victoria's Secret";
+  }
+  if (lower.includes('nike') || lower.includes('jordan') || lower.includes('dunk') || lower.includes('air max') || lower.includes('air force')) {
+    return 'Nike';
+  }
+  if (lower.includes('adidas') || lower.includes('yeezy') || lower.includes('samba') || lower.includes('campus') || lower.includes('gazelle')) {
+    return 'Adidas';
+  }
+  if (lower.includes('zara')) return 'Zara';
+  if (lower.includes('coach')) return 'Coach';
+  if (lower.includes('stanley')) return 'Stanley';
+  return 'FoxDrop Oficial';
+}
+
 export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
   const publicPrice = Number(dbProd.public_price) || 0;
   const totalCost = Number(dbProd.total_cost_mxn) || 0;
@@ -74,6 +97,7 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
     comboProductIds: dbProd.combo_product_ids || [],
     discountPercent: Number(dbProd.discount_percent) || 0,
     isActive: dbProd.is_active ?? true,
+    brand: detectProductBrand(dbProd.title, dbProd.brand),
   };
 }
 
