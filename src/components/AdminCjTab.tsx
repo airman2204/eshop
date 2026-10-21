@@ -94,6 +94,18 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
   const [copiedShare, setCopiedShare] = useState(false);
 
+  // Bloquear el scroll de la página principal cuando el modal esté abierto
+  useEffect(() => {
+    if (previewItem || modalItem) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [previewItem, modalItem]);
+
   const handleSearch = async (targetPage = 1, overrideQuery?: string, overrideCategory?: string) => {
     const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
     const catToUse = overrideCategory !== undefined ? overrideCategory : selectedCategory;
@@ -905,8 +917,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
       {/* MODAL VISTA PREVIA EN GRANDE (ESTILO CJ DROPSHIPPING) */}
       {previewItem && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200">
+        <div 
+          onClick={() => setPreviewItem(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 cursor-default"
+          >
             {/* CABECERA MODAL */}
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/70">
               <div className="min-w-0">
@@ -1120,8 +1138,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
       {/* MODAL CONFIGURAR PRECIO Y PUBLICAR */}
       {modalItem && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200">
+        <div 
+          onClick={() => setModalItem(null)}
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200 cursor-default"
+          >
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-600" />
               <span>Importar Producto a FoxDrop</span>
