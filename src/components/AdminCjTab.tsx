@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info, Share2, Copy } from 'lucide-react';
 import { getStoredAdminToken } from '@/lib/adminAuth';
 
 interface CjItem {
@@ -78,6 +78,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     weight?: string;
   } | null>(null);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
+  const [copiedShare, setCopiedShare] = useState(false);
 
   const handleSearch = async (targetPage = 1, overrideQuery?: string, overrideCategory?: string) => {
     const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
@@ -120,12 +121,41 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     }
   };
 
-  // Carga inicial automática de productos virales/novedades globales
+  // Carga inicial automática de productos virales/novedades globales o abrir producto compartido por URL
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedPid = urlParams.get('cj_pid');
+      if (sharedPid) {
+        // Abrir directamente el producto compartido
+        handleOpenPreview({
+          id: sharedPid,
+          name: urlParams.get('cj_name') || 'Producto compartido',
+          sku: '',
+          image: urlParams.get('cj_img') || '',
+          priceUsd: Number(urlParams.get('cj_price')) || 0,
+        });
+      }
+    }
+
     if (!hasSearched && results.length === 0) {
       handleSearch(1, '', '');
     }
   }, []);
+
+  const handleShareProduct = (item: CjItem) => {
+    if (typeof window === 'undefined') return;
+    const origin = window.location.origin;
+    const shareUrl = `${origin}/admin?tab=cj_dropship&cj_pid=${encodeURIComponent(item.id)}&cj_name=${encodeURIComponent(item.name)}&cj_price=${item.priceUsd}&cj_img=${encodeURIComponent(item.image)}`;
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 3000);
+    } else {
+      prompt('Copia este enlace para compartir el producto con tu socia:', shareUrl);
+    }
+  };
 
   const handleOpenPreview = async (item: CjItem) => {
     setPreviewItem(item);
@@ -540,13 +570,37 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   {previewItem.name}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setPreviewItem(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleShareProduct(previewItem)}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border ${
+                    copiedShare
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white hover:bg-indigo-50 text-indigo-600 border-indigo-200 hover:border-indigo-300'
+                  }`}
+                  title="Copiar enlace directo para tu socia"
+                >
+                  {copiedShare ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>¡Enlace Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Compartir a socia</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewItem(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* CONTENIDO PRINCIPAL */}
