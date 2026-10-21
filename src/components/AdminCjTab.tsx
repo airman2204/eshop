@@ -293,6 +293,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           image: d.bigImage || prev.image,
           priceUsd: Number(d.sellPrice) || prev.priceUsd,
           categoryName: d.categoryName || prev.categoryName,
+          listedNum: Number(d.listedNum) || prev.listedNum || 0,
         } : prev);
 
         setPreviewDetail({
@@ -563,12 +564,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
                         {/* TÍTULO */}
                         <div className="space-y-1">
-                          {item.listedNum && item.listedNum > 0 ? (
-                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200/80 text-[10px] font-bold text-amber-800">
-                              <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
-                              <span>{item.listedNum} tiendas vendiéndolo</span>
-                            </div>
-                          ) : null}
+                          <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200/80 text-[10px] font-bold text-amber-900">
+                            <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
+                            <span>
+                              {item.listedNum && item.listedNum > 0
+                                ? `${item.listedNum.toLocaleString()} tiendas vendiéndolo`
+                                : 'Novedad preseleccionada'}
+                            </span>
+                          </div>
                           <h4
                             onClick={() => handleOpenPreview(item)}
                             className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight hover:text-indigo-600 cursor-pointer"
@@ -885,12 +888,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
                     {/* TÍTULO */}
                     <div className="space-y-1">
-                      {prod.listedNum && prod.listedNum > 10 ? (
-                        <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200/80 text-[10px] font-bold text-amber-800">
-                          <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
-                          <span>Top Ventas ({prod.listedNum} tiendas)</span>
-                        </div>
-                      ) : null}
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200/80 text-[10px] font-bold text-amber-900">
+                        <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
+                        <span>
+                          {prod.listedNum && prod.listedNum > 0
+                            ? `${prod.listedNum.toLocaleString()} tiendas vendiéndolo`
+                            : 'Novedad recién agregada'}
+                        </span>
+                      </div>
                       <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight" title={prod.name}>
                         {prod.name}
                       </h4>
