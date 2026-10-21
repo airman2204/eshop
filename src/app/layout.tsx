@@ -67,19 +67,19 @@ export const metadata: Metadata = {
       "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras y envíos a todo México.",
     images: [
       {
-        url: "/fox-hero-desktop-banner.png",
-        width: 1200,
-        height: 630,
-        alt: "FoxDrop México — Tu Tienda de Tesoros Mundiales",
+        url: "/foxdrop-logo.png",
+        width: 600,
+        height: 600,
+        alt: "FoxDrop México — Catálogo y Novedades",
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "FoxDrop México — Calidad Amistosa y Garantizada",
     description:
       "Descubre tesoros mundiales y productos exclusivos en FoxDrop. Entregas seguras y envíos a todo México.",
-    images: ["/fox-hero-desktop-banner.png"],
+    images: ["/foxdrop-logo.png"],
   },
   manifest: "/manifest.webmanifest",
   icons: {

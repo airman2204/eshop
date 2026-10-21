@@ -127,13 +127,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
       const urlParams = new URLSearchParams(window.location.search);
       const sharedPid = urlParams.get('cj_pid');
       if (sharedPid) {
-        // Abrir directamente el producto compartido
+        // Abrir directamente el producto compartido cargando su detalle completo por PID
         handleOpenPreview({
           id: sharedPid,
-          name: urlParams.get('cj_name') || 'Producto compartido',
+          name: 'Cargando producto...',
           sku: '',
-          image: urlParams.get('cj_img') || '',
-          priceUsd: Number(urlParams.get('cj_price')) || 0,
+          image: '',
+          priceUsd: 0,
         });
       }
     }
@@ -146,14 +146,15 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const handleShareProduct = (item: CjItem) => {
     if (typeof window === 'undefined') return;
     const origin = window.location.origin;
-    const shareUrl = `${origin}/admin?tab=cj_dropship&cj_pid=${encodeURIComponent(item.id)}&cj_name=${encodeURIComponent(item.name)}&cj_price=${item.priceUsd}&cj_img=${encodeURIComponent(item.image)}`;
+    // Enlace super corto y limpio usando solo el ID del producto
+    const shareUrl = `${origin}/admin?tab=cj_dropship&cj_pid=${encodeURIComponent(item.id)}`;
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareUrl);
       setCopiedShare(true);
       setTimeout(() => setCopiedShare(false), 3000);
     } else {
-      prompt('Copia este enlace para compartir el producto con tu socia:', shareUrl);
+      prompt('Copia este enlace para compartir el producto:', shareUrl);
     }
   };
 
@@ -183,8 +184,18 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         const d = data.detail.data;
         const imgSet: string[] = Array.isArray(d.productImageSet) && d.productImageSet.length > 0
           ? d.productImageSet
-          : [item.image];
+          : (d.bigImage ? [d.bigImage] : [item.image]);
         
+        // Actualizar datos del producto si venía solo con PID
+        setPreviewItem(prev => prev ? {
+          ...prev,
+          name: d.productNameEn || d.productName || prev.name,
+          sku: d.productSku || prev.sku,
+          image: d.bigImage || prev.image,
+          priceUsd: Number(d.sellPrice) || prev.priceUsd,
+          categoryName: d.categoryName || prev.categoryName,
+        } : prev);
+
         setPreviewDetail({
           images: imgSet,
           description: d.description || '',
@@ -579,7 +590,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                       : 'bg-white hover:bg-indigo-50 text-indigo-600 border-indigo-200 hover:border-indigo-300'
                   }`}
-                  title="Copiar enlace directo para tu socia"
+                  title="Copiar enlace corto de este producto"
                 >
                   {copiedShare ? (
                     <>
@@ -589,7 +600,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   ) : (
                     <>
                       <Share2 className="w-3.5 h-3.5" />
-                      <span>Compartir a socia</span>
+                      <span>Compartir</span>
                     </>
                   )}
                 </button>
