@@ -337,6 +337,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       <img
                         src={prod.image || '/no-image.svg'}
                         alt={prod.name}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        loading="lazy"
                         className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                       />
                       <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
@@ -441,6 +444,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               <img
                 src={modalItem.image}
                 alt={modalItem.name}
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
                 className="w-16 h-16 rounded-xl object-cover shrink-0"
               />
               <div className="min-w-0">
