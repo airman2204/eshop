@@ -54,6 +54,7 @@ export interface CjProductItem {
   priceUsd: number;
   categoryName?: string;
   variantsCount?: number;
+  listedNum?: number;
 }
 
 /**
@@ -109,6 +110,9 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
     return match ? parseFloat(match[0]) : 0;
   };
 
+  // Ordenar por popularidad real en CJ (más tiendas vendiéndolo a nivel mundial)
+  rawList.sort((a: any, b: any) => (Number(b.listedNum) || 0) - (Number(a.listedNum) || 0));
+
   const products: CjProductItem[] = rawList.map((p: any) => ({
     id: String(p.id || p.pid || p.sku || Math.random()),
     name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
@@ -117,6 +121,7 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
     priceUsd: parseCjPrice(p.sellPrice ?? p.price),
     categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
     variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
+    listedNum: Number(p.listedNum) || 0,
   }));
 
   return {
