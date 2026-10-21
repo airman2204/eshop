@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle } from 'lucide-react';
-import { fetchAdminApi } from '@/lib/adminAuth';
+import { getStoredAdminToken } from '@/lib/adminAuth';
 
 interface CjItem {
   id: string;
@@ -33,44 +33,35 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
 
-  const handleSearch = async (targetPage = 1) => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (targetPage = 1, overrideQuery?: string) => {
+    const queryToUse = (overrideQuery !== undefined ? overrideQuery : searchQuery).trim();
+    if (!queryToUse) return;
     setSearching(true);
     setHasSearched(true);
     try {
-      const res = await fetchAdminApi({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'search_products',
-          query: searchQuery.trim(),
-          page: targetPage,
-          size: 18,
-        }),
-      });
-
-      // El endpoint específico es /api/admin/cj
+      const token = getStoredAdminToken() || '';
       const resCj = await fetch('/api/admin/cj', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('foxdrop_admin_session') ? JSON.parse(localStorage.getItem('foxdrop_admin_session') || '{}').token : ''}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           action: 'search_products',
-          query: searchQuery.trim(),
+          query: queryToUse,
           page: targetPage,
           size: 18,
+          adminToken: token,
         }),
       });
 
       const data = await resCj.json();
-      if (data.success && Array.isArray(data.products)) {
+      if (resCj.ok && data.success && Array.isArray(data.products)) {
         setResults(data.products);
         setTotalRecords(data.total || data.products.length);
         setPage(targetPage);
       } else {
-        alert(data.error || 'No se encontraron productos en CJ');
+        alert(data.error || 'No se encontraron productos en CJ Dropshipping');
       }
     } catch (err: any) {
       alert(`Error buscando en CJ Dropshipping: ${err.message || 'Intenta de nuevo'}`);
@@ -98,14 +89,16 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const finalTitle = customTitles[item.id]?.trim() || item.name;
 
     try {
+      const token = getStoredAdminToken() || '';
       const res = await fetch('/api/admin/cj', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('foxdrop_admin_session') ? JSON.parse(localStorage.getItem('foxdrop_admin_session') || '{}').token : ''}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           action: 'import_cj_product',
+          adminToken: token,
           importProduct: {
             title: finalTitle,
             sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
@@ -217,26 +210,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               type="button"
               onClick={() => {
                 setSearchQuery(tag.query);
-                setSearching(true);
-                setHasSearched(true);
-                // Lanzar búsqueda
-                fetch('/api/admin/cj', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('foxdrop_admin_session') ? JSON.parse(localStorage.getItem('foxdrop_admin_session') || '{}').token : ''}`,
-                  },
-                  body: JSON.stringify({ action: 'search_products', query: tag.query, page: 1, size: 18 }),
-                })
-                  .then(r => r.json())
-                  .then(d => {
-                    if (d.success && Array.isArray(d.products)) {
-                      setResults(d.products);
-                      setTotalRecords(d.total || d.products.length);
-                      setPage(1);
-                    }
-                  })
-                  .finally(() => setSearching(false));
+                handleSearch(1, tag.query);
               }}
               className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-medium transition shrink-0 cursor-pointer border border-slate-200/80"
             >
