@@ -65,6 +65,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [importedIds, setImportedIds] = useState<string[]>([]);
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
+  const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
 
   // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
@@ -171,7 +172,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     }
   };
 
-  const handleOpenImportModal = (item: CjItem) => {
+  const handleOpenImportModal = (item: CjItem, extraDetail?: any) => {
     setModalItem(item);
     const safeUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0;
     const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
@@ -180,6 +181,15 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const suggestedPrice = Math.max(99, Math.round(costMxn * 2.2));
     setCustomPrices(prev => ({ ...prev, [item.id]: suggestedPrice }));
     setCustomTitles(prev => ({ ...prev, [item.id]: item.name }));
+
+    // Si viene la descripción detallada del modal grande, guardarla
+    if (extraDetail?.description) {
+      const cleanDesc = extraDetail.description.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+      setCustomDescriptions(prev => ({
+        ...prev,
+        [item.id]: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional: 10 a 15 días hábiles.` : ''
+      }));
+    }
   };
 
   const handleConfirmImport = async () => {
@@ -192,6 +202,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const costMxn = Math.round(safeUsd * safeRate);
     const salePrice = customPrices[item.id] || Math.round(costMxn * 2.2);
     const finalTitle = customTitles[item.id]?.trim() || item.name;
+    const finalDescription = customDescriptions[item.id]?.trim() || `📦 Producto viral de importación directa a tu domicilio. Tiempo de entrega internacional: 10 a 15 días hábiles con guía de rastreo. SKU CJ: ${item.sku}.`;
 
     try {
       const token = getStoredAdminToken() || '';
@@ -212,8 +223,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             baseCostMxn: costMxn,
             publicPrice: salePrice,
             imageUrl: item.image,
-            images: [item.image],
-            description: `📦 Producto viral de importación directa a tu domicilio. Tiempo de entrega internacional: 10 a 15 días hábiles con guía de rastreo. SKU CJ: ${item.sku}.`,
+            images: previewDetail?.images && previewDetail.images.length > 0 ? previewDetail.images : [item.image],
+            description: finalDescription,
           },
         }),
       });
@@ -633,6 +644,19 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     </div>
                   </div>
 
+                  {/* DESCRIPCIÓN TÉCNICA DEL FABRICANTE */}
+                  {previewDetail?.description && (
+                    <div className="space-y-1.5 text-xs">
+                      <span className="font-bold text-slate-700 block">
+                        Descripción y Especificaciones de Fábrica:
+                      </span>
+                      <div 
+                        className="max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 text-[11px] leading-relaxed prose prose-sm max-w-none [&_img]:hidden [&_p]:mb-1 [&_br]:content-['']"
+                        dangerouslySetInnerHTML={{ __html: previewDetail.description }}
+                      />
+                    </div>
+                  )}
+
                   {/* DESCRIPCIÓN O VARIANTES */}
                   {previewDetail?.variants && previewDetail.variants.length > 0 && (
                     <div className="space-y-1.5 text-xs">
@@ -664,8 +688,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     type="button"
                     onClick={() => {
                       const item = previewItem;
+                      const detail = previewDetail;
                       setPreviewItem(null);
-                      handleOpenImportModal(item);
+                      handleOpenImportModal(item, detail);
                     }}
                     className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
