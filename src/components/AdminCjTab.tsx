@@ -12,6 +12,7 @@ interface CjItem {
   priceUsd: number;
   categoryName?: string;
   listedNum?: number;
+  countryCode?: string;
 }
 
 export interface WishlistItem extends CjItem {
@@ -842,8 +843,12 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         loading="lazy"
                         className="w-full h-full object-cover transition duration-300 group-hover:scale-110"
                       />
-                      <span className="absolute top-1.5 left-1.5 bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10">
-                        ✈️ Dropship
+                      <span className={`absolute top-1.5 left-1.5 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10 ${
+                        prod.countryCode === 'MX' || selectedCountry === 'MX'
+                          ? 'bg-emerald-700/90'
+                          : 'bg-black/75'
+                      }`}>
+                        {prod.countryCode === 'MX' || selectedCountry === 'MX' ? '🇲🇽 Stock MX (2-5d)' : '✈️ Dropship'}
                       </span>
 
                       {/* BOTÓN WISHLIST CORAZÓN */}
@@ -1079,30 +1084,57 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               <div className="space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   {/* PRECIOS Y COSTOS */}
-                  <div className="bg-gradient-to-br from-indigo-50/50 to-slate-50 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Costo Fábrica (China):</span>
-                      <span className="font-mono font-bold text-slate-900 text-sm">
-                        ${previewItem.priceUsd.toFixed(2)} USD (~${Math.round(previewItem.priceUsd * (usdRate || 18))} MXN)
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Flete Internacional Estándar (CJPacket):</span>
-                      <span className="font-mono font-bold text-slate-700">~$130 MXN</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-indigo-700 font-bold border-t border-indigo-100/80 pt-2">
-                      <span>Venta sugerida en FoxDrop:</span>
-                      <span className="font-mono text-base font-black text-indigo-900">
-                        ${Math.max(99, Math.round(previewItem.priceUsd * (usdRate || 18) * 2.2))} MXN
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-emerald-600 font-bold flex items-center justify-between bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
-                      <span>Tu ganancia estimada por venta:</span>
-                      <span className="font-mono">
-                        +${Math.max(0, Math.round(previewItem.priceUsd * (usdRate || 18) * 2.2) - Math.round(previewItem.priceUsd * (usdRate || 18)))} MXN
-                      </span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const isMexicoStock = previewItem.countryCode === 'MX' || selectedCountry === 'MX';
+                    const safeUsd = previewItem.priceUsd;
+                    const costMxn = Math.round(safeUsd * (usdRate || 18));
+                    // Si está en bodega México, el envío es nacional (desde $0 o $99 nacional)
+                    const estimatedFreightMxn = isMexicoStock ? 0 : 130;
+                    // Precio sugerido: en productos nacionales de alto valor no inflar por 2.2 si son equipos pesados, margen saludable
+                    const suggestedSale = isMexicoStock 
+                      ? Math.round(costMxn * 1.5) 
+                      : Math.max(99, Math.round(costMxn * 2.2));
+                    const estimatedProfit = Math.max(0, suggestedSale - costMxn - estimatedFreightMxn);
+
+                    return (
+                      <div className={`p-4 rounded-2xl border space-y-2.5 ${
+                        isMexicoStock 
+                          ? 'bg-gradient-to-br from-emerald-50/60 to-slate-50 border-emerald-200' 
+                          : 'bg-gradient-to-br from-indigo-50/50 to-slate-50 border-indigo-100'
+                      }`}>
+                        <div className="flex items-center justify-between text-xs text-slate-600">
+                          <span>{isMexicoStock ? 'Costo en Bodega México:' : 'Costo Fábrica (China):'}</span>
+                          <span className="font-mono font-bold text-slate-900 text-sm">
+                            ${safeUsd.toFixed(2)} USD (~${costMxn} MXN)
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-600">
+                          <span>{isMexicoStock ? 'Paquetería Nacional (Estafeta / Fedex MX):' : 'Flete Internacional Estándar (CJPacket):'}</span>
+                          <span className={`font-mono font-bold ${isMexicoStock ? 'text-emerald-700' : 'text-slate-700'}`}>
+                            {isMexicoStock ? '✓ Flete Incluido / Nacional' : '~$130 MXN'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>Tiempo de Entrega al Cliente:</span>
+                          <span className="font-bold text-slate-800">
+                            {isMexicoStock ? '⚡ 2 a 5 Días Hábiles (Nacional)' : '✈️ 10 a 15 Días Hábiles (Internacional)'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-indigo-700 font-bold border-t border-slate-200/80 pt-2">
+                          <span>Venta sugerida en FoxDrop:</span>
+                          <span className="font-mono text-base font-black text-indigo-900">
+                            ${suggestedSale} MXN
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-emerald-600 font-bold flex items-center justify-between bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
+                          <span>Tu ganancia estimada por venta:</span>
+                          <span className="font-mono">
+                            +${estimatedProfit} MXN
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* ESPECIFICACIONES TÉCNICAS */}
                   <div className="space-y-2 text-xs">
