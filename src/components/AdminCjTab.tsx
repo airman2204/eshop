@@ -46,7 +46,7 @@ const CJ_TREND_TAGS = [
 ];
 
 export default function AdminCjTab({ usdRate, onProductImported }: Props) {
-  const [searchQuery, setSearchQuery] = useState('mini fan');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CjItem[]>([]);
@@ -102,10 +102,10 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     }
   };
 
-  // Carga inicial automática de productos virales si aún no ha buscado
+  // Carga inicial automática de productos virales/novedades globales
   useEffect(() => {
     if (!hasSearched && results.length === 0) {
-      handleSearch(1, 'portable fan');
+      handleSearch(1, '', '');
     }
   }, []);
 
