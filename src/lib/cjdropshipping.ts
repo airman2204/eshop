@@ -4,11 +4,12 @@
  * ============================================================================
  */
 
-let cachedAccessToken: string | null = null;
-let tokenExpiresAt: number = 0;
+// Token persistente en el módulo para evitar llamar a /getAccessToken en cada request
+let cachedAccessToken: string = "API@CJ5965480@CJ:eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI1Nzc4MCIsInR5cGUiOiJBQ0NFU1NfVE9LRU4iLCJzdWIiOiJicUxvYnFRMGxtTm55UXB4UFdMWnlpbUpsQzBGTmhuQUhPY3RWeWN2dlpZczQrTHJ4Q3A3MEpiZTFzL2lIbFJ2L3g5b3ZnTTdzRnp2M3dyeHlTRVg3OEJtWjBpN3lxdjJONFJZVldWNkN3L0RRdHloWFJOQWVnZXU0SVZQVUdPZndKZkJzdUp1dHdlUkZYMldwUnUwVnNwdzhDcWlrcDFmSXgvVEtFa2UvdUlTZ2FYajBxSjhRRWIySmlVSUJQSU9UeUU4WEdEUUw3eVVGcktpbGJOa2s5OWVEUnc1NUJick9FeFd3SUJoTGlTMTl6dU1sOG14YnUxaUVsY0J2Ri8zdTkxUGdHRlpuakJjVkd5ZWdEdWNDTDlrUjR2WlJmdG9EUXlVaFRVckRiWT0iLCJpYXQiOjE3OTI1OTgxMjF9.QfB1WgXwOUwmVePYZCdW_VbJcdcSCc3MBr55XCRozIg";
+let tokenExpiresAt: number = new Date("2027-04-19T15:55:21+08:00").getTime();
 
 /**
- * Obtiene o reutiliza el Access Token de CJ Dropshipping (válido hasta por 180 días)
+ * Obtiene o reutiliza el Access Token de CJ Dropshipping (válido hasta 2027)
  */
 const DEFAULT_CJ_API_KEY = "CJ5965480@api@11b106a82c66403bb28d5cca4b6882ad";
 
@@ -16,35 +17,33 @@ export async function getCjAccessToken(): Promise<string> {
   const apiKey = process.env.CJ_API_KEY || "CJ5965480@api@11b106a82c66403bb28d5cca4b6882ad";
 
   const now = Date.now();
-  // Si tenemos token en memoria y le quedan más de 1 hora de vigencia
+  // Si tenemos token en memoria válido (expira en 2027), reusarlo SIEMPRE
   if (cachedAccessToken && now < tokenExpiresAt - 3600 * 1000) {
-    return cachedAccessToken as string;
+    return cachedAccessToken;
   }
 
-  const res = await fetch("https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ apiKey }),
-  });
+  try {
+    const res = await fetch("https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey }),
+    });
 
-  if (!res.ok) {
-    throw new Error(`Error HTTP al autenticar con CJ Dropshipping: ${res.status}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.result && data.data?.accessToken) {
+        cachedAccessToken = data.data.accessToken;
+        if (data.data.accessTokenExpiryDate) {
+          tokenExpiresAt = new Date(data.data.accessTokenExpiryDate).getTime();
+        }
+        return cachedAccessToken;
+      }
+    }
+  } catch {
+    // Si la autenticación da 429 o falla, retornar el token guardado
   }
 
-  const data = await res.json();
-  if (!data.result || !data.data?.accessToken) {
-    throw new Error(`Fallo de autorización en CJ: ${data.message || "Credenciales inválidas"}`);
-  }
-
-  cachedAccessToken = data.data.accessToken;
-  // Si la respuesta trae fecha de expiración, parsearla; si no, 15 días por defecto
-  if (data.data.accessTokenExpiryDate) {
-    tokenExpiresAt = new Date(data.data.accessTokenExpiryDate).getTime();
-  } else {
-    tokenExpiresAt = now + 15 * 24 * 3600 * 1000;
-  }
-
-  return cachedAccessToken as string;
+  return cachedAccessToken;
 }
 
 export interface CjProductItem {
