@@ -562,13 +562,21 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         </div>
 
                         {/* TÍTULO */}
-                        <h4
-                          onClick={() => handleOpenPreview(item)}
-                          className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight hover:text-indigo-600 cursor-pointer"
-                          title={item.name}
-                        >
-                          {item.name}
-                        </h4>
+                        <div className="space-y-1">
+                          {item.listedNum && item.listedNum > 0 ? (
+                            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200/80 text-[10px] font-bold text-amber-800">
+                              <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
+                              <span>{item.listedNum} tiendas vendiéndolo</span>
+                            </div>
+                          ) : null}
+                          <h4
+                            onClick={() => handleOpenPreview(item)}
+                            className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight hover:text-indigo-600 cursor-pointer"
+                            title={item.name}
+                          >
+                            {item.name}
+                          </h4>
+                        </div>
 
                         {/* COSTOS */}
                         <div className="bg-slate-50 rounded-xl p-2.5 space-y-1 text-[11px] border border-slate-100">
@@ -1147,6 +1155,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="text-slate-400 block font-medium">Categoría:</span>
                         <span className="font-bold text-slate-800 truncate block">{previewItem.categoryName || 'Novedades'}</span>
+                      </div>
+                      <div className="p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/80">
+                        <span className="text-amber-700 block font-bold">Popularidad Global:</span>
+                        <span className="font-bold text-amber-950 flex items-center gap-1">
+                          <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                          <span>{previewItem.listedNum && previewItem.listedNum > 0 ? `${previewItem.listedNum} tiendas vendiéndolo` : 'Producto en tendencia'}</span>
+                        </span>
                       </div>
                       {previewDetail?.weight && (
                         <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
