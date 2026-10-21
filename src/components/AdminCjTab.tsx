@@ -72,7 +72,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
   const handleOpenImportModal = (item: CjItem) => {
     setModalItem(item);
-    const costMxn = Math.round(item.priceUsd * (usdRate || 18));
+    const safeUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0;
+    const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
+    const costMxn = Math.round(safeUsd * safeRate);
     // Precio sugerido: costo * 2.2 aprox
     const suggestedPrice = Math.max(99, Math.round(costMxn * 2.2));
     setCustomPrices(prev => ({ ...prev, [item.id]: suggestedPrice }));
@@ -84,7 +86,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const item = modalItem;
     setImportingId(item.id);
 
-    const costMxn = Math.round(item.priceUsd * (usdRate || 18));
+    const safeUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0;
+    const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
+    const costMxn = Math.round(safeUsd * safeRate);
     const salePrice = customPrices[item.id] || Math.round(costMxn * 2.2);
     const finalTitle = customTitles[item.id]?.trim() || item.name;
 
@@ -103,7 +107,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             title: finalTitle,
             sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
             categoryName: item.categoryName || 'Novedades & Gadgets',
-            baseCostUsd: item.priceUsd,
+            baseCostUsd: safeUsd,
             baseCostMxn: costMxn,
             publicPrice: salePrice,
             imageUrl: item.image,
@@ -237,9 +241,11 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
             {results.map(prod => {
               const isImported = importedIds.includes(prod.id);
-              const costMxn = Math.round(prod.priceUsd * usdRate);
+              const safePriceUsd = typeof prod.priceUsd === 'number' && !isNaN(prod.priceUsd) ? prod.priceUsd : 0;
+              const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
+              const costMxn = Math.round(safePriceUsd * safeRate);
               const suggestedSale = Math.max(99, Math.round(costMxn * 2.2));
-              const estimatedProfit = suggestedSale - costMxn;
+              const estimatedProfit = Math.max(0, suggestedSale - costMxn);
 
               return (
                 <div
@@ -271,7 +277,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       <div className="flex items-center justify-between text-slate-500">
                         <span>Costo Fábrica:</span>
                         <span className="font-mono font-bold text-slate-700">
-                          ${prod.priceUsd.toFixed(2)} USD (~${costMxn} MXN)
+                          ${safePriceUsd.toFixed(2)} USD (~${costMxn} MXN)
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-indigo-700 font-bold">
@@ -395,9 +401,11 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] pt-1 px-1">
-                  <span className="text-slate-400">Costo: ~${Math.round(modalItem.priceUsd * usdRate)} MXN</span>
+                  <span className="text-slate-400">
+                    Costo: ~${Math.round((typeof modalItem.priceUsd === 'number' && !isNaN(modalItem.priceUsd) ? modalItem.priceUsd : 0) * (usdRate || 18))} MXN
+                  </span>
                   <span className="text-emerald-600 font-bold">
-                    Tu Ganancia: +${Math.max(0, (customPrices[modalItem.id] || 199) - Math.round(modalItem.priceUsd * usdRate))} MXN por venta
+                    Tu Ganancia: +${Math.max(0, (customPrices[modalItem.id] || 199) - Math.round((typeof modalItem.priceUsd === 'number' && !isNaN(modalItem.priceUsd) ? modalItem.priceUsd : 0) * (usdRate || 18)))} MXN por venta
                   </span>
                 </div>
               </div>

@@ -99,14 +99,22 @@ export async function searchCjProducts(query: string, page = 1, size = 20): Prom
     }
   });
 
+  const parseCjPrice = (raw: any): number => {
+    if (typeof raw === "number") return isNaN(raw) ? 0 : raw;
+    if (!raw) return 0;
+    const str = String(raw).trim();
+    const match = str.match(/[\d]+(?:\.[\d]+)?/);
+    return match ? parseFloat(match[0]) : 0;
+  };
+
   const products: CjProductItem[] = rawList.map((p: any) => ({
-    id: p.id || p.pid || p.sku,
-    name: p.nameEn || p.productNameEn || p.productName || "Producto CJ",
-    sku: p.sku || "",
-    image: p.bigImage || p.productImage || "",
-    priceUsd: Number(p.sellPrice || p.price || 0),
-    categoryName: p.categoryName || "Gadgets & Novedades",
-    variantsCount: p.variants?.length || 1,
+    id: String(p.id || p.pid || p.sku || Math.random()),
+    name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
+    sku: String(p.sku || ""),
+    image: String(p.bigImage || p.productImage || ""),
+    priceUsd: parseCjPrice(p.sellPrice ?? p.price),
+    categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
+    variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
   }));
 
   return {
