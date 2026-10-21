@@ -2152,11 +2152,10 @@ export default function TiendaFoxDrop() {
                 : "border-white hover:border-[#005696] hover:shadow-lg"
             }`}
             >
-              <img
-                src="/bath-and-body-works-logo.png"
-                alt="Bath & Body Works"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
+              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#1E3A5F] via-[#142B47] to-[#0A1828] text-white p-2 select-none group-hover:scale-105 transition-transform duration-300">
+                <span className="font-serif text-2xl sm:text-3xl font-black tracking-widest leading-none text-white drop-shadow-sm">B&BW</span>
+                <span className="text-[9px] uppercase tracking-wider font-semibold text-sky-200/80 mt-1">Colección</span>
+              </div>
             </div>
             <span className={`text-xs sm:text-sm font-bold text-center leading-tight ${
               selectedBrand === "Bath & Body Works" ? "text-[#005696] font-black" : "text-gray-800"
@@ -2222,7 +2221,7 @@ export default function TiendaFoxDrop() {
             {selectedBrand !== "Todas" && (
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-stone-200 shadow-sm shrink-0 bg-[#005696] flex items-center justify-center">
                 {selectedBrand === "Bath & Body Works" ? (
-                  <img src="/bath-and-body-works-logo.png" alt="Bath & Body Works" className="w-full h-full object-cover" />
+                  <span className="font-serif text-xs font-black tracking-wider text-white">B&BW</span>
                 ) : (
                   <span className="text-xl">🏬</span>
                 )}
@@ -4410,6 +4409,15 @@ export default function TiendaFoxDrop() {
 
           {/* COPYRIGHT & SELLO DE SEGURIDAD */}
           <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/60 gap-4">
+          {/* DESLINDE LEGAL DE RESPONSABILIDAD (DISCLAIMER) */}
+          <div className="pt-6 pb-2 text-center text-[10px] text-white/40 max-w-4xl mx-auto leading-relaxed border-t border-white/5">
+            <p>
+              FoxDrop es una tienda multimarca independiente de importación y reventa de artículos auténticos en México.
+              Todas las marcas, nombres comerciales y logotipos referenciados son propiedad exclusiva de sus respectivos titulares
+              y se mencionan únicamente con fines descriptivos y de identificación del producto bajo el principio de agotamiento de marca.
+            </p>
+          </div>
+
             <p>© 2026 FoxDrop. Todos los derechos reservados. Comercio electrónico seguro en México.</p>
             <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
               <ShieldCheck className="w-4 h-4" />

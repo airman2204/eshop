@@ -97,6 +97,18 @@ export default function TerminosPage() {
             </p>
           </section>
 
+
+          <section className="space-y-2">
+            <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
+              6. Propiedad Intelectual y Deslinde de Marcas Comerciales
+            </h2>
+            <p>
+              FoxDrop México es un comercio minorista independiente dedicado a la importación y reventa de artículos originales y legítimos en territorio mexicano. Todas las marcas registradas, logotipos, nombres de modelos y signos distintivos que pudieran mencionarse o exhibirse en este sitio web pertenecen de manera exclusiva a sus respectivos titulares y fabricantes internacionales.
+            </p>
+            <p className="text-gray-600 text-xs">
+              El uso y exhibición de los nombres comerciales se realiza bajo el principio de agotamiento de los derechos de marca (Art. 171 de la Ley Federal de Protección a la Propiedad Industrial), teniendo carácter estrictamente nominativo, referencial e informativo para identificar la procedencia y autenticidad física de los productos puestos a disposición del consumidor final, sin que esto implique relación comercial directa, asociación, patrocinio o representación oficial por parte de las marcas citadas.
+            </p>
+          </section>
         </div>
       </main>
 
