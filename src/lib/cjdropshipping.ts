@@ -13,10 +13,7 @@ let tokenExpiresAt: number = 0;
 const DEFAULT_CJ_API_KEY = "CJ5965480@api@11b106a82c66403bb28d5cca4b6882ad";
 
 export async function getCjAccessToken(): Promise<string> {
-  const apiKey = process.env.CJ_API_KEY || DEFAULT_CJ_API_KEY;
-  if (!apiKey) {
-    throw new Error("CJ_API_KEY no está configurada en las variables de entorno.");
-  }
+  const apiKey = process.env.CJ_API_KEY || "CJ5965480@api@11b106a82c66403bb28d5cca4b6882ad";
 
   const now = Date.now();
   // Si tenemos token en memoria y le quedan más de 1 hora de vigencia
