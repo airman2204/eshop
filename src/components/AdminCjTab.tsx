@@ -1080,26 +1080,26 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   {previewDetail?.description && (
                     <div className="space-y-1.5 text-xs">
                       <span className="font-bold text-slate-700 block">
-                        Descripción y Especificaciones de Fábrica:
+                        Descripción y Especificaciones:
                       </span>
                       <div 
-                        className="max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 text-[11px] leading-relaxed prose prose-sm max-w-none [&_img]:hidden [&_p]:mb-1 [&_br]:content-['']"
+                        className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 text-[11px] leading-relaxed [&_img]:hidden [&_p]:mb-1 [&_br]:content-['']"
                         dangerouslySetInnerHTML={{ __html: previewDetail.description }}
                       />
                     </div>
                   )}
 
-                  {/* DESCRIPCIÓN O VARIANTES */}
+                  {/* VARIANTES DEL PRODUCTO */}
                   {previewDetail?.variants && previewDetail.variants.length > 0 && (
                     <div className="space-y-1.5 text-xs">
                       <span className="font-bold text-slate-700 block">
                         Variantes disponibles ({previewDetail.variants.length}):
                       </span>
-                      <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
-                        {previewDetail.variants.slice(0, 10).map((v: any, i: number) => (
-                          <div key={i} className="flex items-center justify-between text-[11px] p-1.5 bg-slate-50 rounded-lg text-slate-600">
-                            <span className="truncate max-w-[200px]">{v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i+1}`}</span>
-                            <span className="font-mono font-bold text-slate-800">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)} USD</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {previewDetail.variants.slice(0, 12).map((v: any, i: number) => (
+                          <div key={i} className="px-2.5 py-1 bg-slate-100/90 rounded-lg text-[11px] text-slate-700 font-medium border border-slate-200/80 flex items-center gap-1.5">
+                            <span className="truncate max-w-[150px]">{v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i+1}`}</span>
+                            <span className="font-mono font-bold text-indigo-700">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
