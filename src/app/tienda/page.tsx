@@ -649,7 +649,7 @@ export default function TiendaFoxDrop() {
     if (activeTab === 'deals') {
       prods = baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
     } else if (activeTab === 'new') {
-      prods = baseFilteredProducts.slice(0, 8);
+      prods = baseFilteredProducts.slice(0, 5);
     }
 
     // Ordenamiento por precio, descuento y A-Z
@@ -2103,14 +2103,14 @@ export default function TiendaFoxDrop() {
 
       {/* ======================================================== */}
       {/* ======================================================== */}
-      {/* 3.5 SECCIÓN: NUESTRAS TIENDAS (CÍRCULOS GRANDES DESTACADOS) */}
       {/* ======================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between gap-3 mb-4">
+      {/* 3.5 SECCIÓN: NUESTRAS TIENDAS (CENTRADO, CÍRCULOS GRANDES) */}
+      {/* ======================================================== */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 mb-5">
           <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
             Nuestras Tiendas
           </h3>
-
           {selectedBrand !== "Todas" && (
             <button
               type="button"
@@ -2118,17 +2118,17 @@ export default function TiendaFoxDrop() {
                 setSelectedBrand("Todas");
                 setSelectedCategory("Todas");
               }}
-              className="text-xs text-[#DF7F2D] hover:text-[#b55e16] font-bold flex items-center gap-1.5 cursor-pointer transition bg-orange-50 hover:bg-orange-100 px-3.5 py-1.5 rounded-full border border-orange-200 shadow-2xs"
+              className="text-xs text-[#DF7F2D] hover:text-[#b55e16] font-bold flex items-center gap-1.5 cursor-pointer transition bg-orange-50 hover:bg-orange-100 px-3.5 py-1.5 rounded-full border border-orange-200 shadow-2xs mt-1"
             >
-              <span>Ver todas</span>
+              <span>Ver todas las tiendas</span>
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* LOGOS EN CÍRCULOS GRANDES */}
-        <div className="flex items-center gap-5 sm:gap-7 overflow-x-auto no-scrollbar py-2">
-          {/* Tienda: Bath & Body Works en Círculo Grande */}
+        {/* CÍRCULOS DE TIENDAS CENTRADOS */}
+        <div className="flex items-center justify-center gap-6 sm:gap-8 flex-wrap py-2">
+          {/* Tienda: Bath & Body Works */}
           <button
             type="button"
             onClick={() => {
@@ -2137,6 +2137,7 @@ export default function TiendaFoxDrop() {
               } else {
                 setSelectedBrand("Bath & Body Works");
                 setSelectedCategory("Todas");
+                setActiveTab("new");
                 const el = document.getElementById("catalog-section");
                 el?.scrollIntoView({ behavior: "smooth" });
               }
@@ -2165,7 +2166,7 @@ export default function TiendaFoxDrop() {
             </span>
           </button>
 
-          {/* Tiendas dinámicas dadas de alta desde Admin */}
+          {/* Tiendas añadidas dinámicamente desde el admin */}
           {storeBrands
             .filter(b => b.name !== "Bath & Body Works" && b.name !== "FoxDrop Oficial" && b.name !== "Todas")
             .map(b => {
@@ -2180,6 +2181,7 @@ export default function TiendaFoxDrop() {
                     } else {
                       setSelectedBrand(b.name);
                       setSelectedCategory("Todas");
+                      setActiveTab("new");
                       const el = document.getElementById("catalog-section");
                       el?.scrollIntoView({ behavior: "smooth" });
                     }
@@ -2215,113 +2217,114 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200/90 pb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
-              <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
-                {activeTab === 'new' 
-                  ? (selectedBrand !== 'Todas' 
-                      ? (selectedCategory === 'Todas' ? `Lo Más Nuevo de ${selectedBrand}` : `Lo Nuevo de ${selectedBrand} en ${selectedCategory}`)
-                      : (selectedCategory === 'Todas' ? 'Lo Más Nuevo en FoxDrop' : `Lo Nuevo en ${selectedCategory}`))
-                  : activeTab === 'deals'
-                  ? (selectedBrand !== 'Todas' ? `Ofertas de ${selectedBrand}` : 'Ofertas & Descuentos Activos')
-                  : (selectedBrand !== 'Todas'
-                      ? (selectedCategory === 'Todas' ? `Catálogo ${selectedBrand}` : `${selectedBrand} • ${selectedCategory}`)
-                      : (selectedCategory === 'Todas' ? 'Catálogo Completo' : `Departamento: ${selectedCategory}`))
-                }
-              </h3>
-            </div>
-            <p className="text-xs text-gray-500 font-medium">
-              {activeTab === 'new' 
-                ? 'Últimos productos dados de alta con disponibilidad inmediata' 
-                : `${filteredProducts.length} artículos encontrados para entrega`}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
-            <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('new');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'new' ? 'bg-[#0F3E36] text-white shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Lo Nuevo
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'deals' ? 'bg-[#DF7F2D] text-white shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Ofertas 🔥
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'all' && selectedCategory === 'Todas' ? 'bg-white text-[#0F3E36] shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Todo
-              </button>
-            </div>
-
-            {/* SELECTOR DE FILTRO DE ORDENAMIENTO (PRECIO / A-Z) */}
-            <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-              <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Ordenar:</span>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as any)}
-                className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
-              >
-                <option value="default">Recomendados / Novedades</option>
-                <option value="discount_desc">Mayor Descuento (% OFF 🔥)</option>
-                <option value="price_asc">Precio: Menor a Mayor ($ ↑)</option>
-                <option value="price_desc">Precio: Mayor a Menor ($ ↓)</option>
-                <option value="name_asc">Nombre: A - Z</option>
-                <option value="name_desc">Nombre: Z - A</option>
-              </select>
-            </div>
-
-            {/* FILTRO POR RANGO DE PRECIO */}
-            <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-              <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Presupuesto:</span>
-              <select
-                value={priceFilter}
-                onChange={e => setPriceFilter(e.target.value as any)}
-                className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
-              >
-                <option value="all">Cualquier Precio</option>
-                <option value="under150">Menos de $150 MXN</option>
-                <option value="150to350">$150 - $350 MXN</option>
-                <option value="above350">Más de $350 MXN</option>
-              </select>
-            </div>
-
-
-            {selectedCategory !== 'Todas' && (
-              <button
-                onClick={() => setSelectedCategory('Todas')}
-                className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] text-xs font-bold px-3 py-1.5 rounded-lg transition border border-orange-200 flex items-center gap-1 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Quitar filtro ({selectedCategory})</span>
-              </button>
+          <div className="flex items-center gap-3.5">
+            {/* LOGO DE LA TIENDA SI HAY UNA SELECCIONADA */}
+            {selectedBrand !== "Todas" && (
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-stone-200 shadow-sm shrink-0 bg-[#005696] flex items-center justify-center">
+                {selectedBrand === "Bath & Body Works" ? (
+                  <img src="/bath-and-body-works-logo.png" alt="Bath & Body Works" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl">🏬</span>
+                )}
+              </div>
             )}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
+                <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
+                  {activeTab === "new"
+                    ? (selectedBrand !== "Todas" ? `Lo Más Nuevo de ${selectedBrand}` : "Lo Más Nuevo en FoxDrop")
+                    : activeTab === "deals"
+                    ? (selectedBrand !== "Todas" ? `Ofertas de ${selectedBrand}` : "Ofertas & Descuentos Activos")
+                    : (selectedBrand !== "Todas"
+                        ? (selectedCategory === "Todas" ? `Catálogo de ${selectedBrand}` : `${selectedBrand} • ${selectedCategory}`)
+                        : (selectedCategory === "Todas" ? "Catálogo Completo" : `Departamento: ${selectedCategory}`))}
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 font-medium">
+                {activeTab === "new"
+                  ? "Últimos artículos agregados con disponibilidad inmediata"
+                  : `${filteredProducts.length} artículos encontrados para entrega`}
+              </p>
+            </div>
           </div>
+
+          {/* FILTROS Y PESTAÑAS: SOLO VISIBLES CUANDO SE ESTÁ EN EL CATÁLOGO COMPLETO (activeTab !== "new") */}
+          {activeTab !== "new" && (
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* PESTAÑAS DE VISTA RÁPIDA (OFERTAS SOLO SI HAY ARTÍCULOS EN DESCUENTO) */}
+              <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
+                {dealsProducts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("deals");
+                      setSelectedCategory("Todas");
+                    }}
+                    className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      activeTab === "deals" ? "bg-[#DF7F2D] text-white shadow-xs" : "hover:text-[#0F3E36]"
+                    }`}
+                  >
+                    Ofertas 🔥
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("all");
+                    setSelectedCategory("Todas");
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    activeTab === "all" && selectedCategory === "Todas" ? "bg-white text-[#0F3E36] shadow-xs" : "hover:text-[#0F3E36]"
+                  }`}
+                >
+                  Todo
+                </button>
+              </div>
+
+              {/* SELECTOR DE FILTRO DE ORDENAMIENTO */}
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Ordenar:</span>
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as any)}
+                  className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="default">Recomendados / Novedades</option>
+                  <option value="discount_desc">Mayor Descuento (% OFF 🔥)</option>
+                  <option value="price_asc">Precio: Menor a Mayor ($ ↑)</option>
+                  <option value="price_desc">Precio: Mayor a Menor ($ ↓)</option>
+                  <option value="name_asc">Nombre: A - Z</option>
+                  <option value="name_desc">Nombre: Z - A</option>
+                </select>
+              </div>
+
+              {/* FILTRO POR RANGO DE PRECIO */}
+              <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Presupuesto:</span>
+                <select
+                  value={priceFilter}
+                  onChange={e => setPriceFilter(e.target.value as any)}
+                  className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">Cualquier Precio</option>
+                  <option value="under150">Menos de $150 MXN</option>
+                  <option value="150to350">$150 - $350 MXN</option>
+                  <option value="above350">Más de $350 MXN</option>
+                </select>
+              </div>
+
+              {selectedCategory !== "Todas" && (
+                <button
+                  onClick={() => setSelectedCategory("Todas")}
+                  className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] text-xs font-bold px-3 py-1.5 rounded-lg transition border border-orange-200 flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Quitar filtro ({selectedCategory})</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {loadingProducts ? (
@@ -2487,7 +2490,7 @@ export default function TiendaFoxDrop() {
                 }}
                 className="bg-white hover:bg-stone-50 text-[#0F3E36] font-black text-xs sm:text-sm px-6 py-3 rounded-2xl border-2 border-[#0F3E36] transition shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer group"
               >
-                <span>{selectedBrand !== 'Todas' ? `Ver Catálogo Completo de ${selectedBrand} →` : 'Ver Catálogo Completo FoxDrop →'}</span>
+                <span>Ver Catálogo Completo</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
