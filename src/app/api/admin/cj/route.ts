@@ -122,6 +122,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, product: data });
     }
 
+    // 4. Obtener Lista de Deseos compartida (Wishlist de preselección)
+    if (action === "get_wishlist") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createServerClient() as any;
+      try {
+        const { data: file } = await supabase.storage
+          .from("product-images")
+          .download("_system/cj_wishlist.json");
+        const list = file ? JSON.parse(await file.text() || "[]") : [];
+        return NextResponse.json({ success: true, wishlist: list });
+      } catch {
+        return NextResponse.json({ success: true, wishlist: [] });
+      }
+    }
+
+    // 5. Guardar/Actualizar Lista de Deseos compartida
+    if (action === "save_wishlist") {
+      const { wishlist } = body;
+      if (!Array.isArray(wishlist)) {
+        return NextResponse.json({ error: "Wishlist inválida" }, { status: 400 });
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createServerClient() as any;
+      await supabase.storage
+        .from("product-images")
+        .upload("_system/cj_wishlist.json", Buffer.from(JSON.stringify(wishlist, null, 2)), {
+          contentType: "application/json",
+          upsert: true,
+        });
+      return NextResponse.json({ success: true, wishlist });
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (err: any) {
     console.error("Error en /api/admin/cj:", err);
