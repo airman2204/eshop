@@ -110,10 +110,17 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     };
   }, [previewItem, modalItem]);
 
-  const handleSearch = async (targetPage = 1, overrideQuery?: string, overrideCategory?: string, overrideCountry?: 'ALL' | 'MX') => {
+  const handleSearch = async (
+    targetPage = 1,
+    overrideQuery?: string,
+    overrideCategory?: string,
+    overrideCountry?: 'ALL' | 'MX',
+    overrideSortOrder?: 'sales_desc' | 'sales_asc' | 'price_asc' | 'price_desc'
+  ) => {
     const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
     const catToUse = overrideCategory !== undefined ? overrideCategory : selectedCategory;
     const countryToUse = overrideCountry !== undefined ? overrideCountry : selectedCountry;
+    const sortToUse = overrideSortOrder !== undefined ? overrideSortOrder : sortOrder;
     
     // Si no hay texto ni categoría seleccionada, buscar tendencias generales
     const finalQuery = (queryToUse || '').trim();
@@ -132,6 +139,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           query: finalQuery,
           categoryId: catToUse || undefined,
           countryCode: countryToUse === 'MX' ? 'MX' : undefined,
+          sortOrder: sortToUse,
           page: targetPage,
           size: 18,
           adminToken: token,
@@ -811,23 +819,28 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           </div>
         </div>
 
-        {/* ORDENAMIENTO Y FILTROS POR VOLUMEN DE VENTAS */}
+        {/* ORDENAMIENTO GLOBAL Y FILTROS POR VOLUMEN DE VENTAS */}
         <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-600">Ordenar productos por:</span>
+            <span className="font-bold text-slate-600">Ordenar catálogo globalmente por:</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1 rounded-2xl border border-slate-200/80">
             {[
-              { id: 'sales_desc', label: '🔥 Más Vendidos (Mayor a Menor)' },
-              { id: 'sales_asc', label: '🌱 Menos Vendidos (Novedades/Oportunidades)' },
+              { id: 'sales_desc', label: '🔥 Más Vendidos Global (Mayor a Menor)' },
+              { id: 'sales_asc', label: '🌱 Menos Vendidos Global (0 Ventas / Oportunidades)' },
               { id: 'price_asc', label: '💲 Precio: Menor a Mayor' },
               { id: 'price_desc', label: '💎 Precio: Mayor a Menor' },
             ].map(opt => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setSortOrder(opt.id as any)}
+                onClick={() => {
+                  const newSort = opt.id as any;
+                  setSortOrder(newSort);
+                  setPage(1);
+                  handleSearch(1, searchQuery, selectedCategory, selectedCountry, newSort);
+                }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                   sortOrder === opt.id
                     ? 'bg-indigo-600 text-white shadow-xs'

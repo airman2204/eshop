@@ -55,12 +55,20 @@ export interface CjProductItem {
   categoryName?: string;
   variantsCount?: number;
   listedNum?: number;
+  countryCode?: string;
 }
 
 /**
- * Busca productos virales y de bajo costo en el catálogo global de CJ Dropshipping
+ * Busca productos virales y de bajo costo en el catálogo global de CJ Dropshipping con ordenamiento nativo en backend
  */
-export async function searchCjProducts(query: string, page = 1, size = 20, categoryId?: string, countryCode?: string): Promise<{
+export async function searchCjProducts(
+  query: string,
+  page = 1,
+  size = 18,
+  categoryId?: string,
+  countryCode?: string,
+  sortOrder?: "sales_desc" | "sales_asc" | "price_asc" | "price_desc"
+): Promise<{
   products: CjProductItem[];
   total: number;
   page: number;
@@ -70,7 +78,7 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
 
   const url = new URL("https://developers.cjdropshipping.com/api2.0/v1/product/listV2");
   url.searchParams.set("page", page.toString());
-  url.searchParams.set("size", Math.min(size, 50).toString());
+  url.searchParams.set("size", Math.min(Math.max(size, 1), 50).toString());
   if (query && query.trim()) {
     url.searchParams.set("keyWord", query.trim());
   }
@@ -79,6 +87,27 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
   }
   if (countryCode && countryCode.trim()) {
     url.searchParams.set("countryCode", countryCode.trim().toUpperCase());
+  }
+
+  // Configuración de ordenamiento nativo global en CJ Dropshipping
+  // orderBy: 1 = listing count (tiendas vendiéndolo), 2 = sell price
+  // sort: 'desc' | 'asc'
+  if (sortOrder === "sales_desc") {
+    url.searchParams.set("orderBy", "1");
+    url.searchParams.set("sort", "desc");
+  } else if (sortOrder === "sales_asc") {
+    url.searchParams.set("orderBy", "1");
+    url.searchParams.set("sort", "asc");
+  } else if (sortOrder === "price_asc") {
+    url.searchParams.set("orderBy", "2");
+    url.searchParams.set("sort", "asc");
+  } else if (sortOrder === "price_desc") {
+    url.searchParams.set("orderBy", "2");
+    url.searchParams.set("sort", "desc");
+  } else {
+    // Por defecto: ordenar globalmente por popularidad/más vendidos
+    url.searchParams.set("orderBy", "1");
+    url.searchParams.set("sort", "desc");
   }
 
   const res = await fetch(url.toString(), {
@@ -113,9 +142,6 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
     return match ? parseFloat(match[0]) : 0;
   };
 
-  // Ordenar por popularidad real en CJ (más tiendas vendiéndolo a nivel mundial)
-  rawList.sort((a: any, b: any) => (Number(b.listedNum) || 0) - (Number(a.listedNum) || 0));
-
   const products: CjProductItem[] = rawList.map((p: any) => ({
     id: String(p.id || p.pid || p.sku || Math.random()),
     name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
@@ -125,6 +151,7 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
     categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
     variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
     listedNum: Number(p.listedNum) || 0,
+    countryCode: countryCode ? countryCode.toUpperCase() : (p.countryCode || (p.verifiedWarehouse === 2 && p.productType === '5' ? 'MX' : 'CN')),
   }));
 
   return {
