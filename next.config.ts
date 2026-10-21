@@ -17,7 +17,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**.fbcdn.net",
+        hostname: "**.cjdropshipping.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cjdot.com",
       },
     ],
   },
@@ -70,7 +74,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net",
+              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com",
               "font-src 'self'",
               "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com",
               "frame-ancestors 'none'",
