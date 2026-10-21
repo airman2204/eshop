@@ -18,6 +18,12 @@ interface Props {
   onProductImported: (product: any) => void;
 }
 
+const getSafeImageUrl = (url: string | undefined): string => {
+  if (!url || typeof url !== 'string' || !url.startsWith('http')) return '/no-image.svg';
+  // Servir a través de nuestro endpoint interno de proxy para que NINGÚN navegador o red bloquee el CDN de China
+  return `/api/whatsapp/image-proxy?url=${encodeURIComponent(url)}`;
+};
+
 const CJ_POPULAR_CATEGORIES = [
   { id: '', name: '🔥 Todo en Tendencia' },
   { id: '52FC6CA5-669B-4D0B-B1AC-415675931399', name: '🏠 Hogar & Cocina' },
@@ -335,10 +341,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     {/* FOTO DEL PRODUCTO */}
                     <div className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 relative group">
                       <img
-                        src={prod.image || '/no-image.svg'}
+                        src={getSafeImageUrl(prod.image)}
                         alt={prod.name}
-                        referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
                         loading="lazy"
                         className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                       />
@@ -442,10 +446,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
             <div className="flex gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
               <img
-                src={modalItem.image}
+                src={getSafeImageUrl(modalItem.image)}
                 alt={modalItem.name}
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
                 className="w-16 h-16 rounded-xl object-cover shrink-0"
               />
               <div className="min-w-0">
