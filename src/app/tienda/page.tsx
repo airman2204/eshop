@@ -2293,7 +2293,16 @@ export default function TiendaFoxDrop() {
                   </div>
 
                   {/* IMAGEN DE PRODUCTO CON EFECTO SUAVE EN CONTENEDOR CREMA/MENTA */}
-                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition">
+                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
+                    {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
+                      <span className="absolute top-2 left-2 z-10 bg-indigo-950/80 backdrop-blur-xs text-indigo-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-indigo-400/30">
+                        ✈️ 10-15 Días
+                      </span>
+                    ) : (
+                      <span className="absolute top-2 left-2 z-10 bg-emerald-950/80 backdrop-blur-xs text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-emerald-400/30">
+                        ⚡ Entrega Inmediata
+                      </span>
+                    )}
                     <img
                       src={product.images[0]}
                       alt={product.title}
