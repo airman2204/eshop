@@ -57,6 +57,9 @@ export interface NewProductInput {
   comboProductIds?: string[];
   discountPercent?: number;
   isActive?: boolean;
+  fulfillmentType?: 'stock_local' | 'cj_dropship';
+  cjProductId?: string;
+  cjSku?: string;
 }
 
 /**

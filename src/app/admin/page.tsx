@@ -6,6 +6,7 @@ import FoxDropLogo from '@/components/FoxDropLogo';
 import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
+import AdminCjTab from '@/components/AdminCjTab';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -59,7 +60,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM (Persistente en recarga)
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'whatsapp'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'whatsapp' | 'cj_dropship'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Leer pestaña persistida al cargar
@@ -3434,6 +3435,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               Operaciones
             </span>
             <div className="space-y-0.5">
+              {/* CJ DROPSHIPPING IMPORTADOR */}
+              <button
+                onClick={() => { setCrmSubTab('cj_dropship'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'cj_dropship'
+                    ? 'bg-indigo-900/60 text-white font-bold border border-indigo-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Globe className={`w-4 h-4 ${crmSubTab === 'cj_dropship' ? 'text-indigo-400' : 'text-slate-400'}`} /> Catálogo CJ (Dropship)
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                  Global
+                </span>
+              </button>
+
               {/* 1. INVENTARIO (Catálogo + Lotes) */}
               <button
                 onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
@@ -3602,6 +3620,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
                     {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Configuración de la Tienda'}
                     {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
+                    {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
                     {crmSubTab === 'agent' && 'Marketing'}
                   </h1>
                 </div>
@@ -3612,6 +3631,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {crmSubTab === 'finance' && 'Rendimiento financiero neto, costos de importación y análisis de márgenes'}
                   {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners principales de la tienda, métodos de entrega y cuentas bancarias SPEI'}
                   {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
+                  {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
                   {crmSubTab === 'agent' && 'Dirección de estrategia comercial, embudo en tiempo real y publicación en redes'}
                 </p>
               </div>
@@ -3726,6 +3746,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
 
         {/* 1. SECCIÓN INVENTARIO & GESTIÓN DE ARTÍCULOS */}
+        {crmSubTab === 'cj_dropship' && (
+          <AdminCjTab
+            usdRate={usdRate}
+            onProductImported={(newP) => {
+              setProducts(prev => [newP, ...prev]);
+              alert('¡Producto importado con éxito! Ya está disponible en tu catálogo de FoxDrop.');
+            }}
+          />
+        )}
+
         {crmSubTab === 'inventory' && (
           <div className="space-y-5">
             {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO */}

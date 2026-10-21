@@ -63,6 +63,12 @@ export interface Product {
    * - false: Apagado (oculto a clientes sin borrarlo del inventario).
    */
   isActive?: boolean;
+  /** Origen del producto: 'stock_local' o 'cj_dropship' */
+  fulfillmentType?: 'stock_local' | 'cj_dropship';
+  /** ID de producto en CJ */
+  cjProductId?: string;
+  /** SKU original en CJ */
+  cjSku?: string;
 }
 
 /**
