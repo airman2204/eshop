@@ -60,7 +60,7 @@ export interface CjProductItem {
 /**
  * Busca productos virales y de bajo costo en el catálogo global de CJ Dropshipping
  */
-export async function searchCjProducts(query: string, page = 1, size = 20): Promise<{
+export async function searchCjProducts(query: string, page = 1, size = 20, categoryId?: string): Promise<{
   products: CjProductItem[];
   total: number;
   page: number;
@@ -71,8 +71,11 @@ export async function searchCjProducts(query: string, page = 1, size = 20): Prom
   const url = new URL("https://developers.cjdropshipping.com/api2.0/v1/product/listV2");
   url.searchParams.set("page", page.toString());
   url.searchParams.set("size", Math.min(size, 50).toString());
-  if (query.trim()) {
+  if (query && query.trim()) {
     url.searchParams.set("keyWord", query.trim());
+  }
+  if (categoryId && categoryId.trim()) {
+    url.searchParams.set("categoryId", categoryId.trim());
   }
 
   const res = await fetch(url.toString(), {

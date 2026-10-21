@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers } from 'lucide-react';
 import { getStoredAdminToken } from '@/lib/adminAuth';
 
 interface CjItem {
@@ -18,8 +18,36 @@ interface Props {
   onProductImported: (product: any) => void;
 }
 
+const CJ_POPULAR_CATEGORIES = [
+  { id: '', name: '🔥 Todo en Tendencia' },
+  { id: '52FC6CA5-669B-4D0B-B1AC-415675931399', name: '🏠 Hogar & Cocina' },
+  { id: '2C7D4A0B-1AB2-41EC-8F9E-13DC31B1C902', name: '💄 Belleza & Cuidado' },
+  { id: 'D9E66BF8-4E81-4CAB-A425-AEDEC5FBFBF2', name: '⚡ Electrónica & Gadgets' },
+  { id: '2409110611570657700', name: '🐾 Mascotas' },
+  { id: 'A50A92FA-BCB3-4716-9BD9-BEC629BEE735', name: '🧸 Juguetes & Niños' },
+  { id: 'A2F799BE-FB59-428E-A953-296AA2673FCF', name: '🚗 Autos & Accesorios' },
+  { id: '4B397425-26C1-4D0E-B6D2-96B0B03689DB', name: '⚽ Deporte & Outdoor' },
+  { id: '2837816E-2FEA-4455-845C-6F40C6D70D1E', name: '⌚ Relojes & Joyería' },
+];
+
+const CJ_TREND_TAGS = [
+  { label: '🌬️ Ventiladores', query: 'portable fan' },
+  { label: '💡 Luces & Lámparas', query: 'sunset lamp led' },
+  { label: '🍳 Gadgets Cocina', query: 'kitchen gadgets' },
+  { label: '🚗 Accesorios Auto', query: 'car phone holder' },
+  { label: '💄 Rodillos & Skincare', query: 'beauty roller' },
+  { label: '🧸 Peluches & Antiestrés', query: 'squishy plush toy' },
+  { label: '⌚ Smartwatches', query: 'smart watch' },
+  { label: '🎧 Audífonos Bluetooth', query: 'wireless earbuds' },
+  { label: '🐱 Juguetes Mascotas', query: 'pet laser toy' },
+  { label: '💧 Humidificadores', query: 'flame humidifier' },
+  { label: '🎒 Mochilas Antirrobo', query: 'anti theft backpack' },
+  { label: '🧹 Mini Aspiradoras', query: 'mini vacuum cleaner' },
+];
+
 export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [searchQuery, setSearchQuery] = useState('mini fan');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CjItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -33,9 +61,12 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
 
-  const handleSearch = async (targetPage = 1, overrideQuery?: string) => {
-    const queryToUse = (overrideQuery !== undefined ? overrideQuery : searchQuery).trim();
-    if (!queryToUse) return;
+  const handleSearch = async (targetPage = 1, overrideQuery?: string, overrideCategory?: string) => {
+    const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
+    const catToUse = overrideCategory !== undefined ? overrideCategory : selectedCategory;
+    
+    // Si no hay texto ni categoría seleccionada, buscar tendencias generales
+    const finalQuery = (queryToUse || '').trim();
     setSearching(true);
     setHasSearched(true);
     try {
@@ -48,7 +79,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         },
         body: JSON.stringify({
           action: 'search_products',
-          query: queryToUse,
+          query: finalQuery,
+          categoryId: catToUse || undefined,
           page: targetPage,
           size: 18,
           adminToken: token,
@@ -69,6 +101,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
       setSearching(false);
     }
   };
+
+  // Carga inicial automática de productos virales si aún no ha buscado
+  useEffect(() => {
+    if (!hasSearched && results.length === 0) {
+      handleSearch(1, 'portable fan');
+    }
+  }, []);
 
   const handleOpenImportModal = (item: CjItem) => {
     setModalItem(item);
@@ -159,14 +198,46 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         </div>
       </div>
 
-      {/* BUSCADOR */}
+      {/* BUSCADOR Y CATEGORÍAS */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm space-y-4">
+        {/* FILA DE CATEGORÍAS PRINCIPALES */}
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-2">
+            <Layers className="w-4 h-4 text-indigo-600" />
+            <span>Explorar por Categoría de Fábrica:</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+            {CJ_POPULAR_CATEGORIES.map(cat => {
+              const active = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.id);
+                    setPage(1);
+                    handleSearch(1, searchQuery, cat.id);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl font-bold transition shrink-0 cursor-pointer text-xs border ${
+                    active
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                      : 'bg-slate-50 hover:bg-indigo-50/70 text-slate-700 border-slate-200/90'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* INPUT DE BÚSQUEDA */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSearch(1);
           }}
-          className="flex flex-col sm:flex-row items-center gap-3"
+          className="flex flex-col sm:flex-row items-center gap-3 pt-1 border-t border-slate-100"
         >
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -174,7 +245,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Escribe en inglés o español (ej. mini fan, night light, kitchen, humidifier, car)..."
+              placeholder="Buscar por palabra clave (ej. humidifier, projector, organizer, smartwatch)..."
               className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition"
             />
           </div>
@@ -198,29 +269,35 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           </button>
         </form>
 
-        {/* ETIQUETAS DE BÚSQUEDA RÁPIDA DE TENDENCIAS */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 shrink-0">Tendencias Virales:</span>
-          {[
-            { label: '🌬️ Ventiladores', query: 'portable fan' },
-            { label: '💡 Luces Led', query: 'sunset lamp led' },
-            { label: '🍳 Cocina Práctica', query: 'kitchen gadgets' },
-            { label: '🚗 Accesorios Auto', query: 'car phone holder' },
-            { label: '💄 Belleza Viral', query: 'beauty roller' },
-            { label: '🧸 Juguetes / Peluches', query: 'plush toy' },
-          ].map(tag => (
-            <button
-              key={tag.label}
-              type="button"
-              onClick={() => {
-                setSearchQuery(tag.query);
-                handleSearch(1, tag.query);
-              }}
-              className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 font-medium transition shrink-0 cursor-pointer border border-slate-200/80"
-            >
-              {tag.label}
-            </button>
-          ))}
+        {/* ETIQUETAS DE BÚSQUEDA RÁPIDA DE TENDENCIAS VIRALES */}
+        <div>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 mb-2">
+            <Flame className="w-3.5 h-3.5 text-amber-500" />
+            <span>Productos Más Vendidos y Virales en Redes:</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+            {CJ_TREND_TAGS.map(tag => {
+              const active = searchQuery.toLowerCase() === tag.query.toLowerCase();
+              return (
+                <button
+                  key={tag.label}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery(tag.query);
+                    setPage(1);
+                    handleSearch(1, tag.query, selectedCategory);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer border ${
+                    active
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                      : 'bg-slate-100/80 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border-slate-200/80'
+                  }`}
+                >
+                  {tag.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
