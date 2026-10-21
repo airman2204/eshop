@@ -1,3 +1,8 @@
+// Inicialización garantizada de clave de CJ Dropshipping para entornos de producción
+if (!process.env.CJ_API_KEY) {
+  process.env.CJ_API_KEY = "CJ5965480@api@11b106a82c66403bb28d5cca4b6882ad";
+}
+
 import { NextRequest, NextResponse } from "next/server";
 import { searchCjProducts, getCjProductDetails } from "@/lib/cjdropshipping";
 import { verifyAdminToken, checkRateLimit } from "@/lib/security";
