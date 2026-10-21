@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers } from 'lucide-react';
+import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { getStoredAdminToken } from '@/lib/adminAuth';
 
 interface CjItem {
@@ -67,6 +67,17 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
 
+  // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
+  const [previewItem, setPreviewItem] = useState<CjItem | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewDetail, setPreviewDetail] = useState<{
+    images: string[];
+    description: string;
+    variants: any[];
+    weight?: string;
+  } | null>(null);
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
+
   const handleSearch = async (targetPage = 1, overrideQuery?: string, overrideCategory?: string) => {
     const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
     const catToUse = overrideCategory !== undefined ? overrideCategory : selectedCategory;
@@ -114,6 +125,51 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
       handleSearch(1, '', '');
     }
   }, []);
+
+  const handleOpenPreview = async (item: CjItem) => {
+    setPreviewItem(item);
+    setSelectedPreviewImage(item.image);
+    setPreviewLoading(true);
+    setPreviewDetail(null);
+
+    try {
+      const token = getStoredAdminToken() || '';
+      const res = await fetch('/api/admin/cj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'get_product_detail',
+          pid: item.id,
+          adminToken: token,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.detail?.data) {
+        const d = data.detail.data;
+        const imgSet: string[] = Array.isArray(d.productImageSet) && d.productImageSet.length > 0
+          ? d.productImageSet
+          : [item.image];
+        
+        setPreviewDetail({
+          images: imgSet,
+          description: d.description || '',
+          variants: Array.isArray(d.variants) ? d.variants : [],
+          weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
+        });
+        if (imgSet.length > 0) {
+          setSelectedPreviewImage(imgSet[0]);
+        }
+      }
+    } catch {
+      // Si falla, se muestra al menos con la foto principal
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const handleOpenImportModal = (item: CjItem) => {
     setModalItem(item);
@@ -353,17 +409,26 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   }`}
                 >
                   <div className="space-y-2">
-                    {/* FOTO DEL PRODUCTO */}
-                    <div className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 relative group">
+                    {/* FOTO DEL PRODUCTO (CLICK PARA VER EN GRANDE) */}
+                    <div
+                      onClick={() => handleOpenPreview(prod)}
+                      className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 relative group cursor-pointer"
+                      title="Clic para ver fotos en grande y detalle completo"
+                    >
                       <img
                         src={getSafeImageUrl(prod.image)}
                         alt={prod.name}
                         loading="lazy"
-                        className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                        className="w-full h-full object-cover transition duration-300 group-hover:scale-110"
                       />
-                      <span className="absolute top-1.5 left-1.5 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                      <span className="absolute top-1.5 left-1.5 bg-black/75 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10">
                         ✈️ Dropship
                       </span>
+                      {/* OVERLAY INDICADOR DE ZOOM */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-bold text-xs">
+                        <Maximize2 className="w-4 h-4 text-white" />
+                        <span>Ver en grande</span>
+                      </div>
                     </div>
 
                     {/* TÍTULO */}
@@ -447,6 +512,170 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Prueba buscando artículos virales de TikTok o novedades de bajo costo para atraer miles de visitas a FoxDrop.
           </p>
+        </div>
+      )}
+
+      {/* MODAL VISTA PREVIA EN GRANDE (ESTILO CJ DROPSHIPPING) */}
+      {previewItem && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200">
+            {/* CABECERA MODAL */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/70">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                  Catálogo Oficial CJ Dropshipping
+                </span>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 truncate" title={previewItem.name}>
+                  {previewItem.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewItem(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* CONTENIDO PRINCIPAL */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* COLUMNA IZQUIERDA: GALERÍA DE FOTOS EN GRANDE */}
+              <div className="space-y-3">
+                {/* FOTO PRINCIPAL ENORME */}
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 relative group flex items-center justify-center shadow-inner">
+                  {previewLoading && !selectedPreviewImage ? (
+                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                  ) : (
+                    <img
+                      src={getSafeImageUrl(selectedPreviewImage || previewItem.image)}
+                      alt={previewItem.name}
+                      className="w-full h-full object-contain transition duration-200"
+                    />
+                  )}
+                </div>
+
+                {/* MINIATURAS DEL SET DE FOTOS DE CJ */}
+                {previewDetail?.images && previewDetail.images.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                    {previewDetail.images.map((img, idx) => {
+                      const isSelected = selectedPreviewImage === img;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedPreviewImage(img)}
+                          className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 ring-2 ring-indigo-200'
+                              : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={getSafeImageUrl(img)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* COLUMNA DERECHA: DATOS DE FÁBRICA Y RENTABILIDAD */}
+              <div className="space-y-5 flex flex-col justify-between">
+                <div className="space-y-4">
+                  {/* PRECIOS Y COSTOS */}
+                  <div className="bg-gradient-to-br from-indigo-50/50 to-slate-50 p-4 rounded-2xl border border-indigo-100 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <span>Costo Fábrica (China):</span>
+                      <span className="font-mono font-bold text-slate-900 text-sm">
+                        ${previewItem.priceUsd.toFixed(2)} USD (~${Math.round(previewItem.priceUsd * (usdRate || 18))} MXN)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-slate-600">
+                      <span>Flete Internacional Estándar (CJPacket):</span>
+                      <span className="font-mono font-bold text-slate-700">~$130 MXN</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-indigo-700 font-bold border-t border-indigo-100/80 pt-2">
+                      <span>Venta sugerida en FoxDrop:</span>
+                      <span className="font-mono text-base font-black text-indigo-900">
+                        ${Math.max(99, Math.round(previewItem.priceUsd * (usdRate || 18) * 2.2))} MXN
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-emerald-600 font-bold flex items-center justify-between bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
+                      <span>Tu ganancia estimada por venta:</span>
+                      <span className="font-mono">
+                        +${Math.max(0, Math.round(previewItem.priceUsd * (usdRate || 18) * 2.2) - Math.round(previewItem.priceUsd * (usdRate || 18)))} MXN
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ESPECIFICACIONES TÉCNICAS */}
+                  <div className="space-y-2 text-xs">
+                    <span className="font-bold text-slate-700 block">Ficha del Fabricante:</span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 block font-medium">SKU Fábrica:</span>
+                        <span className="font-mono font-bold text-slate-800 break-all">{previewItem.sku || 'N/A'}</span>
+                      </div>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 block font-medium">Categoría:</span>
+                        <span className="font-bold text-slate-800 truncate block">{previewItem.categoryName || 'Novedades'}</span>
+                      </div>
+                      {previewDetail?.weight && (
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
+                          <span className="text-slate-400 block font-medium">Peso del paquete:</span>
+                          <span className="font-mono font-bold text-slate-800">{previewDetail.weight}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DESCRIPCIÓN O VARIANTES */}
+                  {previewDetail?.variants && previewDetail.variants.length > 0 && (
+                    <div className="space-y-1.5 text-xs">
+                      <span className="font-bold text-slate-700 block">
+                        Variantes disponibles ({previewDetail.variants.length}):
+                      </span>
+                      <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                        {previewDetail.variants.slice(0, 10).map((v: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-[11px] p-1.5 bg-slate-50 rounded-lg text-slate-600">
+                            <span className="truncate max-w-[200px]">{v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i+1}`}</span>
+                            <span className="font-mono font-bold text-slate-800">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)} USD</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* BOTÓN DE ACCIÓN: IMPORTAR */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewItem(null)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item = previewItem;
+                      setPreviewItem(null);
+                      handleOpenImportModal(item);
+                    }}
+                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Importar este producto a FoxDrop</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
