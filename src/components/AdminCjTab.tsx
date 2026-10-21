@@ -71,6 +71,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<'ALL' | 'MX'>('ALL');
+  const [sortOrder, setSortOrder] = useState<'sales_desc' | 'sales_asc' | 'price_asc' | 'price_desc'>('sales_desc');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CjItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -809,6 +810,35 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             })}
           </div>
         </div>
+
+        {/* ORDENAMIENTO Y FILTROS POR VOLUMEN DE VENTAS */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-600">Ordenar productos por:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1 rounded-2xl border border-slate-200/80">
+            {[
+              { id: 'sales_desc', label: '🔥 Más Vendidos (Mayor a Menor)' },
+              { id: 'sales_asc', label: '🌱 Menos Vendidos (Novedades/Oportunidades)' },
+              { id: 'price_asc', label: '💲 Precio: Menor a Mayor' },
+              { id: 'price_desc', label: '💎 Precio: Mayor a Menor' },
+            ].map(opt => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setSortOrder(opt.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  sortOrder === opt.id
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* RESULTADOS DE PRODUCTOS */}
@@ -826,7 +856,23 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
-            {results.map(prod => {
+            {[...results]
+              .sort((a, b) => {
+                if (sortOrder === 'sales_desc') {
+                  return (b.listedNum || 0) - (a.listedNum || 0);
+                }
+                if (sortOrder === 'sales_asc') {
+                  return (a.listedNum || 0) - (b.listedNum || 0);
+                }
+                if (sortOrder === 'price_asc') {
+                  return (a.priceUsd || 0) - (b.priceUsd || 0);
+                }
+                if (sortOrder === 'price_desc') {
+                  return (b.priceUsd || 0) - (a.priceUsd || 0);
+                }
+                return 0;
+              })
+              .map(prod => {
               const isImported = importedIds.includes(prod.id);
               const safePriceUsd = typeof prod.priceUsd === 'number' && !isNaN(prod.priceUsd) ? prod.priceUsd : 0;
               const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
