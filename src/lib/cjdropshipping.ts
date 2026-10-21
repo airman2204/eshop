@@ -60,7 +60,7 @@ export interface CjProductItem {
 /**
  * Busca productos virales y de bajo costo en el catálogo global de CJ Dropshipping
  */
-export async function searchCjProducts(query: string, page = 1, size = 20, categoryId?: string): Promise<{
+export async function searchCjProducts(query: string, page = 1, size = 20, categoryId?: string, countryCode?: string): Promise<{
   products: CjProductItem[];
   total: number;
   page: number;
@@ -76,6 +76,9 @@ export async function searchCjProducts(query: string, page = 1, size = 20, categ
   }
   if (categoryId && categoryId.trim()) {
     url.searchParams.set("categoryId", categoryId.trim());
+  }
+  if (countryCode && countryCode.trim()) {
+    url.searchParams.set("countryCode", countryCode.trim().toUpperCase());
   }
 
   const res = await fetch(url.toString(), {

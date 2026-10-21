@@ -24,11 +24,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado para consultar la API de CJ" }, { status: 401 });
     }
 
-    const { action, query, page, size, pid, categoryId, importProduct } = body;
+    const { action, query, page, size, pid, categoryId, countryCode, importProduct } = body;
 
     // 1. Búsqueda de productos en CJ
     if (action === "search_products") {
-      const results = await searchCjProducts(query || "", Number(page) || 1, Number(size) || 20, categoryId);
+      const results = await searchCjProducts(query || "", Number(page) || 1, Number(size) || 20, categoryId, countryCode);
       return NextResponse.json({ success: true, ...results });
     }
 
