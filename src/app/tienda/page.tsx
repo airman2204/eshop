@@ -413,10 +413,22 @@ export default function TiendaFoxDrop() {
       const savedTab = sessionStorage.getItem('foxdrop_active_tab') as 'new' | 'deals' | 'all';
       if (savedTab && ['new', 'deals', 'all'].includes(savedTab)) setActiveTab(savedTab);
 
-      const savedView = sessionStorage.getItem('foxdrop_current_view') as 'store' | 'account';
-      if (savedView && ['store', 'account'].includes(savedView)) {
+      const savedView = sessionStorage.getItem('foxdrop_current_view') as 'store' | 'account' | 'checkout';
+      if (savedView && ['store', 'account', 'checkout'].includes(savedView)) {
         setCurrentView(savedView);
       }
+
+      const savedCheckoutStep = sessionStorage.getItem('foxdrop_checkout_step') as 'cart' | 'shipping' | 'payment' | 'success';
+      if (savedCheckoutStep && ['cart', 'shipping', 'payment', 'success'].includes(savedCheckoutStep)) {
+        setCheckoutStep(savedCheckoutStep);
+      }
+
+      try {
+        const savedSummary = sessionStorage.getItem('foxdrop_confirmed_order_summary');
+        if (savedSummary) {
+          setConfirmedOrderSummary(JSON.parse(savedSummary));
+        }
+      } catch {}
 
       const savedAccountTab = sessionStorage.getItem('foxdrop_account_tab') as any;
       if (savedAccountTab && ['orders', 'favorites', 'addresses', 'cards', 'club', 'settings'].includes(savedAccountTab)) {
@@ -564,6 +576,22 @@ export default function TiendaFoxDrop() {
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [confirmedOrderSummary, setConfirmedOrderSummary] = useState<any | null>(null);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_checkout_step', checkoutStep);
+    } catch {}
+  }, [checkoutStep]);
+
+  useEffect(() => {
+    try {
+      if (confirmedOrderSummary) {
+        sessionStorage.setItem('foxdrop_confirmed_order_summary', JSON.stringify(confirmedOrderSummary));
+      } else {
+        sessionStorage.removeItem('foxdrop_confirmed_order_summary');
+      }
+    } catch {}
+  }, [confirmedOrderSummary]);
 
   // Cargar configuración de envíos y pagos
   useEffect(() => {
