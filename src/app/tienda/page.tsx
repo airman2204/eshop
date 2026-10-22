@@ -3903,6 +3903,34 @@ export default function TiendaFoxDrop() {
                           <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">🏪 OXXO</span>
                           <span className="px-1.5 py-0.5 rounded bg-sky-100 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
                         </div>
+
+                        {/* TARJETAS GUARDADAS VINCULADAS EN EL PERFIL */}
+                        {fullProfile?.cards && fullProfile.cards.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-sky-150/70 space-y-1.5">
+                            <span className="text-[11px] font-extrabold text-sky-950 block">
+                              💳 Tarjetas guardadas en tu cuenta:
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {fullProfile.cards.map((c: any) => (
+                                <div
+                                  key={c.id}
+                                  className="bg-white border border-sky-300 shadow-2xs rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-sky-950"
+                                >
+                                  <span className="font-black uppercase tracking-wider text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded">
+                                    {c.brand}
+                                  </span>
+                                  <span className="font-mono font-bold">•••• {c.last4}</span>
+                                  <span className="text-[10px] text-gray-400">({c.expMonth}/{c.expYear})</span>
+                                  {c.isDefault && (
+                                    <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                      Predeterminada
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
