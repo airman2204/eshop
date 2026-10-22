@@ -732,20 +732,9 @@ export default function TiendaFoxDrop() {
     ? products.filter(p => matchesProductSearch(p, searchTerm)).slice(0, 5)
     : [];
 
-  // Productos mostrados según la pestaña activa y ordenados según selección:
-  // - 'new': Los últimos productos dados de alta (hasta 8 más recientes)
-  // - 'deals': Artículos con descuento real
-  // - 'all': Todo el catálogo completo
-  const displayedProducts = (() => {
-    let prods = baseFilteredProducts;
-    if (activeTab === 'deals') {
-      prods = baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
-    } else if (activeTab === 'new') {
-      prods = baseFilteredProducts.slice(0, 8);
-    }
-
-    // Ordenamiento por precio, descuento y A-Z
-    const sorted = [...prods];
+  // Función auxiliar de ordenamiento reutilizable para ambas vitrinas
+  const sortProductList = (list: Product[]) => {
+    const sorted = [...list];
     if (sortBy === 'price_asc') {
       sorted.sort((a, b) => a.publicPrice - b.publicPrice);
     } else if (sortBy === 'price_desc') {
@@ -758,9 +747,13 @@ export default function TiendaFoxDrop() {
       sorted.sort((a, b) => b.title.localeCompare(a.title, 'es', { sensitivity: 'base' }));
     }
     return sorted;
-  })();
+  };
 
-  const filteredProducts = displayedProducts;
+  // Separación limpia en 2 pasillos/vitrinas:
+  // 1. Boutique FoxDrop (Almacén local con entrega inmediata)
+  const boutiqueProducts = sortProductList(baseFilteredProducts.filter(p => !((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')))));
+  // 2. FoxDrop Global (Importación directa a tu domicilio 10-15 días)
+  const importProducts = sortProductList(baseFilteredProducts.filter(p => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))));
 
   const toggleFav = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -2277,105 +2270,25 @@ export default function TiendaFoxDrop() {
 
 
       {/* ======================================================== */}
-      {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
+      {/* 4. SECCIÓN PRINCIPAL: 2 PASILLOS/VITRINAS SEPARADAS */}
       {/* ======================================================== */}
-      <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
+      <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+        
+        {/* BARRA DE HERRAMIENTAS Y FILTROS GENERALES */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200/90 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
               <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
-                {activeTab === 'new' 
-                  ? (selectedCategory === 'Todas' ? 'Lo Más Nuevo en FoxDrop' : `Lo Nuevo en ${selectedCategory}`)
-                  : activeTab === 'deals'
-                  ? 'Ofertas & Descuentos Activos'
-                  : (selectedCategory === 'Todas' ? 'Catálogo Completo' : `Departamento: ${selectedCategory}`)
-                }
+                {selectedCategory === 'Todas' ? 'Catálogo FoxDrop' : `Departamento: ${selectedCategory}`}
               </h3>
             </div>
             <p className="text-xs text-gray-500 font-medium">
-              {activeTab === 'new' 
-                ? 'Últimos productos dados de alta con disponibilidad inmediata' 
-                : `${filteredProducts.length} artículos encontrados para entrega`}
+              Explora los artículos listos para entrega hoy en boutique y nuestras novedades de importación internacional.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* SEGMENTADOR EXCLUSIVO MARIO & NYDIA: BOUTIQUE VS IMPORTACIÓN */}
-            {isPrivilegedPartner && (
-              <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-black border border-slate-300/80 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('all')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    catalogSegment === 'all' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Ver Todo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('boutique')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                    catalogSegment === 'boutique' ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Solo inventario físico FoxDrop"
-                >
-                  <span>🏪 Boutique FoxDrop</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('import')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                    catalogSegment === 'import' ? 'bg-indigo-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Solo productos de importación directa a tu domicilio"
-                >
-                  <span>✈️ Importación Directa</span>
-                </button>
-              </div>
-            )}
-
-            {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
-            <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('new');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'new' ? 'bg-[#0F3E36] text-white shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Lo Nuevo
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'deals' ? 'bg-[#DF7F2D] text-white shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Ofertas 🔥
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'all' && selectedCategory === 'Todas' ? 'bg-white text-[#0F3E36] shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Todo
-              </button>
-            </div>
-
             {/* SELECTOR DE FILTRO DE ORDENAMIENTO (PRECIO / A-Z) */}
             <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
               <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Ordenar:</span>
@@ -2408,7 +2321,6 @@ export default function TiendaFoxDrop() {
               </select>
             </div>
 
-
             {selectedCategory !== 'Todas' && (
               <button
                 onClick={() => setSelectedCategory('Todas')}
@@ -2438,147 +2350,284 @@ export default function TiendaFoxDrop() {
               </div>
             ))}
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center space-y-3">
-            <p className="text-gray-500 font-medium text-sm">No se encontraron productos en esta categoría o selección.</p>
-            <button
-              onClick={() => {
-                setActiveTab('all');
-                setSelectedCategory('Todas');
-                setSearchTerm('');
-              }}
-              className="bg-[#2D4A58] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#1a2d36] transition cursor-pointer"
-            >
-              Ver todo el catálogo
-            </button>
-          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
-            {filteredProducts.map(product => {
-              const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
-              const originalPrice = hasDiscount 
-                ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
-                : product.publicPrice;
-              const isFav = favorites.includes(product.id);
-
-              return (
-                <div
-                  key={product.id}
-                  onClick={() => {
-                    setModalQuantity(1);
-                    setSelectedProduct(product);
-                  }}
-                  className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5"
-                >
-                  {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
-                  <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
-                    <div className="flex flex-wrap items-center gap-1">
-                      {product.isCombo && (
-                        <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
-                          <Sparkles className="w-2.5 h-2.5" /> COMBO
-                        </span>
-                      )}
-                      {hasDiscount ? (
-                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
-                          -{product.discountPercent}%
-                        </span>
-                      ) : product.stock === 1 ? (
-                        <span className="bg-amber-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
-                          Último
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <button
-                      onClick={(e) => toggleFav(product.id, e)}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition pointer-events-auto backdrop-blur-md shadow-xs ${
-                        isFav 
-                          ? 'bg-rose-50 text-rose-500' 
-                          : 'bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white'
-                      }`}
-                      title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500' : ''}`} />
-                    </button>
+          <div className="space-y-12">
+            
+            {/* ======================================================== */}
+            {/* PASILLO 1: BOUTIQUE FOXDROP (DISPONIBILIDAD INMEDIATA) */}
+            {/* ======================================================== */}
+            <div className="space-y-5">
+              <div className="bg-gradient-to-r from-emerald-900/10 via-emerald-800/5 to-transparent p-4 sm:p-5 rounded-2xl border border-emerald-600/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-700 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-2xs">
+                      ⚡ Almacén Local
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black text-[#0F3E36] tracking-tight">
+                      Boutique FoxDrop • Entrega Inmediata
+                    </h4>
                   </div>
-
-                  {/* IMAGEN DE PRODUCTO CON EFECTO SUAVE EN CONTENEDOR CREMA/MENTA */}
-                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
-                    {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
-                      <span className="absolute top-2 left-2 z-10 bg-indigo-950/80 backdrop-blur-xs text-indigo-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-indigo-400/30">
-                        ✈️ 10-15 Días
-                      </span>
-                    ) : (
-                      <span className="absolute top-2 left-2 z-10 bg-emerald-950/80 backdrop-blur-xs text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-emerald-400/30">
-                        ⚡ Entrega Inmediata
-                      </span>
-                    )}
-                    <img
-                      src={product.images[0]}
-                      alt={product.title}
-                      className="max-h-full w-auto object-contain group-hover:scale-108 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  {/* DETALLES DE PRECIO Y VALORACIÓN */}
-                  <div className="space-y-1.5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-gray-900 line-clamp-1 leading-snug group-hover:text-[#0F3E36] transition">
-                        {product.title}
-                      </h4>
-                      {product.description && (
-                        <p className="text-[10px] text-gray-400 line-clamp-1 font-medium mt-0.5">
-                          {product.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="pt-1.5 space-y-1">
-                      {/* PRECIO ACTUAL Y VALOR DE REFERENCIA ESTILO TJ MAXX (COMPARE AT) */}
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-base sm:text-lg font-black text-[#0F3E36] font-mono tracking-tight">
-                            ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
-                          </span>
-                          {hasDiscount ? (
-                            <span className="text-[11px] text-gray-400 line-through font-mono">
-                              ${originalPrice.toFixed(0)}
-                            </span>
-                          ) : null}
-                        </div>
-                        {hasDiscount && (
-                          <span className="text-[10px] font-bold text-emerald-700 block">
-                            Ahorras ${(originalPrice - product.publicPrice).toFixed(0)} MXN
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
-                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                          {product.category}
-                        </span>
-                        <div className="flex items-center gap-1 font-bold text-gray-700">
-                          <span className="text-amber-400 text-xs">★</span>
-                          <span>4.8</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ACCIÓN PRINCIPAL: AGREGAR AL CARRITO ESTILO E-COMMERCE MODERNO */}
-                  <div className="pt-3">
-                    <button
-                      onClick={(e) => addToCart(product, e)}
-                      className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md"
-                    >
-                      <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Agregar al Carrito</span>
-                    </button>
-                  </div>
+                  <p className="text-xs text-gray-600">
+                    Artículos disponibles en almacén listos para entrega inmediata o retiro el mismo día. Pagos en efectivo, transferencia SPEI o tarjeta.
+                  </p>
                 </div>
-              );
-            })}
+                <span className="text-xs font-black text-emerald-800 bg-white px-3 py-1.5 rounded-xl border border-emerald-200/80 shadow-2xs w-fit shrink-0">
+                  {boutiqueProducts.length} productos disponibles
+                </span>
+              </div>
+
+              {boutiqueProducts.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center space-y-2">
+                  <p className="text-gray-500 font-medium text-xs sm:text-sm">No se encontraron artículos de boutique física en esta selección.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
+                  {boutiqueProducts.map(product => {
+                    const hasDiscount = Boolean(product.discountPercent && product.discountPercent > 0);
+                    const originalPrice = hasDiscount 
+                      ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
+                      : product.publicPrice;
+                    const isFav = favorites.includes(product.id);
+
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => {
+                          setModalQuantity(1);
+                          setSelectedProduct(product);
+                        }}
+                        className="bg-white rounded-2xl border border-gray-150 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5"
+                      >
+                        {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
+                        <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
+                          <div className="flex flex-wrap items-center gap-1">
+                            {product.isCombo && (
+                              <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                                <Sparkles className="w-2.5 h-2.5" /> COMBO
+                              </span>
+                            )}
+                            {hasDiscount ? (
+                              <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
+                                -{product.discountPercent}%
+                              </span>
+                            ) : product.stock === 1 ? (
+                              <span className="bg-amber-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
+                                Último
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <button
+                            onClick={(e) => toggleFav(product.id, e)}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition pointer-events-auto backdrop-blur-md shadow-xs ${
+                              isFav 
+                                ? 'bg-rose-50 text-rose-500' 
+                                : 'bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white'
+                            }`}
+                            title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500' : ''}`} />
+                          </button>
+                        </div>
+
+                        {/* IMAGEN DE PRODUCTO */}
+                        <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
+                          <span className="absolute top-2 left-2 z-10 bg-emerald-950/80 backdrop-blur-xs text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-emerald-400/30">
+                            ⚡ Entrega Inmediata
+                          </span>
+                          <img
+                            src={product.images[0]}
+                            alt={product.title}
+                            className="max-h-full w-auto object-contain group-hover:scale-108 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        </div>
+
+                        {/* DETALLES DE PRECIO Y TITULO */}
+                        <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-extrabold text-gray-900 line-clamp-1 leading-snug group-hover:text-[#0F3E36] transition">
+                              {product.title}
+                            </h4>
+                            {product.description && (
+                              <p className="text-[10px] text-gray-400 line-clamp-1 font-medium mt-0.5">
+                                {product.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="pt-1.5 space-y-1">
+                            <div>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-base sm:text-lg font-black text-[#0F3E36] font-mono tracking-tight">
+                                  ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
+                                </span>
+                                {hasDiscount ? (
+                                  <span className="text-[11px] text-gray-400 line-through font-mono">
+                                    ${originalPrice.toFixed(0)}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
+                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                {product.category}
+                              </span>
+                              <div className="flex items-center gap-1 font-bold text-gray-700">
+                                <span className="text-amber-400 text-xs">★</span>
+                                <span>4.9</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ACCIÓN PRINCIPAL */}
+                        <div className="pt-3">
+                          <button
+                            onClick={(e) => addToCart(product, e)}
+                            className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md"
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Agregar al Carrito</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+
+            {/* ======================================================== */}
+            {/* PASILLO 2: FOXDROP GLOBAL (IMPORTACIÓN DIRECTA A DOMICILIO) */}
+            {/* Solo visible para Mario y Nydia mientras se realizan pruebas y calibración */}
+            {/* ======================================================== */}
+            {isPrivilegedPartner && (
+              <div className="space-y-5 pt-4 border-t border-slate-200/80">
+                <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 p-5 rounded-3xl text-white border border-indigo-800/40 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1.5 max-w-2xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="bg-indigo-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
+                        ✈️ FoxDrop Global
+                      </span>
+                      <span className="bg-white/10 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-400/20">
+                        10 a 15 días hábiles a tu domicilio
+                      </span>
+                      <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-400/20">
+                        💳 Pago Exclusivo con Tarjeta o Mercado Pago
+                      </span>
+                    </div>
+                    <h4 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                      Novedades & Gadgets de Importación Directa
+                    </h4>
+                    <p className="text-xs text-indigo-200/90 leading-relaxed">
+                      Artículos exclusivos de catálogo internacional traídos de fábrica directamente a tu puerta. Incluyen guía de rastreo y despacho asegurado.
+                    </p>
+                  </div>
+                  <span className="text-xs font-black text-indigo-300 bg-white/10 px-3.5 py-1.5 rounded-2xl border border-white/15 w-fit shrink-0">
+                    {importProducts.length} productos mundiales
+                  </span>
+                </div>
+
+                {importProducts.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-200 p-8 text-center space-y-2">
+                    <p className="text-gray-500 font-medium text-xs sm:text-sm">No hay productos de importación en esta categoría actualmente.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
+                    {importProducts.map(product => {
+                      const isFav = favorites.includes(product.id);
+
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => {
+                            setModalQuantity(1);
+                            setSelectedProduct(product);
+                          }}
+                          className="bg-white rounded-2xl border-2 border-indigo-100 hover:border-indigo-300 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5"
+                        >
+                          {/* BADGES SUPERIORES */}
+                          <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
+                            <span className="bg-indigo-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+                              ✈️ Importación
+                            </span>
+
+                            <button
+                              onClick={(e) => toggleFav(product.id, e)}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center transition pointer-events-auto backdrop-blur-md shadow-xs ${
+                                isFav 
+                                  ? 'bg-rose-50 text-rose-500' 
+                                  : 'bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white'
+                              }`}
+                              title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                            >
+                              <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500' : ''}`} />
+                            </button>
+                          </div>
+
+                          {/* IMAGEN DE PRODUCTO */}
+                          <div className="aspect-square bg-slate-50 rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-indigo-50/40 transition relative">
+                            <span className="absolute bottom-2 left-2 right-2 text-center z-10 bg-black/60 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                              📦 Envío directo a tu puerta
+                            </span>
+                            <img
+                              src={product.images[0]}
+                              alt={product.title}
+                              className="max-h-full w-auto object-contain group-hover:scale-108 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </div>
+
+                          {/* DETALLES DE PRECIO Y TITULO */}
+                          <div className="space-y-1.5 flex-1 flex flex-col justify-between">
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-extrabold text-gray-900 line-clamp-1 leading-snug group-hover:text-indigo-700 transition">
+                                {product.title}
+                              </h4>
+                              <p className="text-[10px] text-indigo-600 font-bold line-clamp-1 mt-0.5">
+                                Entrega: 10 a 15 días hábiles
+                              </p>
+                            </div>
+
+                            <div className="pt-1.5 space-y-1">
+                              <div>
+                                <span className="text-base sm:text-lg font-black text-indigo-950 font-mono tracking-tight">
+                                  ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
+                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                  {product.category}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-medium">
+                                  💳 Solo Tarjeta
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ACCIÓN PRINCIPAL */}
+                          <div className="pt-3">
+                            <button
+                              onClick={(e) => addToCart(product, e)}
+                              className="w-full bg-indigo-900 hover:bg-indigo-950 active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5 text-indigo-300" />
+                              <span>Comprar Artículo</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         )}
       </section>
