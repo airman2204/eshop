@@ -234,6 +234,7 @@ export default function TiendaFoxDrop() {
             points: profile.loyaltyPoints ?? 0,
           });
           loadUserAccount(profile.phone || '', profile.email);
+          loadFullProfileData();
         }
       } catch (err) {
         console.warn("No active session:", err);
@@ -396,7 +397,12 @@ export default function TiendaFoxDrop() {
       if (savedTab && ['new', 'deals', 'all'].includes(savedTab)) setActiveTab(savedTab);
 
       const savedView = sessionStorage.getItem('foxdrop_current_view') as 'store' | 'account';
-      if (savedView && ['store', 'account'].includes(savedView)) setCurrentView(savedView);
+      if (savedView && ['store', 'account'].includes(savedView)) {
+        setCurrentView(savedView);
+        if (savedView === 'account') {
+          loadFullProfileData();
+        }
+      }
     } catch {}
   }, []);
 
