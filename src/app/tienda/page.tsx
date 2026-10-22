@@ -1762,7 +1762,7 @@ export default function TiendaFoxDrop() {
                               <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
                               <div className="flex items-center justify-between mt-0.5">
                                 <span className="text-[10px] text-gray-400 capitalize">{item.category}</span>
-                                <span className="text-xs font-black text-[#DF7F2D] font-mono">${item.publicPrice.toFixed(0)} MXN</span>
+                                <span className="text-xs font-black text-[#DF7F2D]">${item.publicPrice.toFixed(0)} MXN</span>
                               </div>
                             </div>
                           </div>
@@ -1897,7 +1897,7 @@ export default function TiendaFoxDrop() {
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-[10px] text-white/75 leading-tight">Carrito</span>
-                <span className="text-xs font-black text-white font-mono">
+                <span className="text-xs font-black text-white">
                   ${cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0).toFixed(0)} MXN
                 </span>
               </div>
@@ -2503,11 +2503,11 @@ export default function TiendaFoxDrop() {
                       {/* PRECIO ACTUAL Y VALOR DE REFERENCIA ESTILO TJ MAXX (COMPARE AT) */}
                       <div>
                         <div className="flex items-baseline gap-1.5">
-                          <span className="text-base sm:text-lg font-black text-[#0F3E36] font-mono tracking-tight">
+                          <span className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
                             ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
                           </span>
                           {hasDiscount ? (
-                            <span className="text-[11px] text-gray-400 line-through font-mono">
+                            <span className="text-[11px] text-gray-400 line-through font-medium">
                               ${originalPrice.toFixed(0)}
                             </span>
                           ) : null}
@@ -4820,7 +4820,7 @@ export default function TiendaFoxDrop() {
                   <h3 className="text-lg sm:text-xl font-black text-[#1F2D3D] leading-snug mt-1">{selectedProduct.title}</h3>
                   
                   <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl sm:text-3xl font-black text-gray-950 font-mono">${selectedProduct.publicPrice.toFixed(0)} <span className="text-sm font-normal text-gray-400">MXN</span></span>
+                    <span className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">${selectedProduct.publicPrice.toFixed(0)} <span className="text-sm font-normal text-gray-400">MXN</span></span>
                     {selectedProduct.discountPercent && selectedProduct.discountPercent > 0 ? (
                       <span className="text-xs text-gray-400 line-through">
                         ${(selectedProduct.publicPrice / (1 - (selectedProduct.discountPercent / 100))).toFixed(0)} MXN
