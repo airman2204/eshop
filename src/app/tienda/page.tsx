@@ -4800,7 +4800,7 @@ export default function TiendaFoxDrop() {
                           activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
-                        <img src={imgUrl} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" />
+                        <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
                       </button>
                     ))}
                   </div>

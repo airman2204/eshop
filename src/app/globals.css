@@ -8,10 +8,17 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.011em;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.015em;
+}
+
+/* Tipografía de encabezados premium estilo e-commerce moderno */
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 /* Ocultar barra de scroll en carruseles táctiles */
@@ -79,7 +86,7 @@ html, body {
   background-color: #fff7ed;
 }
 
-/* Animación realista de salida del ticket POS: emerge desde abajo hacia arriba con movimiento fluido continuo */
+/* Animación realista de salida del ticket POS */
 @keyframes thermalTicketRise {
   0% {
     transform: translateY(90%);
@@ -147,6 +154,3 @@ html, body {
 .animate-cloud-float {
   animation: cloudFloatSubtle 5s ease-in-out infinite;
 }
-
-
-
