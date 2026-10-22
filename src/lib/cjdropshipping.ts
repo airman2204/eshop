@@ -110,15 +110,30 @@ export async function searchCjProducts(
     url.searchParams.set("sort", "desc");
   }
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "CJ-Access-Token": token,
-    },
-  });
+  // Reintentos automáticos con backoff si CJ responde 429 por límite de ráfaga (QPS limit 1 req/sec)
+  let res: Response | null = null;
+  let attempts = 0;
+  const maxAttempts = 3;
 
-  if (!res.ok) {
-    throw new Error(`Error consultando productos de CJ: HTTP ${res.status}`);
+  while (attempts < maxAttempts) {
+    attempts++;
+    res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "CJ-Access-Token": token,
+      },
+    });
+
+    if (res.status === 429 && attempts < maxAttempts) {
+      // Esperar 1.2 segundos antes de reintentar
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      continue;
+    }
+    break;
+  }
+
+  if (!res || !res.ok) {
+    throw new Error(`Error consultando productos de CJ: HTTP ${res?.status || 500}`);
   }
 
   const data = await res.json();
@@ -169,13 +184,26 @@ export async function getCjProductDetails(productId: string) {
   const token = await getCjAccessToken();
   const url = `https://developers.cjdropshipping.com/api2.0/v1/product/query?pid=${encodeURIComponent(productId)}`;
 
-  const res = await fetch(url, {
-    method: "GET",
-    headers: { "CJ-Access-Token": token },
-  });
+  let res: Response | null = null;
+  let attempts = 0;
+  const maxAttempts = 3;
 
-  if (!res.ok) {
-    throw new Error(`Error obteniendo detalle de CJ: HTTP ${res.status}`);
+  while (attempts < maxAttempts) {
+    attempts++;
+    res = await fetch(url, {
+      method: "GET",
+      headers: { "CJ-Access-Token": token },
+    });
+
+    if (res.status === 429 && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      continue;
+    }
+    break;
+  }
+
+  if (!res || !res.ok) {
+    throw new Error(`Error obteniendo detalle de CJ: HTTP ${res?.status || 500}`);
   }
 
   return await res.json();
