@@ -1423,8 +1423,13 @@ export default function TiendaFoxDrop() {
         subtotal: cartSubtotal,
         shippingFee,
         total: cartTotal,
-        shippingMethodName: activeShippingMethod?.name || 'Entrega Acordada',
+        shippingMethodName: isMixedCart 
+          ? `Envío Dividido (Boutique 24-48 hrs + Internacional 10-15 días)` 
+          : (cartHasImportItems ? 'Paquetería Internacional Directa' : (activeShippingMethod?.name || 'Entrega Acordada')),
         isPersonalDelivery,
+        isMixedCart,
+        cartHasImportItems,
+        cartHasBoutiqueItems,
         shippingAddress: isPersonalDelivery ? 'Entrega personal / Acordar con vendedor' : `${shippingAddress.street}${shippingAddress.colonia ? ', ' + shippingAddress.colonia : ''}, C.P. ${shippingAddress.zip}, ${shippingAddress.city}`,
         paymentMethod,
         date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -1530,14 +1535,20 @@ export default function TiendaFoxDrop() {
     setCart([]);
   };
 
-  const cartHasImportItems = cart.some(i => (i.product.sku && i.product.sku.startsWith('CJ')) || (i.product.brand && i.product.brand.toLowerCase().includes('cj dropshipping')));
+  const isImportProdItem = (p: Product) => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+  const cartHasImportItems = cart.some(i => isImportProdItem(i.product));
+  const cartHasBoutiqueItems = cart.some(i => !isImportProdItem(i.product));
+  const isMixedCart = cartHasImportItems && cartHasBoutiqueItems;
+
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
   const activeShippingMethod = checkoutSettings.shippingMethods.find(m => m.id === selectedShippingId && m.enabled)
     || checkoutSettings.shippingMethods.find(m => m.enabled)
     || checkoutSettings.shippingMethods[0];
-  // Si contiene productos de importación, el envío es directo a domicilio (requiere dirección obligatoria) y es sin costo adicional (flete ya incluido)
+  
+  // Si contiene productos de importación (o carrito mixto), el envío a domicilio físico es obligatorio
   const isPersonalDelivery = cartHasImportItems ? false : (activeShippingMethod ? !activeShippingMethod.requiresAddress : true);
-  const shippingFee = cartHasImportItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
+  // En carrito exclusivo internacional el envío es gratis ($0). En carrito mixto o boutique, se cobra el método de entrega de boutique seleccionado
+  const shippingFee = cartHasImportItems && !cartHasBoutiqueItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
   
   // Descuento por cupón activo
   const couponDiscountAmount = appliedCoupon ? Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100) : 0;
@@ -3793,7 +3804,87 @@ export default function TiendaFoxDrop() {
             {/* PASO 1: SELECCIÓN DE FORMA DE ENTREGA */}
             {checkoutStep === 'shipping' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
-                {cartHasImportItems ? (
+                {isMixedCart ? (
+                  /* VISTA CARRITO MIXTO: SE ENVIARÁN 2 PAQUETES POR ORIGEN DE ALMACÉN */
+                  <div className="space-y-4">
+                    <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-indigo-500/10 border border-amber-300/60 p-4 rounded-2xl flex items-start gap-3">
+                      <span className="text-2xl shrink-0">📦✈️</span>
+                      <div>
+                        <h2 className="text-base sm:text-lg font-black text-gray-900">
+                          Tu pedido se enviará en 2 entregas independientes
+                        </h2>
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                          Has combinado artículos de nuestra <strong className="text-[#0F3E36]">Boutique FoxDrop (Almacén Puebla)</strong> con artículos de <strong className="text-indigo-800">FoxDrop Internacional (Fábrica Directa)</strong>. Pagas todo junto en una sola transacción con tu misma tarjeta, y recibirás ambos paquetes en tu domicilio.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Paquete 1: Boutique FoxDrop */}
+                      <div className="p-4 rounded-2xl border-2 border-emerald-600/40 bg-emerald-50/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+                            📦 Paquete 1 • Boutique FoxDrop
+                          </span>
+                          <span className="text-[11px] font-extrabold text-emerald-700">Almacén Local</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">
+                            ⚡ Entrega rápida estimada: 24 a 48 hrs hábiles
+                          </p>
+                          <p className="text-[11px] text-gray-500 mt-1">
+                            {cart.filter(i => !isImportProdItem(i.product)).reduce((sum, i) => sum + i.quantity, 0)} artículo(s) preparados y despachados desde nuestro centro de distribución nacional.
+                          </p>
+                        </div>
+                        {/* Selector de paquetería / envío de Boutique */}
+                        <div className="pt-2 border-t border-emerald-100">
+                          <label className="text-[11px] font-bold text-gray-700 block mb-1">
+                            Método de entrega local:
+                          </label>
+                          <select 
+                            value={selectedShippingId} 
+                            onChange={(e) => setSelectedShippingId(e.target.value)}
+                            className="w-full bg-white border border-gray-300 rounded-xl p-2 text-xs font-semibold text-gray-800 outline-none focus:border-[#0F3E36]"
+                          >
+                            {checkoutSettings.shippingMethods
+                              .filter(m => m.enabled)
+                              .map(m => (
+                                <option key={m.id} value={m.id}>
+                                  {m.name} {m.price === 0 ? '(Sin costo)' : `(+$${m.price.toFixed(0)} MXN)`}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Paquete 2: FoxDrop Internacional */}
+                      <div className="p-4 rounded-2xl border-2 border-indigo-600/40 bg-indigo-50/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-wider text-indigo-900 bg-indigo-100/80 px-2 py-0.5 rounded-md">
+                            ✈️ Paquete 2 • FoxDrop Internacional
+                          </span>
+                          <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full uppercase">
+                            ¡Envío Gratis!
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">
+                            🌍 Entrega internacional: 10 a 15 días hábiles
+                          </p>
+                          <p className="text-[11px] text-gray-500 mt-1">
+                            {cart.filter(i => isImportProdItem(i.product)).reduce((sum, i) => sum + i.quantity, 0)} artículo(s) importados directo de fábrica con número de guía independiente para rastreo en tiempo real.
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-indigo-100">
+                          <span className="text-[11px] text-indigo-900 font-semibold flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-indigo-600 stroke-[3]" />
+                            <span>Flete y aduana ya incluidos en el precio</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : cartHasImportItems ? (
                   /* VISTA EXCLUSIVA: ENTREGA INTERNACIONAL DIRECTA A DOMICILIO CON ENVÍO GRATIS YA INCLUIDO */
                   <div className="space-y-4">
                     <div>
@@ -4027,9 +4118,9 @@ export default function TiendaFoxDrop() {
               </div>
             )}
 
-            {/* PASO 2: SELECCIÓN DE PAGO (SPEI O EFECTIVO) */}
+            {/* PASO 2: SELECCIÓN DE PAGO (SPEI O EFECTIVO O MERCADO PAGO / TARJETAS) */}
             {checkoutStep === 'payment' && (() => {
-              const hasImportItemsInCart = cart.some(i => (i.product.sku && i.product.sku.startsWith('CJ')) || (i.product.brand && i.product.brand.toLowerCase().includes('cj dropshipping')));
+              const hasImportItemsInCart = cart.some(i => isImportProdItem(i.product));
 
               return (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
@@ -4039,7 +4130,9 @@ export default function TiendaFoxDrop() {
                     <span>Método de Pago</span>
                   </h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    {hasImportItemsInCart 
+                    {isMixedCart
+                      ? 'Tu pedido combina artículos de Boutique con Importación Internacional. Puedes pagar el total completo de ambos envíos en una sola exhibición con tu tarjeta de crédito/débito o cuenta de Mercado Pago.'
+                      : hasImportItemsInCart 
                       ? 'Tu pedido incluye artículos de importación directa a domicilio. Para estos productos el pago se procesa de forma segura mediante Tarjeta de Crédito/Débito o Mercado Pago.'
                       : 'Selecciona cómo deseas realizar tu pago para procesar la orden de inmediato.'}
                   </p>
@@ -4388,11 +4481,23 @@ export default function TiendaFoxDrop() {
                 {/* Desglose Económico y Método de Entrega */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-gray-200 space-y-2 text-xs">
-                    <span className="text-[10px] font-black uppercase text-gray-400 block tracking-wider">Entrega</span>
+                    <span className="text-[10px] font-black uppercase text-gray-400 block tracking-wider">Detalles de Entrega</span>
                     <div className="font-bold text-gray-900">{confirmedOrderSummary.shippingMethodName}</div>
                     <p className="text-gray-600 text-[11px] leading-relaxed">
                       {confirmedOrderSummary.shippingAddress}
                     </p>
+                    {confirmedOrderSummary.isMixedCart && (
+                      <div className="mt-2 pt-2 border-t border-gray-200/80 space-y-1.5 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
+                          <span>📦 Paquete 1 (Boutique):</span>
+                          <span className="font-medium text-gray-700">Entrega rápida en 24 a 48 hrs</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-indigo-900 font-bold">
+                          <span>✈️ Paquete 2 (Internacional):</span>
+                          <span className="font-medium text-gray-700">Guía internacional en 10 a 15 días hábiles</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-gray-200 space-y-2 text-xs">
