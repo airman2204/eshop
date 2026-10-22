@@ -464,7 +464,39 @@ export default function TiendaFoxDrop() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash' | 'mercadopago'>('mercadopago');
+  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash' | 'mercadopago'>('spei');
+
+  // Identificar si el usuario actual es Mario o Nydia (vía sesión Admin o cuenta de usuario)
+  const isPrivilegedPartner = (() => {
+    // 1. Verificar si tiene sesión activa de administrador en localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const storedAdmin = localStorage.getItem('foxdrop_admin_session');
+        if (storedAdmin) {
+          const parsed = JSON.parse(storedAdmin);
+          const email = (parsed?.email || '').toLowerCase().trim();
+          if (email.includes('magc2204') || email.includes('nydia') || email.includes('mario')) {
+            return true;
+          }
+        }
+      } catch {}
+    }
+    // 2. Verificar cuenta de usuario registrada en tienda
+    const uEmail = (user?.email || fullProfile?.email || '').toLowerCase().trim();
+    const uName = (user?.name || fullProfile?.fullName || '').toLowerCase().trim();
+    if (
+      uEmail.includes('magc2204') ||
+      uEmail.includes('nydia') ||
+      uEmail.includes('mario') ||
+      uName.includes('mario') ||
+      uName.includes('nydia') ||
+      uName.includes('gonzalez cervantes') ||
+      uName.includes('villarce')
+    ) {
+      return true;
+    }
+    return false;
+  })();
   const [redirectingToMp, setRedirectingToMp] = useState(false);
   const [clabeCopied, setClabeCopied] = useState(false);
   const [cardCopied, setCardCopied] = useState(false);
@@ -624,6 +656,12 @@ export default function TiendaFoxDrop() {
     const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
     
+    // Si el producto es de importación CJ Dropshipping recién dado de alta, solo mostrarlo a Mario y Nydia
+    const isCjProduct = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+    if (isCjProduct && !isPrivilegedPartner) {
+      return false;
+    }
+
     // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
     const matchStock = p.stock > 0 || p.isSpecialOrder;
 
@@ -3795,7 +3833,7 @@ export default function TiendaFoxDrop() {
 
                 <div className="space-y-3">
                   {/* Opción Mercado Pago (Tarjetas, OXXO, Saldo) */}
-                  {checkoutSettings.mercadopago?.enabled !== false && (
+                  {checkoutSettings.mercadopago?.enabled !== false && isPrivilegedPartner && (
                     <div
                       onClick={() => setPaymentMethod('mercadopago')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -4687,7 +4725,8 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* BADGES OFICIALES DE PAGO CON TARJETA / MERCADO PAGO / OXXO */}
+                  {/* BADGES OFICIALES DE PAGO CON TARJETA / MERCADO PAGO / OXXO (Solo visible para Mario y Nydia durante pruebas) */}
+                  {isPrivilegedPartner && (
                   <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px] text-slate-600">
                     <span className="font-bold flex items-center gap-1 text-slate-700">
                       💳 Pagos Seguros:
@@ -4699,6 +4738,7 @@ export default function TiendaFoxDrop() {
                       <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
                     </div>
                   </div>
+                  )}
 
                   {/* BOTÓN 1-CLIC: COMPRAR AHORA (ESTILO MERCADO LIBRE / AMAZON) */}
                   {selectedProduct.stock > 0 && (
