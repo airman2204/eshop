@@ -93,15 +93,28 @@ export async function POST(req: NextRequest) {
         public_price: Number(importProduct.publicPrice) || Math.round((Number(importProduct.baseCostMxn) || 100) * 1.8),
         stock: 999, // Dropshipping tiene inventario virtual continuo en fábrica
         images,
-        discount_percent: 0,
         is_active: true,
       };
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("products")
         .insert([insertRecord])
         .select("*, categories(id, name, slug, icon)")
         .single();
+
+      // Si falla por columnas adicionales no migradas en Supabase (ej. discount_percent, combo, etc.)
+      if (error && (error.message?.includes("discount_percent") || error.message?.includes("combo"))) {
+        delete insertRecord.discount_percent;
+        delete insertRecord.is_combo;
+        delete insertRecord.combo_product_ids;
+        const retry = await supabase
+          .from("products")
+          .insert([insertRecord])
+          .select("*, categories(id, name, slug, icon)")
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error("Error insertando producto CJ:", error);
