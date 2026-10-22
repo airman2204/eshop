@@ -4118,7 +4118,7 @@ export default function TiendaFoxDrop() {
                 <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="text-xs text-gray-600 space-y-1">
                     <div>Artículos ({cartItemCount}): <strong className="text-gray-900 font-bold">${cartSubtotal.toFixed(0)} MXN</strong></div>
-                    <div>Costo de entrega: <strong className="text-gray-900 font-bold">{shippingFee === 0 ? 'Sin costo ($0.00)' : `$${shippingFee.toFixed(0)} MXN`}</strong></div>
+                    <div>Costo de entrega: <strong className="text-gray-900 font-bold">{shippingFee === 0 ? <span className="text-emerald-600 font-black">Gratis</span> : `$${shippingFee.toFixed(0)} MXN`}</strong></div>
                     <div className="text-sm font-black text-gray-900 pt-1">
                       Total a pagar: <span className="text-[#DF7F2D] text-lg">${cartTotal.toFixed(0)} MXN</span>
                     </div>
@@ -4154,15 +4154,8 @@ export default function TiendaFoxDrop() {
                 <div>
                   <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
                     <CreditCard className="w-6 h-6 text-[#0F3E36]" />
-                    <span>Método de Pago</span>
+                    <span>Medios de pago</span>
                   </h2>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {isMixedCart
-                      ? 'Tu pedido combina artículos de Boutique con Importación Internacional. Puedes pagar el total completo de ambos envíos en una sola exhibición con tu tarjeta de crédito/débito o cuenta de Mercado Pago.'
-                      : hasImportItemsInCart 
-                      ? 'Tu pedido incluye artículos de importación directa a domicilio. Para estos productos el pago se procesa de forma segura mediante Tarjeta de Crédito/Débito o Mercado Pago.'
-                      : 'Selecciona cómo deseas realizar tu pago para procesar la orden de inmediato.'}
-                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -4171,59 +4164,105 @@ export default function TiendaFoxDrop() {
                     <div
                       onClick={() => setPaymentMethod('mercadopago')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
-                        paymentMethod === 'mercadopago' ? 'border-sky-500 bg-sky-50/40' : 'border-gray-200 hover:border-gray-300 bg-white'
+                        paymentMethod === 'mercadopago' ? 'border-[#009EE3] bg-[#009EE3]/5' : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
-                        paymentMethod === 'mercadopago' ? 'border-sky-500 bg-sky-500' : 'border-gray-300'
+                        paymentMethod === 'mercadopago' ? 'border-[#009EE3] bg-[#009EE3]' : 'border-gray-300'
                       }`}
                       >
                         {paymentMethod === 'mercadopago' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
-                            <span>Tarjeta de Crédito / Débito o Mercado Pago</span>
+                      <div className="flex-1 space-y-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
+                            <span>Tarjeta de Crédito / Débito</span>
                           </span>
-                          <span className="text-[10px] text-sky-800 bg-sky-100 font-bold px-2 py-0.5 rounded-full">
-                            {checkoutSettings.mercadopago?.sandbox !== false ? 'Modo Pruebas' : 'Inmediato'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Paga seguro con Visa, Mastercard, AMEX o saldo de Mercado Pago con acreditación inmediata.
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 pt-1 border-t border-gray-100 text-[10px] font-bold text-gray-600">
-                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">💳 Visa / Mastercard / AMEX</span>
-                          <span className="px-1.5 py-0.5 rounded bg-sky-100 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
+
+                          {/* Logos Oficiales: Mercado Pago, Visa, Mastercard, AMEX */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Logo Mercado Pago */}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#009EE3]/10 border border-[#009EE3]/30 text-[#009EE3] font-bold text-[10px]">
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16.5v-1.63c2.39-.37 4-2.18 4-4.87 0-2.85-2.02-4.14-4.52-4.75-2.14-.52-2.73-.97-2.73-1.84 0-.82.68-1.46 2.05-1.46 1.34 0 2.21.57 2.37 1.73l1.83-.55c-.32-1.64-1.6-2.67-3.4-2.92V3.5h-2v1.65c-2.03.35-3.65 1.93-3.65 4.39 0 2.74 1.83 4.09 4.41 4.71 2.25.54 2.84 1.14 2.84 2.01 0 .99-.87 1.63-2.25 1.63-1.63 0-2.59-.76-2.8-2.05l-1.9.52c.38 1.88 1.81 2.99 3.75 3.27V18.5h2z"/>
+                              </svg>
+                              <span>Mercado Pago</span>
+                            </span>
+
+                            {/* Badge Visa */}
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-[#1A1F71] text-white font-black text-[9px] tracking-wider italic">
+                              VISA
+                            </span>
+
+                            {/* Badge Mastercard */}
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700">
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#EB001B] -mr-1 inline-block opacity-95"></span>
+                              <span className="w-2.5 h-2.5 rounded-full bg-[#F79E1B] inline-block opacity-95"></span>
+                            </span>
+
+                            {/* Badge AMEX */}
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-[#006FCF] text-white font-black text-[9px] tracking-tighter">
+                              AMEX
+                            </span>
+                          </div>
                         </div>
 
-                        {/* TARJETAS GUARDADAS VINCULADAS EN EL PERFIL */}
-                        {fullProfile?.cards && fullProfile.cards.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-sky-150/70 space-y-1.5">
-                            <span className="text-[11px] font-extrabold text-sky-950 block">
-                              💳 Tarjetas guardadas en tu cuenta:
-                            </span>
-                            <div className="flex flex-wrap gap-2">
-                              {fullProfile.cards.map((c: any) => (
-                                <div
-                                  key={c.id}
-                                  className="bg-white border border-sky-300 shadow-2xs rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-sky-950"
-                                >
-                                  <span className="font-black uppercase tracking-wider text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded">
-                                    {c.brand}
-                                  </span>
-                                  <span className="font-mono font-bold">•••• {c.last4}</span>
-                                  <span className="text-[10px] text-gray-400">({c.expMonth}/{c.expYear})</span>
-                                  {c.isDefault && (
-                                    <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                      Predeterminada
+                        {/* TARJETAS GUARDADAS Y BOTÓN AGREGAR OTRA TARJETA */}
+                        <div className="pt-2 border-t border-gray-100 space-y-2">
+                          {fullProfile?.cards && fullProfile.cards.length > 0 ? (
+                            <div className="space-y-2">
+                              <span className="text-[11px] font-bold text-gray-700 block">
+                                Tarjeta seleccionada para este cobro:
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {fullProfile.cards.map((c: any) => (
+                                  <div
+                                    key={c.id}
+                                    className="bg-white border-2 border-sky-400 shadow-2xs rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-sky-950 font-medium"
+                                  >
+                                    <span className="font-black uppercase tracking-wider text-[9px] bg-slate-900 text-white px-1.5 py-0.5 rounded">
+                                      {c.brand}
                                     </span>
-                                  )}
-                                </div>
-                              ))}
+                                    <span className="font-mono font-bold">•••• {c.last4}</span>
+                                    <span className="text-[10px] text-gray-400">({c.expMonth}/{c.expYear})</span>
+                                    {c.isDefault && (
+                                      <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                        Predeterminada
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowCardModal(true);
+                                  }}
+                                  className="text-xs font-bold text-[#009EE3] hover:text-[#007EB5] hover:underline flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#009EE3]/50 hover:border-[#009EE3] bg-sky-50/50 cursor-pointer transition"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Agregar otra tarjeta</span>
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-xs text-gray-500">Paga con cualquier tarjeta de crédito o débito mediante Mercado Pago</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCardModal(true);
+                                }}
+                                className="text-xs font-bold text-[#009EE3] hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>+ Agregar tarjeta</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -4435,14 +4474,14 @@ export default function TiendaFoxDrop() {
                         Cupón {appliedCoupon.code}: -${couponDiscountAmount.toFixed(0)} MXN
                       </div>
                     )}
-                    <div>Entrega: <strong className="text-gray-900">{shippingFee === 0 ? 'Sin costo ($0.00)' : `$${shippingFee.toFixed(0)} MXN`}</strong></div>
+                    <div>Entrega: <strong className="text-gray-900">{shippingFee === 0 ? <span className="text-emerald-600 font-black">Gratis</span> : `$${shippingFee.toFixed(0)} MXN`}</strong></div>
                     <div className="text-sm font-black text-gray-900 pt-1">
                       Total a pagar: <span className="text-2xl font-black text-[#DF7F2D]">${cartTotal.toFixed(0)} MXN</span>
                     </div>
                   </div>
 
-                  {/* BOTÓN CON LLENADO PROGRESIVO ANTICLICKS ACCIDENTALES (HOLD TO CONFIRM) */}
-                  <div className="flex flex-col items-center sm:items-end gap-1.5 select-none">
+                  {/* BOTÓN CON LLENADO PROGRESIVO ANTICLICKS ACCIDENTALES (HOLD TO CONFIRM) ESTILO MERCADO LIBRE */}
+                  <div className="flex flex-col items-center sm:items-end select-none">
                     <button
                       type="button"
                       onMouseDown={() => {
@@ -4450,7 +4489,7 @@ export default function TiendaFoxDrop() {
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
                         const startTime = Date.now();
-                        const duration = 1200; // 1.2 segundos para completarse
+                        const duration = 1100;
                         holdIntervalRef.current = setInterval(() => {
                           const elapsed = Date.now() - startTime;
                           const progress = Math.min(100, Math.round((elapsed / duration) * 100));
@@ -4477,7 +4516,7 @@ export default function TiendaFoxDrop() {
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
                         const startTime = Date.now();
-                        const duration = 1200;
+                        const duration = 1100;
                         holdIntervalRef.current = setInterval(() => {
                           const elapsed = Date.now() - startTime;
                           const progress = Math.min(100, Math.round((elapsed / duration) * 100));
@@ -4494,37 +4533,31 @@ export default function TiendaFoxDrop() {
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
                       }}
-                      className="relative overflow-hidden w-full sm:w-auto bg-[#0F3E36] text-white font-black px-8 py-4 rounded-2xl text-xs sm:text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 select-none"
+                      className="relative overflow-hidden w-full sm:w-auto bg-[#3483FA] hover:bg-[#2968C8] text-white font-bold px-10 py-3.5 rounded-xl text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 select-none tracking-tight"
                     >
                       {/* Barra de progreso de llenado que crece hacia la derecha */}
                       <div
-                        className="absolute inset-y-0 left-0 bg-[#DF7F2D] transition-all ease-linear"
+                        className="absolute inset-y-0 left-0 bg-[#1F62C7] transition-all ease-linear"
                         style={{ width: `${holdProgress}%` }}
                       />
 
                       {/* Contenido del botón */}
-                      <span className="relative z-10 flex items-center gap-2">
+                      <span className="relative z-10 flex items-center gap-2 font-bold text-sm">
                         {holdProgress >= 100 ? (
                           <>
-                            <span>¡Confirmando Pedido...!</span>
+                            <span>Procesando...</span>
                             <Loader2 className="w-4 h-4 animate-spin" />
                           </>
                         ) : isHolding ? (
                           <>
-                            <span>Mantén presionado ({holdProgress}%)</span>
+                            <span>Confirmando ({holdProgress}%)</span>
                             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                           </>
                         ) : (
-                          <>
-                            <span>Mantén presionado para Pagar</span>
-                            <CheckCircle2 className="w-4 h-4" />
-                          </>
+                          <span>Pagar y finalizar</span>
                         )}
                       </span>
                     </button>
-                    <span className="text-[10px] text-gray-500 font-medium">
-                      🛡️ Mantén presionado 1 segundo para evitar clics accidentales
-                    </span>
                   </div>
                 </div>
               </div>
