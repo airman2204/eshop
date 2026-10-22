@@ -40,7 +40,9 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   allowCashOnDelivery: true,
   mercadopago: {
     enabled: true,
-    sandbox: true,
+    sandbox: false,
+    publicKey: 'APP_USR-071ae951-fa96-4df5-a281-bea27ac4d544',
+    accessToken: 'APP_USR-2696735870200983-102212-37956d25b0de4da0271830b00d2682e6-3786813278',
   },
 };
 
