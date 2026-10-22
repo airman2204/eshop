@@ -38,6 +38,10 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
     showCard: true,
   },
   allowCashOnDelivery: true,
+  mercadopago: {
+    enabled: true,
+    sandbox: true,
+  },
 };
 
 import { fetchAdminApi } from './adminAuth';

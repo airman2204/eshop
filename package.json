@@ -15,6 +15,7 @@
     "html-to-image": "^1.11.13",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.48.0",
+    "mercadopago": "^3.6.1",
     "msedge-tts": "^2.0.9",
     "next": "16.3.6",
     "react": "19.2.8",

@@ -464,7 +464,8 @@ export default function TiendaFoxDrop() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash'>('spei');
+  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash' | 'mercadopago'>('mercadopago');
+  const [redirectingToMp, setRedirectingToMp] = useState(false);
   const [clabeCopied, setClabeCopied] = useState(false);
   const [cardCopied, setCardCopied] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
@@ -1261,6 +1262,11 @@ export default function TiendaFoxDrop() {
 
   const handleFinishOrder = async () => {
     try {
+      // 1. Si el método es Mercado Pago, procesamos la orden y redirigimos a la pasarela
+      if (paymentMethod === 'mercadopago') {
+        setRedirectingToMp(true);
+      }
+
       const created = await createOrderInDb({
         userId: user?.id,
         clientName: user?.name || '',
@@ -1270,7 +1276,7 @@ export default function TiendaFoxDrop() {
         shippingCost: shippingFee,
         subtotal: cartSubtotal,
         total: cartTotal,
-        paymentMethod: paymentMethod === 'cash' ? 'cash' : 'spei',
+        paymentMethod: paymentMethod === 'cash' ? 'cash' : (paymentMethod === 'mercadopago' ? 'mercadopago' : 'spei'),
         shippingAddress: isPersonalDelivery ? {
           street: 'Entrega personal / Acordar con vendedor',
           zip: shippingAddress.zip || '',
@@ -1324,6 +1330,39 @@ export default function TiendaFoxDrop() {
           quantity: i.quantity,
         })),
       });
+
+      // Si el cliente eligió Mercado Pago, invocamos la preferencia y redirigimos
+      if (paymentMethod === 'mercadopago') {
+        try {
+          const mpRes = await fetch('/api/mercadopago/preference', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderNumber: created.orderNumber,
+              items: cart,
+              total: cartTotal,
+              shippingCost: shippingFee,
+              clientName: user?.name || shippingAddress.street || 'Cliente',
+              clientEmail: user?.email,
+              clientPhone: user?.phone,
+            }),
+          });
+          const mpData = await mpRes.json();
+          if (mpRes.ok && mpData.initPoint) {
+            // Limpiar carrito local
+            localStorage.removeItem('foxdrop_cart_id');
+            // Redirigir al Checkout Pro oficial de Mercado Pago
+            window.location.href = mpData.initPoint;
+            return;
+          } else {
+            alert(mpData.error || 'Error al conectar con Mercado Pago. Puedes pagar por SPEI o Efectivo.');
+            setRedirectingToMp(false);
+          }
+        } catch (mpErr: any) {
+          alert('Error de conexión con Mercado Pago: ' + (mpErr.message || 'Intenta de nuevo'));
+          setRedirectingToMp(false);
+        }
+      }
     } catch (err) {
       console.warn("Fallo guardando pedido en BD, usando id de contingencia:", err);
       const fallbackId = `FX-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -3755,6 +3794,41 @@ export default function TiendaFoxDrop() {
                 </div>
 
                 <div className="space-y-3">
+                  {/* Opción Mercado Pago (Tarjetas, OXXO, Saldo) */}
+                  {checkoutSettings.mercadopago?.enabled !== false && (
+                    <div
+                      onClick={() => setPaymentMethod('mercadopago')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
+                        paymentMethod === 'mercadopago' ? 'border-sky-500 bg-sky-50/40' : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                        paymentMethod === 'mercadopago' ? 'border-sky-500 bg-sky-500' : 'border-gray-300'
+                      }`}
+                      >
+                        {paymentMethod === 'mercadopago' && <div className="w-2 h-2 bg-white rounded-full" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                            <span>Tarjeta de Crédito / Débito, OXXO o Mercado Pago</span>
+                          </span>
+                          <span className="text-[10px] text-sky-800 bg-sky-100 font-bold px-2 py-0.5 rounded-full">
+                            {checkoutSettings.mercadopago?.sandbox !== false ? 'Modo Pruebas' : 'Inmediato'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Paga seguro con Visa, Mastercard, AMEX, efectivo en OXXO o saldo Mercado Pago.
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 pt-1 border-t border-gray-100 text-[10px] font-bold text-gray-600">
+                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">💳 Tarjetas</span>
+                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">🏪 OXXO</span>
+                          <span className="px-1.5 py-0.5 rounded bg-sky-100 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Opción SPEI */}
                   <div
                     onClick={() => setPaymentMethod('spei')}

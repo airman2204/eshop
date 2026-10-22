@@ -7391,6 +7391,123 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
             </div>
 
+            {/* SECCIÓN PASARELA MERCADO PAGO */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600 font-black text-xs">
+                    MP
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800">Mercado Pago (Checkout Pro)</h3>
+                    <p className="text-[11px] text-slate-500">
+                      Permite a los clientes pagar con Tarjetas de Crédito/Débito, OXXO y saldo de Mercado Pago.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={checkoutSettings.mercadopago?.enabled !== false}
+                    onChange={e => setCheckoutSettings({
+                      ...checkoutSettings,
+                      mercadopago: {
+                        enabled: e.target.checked,
+                        sandbox: checkoutSettings.mercadopago?.sandbox ?? true,
+                        accessToken: checkoutSettings.mercadopago?.accessToken || '',
+                        publicKey: checkoutSettings.mercadopago?.publicKey || '',
+                      }
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                </label>
+              </div>
+
+              {checkoutSettings.mercadopago?.enabled !== false && (
+                <div className="space-y-3 pt-2 border-t border-slate-100 text-xs">
+                  <div className="p-3 bg-sky-50 border border-sky-150 rounded-xl flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-sky-950 block text-xs">Modo de Operación:</span>
+                      <span className="text-[11px] text-sky-700">
+                        {checkoutSettings.mercadopago?.sandbox !== false
+                          ? '🧪 Modo Sandbox (Pruebas con tarjetas de prueba sin dinero real)'
+                          : '🚀 Modo Producción (Cobros reales)'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutSettings({
+                        ...checkoutSettings,
+                        mercadopago: {
+                          enabled: true,
+                          sandbox: !(checkoutSettings.mercadopago?.sandbox !== false),
+                          accessToken: checkoutSettings.mercadopago?.accessToken || '',
+                          publicKey: checkoutSettings.mercadopago?.publicKey || '',
+                        }
+                      })}
+                      className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer border ${
+                        checkoutSettings.mercadopago?.sandbox !== false
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-emerald-600 text-white border-emerald-600'
+                      }`}
+                    >
+                      {checkoutSettings.mercadopago?.sandbox !== false ? '🧪 Modo Pruebas Activo' : '🚀 Producción Activa'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Access Token ({checkoutSettings.mercadopago?.sandbox !== false ? 'TEST-...' : 'APP_USR-...'})
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="TEST-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                        value={checkoutSettings.mercadopago?.accessToken || ''}
+                        onChange={e => setCheckoutSettings({
+                          ...checkoutSettings,
+                          mercadopago: {
+                            enabled: true,
+                            sandbox: checkoutSettings.mercadopago?.sandbox ?? true,
+                            publicKey: checkoutSettings.mercadopago?.publicKey || '',
+                            accessToken: e.target.value.trim(),
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Public Key ({checkoutSettings.mercadopago?.sandbox !== false ? 'TEST-...' : 'APP_USR-...'})
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="TEST-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                        value={checkoutSettings.mercadopago?.publicKey || ''}
+                        onChange={e => setCheckoutSettings({
+                          ...checkoutSettings,
+                          mercadopago: {
+                            enabled: true,
+                            sandbox: checkoutSettings.mercadopago?.sandbox ?? true,
+                            accessToken: checkoutSettings.mercadopago?.accessToken || '',
+                            publicKey: e.target.value.trim(),
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    💡 Si dejas estos campos vacíos, el sistema usará las variables de entorno de tu servidor Next.js.
+                  </p>
+                </div>
+              )}
+            </div>
+
 
 
             {/* Botón flotante/inferior de guardar */}

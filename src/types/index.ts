@@ -253,6 +253,12 @@ export interface CheckoutSettings {
   bankTransfer: BankTransferConfig;
   allowCashOnDelivery: boolean;
   skydropxApiKey?: string;
+  mercadopago?: {
+    enabled: boolean;
+    sandbox: boolean;
+    publicKey?: string;
+    accessToken?: string;
+  };
 }
 
 export interface AgentActionExecution {
