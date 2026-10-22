@@ -3921,7 +3921,7 @@ export default function TiendaFoxDrop() {
                         </div>
                       </div>
                       <p className="text-[11.5px] text-slate-600 leading-relaxed pt-1">
-                        📦 Al despachar tu pedido desde el almacén central, recibirás en tu cuenta y por correo tu número de guía internacional con seguimiento continuo en tiempo real hasta la entrega en tu domicilio. No hay entrega personal disponible para este catálogo.
+                        📦 <strong>Guía y seguimiento garantizado:</strong> Una vez despachado tu pedido, recibirás tu número de guía de seguimiento por correo electrónico y podrás monitorear el estatus en tiempo real en todo momento desde el apartado de <strong>Órdenes en proceso</strong> en tu cuenta.
                       </p>
                     </div>
                   </div>
@@ -4459,7 +4459,14 @@ export default function TiendaFoxDrop() {
                       <div key={idx} className="p-4 flex items-center justify-between gap-4 bg-white">
                         <div className="flex items-center gap-3">
                           {item.product.images?.[0] ? (
-                            <img src={item.product.images[0]} alt={item.product.title} className="w-12 h-12 object-contain bg-gray-50 rounded-xl p-1 border border-gray-200" />
+                            <img 
+                              src={getSafeProductImage(item.product.images[0])} 
+                              alt={item.product.title} 
+                              className="w-12 h-12 object-contain bg-gray-50 rounded-xl p-1 border border-gray-200" 
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
+                              }}
+                            />
                           ) : (
                             <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-lg">📦</div>
                           )}
@@ -5273,7 +5280,14 @@ export default function TiendaFoxDrop() {
                   <div className="space-y-3">
                     {cart.map(item => (
                       <div key={item.product.id} className="flex gap-3 bg-gray-50 p-3 rounded-xl border border-gray-200 text-xs">
-                        <img src={item.product.images[0]} alt={item.product.title} className="w-14 h-14 object-contain bg-white rounded-lg p-1 border border-gray-200" />
+                        <img 
+                          src={getSafeProductImage(item.product.images?.[0])} 
+                          alt={item.product.title} 
+                          className="w-14 h-14 object-contain bg-white rounded-lg p-1 border border-gray-200 shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
+                          }}
+                        />
                         <div className="flex-1 flex flex-col justify-between">
                           <p className="font-bold text-gray-800 line-clamp-1">{item.product.title}</p>
                           <p className="font-black text-gray-900 text-sm">${(item.product.publicPrice * item.quantity).toFixed(0)} MXN</p>
@@ -5323,9 +5337,9 @@ export default function TiendaFoxDrop() {
 
                     <button
                       onClick={handleCheckoutInit}
-                      className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow cursor-pointer"
+                      className="w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow cursor-pointer tracking-wide"
                     >
-                      <span>Ir a Pagar en Pantalla Completa</span>
+                      <span>Pagar</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
