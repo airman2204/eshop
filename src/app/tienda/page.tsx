@@ -5544,6 +5544,41 @@ export default function TiendaFoxDrop() {
                 </div>
               </div>
 
+              {/* Guía de Rastreo y Paquetería si fue despachado */}
+              {(order.tracking_number || order.trackingNumber) && (
+                <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-sky-950 flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-sky-600" /> Guía de Rastreo Asignada
+                    </span>
+                    <span className="text-[10px] bg-sky-200 text-sky-800 font-bold px-2 py-0.5 rounded-full">
+                      Paquetería Nacional / Express
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-sky-150 flex items-center justify-between">
+                    <span className="font-mono font-black text-sm text-sky-900 tracking-wider">
+                      {order.tracking_number || order.trackingNumber}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tr = order.tracking_number || order.trackingNumber;
+                        if (navigator?.clipboard && tr) {
+                          navigator.clipboard.writeText(tr);
+                          alert("Número de guía copiado al portapapeles: " + tr);
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
+                    >
+                      Copiar Guía
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-sky-700">
+                    Puedes rastrear este número directamente en FedEx, Estafeta o la paquetería correspondiente.
+                  </p>
+                </div>
+              )}
+
               {/* Total y Datos de Entrega */}
               <div className="bg-[#FAF6F0] p-4 rounded-xl border border-gray-200 space-y-1.5 text-xs">
                 <div className="flex justify-between text-gray-600">
