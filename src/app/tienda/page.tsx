@@ -2426,7 +2426,7 @@ export default function TiendaFoxDrop() {
                     setModalQuantity(1);
                     setSelectedProduct(product);
                   }}
-                  className={`bg-white rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5 ${isImportItem ? "border-2 border-indigo-200/90 shadow-xs ring-1 ring-indigo-100/50" : "border border-gray-150"}`}
+                  className={`bg-white rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-pointer group relative border ${isImportItem ? "border-indigo-200/90 shadow-2xs" : "border-gray-200/80 shadow-2xs"}`}
                 >
                   {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
@@ -2460,86 +2460,105 @@ export default function TiendaFoxDrop() {
                     </button>
                   </div>
 
-                  {/* IMAGEN DE PRODUCTO CON EFECTO SUAVE EN CONTENEDOR CREMA/MENTA */}
-                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
+                  {/* IMAGEN DE PRODUCTO SOBRE FONDO BLANCO / GRIS ULTRA LIMPIO ESTILO AMAZON */}
+                  <div className="aspect-square bg-[#F8F9FA] rounded-xl flex items-center justify-center p-3 overflow-hidden group-hover:bg-[#F2F4F7] transition relative">
                     <img
                       src={getSafeProductImage(product.images?.[0])}
                       alt={product.title}
-                      className="max-h-full w-auto object-contain group-hover:scale-108 transition-transform duration-300"
+                      className="max-h-full w-auto object-contain group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
                       }}
                     />
 
-                    {/* Pleca de logística al pie de la foto para que NUNCA se encime con los badges de descuento / stock */}
-                    <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex justify-center">
+                    {/* Pleca de logística sutil en la parte inferior izquierda */}
+                    <div className="absolute bottom-1.5 left-1.5 pointer-events-none">
                       {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
-                        <span className="bg-indigo-950/90 backdrop-blur-xs text-indigo-100 text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-sm border border-indigo-300/30 flex items-center gap-1">
-                          ✈️ Internacional (10-15 días)
+                        <span className="bg-indigo-950/85 backdrop-blur-xs text-indigo-100 text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-xs border border-indigo-400/20">
+                          ✈️ Internacional
                         </span>
                       ) : (
-                        <span className="bg-[#072520]/90 backdrop-blur-xs text-emerald-200 text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-sm border border-emerald-400/30 flex items-center gap-1">
-                          ⚡ En Almacén • Envío 24-48 hrs
+                        <span className="bg-[#072520]/85 backdrop-blur-xs text-emerald-200 text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-xs border border-emerald-400/20">
+                          ⚡ 24-48 hrs
                         </span>
                       )}
+                    </div>
+
+                    {/* Botón amarillo '+' circular flotante como en Amazon */}
+                    <div className="absolute bottom-1.5 right-1.5 pointer-events-auto">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalQuantity(1);
+                          setSelectedProduct(product);
+                        }}
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFD814] hover:bg-[#F7CA00] active:scale-95 text-gray-900 flex items-center justify-center shadow-md transition cursor-pointer border border-[#FCD200]"
+                        title="Ver producto y comprar"
+                      >
+                        <Plus className="w-4 h-4 stroke-[3]" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* DETALLES DE PRECIO Y VALORACIÓN */}
-                  <div className="space-y-1.5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-gray-900 line-clamp-1 leading-snug group-hover:text-[#0F3E36] transition">
-                        {product.title}
-                      </h4>
-                      {product.description && (
-                        <p className="text-[10px] text-gray-400 line-clamp-1 font-medium mt-0.5">
-                          {product.description}
-                        </p>
+                  {/* DETALLES DE PRECIO Y PROMOCIÓN ESTILO AMAZON */}
+                  <div className="pt-2 flex-1 flex flex-col justify-between">
+                    {/* Badge de Promoción / Descuento */}
+                    <div className="flex items-center gap-1.5 flex-wrap min-h-[20px]">
+                      {hasDiscount ? (
+                        <>
+                          <span className="bg-[#CC0C39] text-white text-[10.5px] font-bold px-1.5 py-0.5 rounded-xs leading-none">
+                            -{product.discountPercent}%
+                          </span>
+                          <span className="text-[#CC0C39] text-[11px] font-bold">
+                            Promoción
+                          </span>
+                        </>
+                      ) : product.stock === 1 ? (
+                        <span className="text-amber-700 text-[11px] font-bold">
+                          Última pieza
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 text-[11px] font-semibold">
+                          Disponible
+                        </span>
                       )}
                     </div>
 
-                    <div className="pt-1.5 space-y-1">
-                      {/* PRECIO ACTUAL Y VALOR DE REFERENCIA ESTILO TJ MAXX (COMPARE AT) */}
-                      <div>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
-                            ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
-                          </span>
-                          {hasDiscount ? (
-                            <span className="text-[11px] text-gray-400 line-through font-medium">
-                              ${originalPrice.toFixed(0)}
-                            </span>
-                          ) : null}
+                    {/* Precios con superíndice estilo catálogo Amazon */}
+                    <div className="pt-1">
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <div className="flex items-start text-gray-950 font-bold leading-none">
+                          <span className="text-xs pt-0.5">$</span>
+                          <span className="text-xl sm:text-2xl font-black tracking-tight">{Math.floor(product.publicPrice)}</span>
+                          <span className="text-[10px] pt-0.5 font-bold">00</span>
                         </div>
                         {hasDiscount && (
-                          <span className="text-[10px] font-bold text-emerald-700 block">
-                            Ahorras ${(originalPrice - product.publicPrice).toFixed(0)} MXN
+                          <span className="text-[11px] text-gray-500 line-through">
+                            Precio de lista: ${originalPrice.toFixed(0)}
                           </span>
                         )}
                       </div>
+                    </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-0.5">
-                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                          {product.category}
-                        </span>
-                        <div className="flex items-center gap-1 font-bold text-gray-700">
-                          <span className="text-amber-400 text-xs">★</span>
-                          <span>4.8</span>
-                        </div>
+                    {/* Título del producto limpio en 2 líneas */}
+                    <div className="pt-1.5">
+                      <h4 className="text-xs sm:text-[13px] font-medium text-gray-900 line-clamp-2 leading-snug group-hover:text-[#0F3E36] transition">
+                        {product.title}
+                      </h4>
+                    </div>
+
+                    {/* Categoría / Marca enlace sutil */}
+                    <div className="pt-1.5 flex items-center justify-between text-[11px]">
+                      <span className="text-[10px] text-emerald-800 hover:underline font-medium truncate">
+                        {product.brand || product.category}
+                      </span>
+                      <div className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px] shrink-0">
+                        <span>★</span>
+                        <span className="text-gray-700">4.8</span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* ACCIÓN PRINCIPAL: AGREGAR AL CARRITO ESTILO E-COMMERCE MODERNO */}
-                  <div className="pt-3">
-                    <button
-                      onClick={(e) => addToCart(product, e)}
-                      className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-2.5 rounded-xl text-xs transition duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-xs group-hover:shadow-md"
-                    >
-                      <ShoppingCart className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Agregar al Carrito</span>
-                    </button>
                   </div>
                 </div>
               );
