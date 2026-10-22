@@ -1530,12 +1530,14 @@ export default function TiendaFoxDrop() {
     setCart([]);
   };
 
+  const cartHasImportItems = cart.some(i => (i.product.sku && i.product.sku.startsWith('CJ')) || (i.product.brand && i.product.brand.toLowerCase().includes('cj dropshipping')));
   const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
   const activeShippingMethod = checkoutSettings.shippingMethods.find(m => m.id === selectedShippingId && m.enabled)
     || checkoutSettings.shippingMethods.find(m => m.enabled)
     || checkoutSettings.shippingMethods[0];
-  const isPersonalDelivery = activeShippingMethod ? !activeShippingMethod.requiresAddress : true;
-  const shippingFee = activeShippingMethod ? activeShippingMethod.price : 0;
+  // Si contiene productos de importación, el envío es directo a domicilio (requiere dirección obligatoria) y es sin costo adicional (flete ya incluido)
+  const isPersonalDelivery = cartHasImportItems ? false : (activeShippingMethod ? !activeShippingMethod.requiresAddress : true);
+  const shippingFee = cartHasImportItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
   
   // Descuento por cupón activo
   const couponDiscountAmount = appliedCoupon ? Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100) : 0;
@@ -3791,67 +3793,113 @@ export default function TiendaFoxDrop() {
             {/* PASO 1: SELECCIÓN DE FORMA DE ENTREGA */}
             {checkoutStep === 'shipping' && (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
-                <div>
-                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                    <Truck className="w-6 h-6 text-[#DF7F2D]" />
-                    <span>Selecciona tu Método de Entrega</span>
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Elige si deseas coordinar una entrega personal sin costo o envío paquetería a tu domicilio.
-                  </p>
-                </div>
+                {cartHasImportItems ? (
+                  /* VISTA EXCLUSIVA: ENTREGA INTERNACIONAL DIRECTA A DOMICILIO CON ENVÍO GRATIS YA INCLUIDO */
+                  <div className="space-y-4">
+                    <div>
+                      <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                        <span className="text-2xl">✈️</span>
+                        <span>Envío Internacional Directo a Domicilio</span>
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Tu pedido contiene artículos de importación directa de fábrica a tu puerta en México.
+                      </p>
+                    </div>
 
-                {/* Métodos de Entrega Activos */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {checkoutSettings.shippingMethods
-                    .filter(m => m.enabled)
-                    .map((method) => {
-                      const isSelected = selectedShippingId === method.id;
-                      return (
-                        <div
-                          key={method.id}
-                          onClick={() => {
-                            setSelectedShippingId(method.id);
-                            setAddressError(null);
-                          }}
-                          className={`p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between space-y-3 ${
-                            isSelected
-                              ? 'border-[#0F3E36] bg-[#EDF5F7]/50 shadow-xs'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                isSelected ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
-                              }`}>
-                                {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                              </div>
-                              <span className="font-extrabold text-sm text-gray-900">{method.name}</span>
-                            </div>
-                            <span className="font-black text-sm text-[#0F3E36]">
-                              {method.price === 0 ? 'Sin costo' : `$${method.price.toFixed(0)} MXN`}
+                    {/* Tarjeta de Paquetería Internacional con Envío Gratis */}
+                    <div className="p-5 rounded-2xl border-2 border-indigo-600/70 bg-gradient-to-r from-indigo-50/60 via-white to-indigo-50/30 shadow-xs space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-sm text-slate-900 block">
+                              Paquetería Internacional con Guía de Rastreo
+                            </span>
+                            <span className="text-xs text-indigo-700 font-semibold block mt-0.5">
+                              ⚡ Tiempo estimado de entrega: 10 a 15 días hábiles
                             </span>
                           </div>
-
-                          <p className="text-xs text-gray-500 leading-relaxed">{method.description}</p>
-
-                          {!method.requiresAddress ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
-                              🤝 Entrega acordada (no requiere dirección)
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md self-start">
-                              📦 Envío a domicilio
-                            </span>
-                          )}
                         </div>
-                      );
-                    })}
-                </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            ¡Envío Gratis!
+                          </span>
+                          <span className="text-[10px] text-slate-400 block mt-1 font-medium">Incluido en el precio</span>
+                        </div>
+                      </div>
+                      <p className="text-[11.5px] text-slate-600 leading-relaxed pt-1">
+                        📦 Al despachar tu pedido desde el almacén central, recibirás en tu cuenta y por correo tu número de guía internacional con seguimiento continuo en tiempo real hasta la entrega en tu domicilio. No hay entrega personal disponible para este catálogo.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* VISTA TRADICIONAL PARA PRODUCTOS LOCALES DE BOUTIQUE */
+                  <>
+                    <div>
+                      <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                        <Truck className="w-6 h-6 text-[#DF7F2D]" />
+                        <span>Selecciona tu Método de Entrega</span>
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Elige si deseas coordinar una entrega personal sin costo o envío paquetería a tu domicilio.
+                      </p>
+                    </div>
 
-                {/* Aviso o Formulario de Dirección */}
-                {isPersonalDelivery ? (
+                    {/* Métodos de Entrega Activos */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {checkoutSettings.shippingMethods
+                        .filter(m => m.enabled)
+                        .map((method) => {
+                          const isSelected = selectedShippingId === method.id;
+                          return (
+                            <div
+                              key={method.id}
+                              onClick={() => {
+                                setSelectedShippingId(method.id);
+                                setAddressError(null);
+                              }}
+                              className={`p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between space-y-3 ${
+                                isSelected
+                                  ? 'border-[#0F3E36] bg-[#EDF5F7]/50 shadow-xs'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                    isSelected ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
+                                  }`}>
+                                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                  </div>
+                                  <span className="font-extrabold text-sm text-gray-900">{method.name}</span>
+                                </div>
+                                <span className="font-black text-sm text-[#0F3E36]">
+                                  {method.price === 0 ? 'Sin costo' : `${method.price.toFixed(0)} MXN`}
+                                </span>
+                              </div>
+
+                              <p className="text-xs text-gray-500 leading-relaxed">{method.description}</p>
+
+                              {!method.requiresAddress ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
+                                  🤝 Entrega acordada (no requiere dirección)
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md self-start">
+                                  📦 Envío a domicilio
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </>
+                )}
+
+                {/* Formulario de Dirección Física (Siempre obligatorio para Importación Directa, opcional para boutique según método) */}
+                {(!cartHasImportItems && isPersonalDelivery) ? (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-emerald-900 space-y-1.5">
                     <div className="flex items-center gap-2 font-black text-sm text-emerald-800">
                       <CheckCircle2 className="w-5 h-5 text-emerald-600" />
