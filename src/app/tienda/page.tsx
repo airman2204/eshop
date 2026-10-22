@@ -399,9 +399,27 @@ export default function TiendaFoxDrop() {
       const savedView = sessionStorage.getItem('foxdrop_current_view') as 'store' | 'account';
       if (savedView && ['store', 'account'].includes(savedView)) {
         setCurrentView(savedView);
-        if (savedView === 'account') {
-          loadFullProfileData();
+      }
+
+      const savedAccountTab = sessionStorage.getItem('foxdrop_account_tab') as any;
+      if (savedAccountTab && ['orders', 'favorites', 'addresses', 'cards', 'club', 'settings'].includes(savedAccountTab)) {
+        setAccountTab(savedAccountTab);
+      }
+
+      // Restaurar perfil completo desde cache local de inmediato para que nunca parpadee vacío
+      try {
+        const cachedProfile = localStorage.getItem('foxdrop_cached_full_profile');
+        if (cachedProfile) {
+          const parsed = JSON.parse(cachedProfile);
+          if (parsed && Array.isArray(parsed.cards)) {
+            setFullProfile(parsed);
+          }
         }
+      } catch {}
+
+      // Si estaba en la vista de cuenta, disparar sincronización de inmediato
+      if (savedView === 'account') {
+        loadFullProfileData();
       }
     } catch {}
   }, []);
@@ -423,6 +441,12 @@ export default function TiendaFoxDrop() {
       sessionStorage.setItem('foxdrop_current_view', currentView);
     } catch {}
   }, [currentView]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_account_tab', accountTab);
+    } catch {}
+  }, [accountTab]);
 
   // Guardar posición de scroll al desplazarse
   useEffect(() => {
@@ -1137,6 +1161,9 @@ export default function TiendaFoxDrop() {
       const p = await getUserFullProfile();
       if (p) {
         setFullProfile(p);
+        try {
+          localStorage.setItem('foxdrop_cached_full_profile', JSON.stringify(p));
+        } catch {}
         setEditName(p.fullName || '');
         setEditPhone(p.phone || '');
         loadUserAccount(p.phone || '', p.email);
@@ -1259,7 +1286,13 @@ export default function TiendaFoxDrop() {
       };
 
       const updated = await saveUserCard(cardPayload);
-      setFullProfile(prev => prev ? { ...prev, cards: updated } : null);
+      setFullProfile(prev => {
+        const next = prev ? { ...prev, cards: updated } : null;
+        if (next) {
+          try { localStorage.setItem('foxdrop_cached_full_profile', JSON.stringify(next)); } catch {}
+        }
+        return next;
+      });
       setCardSuccessNotice(`Tarjeta ${brand.toUpperCase()} terminada en •••• ${last4} guardada con éxito`);
       setTimeout(() => {
         setCardSuccessNotice(null);
