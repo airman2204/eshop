@@ -444,10 +444,10 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
-      // Si la orden ya fue enviada a CJ Dropshipping
+      // Si la orden ya fue emitida a despacho
       if (orderData.notes && orderData.notes.includes("[CJ-ORDER:")) {
         return NextResponse.json({
-          error: "Tu pedido ya fue confirmado y emitido a fábrica internacional en CJ Dropshipping. No es posible cancelarlo. Contacta a soporte por WhatsApp."
+          error: "Tu pedido ya fue confirmado y emitido para preparación y logística directa. No es posible cancelarlo directamente. Contacta a soporte por WhatsApp para cualquier aclaración."
         }, { status: 400 });
       }
 

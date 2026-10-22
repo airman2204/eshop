@@ -38,6 +38,19 @@ export async function POST(req: NextRequest) {
     // Generar folio de compra oficial FX-XXXXXX
     const orderNumber = `FX-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    // Mapear shipping_type a los valores admitidos por el CHECK constraint de la base de datos:
+    // ('puebla_local', 'agreed_pickup', 'national_shipping')
+    let validShippingType = "national_shipping";
+    let isInternational = false;
+    if (shippingType === "puebla_local") validShippingType = "puebla_local";
+    else if (shippingType === "agreed_pickup") validShippingType = "agreed_pickup";
+    else if (shippingType === "international_shipping") {
+      validShippingType = "national_shipping";
+      isInternational = true;
+    }
+
+    const orderNotes = isInternational ? "[IMPORTACION-INTERNACIONAL]" : null;
+
     // 1. Insertar orden principal con Service Role (omite RLS para permitir checkout tanto de invitados como registrados)
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -48,7 +61,7 @@ export async function POST(req: NextRequest) {
           client_name: clientName,
           client_phone: clientPhone,
           client_email: clientEmail || null,
-          shipping_type: shippingType || "standard",
+          shipping_type: validShippingType,
           pickup_point: pickupPoint || null,
           shipping_cost: Number(shippingCost) || 0,
           subtotal: Number(subtotal) || 0,
@@ -56,6 +69,7 @@ export async function POST(req: NextRequest) {
           payment_method: paymentMethod || "spei",
           payment_status: "pending",
           shipping_address: shippingAddress || null,
+          notes: orderNotes,
           status: "pending",
         },
       ])
