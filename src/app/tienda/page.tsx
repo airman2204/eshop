@@ -2535,7 +2535,7 @@ export default function TiendaFoxDrop() {
                       {/* Descripción breve del artículo */}
                       {product.description && (
                         <p className="text-[10.5px] text-gray-500 line-clamp-2 leading-snug mt-1 font-normal">
-                          {isImportItem ? 'Producto de importación directa a tu domicilio.' : product.description}
+                          {product.description || (isImportItem ? 'Producto de importación directa a tu domicilio.' : '')}
                         </p>
                       )}
                     </div>

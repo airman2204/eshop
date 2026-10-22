@@ -43,6 +43,7 @@ export async function getLiveExchangeRate(): Promise<number> {
 
 export interface NewProductInput {
   title: string;
+  description?: string;
   categoryName: string;
   brand?: string;
   baseCostUsd: number;

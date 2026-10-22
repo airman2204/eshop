@@ -131,6 +131,7 @@ export default function AdminCRM() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [newSku, setNewSku] = useState('');
   const [newCategory, setNewCategory] = useState('Cosmética');
   const [newBrand, setNewBrand] = useState('Bath & Body Works');
@@ -1961,6 +1962,7 @@ export default function AdminCRM() {
   const handleOpenEditProduct = (prod: Product) => {
     setEditingProductId(prod.id);
     setNewTitle(prod.title);
+    setNewDescription(prod.description || '');
     setNewSku(prod.sku || '');
     setNewCategory(prod.category || 'Electrónica');
     setNewCostUsd(prod.baseCostUsd || 5.0);
@@ -2004,6 +2006,7 @@ export default function AdminCRM() {
   const handleOpenCreateProduct = () => {
     setEditingProductId(null);
     setNewTitle('');
+    setNewDescription('');
     setNewSku('');
     setNewCategory('Electrónica');
     setNewCostUsd(5.00);
@@ -2038,6 +2041,7 @@ export default function AdminCRM() {
         // EDICIÓN
         await updateProductInDb(editingProductId, {
           title: newTitle,
+          description: newDescription.trim() || undefined,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
           brand: newBrand,
@@ -2059,6 +2063,7 @@ export default function AdminCRM() {
             return {
               ...p,
               title: newTitle,
+              description: newDescription.trim() || p.description,
               sku: newSku.trim() || p.sku,
               category: newCategory,
               baseCostUsd: calculatedCostUsd,
@@ -2084,6 +2089,7 @@ export default function AdminCRM() {
         // ALTA NUEVA
         await createProductInDb({
           title: newTitle,
+          description: newDescription.trim() || undefined,
           sku: newSku.trim() || undefined,
           categoryName: newCategory,
           brand: newBrand,
@@ -2120,6 +2126,7 @@ export default function AdminCRM() {
       setShowAddModal(false);
       setEditingProductId(null);
       setNewTitle('');
+      setNewDescription('');
       setNewImageUrl('');
       setNewImages([]);
       setIsCombo(false);
@@ -8997,6 +9004,23 @@ ESTÉTICA Y CONCEPTO VISUAL:
                     />
                   </div>
                 </div>
+
+                  {/* 1.1 Descripción detallada del Producto (Boutique e Inventario) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-700 font-bold block text-xs">
+                        Descripción del Producto (Visible para el cliente)
+                      </label>
+                      <span className="text-[10px] text-slate-400">Visible en la tienda</span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Ej. Fragancia dulce con notas de cereza y vainilla. Producto 100% original con entrega garantizada..."
+                      value={newDescription}
+                      onChange={e => setNewDescription(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs focus:outline-none focus:border-[#E65F2B] resize-none"
+                    />
+                  </div>
 
                 {/* 2. Categoría, Stock y Encendido/Apagado */}
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
