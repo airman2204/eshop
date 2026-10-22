@@ -2544,15 +2544,21 @@ export default function TiendaFoxDrop() {
 
                     {/* Título del producto limpio en 2 líneas */}
                     <div className="pt-1.5">
-                      <h4 className="text-xs sm:text-[13px] font-medium text-gray-900 line-clamp-2 leading-snug group-hover:text-[#0F3E36] transition">
+                      <h4 className="text-xs sm:text-[13px] font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-[#0F3E36] transition">
                         {product.title}
                       </h4>
+                      {/* Descripción breve del artículo */}
+                      {product.description && (
+                        <p className="text-[10.5px] text-gray-500 line-clamp-2 leading-snug mt-1 font-normal">
+                          {isImportItem ? 'Producto de importación directa a tu domicilio.' : product.description}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Categoría / Marca enlace sutil */}
-                    <div className="pt-1.5 flex items-center justify-between text-[11px]">
-                      <span className="text-[10px] text-emerald-800 hover:underline font-medium truncate">
-                        {product.brand || product.category}
+                    {/* Procedencia / Marca / Calificación (Si es importación mostrar 'Internacional') */}
+                    <div className="pt-2 flex items-center justify-between text-[11px] border-t border-gray-100 mt-2">
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">
+                        {isImportItem ? 'Internacional' : (product.brand && !product.brand.toLowerCase().includes('cj dropshipping') ? product.brand : product.category)}
                       </span>
                       <div className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px] shrink-0">
                         <span>★</span>
