@@ -709,11 +709,6 @@ export default function TiendaFoxDrop() {
       return false;
     }
 
-    // Segmentación exclusiva Mario & Nydia: alternar entre Boutique e Importación Directa
-    if (isPrivilegedPartner) {
-      if (catalogSegment === 'boutique' && isCjProduct) return false;
-      if (catalogSegment === 'import' && !isCjProduct) return false;
-    }
 
     // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
     const matchStock = p.stock > 0 || p.isSpecialOrder;
@@ -2301,41 +2296,6 @@ export default function TiendaFoxDrop() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* SEGMENTADOR EXCLUSIVO MARIO & NYDIA: BOUTIQUE VS IMPORTACIÓN */}
-            {isPrivilegedPartner && (
-              <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-black border border-slate-300/80 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('all')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    catalogSegment === 'all' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Ver Todo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('boutique')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                    catalogSegment === 'boutique' ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Solo inventario físico FoxDrop"
-                >
-                  <span>🏪 Boutique FoxDrop</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCatalogSegment('import')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                    catalogSegment === 'import' ? 'bg-indigo-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="Solo productos de importación directa a tu domicilio"
-                >
-                  <span>✈️ Importación Directa</span>
-                </button>
-              </div>
-            )}
-
             {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
             <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
               <button
@@ -2460,6 +2420,7 @@ export default function TiendaFoxDrop() {
                 ? (product.publicPrice / (1 - (product.discountPercent! / 100))) 
                 : product.publicPrice;
               const isFav = favorites.includes(product.id);
+              const isImportItem = (product.sku && product.sku.startsWith("CJ")) || (product.brand && product.brand.toLowerCase().includes("cj dropshipping"));
 
               return (
                 <div
@@ -2468,7 +2429,7 @@ export default function TiendaFoxDrop() {
                     setModalQuantity(1);
                     setSelectedProduct(product);
                   }}
-                  className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5"
+                  className={`bg-white rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 cursor-pointer group relative hover:-translate-y-0.5 ${isImportItem ? "border-2 border-indigo-200/90 shadow-xs ring-1 ring-indigo-100/50" : "border border-gray-150"}`}
                 >
                   {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
@@ -2506,11 +2467,11 @@ export default function TiendaFoxDrop() {
                   <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
                     {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
                       <span className="absolute top-2 left-2 z-10 bg-indigo-950/80 backdrop-blur-xs text-indigo-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-indigo-400/30">
-                        ✈️ 10-15 Días
+                        ✈️ Envío Internacional (10-15 días)
                       </span>
                     ) : (
                       <span className="absolute top-2 left-2 z-10 bg-emerald-950/80 backdrop-blur-xs text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-emerald-400/30">
-                        ⚡ Entrega Inmediata
+                        ⚡ En Almacén • Entrega Hoy
                       </span>
                     )}
                     <img
