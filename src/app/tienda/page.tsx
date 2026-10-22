@@ -2518,7 +2518,7 @@ export default function TiendaFoxDrop() {
         /* ======================================================== */
         /* SECCIÓN INTEGRADA: MI CUENTA, RASTREO Y BENEFICIOS FOXDROP */
         /* ======================================================== */
-        <div className="w-full flex-1 animate-in fade-in duration-200">
+        <div className="w-full flex-1 animate-in fade-in duration-200 bg-[#F5F6F8]">
           
           {/* BARRA SUPERIOR DE NAVEGACIÓN LIMPIA Y PROFESIONAL (ESTILO MERCADO LIBRE / AMAZON) */}
           <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
@@ -2529,7 +2529,7 @@ export default function TiendaFoxDrop() {
                     setCurrentView('store');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-700 hover:text-[#0F3E36] transition cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-[#0F3E36] transition cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
                   <span>Volver a la Tienda</span>
@@ -2548,7 +2548,7 @@ export default function TiendaFoxDrop() {
                     loadFullProfileData();
                     if (user) loadUserAccount(user.phone, user.email);
                   }}
-                  className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition cursor-pointer"
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 transition cursor-pointer"
                   title="Sincronizar información"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loadingOrders || loadingFullProfile ? 'animate-spin text-[#0F3E36]' : ''}`} />
@@ -2559,54 +2559,54 @@ export default function TiendaFoxDrop() {
           </div>
 
           {/* CABECERA PRINCIPAL ELEGANTE CON CREDENCIALES DE SEGURIDAD (ESTILO AMAZON / MERCADO LIBRE) */}
-          <div className="bg-slate-50/80 border-b border-slate-200/90 py-6 sm:py-8 px-4 sm:px-6">
+          <div className="bg-white border-b border-slate-200 py-6 sm:py-7 px-4 sm:px-6">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
               
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#0F3E36] text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-sm border-2 border-white shrink-0">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : '🦊'}
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-900 text-white font-extrabold text-xl sm:text-2xl flex items-center justify-center shadow-xs shrink-0">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
                 
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                       {user?.name || 'Mi Cuenta FoxDrop'}
                     </h1>
-                    <span className="bg-emerald-100/80 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300/80 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Cuenta Protegida
+                    <span className="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#0F3E36]" /> Cuenta Verificada
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span>{user?.email}</span>
-                    {user?.phone && <span>• 📞 {user.phone}</span>}
+                    {user?.phone && <span>• Tel: {user.phone}</span>}
                   </p>
                 </div>
               </div>
 
-              {/* TIER DEL CLUB Y PUNTOS CON ESTILO AMAZON PRIME */}
+              {/* TIER DEL CLUB Y PUNTOS CON ESTILO SOBRIO CORPORATIVO */}
               {(() => {
                 const pts = user?.points ?? 0;
                 const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
                 return (
                   <div 
                     onClick={() => setAccountTab('club')}
-                    className="bg-white rounded-2xl p-3.5 sm:px-5 border border-slate-200 shadow-xs flex items-center gap-4 shrink-0 cursor-pointer hover:border-[#DF7F2D] hover:shadow-sm transition group"
+                    className="bg-slate-50 rounded-xl p-3.5 sm:px-4 border border-slate-200 shadow-2xs flex items-center gap-4 shrink-0 cursor-pointer hover:border-slate-300 transition group"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+                    <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-xl shadow-2xs">
                       {tier.badge}
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 block">
-                        Beneficios FoxDrop Club
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                        FoxDrop Club
                       </span>
-                      <span className="text-sm font-black text-slate-900">{tier.name}</span>
-                      <span className="text-[11px] text-emerald-600 font-bold block">{tier.discountPercent}% OFF Permanente</span>
+                      <span className="text-xs font-black text-slate-900">{tier.name}</span>
+                      <span className="text-[11px] text-slate-600 font-bold block">{tier.discountPercent}% OFF Permanente</span>
                     </div>
-                    <div className="border-l border-slate-100 pl-4 text-right">
-                      <span className="text-lg font-black text-[#DF7F2D] block font-mono leading-tight">
+                    <div className="border-l border-slate-200 pl-3.5 text-right">
+                      <span className="text-base font-black text-slate-900 block font-mono leading-tight">
                         {pts}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-bold">Puntos</span>
+                      <span className="text-[10px] text-slate-500 font-bold">Puntos</span>
                     </div>
                   </div>
                 );
@@ -2618,14 +2618,14 @@ export default function TiendaFoxDrop() {
           {/* CONTENEDOR PRINCIPAL CON DISEÑO DE CENTRO DE GESTIÓN (HUB AMAZON / MERCADO LIBRE) */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-            {/* BARRA DE ACCESOS RÁPIDOS PRINCIPALES CON DISEÑO CLEAN Y ELEGANTE */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* BARRA DE ACCESOS RÁPIDOS PRINCIPALES CON ESTILO HUB EJECUTIVO */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               {[
-                { id: 'orders', label: 'Mis Pedidos', sub: `${userOrders.length} compra(s)`, icon: Package },
+                { id: 'orders', label: 'Mis Pedidos', sub: `${userOrders.length} pedido(s)`, icon: Package },
                 { id: 'favorites', label: 'Favoritos', sub: `${favorites.length} guardado(s)`, icon: Heart },
                 { id: 'addresses', label: 'Direcciones', sub: `${fullProfile?.addresses?.length || 0} registrada(s)`, icon: MapPin },
                 { id: 'cards', label: 'Billetera & Tarjetas', sub: `${fullProfile?.cards?.length || 0} guardada(s)`, icon: CreditCard },
-                { id: 'club', label: 'Nivel & Puntos', sub: 'Beneficios activos', icon: Award },
+                { id: 'club', label: 'Nivel & Puntos', sub: 'Beneficios del club', icon: Award },
                 { id: 'settings', label: 'Seguridad y Datos', sub: 'Datos de contacto', icon: ShieldCheck },
               ].map(tab => {
                 const Icon = tab.icon;
@@ -2634,27 +2634,24 @@ export default function TiendaFoxDrop() {
                   <button
                     key={tab.id}
                     onClick={() => setAccountTab(tab.id as any)}
-                    className={`p-3.5 rounded-2xl text-left border transition cursor-pointer flex flex-col justify-between ${
+                    className={`p-3 rounded-xl text-left border transition cursor-pointer flex flex-col justify-between ${
                       active
-                        ? 'bg-white border-[#0F3E36] ring-2 ring-[#0F3E36]/15 shadow-sm'
-                        : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300 shadow-2xs'
+                        ? 'bg-[#0F3E36] border-[#0F3E36] text-white shadow-xs'
+                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
-                        active ? 'bg-[#0F3E36] text-white' : 'bg-slate-100 text-slate-600'
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition ${
+                        active ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'
                       }`}>
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-3.5 h-3.5" />
                       </div>
-                      {active && (
-                        <span className="w-2 h-2 rounded-full bg-[#DF7F2D]"></span>
-                      )}
                     </div>
                     <div>
-                      <span className={`text-xs font-black block truncate ${active ? 'text-[#0F3E36]' : 'text-slate-800'}`}>
+                      <span className={`text-xs font-bold block truncate ${active ? 'text-white' : 'text-slate-900'}`}>
                         {tab.label}
                       </span>
-                      <span className="text-[10px] text-slate-400 block truncate font-medium">
+                      <span className={`text-[10px] block truncate font-medium ${active ? 'text-white/70' : 'text-slate-500'}`}>
                         {tab.sub}
                       </span>
                     </div>
@@ -2665,8 +2662,8 @@ export default function TiendaFoxDrop() {
 
             {/* TAB 1: MIS PEDIDOS Y RASTREO */}
             {accountTab === 'orders' && (
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                     {[
                       { id: 'all', label: `Todos (${userOrders.length})` },
@@ -2678,10 +2675,10 @@ export default function TiendaFoxDrop() {
                       <button
                         key={f.id}
                         onClick={() => setOrderFilter(f.id as any)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                           orderFilter === f.id
-                            ? 'bg-[#DF7F2D] text-white shadow-xs'
-                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                            ? 'bg-[#0F3E36] text-white shadow-2xs'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
                         {f.label}
@@ -2689,24 +2686,24 @@ export default function TiendaFoxDrop() {
                     ))}
                   </div>
 
-                  <span className="text-xs text-gray-500 hidden sm:inline">
+                  <span className="text-xs text-slate-500 hidden sm:inline font-medium">
                     {userOrders.length} pedido(s) registrados
                   </span>
                 </div>
 
                 {loadingOrders ? (
-                  <div className="bg-white rounded-3xl p-12 text-center space-y-3 border border-gray-100 shadow-sm">
-                    <RefreshCw className="w-8 h-8 text-[#0F3E36] animate-spin mx-auto" />
-                    <p className="text-sm font-bold text-gray-700">Consultando historial con el centro logístico...</p>
+                  <div className="bg-white rounded-2xl p-12 text-center space-y-3 border border-slate-200 shadow-2xs">
+                    <RefreshCw className="w-6 h-6 text-[#0F3E36] animate-spin mx-auto" />
+                    <p className="text-xs font-bold text-slate-700">Consultando historial con el centro logístico...</p>
                   </div>
                 ) : userOrders.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-12 text-center space-y-4 border border-gray-100 shadow-sm max-w-lg mx-auto">
-                    <div className="w-16 h-16 rounded-full bg-orange-50 text-[#DF7F2D] flex items-center justify-center mx-auto">
-                      <Package className="w-8 h-8" />
+                  <div className="bg-white rounded-2xl p-10 text-center space-y-4 border border-slate-200 shadow-2xs max-w-lg mx-auto">
+                    <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto">
+                      <Package className="w-6 h-6" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-base font-black text-gray-900">Aún no tienes pedidos registrados</h3>
-                      <p className="text-xs text-gray-500">
+                      <h3 className="text-sm font-bold text-slate-900">Aún no tienes pedidos registrados</h3>
+                      <p className="text-xs text-slate-500">
                         Cuando realices compras en la tienda web o en nuestro mostrador físico, aquí podrás consultar tu historial, boletos y tickets en tiempo real.
                       </p>
                     </div>
@@ -2715,14 +2712,14 @@ export default function TiendaFoxDrop() {
                         setCurrentView('store');
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center gap-2 bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs px-5 py-2.5 rounded-full transition shadow-md cursor-pointer"
+                      className="inline-flex items-center gap-2 bg-[#0F3E36] hover:bg-[#154E45] text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer"
                     >
-                      <ShoppingBag className="w-4 h-4 text-[#DF7F2D]" />
+                      <ShoppingBag className="w-3.5 h-3.5" />
                       <span>Explorar Catálogo de la Tienda</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {userOrders
                       .filter(ord => {
                         const isPosOrder = ord.order_number?.startsWith('FX-POS') || ord.id?.startsWith('FX-POS') || (ord.notes && ord.notes.includes('POS'));
@@ -2734,7 +2731,7 @@ export default function TiendaFoxDrop() {
                       })
                       .map(order => {
                         const isCancelled = order.status === 'cancelled';
-                        const isPos = order.order_number?.startsWith('FX-POS') || order.id?.startsWith('FX-POS') || (order.notes && order.notes.includes('POS'));
+                        const isPos = order.order_number?.startsWith('FX-POS') || order.id?.startsWith('FX-POS') || (order.notes && order.notes?.includes('POS'));
                         const ticketUrlMatch = order.notes && order.notes.match(/Ticket:\s*(https?:\/\/[^\s]+|data:image\/[a-zA-Z]+;base64,[^\s]+)/);
                         const ticketUrl = ticketUrlMatch ? ticketUrlMatch[1] : null;
 
@@ -2750,51 +2747,46 @@ export default function TiendaFoxDrop() {
 
                         const statusBadge = (() => {
                           if (isPos) {
-                            return { label: 'Entregado en Mostrador', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+                            return { label: 'Entregado en Mostrador', bg: 'bg-slate-100 text-slate-800 border-slate-200' };
                           }
                           switch (order.status) {
-                            case 'shipped': return { label: 'En Camino', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
-                            case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
-                            case 'delivered': return { label: 'Entregado', bg: 'bg-teal-100 text-teal-800 border-teal-300' };
-                            case 'cancelled': return { label: 'Cancelado', bg: 'bg-red-100 text-red-800 border-red-300' };
+                            case 'shipped': return { label: 'En Camino', bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+                            case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+                            case 'delivered': return { label: 'Entregado', bg: 'bg-slate-100 text-slate-800 border-slate-200' };
+                            case 'cancelled': return { label: 'Cancelado', bg: 'bg-rose-50 text-rose-800 border-rose-200' };
                             case 'pending':
                             default:
-                              return { label: 'Pendiente de Confirmación', bg: 'bg-amber-50 text-amber-800 border-amber-300' };
+                              return { label: 'Pendiente de Confirmación', bg: 'bg-amber-50 text-amber-800 border-amber-200' };
                           }
                         })();
 
                         return (
-                          <div key={order.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md transition">
-                            <div className="bg-[#FAF6F0] border-b border-gray-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div key={order.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                            <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
                               <div className="flex items-center gap-4 sm:gap-6">
                                 <div>
-                                  <span className="text-[10px] text-gray-400 block uppercase font-bold">Fecha</span>
-                                  <span className="font-bold text-gray-800">
+                                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Fecha</span>
+                                  <span className="font-bold text-slate-800">
                                     {new Date(order.created_at).toLocaleDateString('es-MX')}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-[10px] text-gray-400 block uppercase font-bold">Total</span>
-                                  <span className="font-extrabold text-[#DF7F2D] text-sm">
+                                  <span className="text-[10px] text-slate-400 block uppercase font-bold">Total</span>
+                                  <span className="font-extrabold text-slate-900 text-sm">
                                     ${Number(order.total).toFixed(2)} MXN
                                   </span>
                                 </div>
                                 {isPos && (
-                                  <span className="hidden sm:inline-flex items-center gap-1 bg-orange-100 text-[#DF7F2D] border border-orange-200 text-[10px] font-black px-2 py-0.5 rounded-full">
-                                    🏪 Compra Física (POS)
+                                  <span className="hidden sm:inline-flex items-center gap-1 bg-slate-200/80 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                    🏪 Mostrador
                                   </span>
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
-                                {isPos && (
-                                  <span className="sm:hidden inline-flex items-center gap-1 bg-orange-100 text-[#DF7F2D] border border-orange-200 text-[10px] font-black px-2 py-0.5 rounded-full">
-                                    🏪 Física
-                                  </span>
-                                )}
-                                <span className={`text-[11px] font-black px-3 py-1 rounded-full border ${statusBadge.bg}`}>
+                                <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border ${statusBadge.bg}`}>
                                   {statusBadge.label}
                                 </span>
-                                <span className="font-mono font-bold text-xs text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
+                                <span className="font-mono font-bold text-xs text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                                   {order.order_number || order.id}
                                 </span>
                               </div>
@@ -2802,23 +2794,23 @@ export default function TiendaFoxDrop() {
 
                             {/* Alerta de Cancelación si la orden fue dada de baja */}
                             {isCancelled ? (
-                              <div className="p-4 sm:p-6">
-                                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs space-y-1.5 text-red-900">
-                                  <div className="flex items-center gap-2 font-black text-red-800">
-                                    <Ban className="w-4 h-4 text-red-600" />
-                                    <span>Este pedido fue cancelado por la administración</span>
+                              <div className="p-4 sm:p-5">
+                                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-xs space-y-1 text-rose-900">
+                                  <div className="flex items-center gap-2 font-bold text-rose-800">
+                                    <Ban className="w-4 h-4 text-rose-600" />
+                                    <span>Pedido cancelado</span>
                                   </div>
-                                  <p className="text-red-700">
-                                    <strong>Motivo / Nota de la tienda:</strong> {order.notes || 'Cancelado por administración sin motivo especificado.'}
+                                  <p className="text-rose-700 text-[11px]">
+                                    <strong>Motivo:</strong> {order.notes || 'Cancelado por administración.'}
                                   </p>
                                 </div>
                               </div>
                             ) : (
-                              /* Tracker de 4 pasos para pedidos activos o entregados */
-                              <div className="p-4 sm:p-6 pb-0">
-                                <div className="bg-[#FAF6F0]/70 rounded-2xl p-4 border border-gray-100">
+                              /* Tracker de 4 pasos sobrio y uniforme */
+                              <div className="p-4 sm:p-5 pb-0">
+                                <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
                                   <div className="relative flex items-center justify-between">
-                                    <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
+                                    <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-0.5 bg-slate-200 z-0">
                                       <div 
                                         className="h-full bg-[#0F3E36] transition-all duration-500"
                                         style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
@@ -2838,16 +2830,16 @@ export default function TiendaFoxDrop() {
                                       return (
                                         <div key={s.step} className="relative z-10 flex flex-col items-center">
                                           <div 
-                                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
+                                            className={`w-7 h-7 rounded-full flex items-center justify-center transition text-xs ${
                                               isPassed 
-                                                ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
-                                                : 'bg-white border-2 border-gray-300 text-gray-400'
-                                            } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
+                                                ? 'bg-[#0F3E36] text-white' 
+                                                : 'bg-white border border-slate-300 text-slate-400'
+                                            } ${isCurrent ? 'ring-2 ring-[#0F3E36]/30' : ''}`}
                                           >
                                             <Icon className="w-3.5 h-3.5" />
                                           </div>
                                           <span className={`text-[10px] mt-1 font-bold ${
-                                            isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
+                                            isCurrent ? 'text-[#0F3E36]' : isPassed ? 'text-slate-800' : 'text-slate-400'
                                           }`}>
                                             {s.title}
                                           </span>
@@ -2859,10 +2851,10 @@ export default function TiendaFoxDrop() {
                               </div>
                             )}
 
-                            <div className="p-4 sm:p-6 pt-3 space-y-4">
-                              {/* Artículos con Fotos Reales y Botón Re-comprar */}
+                            <div className="p-4 sm:p-5 pt-3 space-y-3">
+                              {/* Artículos */}
                               {order.order_items && order.order_items.length > 0 && (
-                                <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden text-xs bg-white">
+                                <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden text-xs bg-white">
                                    {order.order_items.map((item: any, idx: number) => {
                                     const cleanItemTitle = (item.product_title || "").trim().toLowerCase();
                                     const matchedProd = products.find(p => {
@@ -2875,9 +2867,9 @@ export default function TiendaFoxDrop() {
                                       : (matchedProd?.images?.[0] && !matchedProd.images[0].includes("no-image.svg") ? matchedProd.images[0] : '/no-image.svg');
 
                                     return (
-                                      <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-slate-50/60 transition">
+                                      <div key={idx} className="p-2.5 flex items-center justify-between gap-3 bg-white hover:bg-slate-50/70 transition">
                                         <div className="flex items-center gap-3 min-w-0">
-                                          <div className="w-12 h-12 rounded-xl bg-slate-50 p-1 border border-slate-200/80 shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
+                                          <div className="w-10 h-10 rounded-lg bg-slate-50 p-1 border border-slate-200 shrink-0 flex items-center justify-center overflow-hidden">
                                             <img
                                               src={prodImg}
                                               alt={item.product_title}
@@ -2886,15 +2878,15 @@ export default function TiendaFoxDrop() {
                                             />
                                           </div>
                                           <div className="min-w-0">
-                                            <p className="font-bold text-gray-900 truncate max-w-[200px] sm:max-w-md">{item.product_title}</p>
-                                            <p className="text-[11px] text-gray-500">
-                                              Cantidad: <strong className="text-gray-800">{item.quantity}</strong> • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
+                                            <p className="font-bold text-slate-900 truncate max-w-[200px] sm:max-w-md">{item.product_title}</p>
+                                            <p className="text-[11px] text-slate-500">
+                                              Cant: <strong className="text-slate-800">{item.quantity}</strong> • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
                                             </p>
                                           </div>
                                         </div>
 
                                         <div className="flex items-center gap-2 shrink-0">
-                                          <span className="font-extrabold text-gray-800 font-mono text-xs sm:text-sm">
+                                          <span className="font-extrabold text-slate-900 font-mono text-xs">
                                             ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)}
                                           </span>
                                           {matchedProd && (
@@ -2904,7 +2896,7 @@ export default function TiendaFoxDrop() {
                                                 e.stopPropagation();
                                                 addToCart(matchedProd, e, item.quantity || 1);
                                               }}
-                                              className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#DF7F2D] font-bold text-[10px] transition flex items-center gap-1 border border-orange-200 cursor-pointer"
+                                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition flex items-center gap-1 cursor-pointer"
                                               title="Volver a comprar este producto"
                                             >
                                               <ShoppingCart className="w-3.5 h-3.5" />
@@ -2918,9 +2910,9 @@ export default function TiendaFoxDrop() {
                                 </div>
                               )}
 
-                              {/* Botones de acción para ver seguimiento, ticket, reordenar todo y WhatsApp */}
-                              <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <span className="text-[11px] text-gray-500 font-medium">
+                              {/* Botones de acción */}
+                              <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                <span className="text-[11px] text-slate-500 font-medium">
                                   {order.order_items?.length || 0} producto(s) en este pedido
                                 </span>
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -2941,11 +2933,11 @@ export default function TiendaFoxDrop() {
                                           alert("Los productos de este pedido ya no se encuentran en el catálogo actual.");
                                         }
                                       }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs transition cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
                                       title="Agregar todos los productos de este pedido al carrito"
                                     >
-                                      <ShoppingCart className="w-3.5 h-3.5 text-emerald-600" />
-                                      <span>Volver a comprar todo</span>
+                                      <ShoppingCart className="w-3.5 h-3.5 text-slate-600" />
+                                      <span>Comprar de nuevo</span>
                                     </button>
                                   )}
 
@@ -2954,11 +2946,11 @@ export default function TiendaFoxDrop() {
                                     href={`https://wa.me/522221234567?text=${encodeURIComponent(`Hola FoxDrop 🦊, tengo una duda sobre mi pedido *${order.order_number || order.id}* por *$${Number(order.total).toFixed(2)} MXN*.`)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
                                     title="Contactar soporte por WhatsApp"
                                   >
-                                    <MessageSquare className="w-3.5 h-3.5 fill-white text-white" />
-                                    <span>Ayuda WhatsApp</span>
+                                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Soporte</span>
                                   </a>
 
                                   {ticketUrl && (
@@ -2966,9 +2958,9 @@ export default function TiendaFoxDrop() {
                                       href={ticketUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-[#DF7F2D] font-bold text-xs transition cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
                                     >
-                                      <span>🧾 Ver Ticket</span>
+                                      <span>🧾 Ticket</span>
                                       <ArrowUpRight className="w-3.5 h-3.5" />
                                     </a>
                                   )}
@@ -2982,9 +2974,9 @@ export default function TiendaFoxDrop() {
                                         setClientCancelNotes('');
                                         setShowClientCancelModal(true);
                                       }}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition cursor-pointer"
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer"
                                     >
-                                      <Ban className="w-3.5 h-3.5 text-red-600" />
+                                      <Ban className="w-3.5 h-3.5 text-rose-600" />
                                       <span>Cancelar</span>
                                     </button>
                                   )}
@@ -2992,9 +2984,9 @@ export default function TiendaFoxDrop() {
                                   <button
                                     type="button"
                                     onClick={() => setSelectedOrderForDetail(order)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F3E36] hover:bg-[#154E45] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
                                   >
-                                    <span>Rastreo & Detalle</span>
+                                    <span>Detalle</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
@@ -3010,31 +3002,31 @@ export default function TiendaFoxDrop() {
 
             {/* TAB FAVORITOS (ARTÍCULOS GUARDADOS POR EL USUARIO) */}
             {accountTab === 'favorites' && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
-                      <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-slate-700 fill-slate-700" />
                       <span>Mis Artículos Favoritos</span>
                     </h3>
-                    <p className="text-xs text-gray-500">Productos que guardaste para comprar más tarde.</p>
+                    <p className="text-xs text-slate-500">Productos que guardaste para comprar más tarde.</p>
                   </div>
                   {favorites.length > 0 && (
-                    <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                    <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">
                       {favorites.length} guardado(s)
                     </span>
                   )}
                 </div>
 
                 {favorites.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-12 text-center space-y-4 border border-gray-100 shadow-sm max-w-md mx-auto">
-                    <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
-                      <Heart className="w-8 h-8" />
+                  <div className="bg-white rounded-2xl p-10 text-center space-y-4 border border-slate-200 shadow-2xs max-w-md mx-auto">
+                    <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto">
+                      <Heart className="w-6 h-6" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-base font-black text-gray-900">Aún no tienes favoritos</h4>
-                      <p className="text-xs text-gray-500">
-                        Explora la tienda y presiona el ícono del corazón ❤️ en cualquier producto que te guste para tenerlo a la mano.
+                      <h4 className="text-sm font-bold text-slate-900">Aún no tienes favoritos</h4>
+                      <p className="text-xs text-slate-500">
+                        Explora la tienda y presiona el ícono del corazón en cualquier producto para guardarlo aquí.
                       </p>
                     </div>
                     <button
@@ -3042,14 +3034,14 @@ export default function TiendaFoxDrop() {
                         setCurrentView('store');
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center gap-2 bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold text-xs px-5 py-2.5 rounded-full transition shadow-md cursor-pointer"
+                      className="inline-flex items-center gap-2 bg-[#0F3E36] hover:bg-[#154E45] text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer"
                     >
-                      <ShoppingBag className="w-4 h-4 text-[#DF7F2D]" />
+                      <ShoppingBag className="w-3.5 h-3.5" />
                       <span>Explorar Catálogo</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {products
                       .filter(p => favorites.includes(p.id))
                       .map(favProduct => (
@@ -3059,17 +3051,17 @@ export default function TiendaFoxDrop() {
                             setModalQuantity(1);
                             setSelectedProduct(favProduct);
                           }}
-                          className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col justify-between hover:shadow-lg transition cursor-pointer group relative"
+                          className="bg-white rounded-xl border border-slate-200 p-3 flex flex-col justify-between hover:shadow-sm transition cursor-pointer group relative"
                         >
                           <button
                             onClick={(e) => toggleFav(favProduct.id, e)}
-                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 shadow-xs flex items-center justify-center text-rose-500 hover:scale-110 transition z-10"
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white shadow-xs flex items-center justify-center text-slate-400 hover:text-rose-500 hover:scale-110 transition z-10 border border-slate-100"
                             title="Quitar de favoritos"
                           >
-                            <Heart className="w-4 h-4 fill-rose-500" />
+                            <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
                           </button>
 
-                          <div className="aspect-square bg-[#EAF1EF] rounded-xl flex items-center justify-center p-2 mb-2 overflow-hidden">
+                          <div className="aspect-square bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-2 overflow-hidden border border-slate-100">
                             <img
                               src={favProduct.images[0]}
                               alt={favProduct.title}
@@ -3079,16 +3071,16 @@ export default function TiendaFoxDrop() {
 
                           <div className="space-y-1 flex-1 flex flex-col justify-between">
                             <div>
-                              <h5 className="text-xs font-bold text-gray-900 line-clamp-1">{favProduct.title}</h5>
-                              <p className="text-[10px] text-gray-400">{favProduct.category}</p>
+                              <h5 className="text-xs font-bold text-slate-900 line-clamp-1">{favProduct.title}</h5>
+                              <p className="text-[10px] text-slate-400">{favProduct.category}</p>
                             </div>
                             <div className="pt-1 flex items-center justify-between">
-                              <span className="text-xs sm:text-sm font-black text-[#0F3E36] font-mono">
+                              <span className="text-xs sm:text-sm font-black text-slate-900 font-mono">
                                 ${favProduct.publicPrice.toFixed(0)} MXN
                               </span>
                               <button
                                 onClick={(e) => addToCart(favProduct, e)}
-                                className="p-1.5 rounded-lg bg-[#0F3E36] hover:bg-[#1A5248] text-white transition shadow-2xs"
+                                className="p-1.5 rounded-lg bg-[#0F3E36] hover:bg-[#154E45] text-white transition shadow-2xs"
                                 title="Agregar al carrito"
                               >
                                 <ShoppingCart className="w-3.5 h-3.5" />
@@ -3104,73 +3096,73 @@ export default function TiendaFoxDrop() {
 
             {/* TAB 2: DIRECCIONES */}
             {accountTab === 'addresses' && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                   <div>
-                    <h3 className="text-base font-black text-gray-900">Tus Direcciones de Entrega</h3>
-                    <p className="text-xs text-gray-500">Para compras rápidas y entregas precisas.</p>
+                    <h3 className="text-sm font-bold text-slate-900">Tus Direcciones de Entrega</h3>
+                    <p className="text-xs text-slate-500">Para compras rápidas y entregas precisas.</p>
                   </div>
                   <button
                     onClick={handleOpenAddAddress}
-                    className="bg-[#0F3E36] hover:bg-[#1A5248] text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow cursor-pointer"
+                    className="bg-[#0F3E36] hover:bg-[#154E45] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                   >
-                    <Plus className="w-4 h-4 text-[#DF7F2D]" />
+                    <Plus className="w-3.5 h-3.5" />
                     <span>Agregar Dirección</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <button
                     onClick={handleOpenAddAddress}
-                    className="border-2 border-dashed border-gray-300 hover:border-[#DF7F2D] rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2 transition bg-white/50 hover:bg-white min-h-[160px] cursor-pointer"
+                    className="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-xl p-5 flex flex-col items-center justify-center text-center space-y-2 transition bg-white min-h-[140px] cursor-pointer"
                   >
-                    <div className="w-10 h-10 rounded-full bg-orange-50 text-[#DF7F2D] flex items-center justify-center">
-                      <Plus className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
+                      <Plus className="w-4 h-4" />
                     </div>
-                    <span className="font-bold text-xs text-gray-800">Agregar nueva dirección</span>
+                    <span className="font-bold text-xs text-slate-800">Agregar nueva dirección</span>
                   </button>
 
                   {fullProfile?.addresses && fullProfile.addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className={`bg-white rounded-2xl border p-4 space-y-2 relative shadow-xs transition flex flex-col justify-between ${
-                        addr.isDefault ? 'border-[#0F3E36] ring-2 ring-[#0F3E36]/10' : 'border-gray-200'
+                      className={`bg-white rounded-xl border p-4 space-y-2 relative shadow-2xs transition flex flex-col justify-between ${
+                        addr.isDefault ? 'border-[#0F3E36] ring-1 ring-[#0F3E36]' : 'border-slate-200'
                       }`}
                     >
                       <div className="space-y-1 text-xs">
                         <div className="flex items-center justify-between">
-                          <span className="font-black text-gray-900">{addr.name}</span>
+                          <span className="font-bold text-slate-900">{addr.name}</span>
                           {addr.isDefault && (
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            <span className="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">
                               Predeterminada
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-800 font-medium">{addr.street}</p>
-                        {addr.colonia && <p className="text-gray-600">Col. {addr.colonia}</p>}
-                        <p className="text-gray-600">{addr.city}, {addr.state} • C.P. {addr.zip}</p>
-                        {addr.phone && <p className="text-[11px] text-gray-500">Tel: {addr.phone}</p>}
+                        <p className="text-slate-800 font-medium">{addr.street}</p>
+                        {addr.colonia && <p className="text-slate-600">Col. {addr.colonia}</p>}
+                        <p className="text-slate-600">{addr.city}, {addr.state} • C.P. {addr.zip}</p>
+                        {addr.phone && <p className="text-[11px] text-slate-500">Tel: {addr.phone}</p>}
                         {addr.references && (
-                          <p className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg mt-1 border border-amber-100">
+                          <p className="text-[11px] text-slate-700 bg-slate-50 p-2 rounded-lg mt-1 border border-slate-100">
                             Ref: {addr.references}
                           </p>
                         )}
                       </div>
 
-                      <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                      <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                         <button
                           onClick={() => handleOpenEditAddress(addr)}
-                          className="p-1 text-gray-500 hover:text-[#0F3E36] transition cursor-pointer"
+                          className="p-1 text-slate-500 hover:text-slate-900 transition cursor-pointer"
                           title="Editar"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteAddress(addr.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition cursor-pointer"
+                          className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
                           title="Eliminar"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -3179,19 +3171,19 @@ export default function TiendaFoxDrop() {
               </div>
             )}
 
-            {/* TAB 3: BILLETERA Y MÉTODOS DE PAGO (REDISEÑO PREMIUM MERCADO PAGO / AMAZON) */}
+            {/* TAB 3: BILLETERA Y MÉTODOS DE PAGO (REDISEÑO SOBRIO EJECUTIVO) */}
             {accountTab === 'cards' && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 
                 {/* ENCABEZADO DE BILLETERA */}
-                <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                      <CreditCard className="w-5 h-5 text-[#0F3E36]" />
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-slate-700" />
                       <span>Billetera & Medios de Pago</span>
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Tus tarjetas guardadas están encriptadas bajo el estándar bancario PCI-DSS para compras rápidas y seguras.
+                      Tus tarjetas guardadas están encriptadas bajo el estándar bancario PCI-DSS para compras rápidas.
                     </p>
                   </div>
 
@@ -3201,75 +3193,62 @@ export default function TiendaFoxDrop() {
                       setCardSuccessNotice(null);
                       setShowCardModal(true);
                     }}
-                    className="bg-[#0F3E36] hover:bg-[#1A5248] text-white text-xs font-black px-5 py-2.5 rounded-2xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+                    className="bg-[#0F3E36] hover:bg-[#154E45] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
                   >
-                    <Plus className="w-4 h-4 text-amber-300" />
+                    <Plus className="w-3.5 h-3.5" />
                     <span>Agregar Nueva Tarjeta</span>
                   </button>
                 </div>
 
-                {/* LISTADO DE TARJETAS CON DISEÑO BANCARIO PROFESIONAL */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* LISTADO DE TARJETAS CON DISEÑO EJECUTIVO UNIFORME */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   
-                  {/* Tarjetas existentes */}
+                  {/* Tarjetas existentes con diseño sobrio slate/navy */}
                   {fullProfile?.cards && fullProfile.cards.map((card) => {
-                    const isVisa = card.brand === 'visa';
-                    const isMaster = card.brand === 'mastercard';
-                    const isAmex = card.brand === 'amex';
-
                     return (
                       <div
                         key={card.id}
-                        className="relative rounded-3xl p-5 text-white flex flex-col justify-between shadow-lg min-h-[190px] border border-white/10 overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                        style={{
-                          background: isVisa
-                            ? 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #1e3a8a 100%)'
-                            : isMaster
-                            ? 'linear-gradient(135deg, #18181b 0%, #27272a 45%, #7c2d12 100%)'
-                            : isAmex
-                            ? 'linear-gradient(135deg, #042f2e 0%, #0f3e36 50%, #115e59 100%)'
-                            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                        }}
+                        className="relative rounded-2xl p-4 text-white flex flex-col justify-between shadow-xs min-h-[175px] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 overflow-hidden"
                       >
-                        {/* Brillo de tarjeta */}
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+                        {/* Brillo tenue */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
 
                         {/* Top de la Tarjeta */}
                         <div className="flex items-center justify-between relative z-10">
                           <div className="flex items-center gap-2">
-                            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-300 to-amber-500 shadow-xs border border-amber-200/40"></div>
-                            <span className="text-[10px] text-white/50 tracking-widest font-mono">CHIP</span>
+                            <div className="w-8 h-6 rounded bg-amber-400/90 shadow-2xs border border-amber-300/40"></div>
+                            <span className="text-[9px] text-slate-400 tracking-widest font-mono">CHIP</span>
                           </div>
 
                           <div className="flex items-center gap-2">
                             {card.isDefault && (
-                              <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">
+                              <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded border border-emerald-500/30 uppercase tracking-wider">
                                 Predeterminada
                               </span>
                             )}
-                            <span className="font-mono text-xs font-black uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                            <span className="font-mono text-xs font-bold uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded border border-white/10 text-slate-200">
                               {card.brand || 'Tarjeta'}
                             </span>
                           </div>
                         </div>
 
                         {/* Número en relieve */}
-                        <div className="font-mono text-xl font-bold tracking-[0.25em] text-white text-center py-2 drop-shadow-sm relative z-10">
+                        <div className="font-mono text-lg font-bold tracking-[0.25em] text-slate-100 text-center py-2 relative z-10">
                           •••• •••• •••• {card.last4}
                         </div>
 
                         {/* Datos del titular y vencimiento */}
-                        <div className="flex items-end justify-between pt-2 border-t border-white/15 relative z-10">
+                        <div className="flex items-end justify-between pt-2 border-t border-white/10 relative z-10">
                           <div className="min-w-0 pr-2">
-                            <span className="text-[9px] uppercase tracking-wider text-white/50 block font-medium">Titular</span>
-                            <span className="text-xs font-extrabold uppercase truncate block max-w-[150px] tracking-wide text-white/95">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-medium">Titular</span>
+                            <span className="text-xs font-bold uppercase truncate block max-w-[140px] tracking-wide text-slate-200">
                               {card.holderName || user?.name || 'TITULAR'}
                             </span>
                           </div>
 
                           <div className="text-right">
-                            <span className="text-[9px] uppercase tracking-wider text-white/50 block font-medium">Expira</span>
-                            <span className="font-mono text-xs font-bold text-white tracking-widest">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-medium">Expira</span>
+                            <span className="font-mono text-xs font-bold text-slate-200 tracking-wider">
                               {card.expMonth}/{card.expYear}
                             </span>
                           </div>
@@ -3277,10 +3256,10 @@ export default function TiendaFoxDrop() {
                           <button
                             type="button"
                             onClick={() => handleDeleteCard(card.id)}
-                            className="text-white/60 hover:text-red-300 p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer ml-1 shrink-0"
+                            className="text-slate-400 hover:text-rose-400 p-1.5 hover:bg-white/10 rounded-md transition cursor-pointer ml-1 shrink-0"
                             title="Eliminar tarjeta guardada"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -3294,16 +3273,16 @@ export default function TiendaFoxDrop() {
                       setCardSuccessNotice(null);
                       setShowCardModal(true);
                     }}
-                    className="border-2 border-dashed border-slate-300 hover:border-[#0F3E36] rounded-3xl p-6 flex flex-col items-center justify-center text-center space-y-3 transition-all duration-200 bg-white/60 hover:bg-white min-h-[190px] cursor-pointer group shadow-2xs"
+                    className="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-2xl p-5 flex flex-col items-center justify-center text-center space-y-2 transition bg-white min-h-[175px] cursor-pointer group shadow-2xs"
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 group-hover:bg-[#0F3E36] text-slate-500 group-hover:text-white transition flex items-center justify-center shadow-xs">
-                      <CreditCard className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 group-hover:bg-slate-200 text-slate-600 transition flex items-center justify-center">
+                      <CreditCard className="w-5 h-5" />
                     </div>
                     <div>
-                      <span className="font-black text-xs text-slate-800 group-hover:text-[#0F3E36] transition block">
-                        + Agregar Tarjeta de Crédito o Débito
+                      <span className="font-bold text-xs text-slate-800 transition block">
+                        + Agregar Tarjeta
                       </span>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                      <span className="text-[10px] text-slate-500 block mt-0.5">
                         Guarda Visa, Mastercard o AMEX para comprar en 1 clic
                       </span>
                     </div>
@@ -3312,22 +3291,22 @@ export default function TiendaFoxDrop() {
                 </div>
 
                 {/* BANNER DE SEGURIDAD PCI-DSS BANCARIA */}
-                <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
-                      <ShieldCheck className="w-5 h-5" />
+                <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-[#0F3E36]" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-black text-slate-900">Seguridad Bancaria Garantizada</h4>
+                      <h4 className="text-xs font-bold text-slate-900">Seguridad Bancaria Garantizada</h4>
                       <p className="text-[11px] text-slate-500">
                         FoxDrop nunca almacena tu código CVV ni números completos de tarjeta. Los cobros son procesados mediante cifrado tokenizado TLS 1.3.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 font-mono text-[10px] font-black text-slate-500 shrink-0">
-                    <span className="bg-slate-100 px-2 py-1 rounded-md border border-slate-200">256-BIT ENCRYPTION</span>
-                    <span className="bg-slate-100 px-2 py-1 rounded-md border border-slate-200">PCI-DSS LEVEL 1</span>
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-slate-500 shrink-0">
+                    <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200">256-BIT ENCRYPTION</span>
+                    <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-200">PCI-DSS COMPLIANT</span>
                   </div>
                 </div>
 
@@ -3336,7 +3315,7 @@ export default function TiendaFoxDrop() {
 
             {/* TAB 4: CLUB FOXDROP */}
             {accountTab === 'club' && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {(() => {
                   const pts = user?.points ?? 0;
                   const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
@@ -3357,72 +3336,74 @@ export default function TiendaFoxDrop() {
                     : 100;
 
                   return (
-                    <div className="bg-gradient-to-br from-[#0F3E36] via-[#1E5D52] to-[#DF7F2D] rounded-3xl p-6 text-white shadow-lg space-y-5">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-4xl filter drop-shadow-md">{tier.badge}</span>
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl border border-slate-200">
+                            {tier.badge}
+                          </div>
                           <div>
-                            <span className="text-[10px] uppercase font-bold text-[#E3B888] tracking-widest block">
-                              Membresía Exclusiva
+                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                              Membresía Activa
                             </span>
-                            <h3 className="text-xl sm:text-2xl font-black text-white">{tier.name}</h3>
+                            <h3 className="text-lg font-black text-slate-900">{tier.name}</h3>
                           </div>
                         </div>
-                        <div className="text-right bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-2xl border border-white/15">
-                          <span className="text-2xl font-black text-[#E3B888] block leading-none">{pts}</span>
-                          <span className="text-[11px] text-white/80 font-bold">Puntos Club</span>
+                        <div className="text-right bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200">
+                          <span className="text-xl font-black text-slate-900 block font-mono leading-none">{pts}</span>
+                          <span className="text-[10px] text-slate-500 font-bold">Puntos Club</span>
                         </div>
                       </div>
 
-                      {/* Barra de progreso interactiva */}
-                      <div className="bg-black/20 backdrop-blur-xs p-4 rounded-2xl border border-white/15 space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold">
-                          <span className="text-white/90 flex items-center gap-1.5">
-                            <Sparkle className="w-3.5 h-3.5 text-[#E3B888]" />
+                      {/* Barra de progreso sobria */}
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkle className="w-3.5 h-3.5 text-[#0F3E36]" />
                             {nextTier ? `Próximo Nivel: ${nextTier.name} ${nextTier.badge}` : '¡Has alcanzado el Nivel Máximo! 💎'}
                           </span>
-                          <span className="text-[#E3B888] font-black">{progressPct}%</span>
+                          <span className="text-slate-900 font-mono">{progressPct}%</span>
                         </div>
                         
-                        <div className="h-3 bg-white/20 rounded-full overflow-hidden p-0.5 border border-white/10">
+                        <div className="h-2.5 bg-slate-200 rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-[#DF7F2D] to-amber-300 rounded-full transition-all duration-700 shadow-sm"
+                            className="h-full bg-[#0F3E36] rounded-full transition-all duration-700"
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
 
-                        <div className="flex items-center justify-between text-[11px] text-white/75 pt-0.5">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                           <span>{pts} pts acumulados</span>
                           <span>
                             {nextTier 
-                              ? `Faltan ${pointsNeeded} pts para desbloquear ${nextTier.discountPercent}% OFF`
-                              : 'Beneficios VIP y envíos gratis ilimitados'}
+                              ? `Faltan ${pointsNeeded} pts para ${nextTier.discountPercent}% OFF`
+                              : 'Beneficios VIP activados'}
                           </span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-white/85 leading-relaxed">
+                      <p className="text-xs text-slate-600 leading-relaxed">
                         {tier.discountPercent > 0
-                          ? `🎉 Disfrutas de un ${tier.discountPercent}% de descuento permanente en toda la tienda FoxDrop.`
-                          : 'Acumula 1 punto por cada $10 MXN gastados para desbloquear descuentos automáticos y envíos prioritarios.'}
+                          ? `🎉 Cuentas con un ${tier.discountPercent}% de descuento permanente en tus compras en FoxDrop.`
+                          : 'Acumula 1 punto por cada $10 MXN gastados para desbloquear descuentos automáticos y beneficios exclusivos.'}
                       </p>
                     </div>
                   );
                 })()}
 
-                <div className="bg-white rounded-2xl p-5 border border-gray-200 space-y-3">
-                  <h4 className="text-xs font-black uppercase text-gray-900 tracking-wide">Niveles de Membresía</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs space-y-3">
+                  <h4 className="text-xs font-bold uppercase text-slate-900 tracking-wider">Niveles de Membresía</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
                     {[
                       { name: 'Bronce 🥉', pts: '0 - 499 pts', desc: '1 punto por cada $10 MXN.' },
                       { name: 'Plata 🥈', pts: '500 - 1,499 pts', desc: '5% de descuento permanente.' },
-                      { name: 'Oro 🥇', pts: '1,500 - 3,499 pts', desc: '10% de descuento + envíos locales gratis.' },
-                      { name: 'Platino 💎', pts: '3,500+ pts', desc: '15% de descuento + atención VIP personalizada.' },
+                      { name: 'Oro 🥇', pts: '1,500 - 3,499 pts', desc: '10% de descuento permanente.' },
+                      { name: 'Platino 💎', pts: '3,500+ pts', desc: '15% de descuento + atención prioritaria.' },
                     ].map((lvl, idx) => (
-                      <div key={idx} className="p-3 rounded-xl border border-gray-200 bg-gray-50/50 space-y-1">
-                        <span className="font-bold text-gray-900 block">{lvl.name}</span>
-                        <span className="text-[10px] text-gray-400 block">{lvl.pts}</span>
-                        <p className="text-[11px] text-gray-600">{lvl.desc}</p>
+                      <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 space-y-1">
+                        <span className="font-bold text-slate-900 block">{lvl.name}</span>
+                        <span className="text-[10px] text-slate-500 block font-mono">{lvl.pts}</span>
+                        <p className="text-[11px] text-slate-600">{lvl.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -3432,12 +3413,12 @@ export default function TiendaFoxDrop() {
 
             {/* TAB 5: DATOS PERSONALES */}
             {accountTab === 'settings' && (
-              <div className="max-w-lg space-y-5">
-                <div className="bg-white rounded-2xl p-5 border border-gray-200 space-y-4 shadow-xs">
-                  <h3 className="text-sm font-black text-gray-900">Tus Datos de Contacto</h3>
+              <div className="max-w-lg space-y-4">
+                <div className="bg-white rounded-xl p-5 border border-slate-200 space-y-4 shadow-2xs">
+                  <h3 className="text-sm font-bold text-slate-900">Tus Datos de Contacto</h3>
 
                   {profileSaveSuccess && (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-lg text-xs font-bold flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>¡Tus datos fueron guardados con éxito!</span>
                     </div>
@@ -3445,52 +3426,52 @@ export default function TiendaFoxDrop() {
 
                   <form onSubmit={handleSavePersonalData} className="space-y-3 text-xs">
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">Nombre completo:</label>
+                      <label className="text-slate-700 font-bold block mb-1">Nombre completo:</label>
                       <input
                         type="text"
                         required
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl px-3.5 py-2 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                       />
                     </div>
 
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">WhatsApp de contacto:</label>
+                      <label className="text-slate-700 font-bold block mb-1">WhatsApp de contacto:</label>
                       <input
                         type="tel"
                         required
                         placeholder="10 dígitos"
                         value={editPhone}
                         onChange={e => setEditPhone(e.target.value)}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl px-3.5 py-2 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                       />
                     </div>
 
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">Correo electrónico:</label>
+                      <label className="text-slate-700 font-bold block mb-1">Correo electrónico:</label>
                       <input
                         type="email"
                         disabled
                         value={user?.email || ''}
-                        className="w-full bg-gray-100 border border-gray-200 rounded-xl px-3.5 py-2 text-gray-500 cursor-not-allowed"
+                        className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-500 cursor-not-allowed"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={isSavingProfile}
-                      className="bg-[#0F3E36] hover:bg-[#1A5248] disabled:bg-gray-300 text-white font-bold px-5 py-2.5 rounded-xl transition text-xs shadow cursor-pointer"
+                      className="bg-[#0F3E36] hover:bg-[#154E45] disabled:bg-slate-300 text-white font-bold px-4 py-2 rounded-lg transition text-xs shadow-2xs cursor-pointer"
                     >
                       {isSavingProfile ? 'Guardando...' : 'Guardar Cambios'}
                     </button>
                   </form>
                 </div>
 
-                <div className="bg-red-50/60 rounded-2xl p-4 border border-red-200/60 flex items-center justify-between">
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
                   <div className="text-xs">
-                    <p className="font-bold text-red-900">Cerrar Sesión</p>
-                    <p className="text-[11px] text-red-600">Finalizar tu sesión en este navegador.</p>
+                    <p className="font-bold text-slate-900">Cerrar Sesión</p>
+                    <p className="text-[11px] text-slate-500">Finalizar tu sesión en este navegador.</p>
                   </div>
                   <button
                     onClick={async () => {
@@ -3498,9 +3479,9 @@ export default function TiendaFoxDrop() {
                       setUser(null);
                       setCurrentView('store');
                     }}
-                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-rose-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 transition cursor-pointer"
                   >
-                    Salir
+                    Salir de la cuenta
                   </button>
                 </div>
               </div>
@@ -3511,36 +3492,36 @@ export default function TiendaFoxDrop() {
           {/* MODAL AGREGAR / EDITAR DIRECCIÓN */}
           {showAddressModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 relative shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
                 <button
                   onClick={() => setShowAddressModal(false)}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
-                <div className="border-b border-gray-100 pb-2">
-                  <h3 className="font-black text-base text-gray-900">
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="font-bold text-base text-slate-900">
                     {editingAddress ? 'Editar Dirección' : 'Nueva Dirección de Entrega'}
                   </h3>
-                  <p className="text-xs text-gray-500">Ingresa la ubicación donde recibirás tus pedidos.</p>
+                  <p className="text-xs text-slate-500">Ingresa la ubicación donde recibirás tus pedidos.</p>
                 </div>
 
                 <form onSubmit={handleSaveAddress} className="space-y-3 text-xs">
                   <div>
-                    <label className="text-gray-700 font-bold block mb-1">Nombre de quien recibe:</label>
+                    <label className="text-slate-700 font-bold block mb-1">Nombre de quien recibe:</label>
                     <input
                       type="text"
                       required
                       value={addressForm.name || ''}
                       onChange={e => setAddressForm(p => ({ ...p, name: e.target.value }))}
-                      className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                     />
                   </div>
 
                   {/* Dirección de entrega */}
                   <div className="pt-1">
-                    <label className="text-gray-700 font-bold block mb-1">
+                    <label className="text-slate-700 font-bold block mb-1">
                       Dirección de entrega:
                     </label>
                     <GoogleAddressInput
@@ -3564,18 +3545,18 @@ export default function TiendaFoxDrop() {
                   </div>
 
                   <div>
-                    <label className="text-gray-700 font-bold block mb-1">Referencias de entrega (opcional):</label>
+                    <label className="text-slate-700 font-bold block mb-1">Referencias de entrega (opcional):</label>
                     <textarea
                       rows={2}
                       value={addressForm.references || ''}
                       onChange={e => setAddressForm(p => ({ ...p, references: e.target.value }))}
-                      className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold py-2.5 rounded-xl transition text-xs shadow cursor-pointer mt-2"
+                    className="w-full bg-[#0F3E36] hover:bg-[#154E45] text-white font-bold py-2.5 rounded-lg transition text-xs shadow-2xs cursor-pointer mt-2"
                   >
                     {editingAddress ? 'Actualizar Dirección' : 'Guardar Dirección'}
                   </button>
@@ -3587,33 +3568,33 @@ export default function TiendaFoxDrop() {
           {/* MODAL AGREGAR TARJETA */}
           {showCardModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
+              <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl border border-slate-200">
                 <button
                   onClick={() => setShowCardModal(false)}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
-                <div className="border-b border-gray-100 pb-2">
-                  <h3 className="font-black text-base text-gray-900">Agregar Método de Pago</h3>
-                  <p className="text-xs text-gray-500">Guarda una tarjeta de crédito o débito para compras con 1 clic.</p>
+                <div className="border-b border-slate-100 pb-2">
+                  <h3 className="font-bold text-base text-slate-900">Agregar Método de Pago</h3>
+                  <p className="text-xs text-slate-500">Guarda una tarjeta de crédito o débito para compras con 1 clic.</p>
                 </div>
 
                 <form onSubmit={handleSaveCard} className="space-y-3 text-xs">
                   <div>
-                    <label className="text-gray-700 font-bold block mb-1">Nombre en la tarjeta:</label>
+                    <label className="text-slate-700 font-bold block mb-1">Nombre en la tarjeta:</label>
                     <input
                       type="text"
                       required
                       value={cardForm.holderName}
                       onChange={e => setCardForm(p => ({ ...p, holderName: e.target.value }))}
-                      className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="text-gray-700 font-bold block mb-1">Número de tarjeta:</label>
+                    <label className="text-slate-700 font-bold block mb-1">Número de tarjeta:</label>
                     <input
                       type="text"
                       required
@@ -3623,15 +3604,15 @@ export default function TiendaFoxDrop() {
                         const v = e.target.value.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim();
                         setCardForm(p => ({ ...p, cardNumber: v }));
                       }}
-                      className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 font-mono text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                     />
                   </div>
 
                   {/* Visual de Tarjeta Estilo Pasarela */}
-                  <div className="bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3 relative overflow-hidden border border-slate-700">
+                  <div className="bg-slate-900 text-white rounded-xl p-4 shadow-xs space-y-3 relative overflow-hidden border border-slate-800">
                     <div className="flex items-center justify-between">
-                      <div className="w-8 h-6 bg-amber-400/90 rounded-md shadow-xs"></div>
-                      <span className="font-mono text-xs uppercase tracking-widest text-slate-300 font-bold">
+                      <div className="w-8 h-6 bg-amber-400/90 rounded shadow-2xs"></div>
+                      <span className="font-mono text-xs uppercase tracking-wider text-slate-300 font-bold">
                         {detectBrand(cardForm.cardNumber.replace(/\s/g, '')) || 'Tarjeta'}
                       </span>
                     </div>
@@ -3654,7 +3635,7 @@ export default function TiendaFoxDrop() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">Vencimiento (MM/AA):</label>
+                      <label className="text-slate-700 font-bold block mb-1">Vencimiento (MM/AA):</label>
                       <input
                         type="text"
                         required
@@ -3668,32 +3649,32 @@ export default function TiendaFoxDrop() {
                           }
                           setCardForm(p => ({ ...p, expDate: v }));
                         }}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 font-mono text-center text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-center text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                       />
                     </div>
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">CVV / CVC:</label>
+                      <label className="text-slate-700 font-bold block mb-1">CVV / CVC:</label>
                       <input
                         type="password"
                         placeholder="123"
                         maxLength={4}
                         value={cardForm.cvc}
                         onChange={e => setCardForm(p => ({ ...p, cvc: e.target.value.replace(/\D/g, '') }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 font-mono text-center text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-center text-slate-900 focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                       />
                     </div>
                   </div>
 
                   {/* MENSAJES SUTILES INTEGRADOS EN LA INTERFAZ */}
                   {cardError && (
-                    <div className="bg-rose-50 border border-rose-200/80 rounded-xl px-3 py-2 text-[11px] text-rose-700 font-medium flex items-center gap-1.5 animate-in fade-in">
+                    <div className="bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 text-[11px] text-rose-700 font-medium flex items-center gap-1.5 animate-in fade-in">
                       <span>⚠️</span>
                       <span>{cardError}</span>
                     </div>
                   )}
 
                   {cardSuccessNotice && (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] text-emerald-800 font-bold flex items-center gap-1.5 animate-in fade-in">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-[11px] text-emerald-800 font-bold flex items-center gap-1.5 animate-in fade-in">
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
                       <span>{cardSuccessNotice}</span>
                     </div>
@@ -3702,7 +3683,7 @@ export default function TiendaFoxDrop() {
                   <button
                     type="submit"
                     disabled={cardSaving || Boolean(cardSuccessNotice)}
-                    className="w-full bg-[#0F3E36] hover:bg-[#1A5248] disabled:bg-slate-400 text-white font-bold py-2.5 rounded-xl transition text-xs shadow cursor-pointer mt-2 flex items-center justify-center gap-2"
+                    className="w-full bg-[#0F3E36] hover:bg-[#154E45] disabled:bg-slate-300 text-white font-bold py-2.5 rounded-lg transition text-xs shadow-2xs cursor-pointer mt-2 flex items-center justify-center gap-2"
                   >
                     {cardSaving ? (
                       <>
