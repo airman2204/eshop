@@ -5969,131 +5969,130 @@ export default function TiendaFoxDrop() {
       {selectedOrderForDetail && (() => {
         const order = selectedOrderForDetail;
         const isCancelled = order.status === 'cancelled';
-        const statusStep = (() => {
-          switch (order.status) {
-            case 'pending': return 1;
-            case 'processing': return 2;
-            case 'shipped': return 3;
-            case 'delivered': return 4;
-            default: return 1;
-          }
-        })();
-
-        const statusBadge = (() => {
-          switch (order.status) {
-            case 'shipped': return { label: 'En Camino', bg: 'bg-amber-100 text-amber-800 border-amber-300' };
-            case 'processing': return { label: 'Confirmado por Tienda', bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
-            case 'delivered': return { label: 'Entregado', bg: 'bg-teal-100 text-teal-800 border-teal-300' };
-            case 'cancelled': return { label: 'Cancelado', bg: 'bg-red-100 text-red-800 border-red-300' };
-            case 'pending':
-            default:
-              return { label: 'Pendiente de Confirmación', bg: 'bg-amber-50 text-amber-800 border-amber-300' };
-          }
-        })();
+        const isDelivered = order.status === 'delivered';
+        const isShipped = order.status === 'shipped';
+        const isProcessing = order.status === 'processing';
+        const isPending = order.status === 'pending';
 
         const orderNum = order.order_number || order.id;
-        const waMsg = `Hola FoxDrop 🦊, deseo consultar el estado de mi pedido *${orderNum}* por un total de *$${Number(order.total).toFixed(2)} MXN*.`;
+        const waMsg = `Hola FoxDrop 🦊, deseo consultar el estado de mi pedido *${orderNum}* por un total de *${Number(order.total).toFixed(2)} MXN*.`;
         const waLink = `https://wa.me/522221234567?text=${encodeURIComponent(waMsg)}`;
+
+        // Resolver items si vienen vacíos usando catálogo local
+        const orderItems = (order.order_items && order.order_items.length > 0)
+          ? order.order_items
+          : (order.items || []);
+
+        const isInternational = order.shipping_type === 'international_shipping' || 
+                                (order.notes && (order.notes.includes('[IMPORTACION') || order.notes.includes('[CJ-ORDER:')));
+
+        // Dirección limpia y formateada estilo Amazon/Mercado Libre
+        const addr = typeof order.shipping_address === 'object' && order.shipping_address !== null ? order.shipping_address : {};
+        const formattedAddress = [addr.street, addr.colonia, addr.city, addr.zip ? `C.P. ${addr.zip}` : ''].filter(Boolean).join(', ');
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 relative shadow-2xl max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setSelectedOrderForDetail(null)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Encabezado del Detalle */}
-              <div className="border-b border-gray-100 pb-3 pr-8 space-y-1">
-                <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Detalle & Seguimiento Oficial
-                </span>
-                <div className="flex items-center gap-2 flex-wrap pt-1">
-                  <h3 className="font-black text-lg text-gray-900">Número de Orden:</h3>
-                  <span className="font-mono font-black text-sm bg-[#0F3E36] text-white px-2.5 py-0.5 rounded-lg">
-                    {orderNum}
-                  </span>
+            <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 relative shadow-2xl max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-slate-800">
+              {/* Header limpio estilo Amazon / Mercado Libre */}
+              <div className="flex items-start justify-between border-b border-slate-100 pb-3 pr-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-sm text-slate-900 tracking-tight">
+                      Pedido {orderNum}
+                    </span>
+                    {isCancelled ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        Cancelado
+                      </span>
+                    ) : isDelivered ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Entregado
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0F3E36] border border-emerald-200">
+                        En Preparación
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Comprado el {new Date(order.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Registrado el {new Date(order.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrderForDetail(null)}
+                  className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Estatus Actual y Tracker de 4 Pasos (o aviso de cancelación) */}
-              {isCancelled ? (
-                <div className="bg-red-50 rounded-2xl p-4 border border-red-200 space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-red-900 flex items-center gap-1.5">
-                      <Ban className="w-4 h-4 text-red-600" /> Estado de la Orden:
-                    </span>
-                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full border bg-red-100 text-red-800 border-red-300">
-                      Cancelado
-                    </span>
+              {/* Banner de Entrega / Estado estilo Mercado Libre */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-[#0F3E36] flex items-center justify-center shrink-0">
+                    <Truck className="w-4 h-4" />
                   </div>
-                  <div className="bg-white/80 p-3 rounded-xl border border-red-100 text-red-800 space-y-1">
-                    <span className="font-bold block text-[11px]">Motivo registrado por la tienda:</span>
-                    <p className="italic">{order.notes || 'Cancelado por administración sin motivo especificado.'}</p>
+                  <div>
+                    <p className="font-bold text-xs text-slate-900">
+                      {isCancelled 
+                        ? 'Este pedido fue cancelado' 
+                        : isDelivered 
+                        ? 'Paquete entregado' 
+                        : isShipped 
+                        ? 'Tu paquete está en camino' 
+                        : isInternational
+                        ? 'En preparación de despacho internacional'
+                        : 'En preparación en tienda'}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {isInternational ? 'Tiempo estimado de entrega: 10 a 15 días hábiles' : 'Entrega local: 24 a 48 horas'}
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-[#FAF6F0] rounded-2xl p-4 border border-gray-200 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700">Estado de preparación:</span>
-                    <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border ${statusBadge.bg}`}>
-                      {statusBadge.label}
-                    </span>
+
+                {formattedAddress && (
+                  <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <span>Enviar a: <strong>{formattedAddress}</strong></span>
                   </div>
+                )}
+              </div>
 
-                  <div className="relative flex items-center justify-between pt-2">
-                    <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-200 z-0">
-                      <div 
-                        className="h-full bg-[#0F3E36] transition-all duration-500"
-                        style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
-                      />
-                    </div>
-
-                    {[
-                      { step: 1, title: 'Por Confirmar', icon: Clock },
-                      { step: 2, title: 'Confirmado', icon: CheckCircle2 },
-                      { step: 3, title: 'En Camino', icon: Truck },
-                      { step: 4, title: 'Entregado', icon: Check },
-                    ].map(s => {
-                      const Icon = s.icon;
-                      const isPassed = statusStep >= s.step;
-                      const isCurrent = statusStep === s.step;
-
-                      return (
-                        <div key={s.step} className="relative z-10 flex flex-col items-center">
-                          <div 
-                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition ${
-                              isPassed 
-                                ? 'bg-[#0F3E36] text-white ring-4 ring-emerald-100' 
-                                : 'bg-white border-2 border-gray-300 text-gray-400'
-                            } ${isCurrent ? '!bg-[#DF7F2D] ring-4 ring-[#DF7F2D]/30' : ''}`}
-                          >
-                            <Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className={`text-[10px] mt-1 font-bold ${
-                            isCurrent ? 'text-[#DF7F2D]' : isPassed ? 'text-[#0F3E36]' : 'text-gray-400'
-                          }`}>
-                            {s.title}
-                          </span>
-                        </div>
-                      );
-                    })}
+              {/* Guía de Rastreo si ya cuenta con tracking */}
+              {(order.tracking_number || order.trackingNumber) && (
+                <div className="bg-sky-50/70 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-xs">
+                  <span className="font-bold text-sky-950 flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-sky-600" /> Número de Guía de Rastreo
+                  </span>
+                  <div className="bg-white p-2.5 rounded-xl border border-sky-200 flex items-center justify-between">
+                    <span className="font-mono font-black text-xs text-sky-900 tracking-wider">
+                      {order.tracking_number || order.trackingNumber}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tr = order.tracking_number || order.trackingNumber;
+                        if (navigator?.clipboard && tr) {
+                          navigator.clipboard.writeText(tr);
+                          alert("Número de guía copiado");
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[10px] rounded-lg transition"
+                    >
+                      Copiar
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Productos en el Pedido */}
+              {/* Lista limpia de Productos Comprados */}
               <div className="space-y-2">
-                <span className="text-xs font-black uppercase text-gray-400 tracking-wider block">
-                  Artículos Comprados
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Artículos en el pedido ({orderItems.length})
                 </span>
-                <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-xs max-h-56 overflow-y-auto">
-                  {order.order_items && order.order_items.map((item: any, idx: number) => {
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                  {orderItems.map((item: any, idx: number) => {
                     const cleanItemTitle = (item.product_title || "").trim().toLowerCase();
                     const matchedProduct = products.find(p => {
                       if (p.id && item.product_id && p.id === item.product_id) return true;
@@ -6105,9 +6104,9 @@ export default function TiendaFoxDrop() {
                       : (matchedProduct?.images?.[0] && !matchedProduct.images[0].includes("no-image.svg") ? matchedProduct.images[0] : '/no-image.svg');
 
                     return (
-                      <div key={idx} className="p-3 flex items-center justify-between gap-3 bg-white hover:bg-gray-50/50 transition">
+                      <div key={idx} className="p-3 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-11 h-11 rounded-lg bg-slate-50 p-1 border border-slate-200/80 shrink-0 flex items-center justify-center overflow-hidden shadow-xs">
+                          <div className="w-12 h-12 rounded-xl bg-slate-50 p-1 border border-slate-200 shrink-0 flex items-center justify-center overflow-hidden">
                             <img
                               src={productImg}
                               alt={item.product_title}
@@ -6116,31 +6115,17 @@ export default function TiendaFoxDrop() {
                             />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-gray-900 truncate">{item.product_title}</p>
-                            <p className="text-[11px] text-gray-500">
-                              Cantidad: {item.quantity} • ${Number(item.price_at_purchase).toFixed(2)} MXN c/u
+                            <p className="font-bold text-xs text-slate-900 truncate max-w-[220px] sm:max-w-xs">{item.product_title}</p>
+                            <p className="text-[11px] text-slate-500">
+                              Cantidad: {item.quantity} ud(s)
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-black text-gray-900 text-xs">
+                        <div className="text-right shrink-0">
+                          <span className="font-mono font-bold text-slate-900 text-xs block">
                             ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)} MXN
                           </span>
-                          {matchedProduct && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                addToCart(matchedProduct);
-                                setSelectedOrderForDetail(null);
-                                setIsCartOpen(true);
-                              }}
-                              className="p-1.5 rounded-lg bg-orange-50 hover:bg-[#DF7F2D] text-[#DF7F2D] hover:text-white transition cursor-pointer"
-                              title="Volver a comprar este producto"
-                            >
-                              <ShoppingBag className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     );
@@ -6148,95 +6133,27 @@ export default function TiendaFoxDrop() {
                 </div>
               </div>
 
-              {/* Guía de Rastreo y Paquetería si fue despachado */}
-              {(order.tracking_number || order.trackingNumber) && (
-                <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-sky-950 flex items-center gap-1.5">
-                      <Truck className="w-4 h-4 text-sky-600" /> Guía de Rastreo Asignada
-                    </span>
-                    <span className="text-[10px] bg-sky-200 text-sky-800 font-bold px-2 py-0.5 rounded-full">
-                      Paquetería Nacional / Express
-                    </span>
-                  </div>
-                  <div className="bg-white p-2.5 rounded-xl border border-sky-150 flex items-center justify-between">
-                    <span className="font-mono font-black text-sm text-sky-900 tracking-wider">
-                      {order.tracking_number || order.trackingNumber}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tr = order.tracking_number || order.trackingNumber;
-                        if (navigator?.clipboard && tr) {
-                          navigator.clipboard.writeText(tr);
-                          alert("Número de guía copiado al portapapeles: " + tr);
-                        }
-                      }}
-                      className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[11px] rounded-lg transition cursor-pointer"
-                    >
-                      Copiar Guía
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-sky-700">
-                    Puedes rastrear este número directamente en FedEx, Estafeta o la paquetería correspondiente.
-                  </p>
+              {/* Resumen Limpio de Pago */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-500">
+                  <span>Productos ({orderItems.reduce((acc: number, cur: any) => acc + (cur.quantity || 1), 0)}):</span>
+                  <span className="font-mono font-medium text-slate-800">${Number(order.subtotal || order.total).toFixed(2)} MXN</span>
                 </div>
-              )}
-
-              {/* Total y Datos de Entrega */}
-              <div className="bg-[#FAF6F0] p-4 rounded-xl border border-gray-200 space-y-1.5 text-xs">
-                <div className="flex justify-between text-gray-600">
-                  <span>Canal de compra:</span>
-                  <span className="font-bold">
-                    {order.order_number?.startsWith('FX-POS') || order.id?.startsWith('FX-POS') || (order.notes && order.notes.includes('POS'))
-                      ? '🏪 Mostrador Físico (Punto de Venta POS)'
-                      : '🌐 Tienda Oficial en Línea'}
+                <div className="flex justify-between text-slate-500">
+                  <span>Envío:</span>
+                  <span className="font-bold text-emerald-600">
+                    {Number(order.shipping_cost) > 0 ? `${Number(order.shipping_cost).toFixed(2)} MXN` : 'Gratis'}
                   </span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Método de pago:</span>
-                  <span className="font-bold capitalize">{order.payment_method === 'cash' ? 'Efectivo / Mostrador' : order.payment_method === 'card' ? 'Tarjeta' : 'Transferencia SPEI'}</span>
-                </div>
-                <div className="flex justify-between text-sm font-black text-gray-900 pt-1 border-t border-gray-200">
-                  <span>Total de la Orden:</span>
-                  <span className="text-[#DF7F2D] text-base">${Number(order.total).toFixed(2)} MXN</span>
+                <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+                  <span>Total Pagado:</span>
+                  <span className="font-mono text-base text-[#DF7F2D]">${Number(order.total).toFixed(2)} MXN</span>
                 </div>
               </div>
 
-              {/* Ticket Oficial de Venta POS si existe */}
-              {(() => {
-                const ticketUrlMatch = order.notes && order.notes.match(/Ticket:\s*(https?:\/\/[^\s]+|data:image\/[a-zA-Z]+;base64,[^\s]+)/);
-                const ticketUrl = ticketUrlMatch ? ticketUrlMatch[1] : null;
-                if (!ticketUrl) return null;
-                return (
-                  <div className="bg-orange-50/60 border border-orange-200 rounded-2xl p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                        🧾 Comprobante / Ticket Oficial de Venta
-                      </span>
-                      <a
-                        href={ticketUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] font-bold text-[#E65F2B] hover:underline flex items-center gap-1"
-                      >
-                        Abrir imagen <ArrowUpRight className="w-3 h-3" />
-                      </a>
-                    </div>
-                    <div className="max-h-56 overflow-hidden rounded-xl border border-orange-100 bg-white flex justify-center p-2 shadow-inner">
-                      <img
-                        src={ticketUrl}
-                        alt={`Ticket oficial ${orderNum}`}
-                        className="max-h-52 w-auto object-contain rounded-lg shadow-sm"
-                      />
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Botón de Cancelación y WhatsApp de Atención Inmediata */}
+              {/* Acciones principales limpias */}
               <div className="space-y-2 pt-1">
-                {(order.status === 'pending' || order.status === 'processing') && (
+                {isPending && (
                   <button
                     type="button"
                     onClick={() => {
@@ -6245,9 +6162,9 @@ export default function TiendaFoxDrop() {
                       setClientCancelNotes('');
                       setShowClientCancelModal(true);
                     }}
-                    className="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                    className="w-full bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
                   >
-                    <Ban className="w-4 h-4 text-red-600" />
+                    <Ban className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
                     <span>Cancelar este Pedido</span>
                   </button>
                 )}
@@ -6256,19 +6173,11 @@ export default function TiendaFoxDrop() {
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-sm"
+                  className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow-xs cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4 fill-white" />
-                  <span>Contactar Asesor por WhatsApp para esta Orden</span>
+                  <span>Ayuda con mi Pedido (WhatsApp)</span>
                 </a>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedOrderForDetail(null)}
-                  className="w-full py-2.5 text-xs text-gray-500 hover:text-gray-800 font-bold transition cursor-pointer"
-                >
-                  Cerrar Detalle
-                </button>
               </div>
             </div>
           </div>
