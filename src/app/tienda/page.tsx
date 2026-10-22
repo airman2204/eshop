@@ -9,7 +9,7 @@ import {
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
   Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy,
-  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp, TrendingUp, Coins
+  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp, TrendingUp, Coins, Loader2
 } from 'lucide-react';
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
@@ -365,6 +365,9 @@ export default function TiendaFoxDrop() {
   const [cardForm, setCardForm] = useState({
     holderName: '', cardNumber: '', expDate: '', cvc: '', expMonth: '01', expYear: '26', isDefault: false,
   });
+  const [cardError, setCardError] = useState<string | null>(null);
+  const [cardSaving, setCardSaving] = useState(false);
+  const [cardSuccessNotice, setCardSuccessNotice] = useState<string | null>(null);
 
   // Datos personales editables
   const [editName, setEditName] = useState('');
@@ -1210,16 +1213,22 @@ export default function TiendaFoxDrop() {
 
   const handleSaveCard = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCardError(null);
     const clean = cardForm.cardNumber.replace(/\s/g, '');
     if (clean.length < 15) {
-      alert("Por favor ingresa un número de tarjeta válido (15 o 16 dígitos).");
+      setCardError("Por favor ingresa un número de tarjeta válido (15 o 16 dígitos).");
       return;
     }
     if (!cardForm.holderName.trim()) {
-      alert("Por favor ingresa el nombre del titular tal como aparece en la tarjeta.");
+      setCardError("Por favor ingresa el nombre del titular tal como aparece en la tarjeta.");
+      return;
+    }
+    if (cardForm.expDate && cardForm.expDate.length < 5) {
+      setCardError("Por favor ingresa la fecha de vencimiento completa en formato MM/AA.");
       return;
     }
 
+    setCardSaving(true);
     try {
       const last4 = clean.slice(-4);
       const brand = detectBrand(clean);
@@ -1245,10 +1254,16 @@ export default function TiendaFoxDrop() {
 
       const updated = await saveUserCard(cardPayload);
       setFullProfile(prev => prev ? { ...prev, cards: updated } : null);
-      setShowCardModal(false);
-      setCardForm({ holderName: '', cardNumber: '', expDate: '', cvc: '', expMonth: '01', expYear: '26', isDefault: false });
+      setCardSuccessNotice(`Tarjeta ${brand.toUpperCase()} terminada en •••• ${last4} guardada con éxito`);
+      setTimeout(() => {
+        setCardSuccessNotice(null);
+        setShowCardModal(false);
+        setCardForm({ holderName: '', cardNumber: '', expDate: '', cvc: '', expMonth: '01', expYear: '26', isDefault: false });
+      }, 1200);
     } catch (err: any) {
-      alert(`Error al guardar tarjeta: ${err?.message || 'Intenta de nuevo'}`);
+      setCardError(err?.message || "Error al guardar tarjeta. Intenta nuevamente.");
+    } finally {
+      setCardSaving(false);
     }
   };
 
@@ -3623,11 +3638,39 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
 
+                  {/* MENSAJES SUTILES INTEGRADOS EN LA INTERFAZ */}
+                  {cardError && (
+                    <div className="bg-rose-50 border border-rose-200/80 rounded-xl px-3 py-2 text-[11px] text-rose-700 font-medium flex items-center gap-1.5 animate-in fade-in">
+                      <span>⚠️</span>
+                      <span>{cardError}</span>
+                    </div>
+                  )}
+
+                  {cardSuccessNotice && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-[11px] text-emerald-800 font-bold flex items-center gap-1.5 animate-in fade-in">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{cardSuccessNotice}</span>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
-                    className="w-full bg-[#0F3E36] hover:bg-[#1A5248] text-white font-bold py-2.5 rounded-xl transition text-xs shadow cursor-pointer mt-2"
+                    disabled={cardSaving || Boolean(cardSuccessNotice)}
+                    className="w-full bg-[#0F3E36] hover:bg-[#1A5248] disabled:bg-slate-400 text-white font-bold py-2.5 rounded-xl transition text-xs shadow cursor-pointer mt-2 flex items-center justify-center gap-2"
                   >
-                    Guardar Tarjeta
+                    {cardSaving ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Guardando en tu cuenta...</span>
+                      </>
+                    ) : cardSuccessNotice ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>¡Guardada!</span>
+                      </>
+                    ) : (
+                      <span>Guardar Tarjeta</span>
+                    )}
                   </button>
                 </form>
               </div>
