@@ -103,6 +103,9 @@ export default function TiendaFoxDrop() {
   const [activeModalImageIndex, setActiveModalImageIndex] = useState(0);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
@@ -3878,7 +3881,7 @@ export default function TiendaFoxDrop() {
                         <div className="pt-2 border-t border-indigo-100">
                           <span className="text-[11px] text-indigo-900 font-semibold flex items-center gap-1.5">
                             <Check className="w-3.5 h-3.5 text-indigo-600 stroke-[3]" />
-                            <span>Flete y aduana ya incluidos en el precio</span>
+                            <span>Envío Internacional Gratis</span>
                           </span>
                         </div>
                       </div>
@@ -3892,9 +3895,6 @@ export default function TiendaFoxDrop() {
                         <span className="text-2xl">✈️</span>
                         <span>Envío Internacional Directo a Domicilio</span>
                       </h2>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Tu pedido contiene artículos de importación directa de fábrica a tu puerta en México.
-                      </p>
                     </div>
 
                     {/* Tarjeta de Paquetería Internacional con Envío Gratis */}
@@ -3917,7 +3917,6 @@ export default function TiendaFoxDrop() {
                           <span className="text-xs font-black text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
                             ¡Envío Gratis!
                           </span>
-                          <span className="text-[10px] text-slate-400 block mt-1 font-medium">Incluido en el precio</span>
                         </div>
                       </div>
                       <p className="text-[11.5px] text-slate-600 leading-relaxed pt-1">
@@ -4414,13 +4413,91 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleFinishOrder}
-                    className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white font-black px-8 py-4 rounded-2xl text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Completar y Confirmar Pedido</span>
-                    <CheckCircle2 className="w-4 h-4" />
-                  </button>
+                  {/* BOTÓN CON LLENADO PROGRESIVO ANTICLICKS ACCIDENTALES (HOLD TO CONFIRM) */}
+                  <div className="flex flex-col items-center sm:items-end gap-1.5 select-none">
+                    <button
+                      type="button"
+                      onMouseDown={() => {
+                        setIsHolding(true);
+                        setHoldProgress(0);
+                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                        const startTime = Date.now();
+                        const duration = 1200; // 1.2 segundos para completarse
+                        holdIntervalRef.current = setInterval(() => {
+                          const elapsed = Date.now() - startTime;
+                          const progress = Math.min(100, Math.round((elapsed / duration) * 100));
+                          setHoldProgress(progress);
+                          if (progress >= 100) {
+                            if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                            setIsHolding(false);
+                            handleFinishOrder();
+                          }
+                        }, 25);
+                      }}
+                      onMouseUp={() => {
+                        setIsHolding(false);
+                        setHoldProgress(0);
+                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                      }}
+                      onMouseLeave={() => {
+                        setIsHolding(false);
+                        setHoldProgress(0);
+                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                      }}
+                      onTouchStart={() => {
+                        setIsHolding(true);
+                        setHoldProgress(0);
+                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                        const startTime = Date.now();
+                        const duration = 1200;
+                        holdIntervalRef.current = setInterval(() => {
+                          const elapsed = Date.now() - startTime;
+                          const progress = Math.min(100, Math.round((elapsed / duration) * 100));
+                          setHoldProgress(progress);
+                          if (progress >= 100) {
+                            if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                            setIsHolding(false);
+                            handleFinishOrder();
+                          }
+                        }, 25);
+                      }}
+                      onTouchEnd={() => {
+                        setIsHolding(false);
+                        setHoldProgress(0);
+                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+                      }}
+                      className="relative overflow-hidden w-full sm:w-auto bg-[#0F3E36] text-white font-black px-8 py-4 rounded-2xl text-xs sm:text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 select-none"
+                    >
+                      {/* Barra de progreso de llenado que crece hacia la derecha */}
+                      <div
+                        className="absolute inset-y-0 left-0 bg-[#DF7F2D] transition-all ease-linear"
+                        style={{ width: `${holdProgress}%` }}
+                      />
+
+                      {/* Contenido del botón */}
+                      <span className="relative z-10 flex items-center gap-2">
+                        {holdProgress >= 100 ? (
+                          <>
+                            <span>¡Confirmando Pedido...!</span>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          </>
+                        ) : isHolding ? (
+                          <>
+                            <span>Mantén presionado ({holdProgress}%)</span>
+                            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                          </>
+                        ) : (
+                          <>
+                            <span>Mantén presionado para Pagar</span>
+                            <CheckCircle2 className="w-4 h-4" />
+                          </>
+                        )}
+                      </span>
+                    </button>
+                    <span className="text-[10px] text-gray-500 font-medium">
+                      🛡️ Mantén presionado 1 segundo para evitar clics accidentales
+                    </span>
+                  </div>
                 </div>
               </div>
               );
