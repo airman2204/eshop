@@ -2461,7 +2461,7 @@ export default function TiendaFoxDrop() {
                   </div>
 
                   {/* IMAGEN DE PRODUCTO SOBRE FONDO BLANCO / GRIS ULTRA LIMPIO ESTILO AMAZON */}
-                  <div className="aspect-square bg-[#F8F9FA] rounded-xl flex items-center justify-center p-3 overflow-hidden group-hover:bg-[#F2F4F7] transition relative">
+                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
                     <img
                       src={getSafeProductImage(product.images?.[0])}
                       alt={product.title}
@@ -2504,39 +2504,24 @@ export default function TiendaFoxDrop() {
 
                   {/* DETALLES DE PRECIO Y PROMOCIÓN ESTILO AMAZON */}
                   <div className="pt-2 flex-1 flex flex-col justify-between">
-                    {/* Badge de Promoción / Descuento */}
-                    <div className="flex items-center gap-1.5 flex-wrap min-h-[20px]">
-                      {hasDiscount ? (
-                        <>
-                          <span className="bg-[#CC0C39] text-white text-[10.5px] font-bold px-1.5 py-0.5 rounded-xs leading-none">
-                            -{product.discountPercent}%
-                          </span>
-                          <span className="text-[#CC0C39] text-[11px] font-bold">
-                            Promoción
-                          </span>
-                        </>
-                      ) : product.stock === 1 ? (
-                        <span className="text-amber-700 text-[11px] font-bold">
-                          Última pieza
-                        </span>
-                      ) : (
-                        <span className="text-emerald-700 text-[11px] font-semibold">
-                          Disponible
-                        </span>
-                      )}
-                    </div>
 
-                    {/* Precios con superíndice estilo catálogo Amazon */}
-                    <div className="pt-1">
-                      <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <div className="flex items-start text-gray-950 font-bold leading-none">
-                          <span className="text-xs pt-0.5">$</span>
-                          <span className="text-xl sm:text-2xl font-black tracking-tight">{Math.floor(product.publicPrice)}</span>
-                          <span className="text-[10px] pt-0.5 font-bold">00</span>
+
+                    {/* PRECIO ACTUAL Y VALOR DE REFERENCIA DE ANTES (VERDE #0F3E36) */}
+                    <div className="pt-1.5 space-y-1">
+                      <div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
+                            ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
+                          </span>
+                          {hasDiscount ? (
+                            <span className="text-[11px] text-gray-400 line-through font-medium">
+                              ${originalPrice.toFixed(0)}
+                            </span>
+                          ) : null}
                         </div>
                         {hasDiscount && (
-                          <span className="text-[11px] text-gray-500 line-through">
-                            Precio de lista: ${originalPrice.toFixed(0)}
+                          <span className="text-[10px] font-bold text-emerald-700 block">
+                            Ahorras ${(originalPrice - product.publicPrice).toFixed(0)} MXN
                           </span>
                         )}
                       </div>
@@ -2555,14 +2540,21 @@ export default function TiendaFoxDrop() {
                       )}
                     </div>
 
-                    {/* Procedencia / Marca / Calificación (Si es importación mostrar 'Internacional') */}
+                    {/* Procedencia / Marca / Calificación con avioncito y colores de antes */}
                     <div className="pt-2 flex items-center justify-between text-[11px] border-t border-gray-100 mt-2">
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider truncate">
-                        {isImportItem ? 'Internacional' : (product.brand && !product.brand.toLowerCase().includes('cj dropshipping') ? product.brand : product.category)}
+                      <span className="text-[10px] font-semibold text-[#0F3E36] hover:underline uppercase tracking-wider truncate flex items-center gap-1">
+                        {isImportItem ? (
+                          <>
+                            <span>✈️</span>
+                            <span>Internacional</span>
+                          </>
+                        ) : (
+                          <span>{product.brand && !product.brand.toLowerCase().includes('cj dropshipping') ? product.brand : product.category}</span>
+                        )}
                       </span>
-                      <div className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px] shrink-0">
-                        <span>★</span>
-                        <span className="text-gray-700">4.8</span>
+                      <div className="flex items-center gap-1 font-bold text-gray-700 shrink-0">
+                        <span className="text-amber-400 text-xs">★</span>
+                        <span>4.8</span>
                       </div>
                     </div>
                   </div>
