@@ -363,7 +363,7 @@ export default function TiendaFoxDrop() {
 
   const [showCardModal, setShowCardModal] = useState(false);
   const [cardForm, setCardForm] = useState({
-    holderName: '', cardNumber: '', expMonth: '01', expYear: '26', isDefault: false,
+    holderName: '', cardNumber: '', expDate: '', cvc: '', expMonth: '01', expYear: '26', isDefault: false,
   });
 
   // Datos personales editables
@@ -1223,20 +1223,30 @@ export default function TiendaFoxDrop() {
     try {
       const last4 = clean.slice(-4);
       const brand = detectBrand(clean);
+      
+      // Extraer mes y año desde el formato estándar MM/AA
+      let parsedMonth = cardForm.expMonth;
+      let parsedYear = cardForm.expYear;
+      if (cardForm.expDate && cardForm.expDate.includes('/')) {
+        const [m, y] = cardForm.expDate.split('/');
+        if (m) parsedMonth = m.trim().padStart(2, '0');
+        if (y) parsedYear = y.trim().length === 2 ? y.trim() : y.trim().slice(-2);
+      }
+
       const cardPayload: UserCard = {
         id: `card-${Date.now()}`,
         brand,
         last4,
         holderName: cardForm.holderName.trim().toUpperCase(),
-        expMonth: cardForm.expMonth,
-        expYear: cardForm.expYear,
+        expMonth: parsedMonth,
+        expYear: parsedYear,
         isDefault: (fullProfile?.cards?.length || 0) === 0 ? true : Boolean(cardForm.isDefault),
       };
 
       const updated = await saveUserCard(cardPayload);
       setFullProfile(prev => prev ? { ...prev, cards: updated } : null);
       setShowCardModal(false);
-      setCardForm({ holderName: '', cardNumber: '', expMonth: '01', expYear: '26', isDefault: false });
+      setCardForm({ holderName: '', cardNumber: '', expDate: '', cvc: '', expMonth: '01', expYear: '26', isDefault: false });
     } catch (err: any) {
       alert(`Error al guardar tarjeta: ${err?.message || 'Intenta de nuevo'}`);
     }
@@ -3556,30 +3566,60 @@ export default function TiendaFoxDrop() {
                     />
                   </div>
 
+                  {/* Visual de Tarjeta Estilo Pasarela */}
+                  <div className="bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3 relative overflow-hidden border border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <div className="w-8 h-6 bg-amber-400/90 rounded-md shadow-xs"></div>
+                      <span className="font-mono text-xs uppercase tracking-widest text-slate-300 font-bold">
+                        {detectBrand(cardForm.cardNumber.replace(/\s/g, '')) || 'Tarjeta'}
+                      </span>
+                    </div>
+                    <div className="font-mono text-base tracking-widest text-slate-100 font-bold">
+                      {cardForm.cardNumber || '•••• •••• •••• ••••'}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <div>
+                        <span className="text-[9px] text-slate-400 block uppercase">Titular</span>
+                        <span className="font-bold truncate block max-w-[170px] uppercase">
+                          {cardForm.holderName || 'NOMBRE COMPLETO'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] text-slate-400 block uppercase">Vence</span>
+                        <span className="font-mono font-bold">{cardForm.expDate || 'MM/AA'}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">Mes:</label>
-                      <select
-                        value={cardForm.expMonth}
-                        onChange={e => setCardForm(p => ({ ...p, expMonth: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      >
-                        {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(m => (
-                          <option key={m} value={m}>{m}</option>
-                        ))}
-                      </select>
+                      <label className="text-gray-700 font-bold block mb-1">Vencimiento (MM/AA):</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="MM/AA"
+                        maxLength={5}
+                        value={cardForm.expDate}
+                        onChange={e => {
+                          let v = e.target.value.replace(/\D/g, '');
+                          if (v.length >= 2) {
+                            v = v.slice(0, 2) + '/' + v.slice(2, 4);
+                          }
+                          setCardForm(p => ({ ...p, expDate: v }));
+                        }}
+                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 font-mono text-center text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      />
                     </div>
                     <div>
-                      <label className="text-gray-700 font-bold block mb-1">Año:</label>
-                      <select
-                        value={cardForm.expYear}
-                        onChange={e => setCardForm(p => ({ ...p, expYear: e.target.value }))}
-                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
-                      >
-                        {['25', '26', '27', '28', '29', '30', '31'].map(y => (
-                          <option key={y} value={y}>20{y}</option>
-                        ))}
-                      </select>
+                      <label className="text-gray-700 font-bold block mb-1">CVV / CVC:</label>
+                      <input
+                        type="password"
+                        placeholder="123"
+                        maxLength={4}
+                        value={cardForm.cvc}
+                        onChange={e => setCardForm(p => ({ ...p, cvc: e.target.value.replace(/\D/g, '') }))}
+                        className="w-full bg-[#FAF6F0] border border-gray-200 rounded-xl p-2.5 font-mono text-center text-gray-900 focus:outline-none focus:border-[#DF7F2D]"
+                      />
                     </div>
                   </div>
 
