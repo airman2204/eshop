@@ -30,11 +30,12 @@ export default function FoxDropLogo({
 
   return (
     <div className={`inline-flex items-center gap-2 select-none group cursor-pointer ${className}`}>
-      {/* Texto 3D FOXDROP con relieve, degradado cálido caramelo/arena y sombra en bisel */}
+      {/* Texto 3D FOXDROP con relieve original Geist */}
       <div className="flex flex-col justify-center leading-none">
         <span
-          className={`font-black tracking-normal uppercase font-sans ${textSizes[size].title} transition-transform duration-200 group-hover:scale-[1.02]`}
+          className={`font-black tracking-normal uppercase ${textSizes[size].title} transition-transform duration-200 group-hover:scale-[1.02]`}
           style={{
+            fontFamily: 'var(--font-geist-logo), var(--font-sans), sans-serif',
             color: '#CE8B54',
             backgroundImage: 'linear-gradient(180deg, #E6A76E 0%, #C47F46 70%, #9E5B26 100%)',
             WebkitBackgroundClip: 'text',
@@ -50,6 +51,7 @@ export default function FoxDropLogo({
           <span
             className={`font-black tracking-[0.25em] uppercase text-[#E3B888] mt-0.5 ${textSizes[size].tag}`}
             style={{
+              fontFamily: 'var(--font-geist-logo), var(--font-sans), sans-serif',
               textShadow: '0 1px 2px rgba(0,0,0,0.5)',
             }}
           >
@@ -70,4 +72,3 @@ export default function FoxDropLogo({
     </div>
   );
 }
-
