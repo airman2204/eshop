@@ -2520,220 +2520,147 @@ export default function TiendaFoxDrop() {
         /* ======================================================== */
         <div className="w-full flex-1 animate-in fade-in duration-200">
           
-          {/* BARRA SUPERIOR DE REGRESO RÁPIDO */}
-          <div className="bg-[#FAF6F0] border-b border-gray-200 px-4 sm:px-6 py-2.5">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setCurrentView('store');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F3E36] hover:text-[#DF7F2D] transition cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4 text-[#DF7F2D]" />
-                <span>← Volver al catálogo de productos</span>
-              </button>
-
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <span>FoxDrop Tienda</span>
-                <span>/</span>
-                <strong className="text-[#0F3E36]">Mi Cuenta</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* HERO BANNER DE USUARIO INTEGRADO CON IDENTIDAD FOXDROP */}
-          <div className="bg-gradient-to-r from-[#0F3E36] via-[#164C42] to-[#0A2E28] text-white py-5 sm:py-7 px-4 sm:px-6 shadow-inner relative overflow-hidden">
-            {/* Luces sutiles de fondo */}
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#DF7F2D]/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="max-w-7xl mx-auto space-y-5 relative z-10">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5 sm:gap-4">
-                  <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#DF7F2D] to-[#B85D14] text-white font-black text-2xl flex items-center justify-center shadow-lg border-2 border-white/20 shrink-0">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : '🦊'}
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h1 className="text-lg sm:text-2xl font-black text-white leading-tight">
-                        {user?.name || 'Mi Cuenta FoxDrop'}
-                      </h1>
-                      <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Verificado
-                      </span>
-                    </div>
-                    <p className="text-xs text-emerald-100/80 flex items-center gap-2 sm:gap-3 flex-wrap">
-                      <span>{user?.email}</span>
-                      {user?.phone && <span>• 📞 {user.phone}</span>}
-                    </p>
-                  </div>
+          {/* BARRA SUPERIOR DE NAVEGACIÓN LIMPIA Y PROFESIONAL (ESTILO MERCADO LIBRE / AMAZON) */}
+          <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setCurrentView('store');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-700 hover:text-[#0F3E36] transition cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Volver a la Tienda</span>
+                </button>
+                <span className="text-slate-300 hidden sm:inline">|</span>
+                <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <span>Inicio</span>
+                  <span>›</span>
+                  <span className="font-bold text-slate-900">Mi Cuenta</span>
                 </div>
+              </div>
 
-                {/* Badge de Membresía Club Foxdrop */}
-                {(() => {
-                  const pts = user?.points ?? 0;
-                  const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
-                  return (
-                    <div 
-                      onClick={() => setAccountTab('club')}
-                      className="bg-white/10 hover:bg-white/15 transition border border-white/15 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 sm:px-4 flex items-center gap-3 shrink-0 cursor-pointer group"
-                      title="Ver beneficios de tu nivel"
-                    >
-                      <div className="text-2xl group-hover:scale-110 transition-transform">{tier.badge}</div>
-                      <div>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#E3B888] block">
-                          Club Foxdrop
-                        </span>
-                        <span className="text-xs sm:text-sm font-black text-white">{tier.name}</span>
-                      </div>
-                      <div className="border-l border-white/15 pl-3 text-right">
-                        <span className="text-base sm:text-lg font-black text-[#DF7F2D] block leading-tight">
-                          {pts}
-                        </span>
-                        <span className="text-[10px] text-white/70">Puntos</span>
-                      </div>
+              <div className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => {
+                    loadFullProfileData();
+                    if (user) loadUserAccount(user.phone, user.email);
+                  }}
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition cursor-pointer"
+                  title="Sincronizar información"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loadingOrders || loadingFullProfile ? 'animate-spin text-[#0F3E36]' : ''}`} />
+                  <span className="hidden sm:inline">Sincronizar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* CABECERA PRINCIPAL ELEGANTE CON CREDENCIALES DE SEGURIDAD (ESTILO AMAZON / MERCADO LIBRE) */}
+          <div className="bg-slate-50/80 border-b border-slate-200/90 py-6 sm:py-8 px-4 sm:px-6">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+              
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#0F3E36] text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-sm border-2 border-white shrink-0">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : '🦊'}
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                      {user?.name || 'Mi Cuenta FoxDrop'}
+                    </h1>
+                    <span className="bg-emerald-100/80 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300/80 flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Cuenta Protegida
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <span>{user?.email}</span>
+                    {user?.phone && <span>• 📞 {user.phone}</span>}
+                  </p>
+                </div>
+              </div>
+
+              {/* TIER DEL CLUB Y PUNTOS CON ESTILO AMAZON PRIME */}
+              {(() => {
+                const pts = user?.points ?? 0;
+                const tier = getClubFoxDropTier(pts, clubSettings?.tiers);
+                return (
+                  <div 
+                    onClick={() => setAccountTab('club')}
+                    className="bg-white rounded-2xl p-3.5 sm:px-5 border border-slate-200 shadow-xs flex items-center gap-4 shrink-0 cursor-pointer hover:border-[#DF7F2D] hover:shadow-sm transition group"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-2xl group-hover:scale-105 transition-transform">
+                      {tier.badge}
                     </div>
-                  );
-                })()}
-              </div>
-
-              {/* 5 Cards de Resumen Rápido con scroll horizontal táctil en móvil */}
-              <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none">
-                <button
-                  onClick={() => setAccountTab('orders')}
-                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
-                    accountTab === 'orders' 
-                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <Package className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'orders' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {userOrders.length}
-                    </span>
+                    <div>
+                      <span className="text-[10px] uppercase font-black tracking-wider text-slate-400 block">
+                        Beneficios FoxDrop Club
+                      </span>
+                      <span className="text-sm font-black text-slate-900">{tier.name}</span>
+                      <span className="text-[11px] text-emerald-600 font-bold block">{tier.discountPercent}% OFF Permanente</span>
+                    </div>
+                    <div className="border-l border-slate-100 pl-4 text-right">
+                      <span className="text-lg font-black text-[#DF7F2D] block font-mono leading-tight">
+                        {pts}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">Puntos</span>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold block">Mis Pedidos</span>
-                  <span className="text-[10px] opacity-80 block truncate">Rastreo e historial</span>
-                </button>
-
-                <button
-                  onClick={() => setAccountTab('favorites')}
-                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
-                    accountTab === 'favorites' 
-                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'favorites' ? 'text-rose-500 fill-rose-500' : 'text-rose-400'}`} />
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {favorites.length}
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold block">Favoritos</span>
-                  <span className="text-[10px] opacity-80 block truncate">Artículos guardados</span>
-                </button>
-
-                <button
-                  onClick={() => setAccountTab('addresses')}
-                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
-                    accountTab === 'addresses' 
-                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'addresses' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {fullProfile?.addresses?.length || 0}
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold block">Direcciones</span>
-                  <span className="text-[10px] opacity-80 block truncate">Entrega y envío</span>
-                </button>
-
-                <button
-                  onClick={() => setAccountTab('cards')}
-                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
-                    accountTab === 'cards' 
-                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <CreditCard className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'cards' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {fullProfile?.cards?.length || 0}
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold block">Billetera</span>
-                  <span className="text-[10px] opacity-80 block truncate">Tarjetas guardadas</span>
-                </button>
-
-                <button
-                  onClick={() => setAccountTab('club')}
-                  className={`p-3 rounded-2xl text-left transition border cursor-pointer shrink-0 min-w-[135px] sm:min-w-0 flex-1 ${
-                    accountTab === 'club' 
-                      ? 'bg-white text-[#0F3E36] border-white shadow-md' 
-                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${accountTab === 'club' ? 'text-[#DF7F2D]' : 'text-[#E3B888]'}`} />
-                    <span className="text-xs font-black px-2 py-0.5 rounded-full bg-black/10">
-                      {getClubFoxDropTier(user?.points ?? 0, clubSettings?.tiers).discountPercent}%
-                    </span>
-                  </div>
-                  <span className="text-xs font-bold block">Beneficios Club</span>
-                  <span className="text-[10px] opacity-80 block truncate">Puntos y descuentos</span>
-                </button>
-              </div>
+                );
+              })()}
 
             </div>
           </div>
 
-          {/* CONTENEDOR DE PESTAÑAS Y DETALLE */}
+          {/* CONTENEDOR PRINCIPAL CON DISEÑO DE CENTRO DE GESTIÓN (HUB AMAZON / MERCADO LIBRE) */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-            
-            {/* Pestañas horizontales */}
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3 overflow-x-auto gap-2">
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                {[
-                  { id: 'orders', label: '📦 Pedidos y Rastreo' },
-                  { id: 'favorites', label: `❤️ Favoritos (${favorites.length})` },
-                  { id: 'addresses', label: '📍 Direcciones' },
-                  { id: 'cards', label: '💳 Métodos de Pago' },
-                  { id: 'club', label: '🦊 Club FoxDrop' },
-                  { id: 'settings', label: '⚙️ Datos Personales' },
-                ].map(tab => (
+
+            {/* BARRA DE ACCESOS RÁPIDOS PRINCIPALES CON DISEÑO CLEAN Y ELEGANTE */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { id: 'orders', label: 'Mis Pedidos', sub: `${userOrders.length} compra(s)`, icon: Package },
+                { id: 'favorites', label: 'Favoritos', sub: `${favorites.length} guardado(s)`, icon: Heart },
+                { id: 'addresses', label: 'Direcciones', sub: `${fullProfile?.addresses?.length || 0} registrada(s)`, icon: MapPin },
+                { id: 'cards', label: 'Billetera & Tarjetas', sub: `${fullProfile?.cards?.length || 0} guardada(s)`, icon: CreditCard },
+                { id: 'club', label: 'Nivel & Puntos', sub: 'Beneficios activos', icon: Award },
+                { id: 'settings', label: 'Seguridad y Datos', sub: 'Datos de contacto', icon: ShieldCheck },
+              ].map(tab => {
+                const Icon = tab.icon;
+                const active = accountTab === tab.id;
+                return (
                   <button
                     key={tab.id}
                     onClick={() => setAccountTab(tab.id as any)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                      accountTab === tab.id
-                        ? 'bg-[#0F3E36] text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-100'
+                    className={`p-3.5 rounded-2xl text-left border transition cursor-pointer flex flex-col justify-between ${
+                      active
+                        ? 'bg-white border-[#0F3E36] ring-2 ring-[#0F3E36]/15 shadow-sm'
+                        : 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-slate-300 shadow-2xs'
                     }`}
                   >
-                    {tab.label}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
+                        active ? 'bg-[#0F3E36] text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      {active && (
+                        <span className="w-2 h-2 rounded-full bg-[#DF7F2D]"></span>
+                      )}
+                    </div>
+                    <div>
+                      <span className={`text-xs font-black block truncate ${active ? 'text-[#0F3E36]' : 'text-slate-800'}`}>
+                        {tab.label}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block truncate font-medium">
+                        {tab.sub}
+                      </span>
+                    </div>
                   </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  loadFullProfileData();
-                  if (user) loadUserAccount(user.phone, user.email);
-                }}
-                className="text-xs font-bold text-[#0F3E36] hover:text-[#DF7F2D] flex items-center gap-1 shrink-0 p-1.5 cursor-pointer"
-                title="Actualizar datos"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingOrders || loadingFullProfile ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Actualizar</span>
-              </button>
+                );
+              })}
             </div>
 
             {/* TAB 1: MIS PEDIDOS Y RASTREO */}
@@ -3252,78 +3179,158 @@ export default function TiendaFoxDrop() {
               </div>
             )}
 
-            {/* TAB 3: MÉTODOS DE PAGO */}
+            {/* TAB 3: BILLETERA Y MÉTODOS DE PAGO (REDISEÑO PREMIUM MERCADO PAGO / AMAZON) */}
             {accountTab === 'cards' && (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-black text-gray-900">Métodos de Pago</h3>
-                    <p className="text-xs text-gray-500">Tarjetas de crédito o débito para compras con 1 clic.</p>
+              <div className="space-y-6">
+                
+                {/* ENCABEZADO DE BILLETERA */}
+                <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <CreditCard className="w-5 h-5 text-[#0F3E36]" />
+                      <span>Billetera & Medios de Pago</span>
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Tus tarjetas guardadas están encriptadas bajo el estándar bancario PCI-DSS para compras rápidas y seguras.
+                    </p>
                   </div>
+
                   <button
-                    onClick={() => setShowCardModal(true)}
-                    className="bg-[#0F3E36] hover:bg-[#1A5248] text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow cursor-pointer"
+                    onClick={() => {
+                      setCardError(null);
+                      setCardSuccessNotice(null);
+                      setShowCardModal(true);
+                    }}
+                    className="bg-[#0F3E36] hover:bg-[#1A5248] text-white text-xs font-black px-5 py-2.5 rounded-2xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
                   >
-                    <Plus className="w-4 h-4 text-[#DF7F2D]" />
-                    <span>Agregar Tarjeta</span>
+                    <Plus className="w-4 h-4 text-amber-300" />
+                    <span>Agregar Nueva Tarjeta</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => setShowCardModal(true)}
-                    className="border-2 border-dashed border-gray-300 hover:border-[#DF7F2D] rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2 transition bg-white/50 hover:bg-white min-h-[160px] cursor-pointer"
+                {/* LISTADO DE TARJETAS CON DISEÑO BANCARIO PROFESIONAL */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  
+                  {/* Tarjetas existentes */}
+                  {fullProfile?.cards && fullProfile.cards.map((card) => {
+                    const isVisa = card.brand === 'visa';
+                    const isMaster = card.brand === 'mastercard';
+                    const isAmex = card.brand === 'amex';
+
+                    return (
+                      <div
+                        key={card.id}
+                        className="relative rounded-3xl p-5 text-white flex flex-col justify-between shadow-lg min-h-[190px] border border-white/10 overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                        style={{
+                          background: isVisa
+                            ? 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #1e3a8a 100%)'
+                            : isMaster
+                            ? 'linear-gradient(135deg, #18181b 0%, #27272a 45%, #7c2d12 100%)'
+                            : isAmex
+                            ? 'linear-gradient(135deg, #042f2e 0%, #0f3e36 50%, #115e59 100%)'
+                            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                        }}
+                      >
+                        {/* Brillo de tarjeta */}
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+
+                        {/* Top de la Tarjeta */}
+                        <div className="flex items-center justify-between relative z-10">
+                          <div className="flex items-center gap-2">
+                            <div className="w-9 h-7 rounded-md bg-gradient-to-br from-amber-300 to-amber-500 shadow-xs border border-amber-200/40"></div>
+                            <span className="text-[10px] text-white/50 tracking-widest font-mono">CHIP</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {card.isDefault && (
+                              <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">
+                                Predeterminada
+                              </span>
+                            )}
+                            <span className="font-mono text-xs font-black uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                              {card.brand || 'Tarjeta'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Número en relieve */}
+                        <div className="font-mono text-xl font-bold tracking-[0.25em] text-white text-center py-2 drop-shadow-sm relative z-10">
+                          •••• •••• •••• {card.last4}
+                        </div>
+
+                        {/* Datos del titular y vencimiento */}
+                        <div className="flex items-end justify-between pt-2 border-t border-white/15 relative z-10">
+                          <div className="min-w-0 pr-2">
+                            <span className="text-[9px] uppercase tracking-wider text-white/50 block font-medium">Titular</span>
+                            <span className="text-xs font-extrabold uppercase truncate block max-w-[150px] tracking-wide text-white/95">
+                              {card.holderName || user?.name || 'TITULAR'}
+                            </span>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-[9px] uppercase tracking-wider text-white/50 block font-medium">Expira</span>
+                            <span className="font-mono text-xs font-bold text-white tracking-widest">
+                              {card.expMonth}/{card.expYear}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCard(card.id)}
+                            className="text-white/60 hover:text-red-300 p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer ml-1 shrink-0"
+                            title="Eliminar tarjeta guardada"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Tarjeta vacía para agregar nueva */}
+                  <div
+                    onClick={() => {
+                      setCardError(null);
+                      setCardSuccessNotice(null);
+                      setShowCardModal(true);
+                    }}
+                    className="border-2 border-dashed border-slate-300 hover:border-[#0F3E36] rounded-3xl p-6 flex flex-col items-center justify-center text-center space-y-3 transition-all duration-200 bg-white/60 hover:bg-white min-h-[190px] cursor-pointer group shadow-2xs"
                   >
-                    <div className="w-10 h-10 rounded-full bg-orange-50 text-[#DF7F2D] flex items-center justify-center">
-                      <CreditCard className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 group-hover:bg-[#0F3E36] text-slate-500 group-hover:text-white transition flex items-center justify-center shadow-xs">
+                      <CreditCard className="w-6 h-6" />
                     </div>
-                    <span className="font-bold text-xs text-gray-800">Agregar método de pago</span>
-                  </button>
+                    <div>
+                      <span className="font-black text-xs text-slate-800 group-hover:text-[#0F3E36] transition block">
+                        + Agregar Tarjeta de Crédito o Débito
+                      </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
+                        Guarda Visa, Mastercard o AMEX para comprar en 1 clic
+                      </span>
+                    </div>
+                  </div>
 
-                  {fullProfile?.cards && fullProfile.cards.map((card) => (
-                    <div
-                      key={card.id}
-                      className="relative rounded-2xl p-4 text-white flex flex-col justify-between shadow-md min-h-[160px]"
-                      style={{
-                        background: card.brand === 'visa' 
-                          ? 'linear-gradient(135deg, #1A365D 0%, #0F172A 100%)' 
-                          : card.brand === 'mastercard'
-                          ? 'linear-gradient(135deg, #7C2D12 0%, #18181B 100%)'
-                          : 'linear-gradient(135deg, #0F3E36 0%, #022c22 100%)'
-                      }}
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black uppercase tracking-widest opacity-80">{card.brand}</span>
-                        {card.isDefault && (
-                          <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                            Predeterminada
-                          </span>
-                        )}
-                      </div>
-                      <div className="font-mono text-base font-black tracking-widest text-center">
-                        •••• •••• •••• {card.last4}
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/10">
-                        <span className="uppercase font-bold truncate max-w-[130px]">{card.holderName}</span>
-                        <span>{card.expMonth}/{card.expYear}</span>
-                        <button
-                          onClick={() => handleDeleteCard(card.id)}
-                          className="hover:text-red-300 transition cursor-pointer p-0.5"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
 
-                <div className="bg-white rounded-2xl p-4 border border-gray-200 flex items-start gap-3 text-xs text-gray-600">
-                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-gray-500">
-                    Tus pagos viajan encriptados de extremo a extremo mediante certificación bancaria PCI-DSS y 3D Secure. FoxDrop nunca almacena tu código CVV.
-                  </p>
+                {/* BANNER DE SEGURIDAD PCI-DSS BANCARIA */}
+                <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">Seguridad Bancaria Garantizada</h4>
+                      <p className="text-[11px] text-slate-500">
+                        FoxDrop nunca almacena tu código CVV ni números completos de tarjeta. Los cobros son procesados mediante cifrado tokenizado TLS 1.3.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 font-mono text-[10px] font-black text-slate-500 shrink-0">
+                    <span className="bg-slate-100 px-2 py-1 rounded-md border border-slate-200">256-BIT ENCRYPTION</span>
+                    <span className="bg-slate-100 px-2 py-1 rounded-md border border-slate-200">PCI-DSS LEVEL 1</span>
+                  </div>
                 </div>
+
               </div>
             )}
 
