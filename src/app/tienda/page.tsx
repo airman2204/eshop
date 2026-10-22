@@ -1419,6 +1419,32 @@ export default function TiendaFoxDrop() {
   };
 
 
+  const isImportProdItem = (p: Product) => {
+    if (!p) return false;
+    const sku = (p.sku || '').toUpperCase();
+    const brand = (p.brand || '').toLowerCase();
+    const title = (p.title || '').toLowerCase();
+    return sku.startsWith('CJ') || brand.includes('cj dropshipping') || title.includes('humidifier') || title.includes('magic shadow');
+  };
+  const cartHasImportItems = cart.some(i => isImportProdItem(i.product));
+  const cartHasBoutiqueItems = cart.some(i => !isImportProdItem(i.product));
+  const isMixedCart = cartHasImportItems && cartHasBoutiqueItems;
+
+  const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
+  const activeShippingMethod = checkoutSettings.shippingMethods.find(m => m.id === selectedShippingId && m.enabled)
+    || checkoutSettings.shippingMethods.find(m => m.enabled)
+    || checkoutSettings.shippingMethods[0];
+  
+  // Si contiene productos de importación (o carrito mixto), el envío a domicilio físico es obligatorio
+  const isPersonalDelivery = cartHasImportItems ? false : (activeShippingMethod ? !activeShippingMethod.requiresAddress : true);
+  // En carrito exclusivo internacional el envío es gratis ($0). En carrito mixto o boutique, se cobra el método de entrega de boutique seleccionado
+  const shippingFee = cartHasImportItems && !cartHasBoutiqueItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
+  
+  // Descuento por cupón activo
+  const couponDiscountAmount = appliedCoupon ? Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100) : 0;
+  const cartTotal = Math.max(0, cartSubtotal - couponDiscountAmount + shippingFee);
+  const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
+
   const handleFinishOrder = async () => {
     try {
       // 1. Si el método es Mercado Pago, procesamos la orden y redirigimos a la pasarela
@@ -1431,7 +1457,7 @@ export default function TiendaFoxDrop() {
         clientName: user?.name || '',
         clientPhone: user?.phone || '',
         clientEmail: user?.email,
-        shippingType: isPersonalDelivery ? 'agreed_pickup' : (selectedShippingId === 'national' ? 'national_shipping' : 'local_delivery'),
+        shippingType: isPersonalDelivery ? 'agreed_pickup' : (cartHasImportItems ? 'international_shipping' : (selectedShippingId === 'national' ? 'national_shipping' : 'local_delivery')),
         shippingCost: shippingFee,
         subtotal: cartSubtotal,
         total: cartTotal,
@@ -1477,7 +1503,7 @@ export default function TiendaFoxDrop() {
             clientName: user?.name || "Cliente",
             clientPhone: user?.phone,
             total: cartTotal,
-            shippingType: isPersonalDelivery ? "agreed_pickup" : "puebla_local",
+            shippingType: isPersonalDelivery ? "agreed_pickup" : (cartHasImportItems ? "international_shipping" : "puebla_local"),
             pickupPoint: isPersonalDelivery ? "Entrega personal / Acordar punto" : `${shippingAddress.street}, ${shippingAddress.city}`,
           }),
         }).catch(err => console.warn("WhatsApp notification error:", err));
@@ -1537,8 +1563,13 @@ export default function TiendaFoxDrop() {
         subtotal: cartSubtotal,
         shippingFee,
         total: cartTotal,
-        shippingMethodName: activeShippingMethod?.name || 'Entrega Acordada',
+        shippingMethodName: isMixedCart 
+          ? `Envío Dividido (Boutique 24-48 hrs + Internacional 10-15 días)` 
+          : (cartHasImportItems ? 'Paquetería Internacional Directa' : (activeShippingMethod?.name || 'Entrega Acordada')),
         isPersonalDelivery,
+        isMixedCart,
+        cartHasImportItems,
+        cartHasBoutiqueItems,
         shippingAddress: isPersonalDelivery ? 'Entrega personal / Acordar con vendedor' : `${shippingAddress.street}, C.P. ${shippingAddress.zip}`,
         paymentMethod,
         date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -1565,26 +1596,6 @@ export default function TiendaFoxDrop() {
     } catch {}
     setCart([]);
   };
-
-  const isImportProdItem = (p: Product) => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
-  const cartHasImportItems = cart.some(i => isImportProdItem(i.product));
-  const cartHasBoutiqueItems = cart.some(i => !isImportProdItem(i.product));
-  const isMixedCart = cartHasImportItems && cartHasBoutiqueItems;
-
-  const cartSubtotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
-  const activeShippingMethod = checkoutSettings.shippingMethods.find(m => m.id === selectedShippingId && m.enabled)
-    || checkoutSettings.shippingMethods.find(m => m.enabled)
-    || checkoutSettings.shippingMethods[0];
-  
-  // Si contiene productos de importación (o carrito mixto), el envío a domicilio físico es obligatorio
-  const isPersonalDelivery = cartHasImportItems ? false : (activeShippingMethod ? !activeShippingMethod.requiresAddress : true);
-  // En carrito exclusivo internacional el envío es gratis ($0). En carrito mixto o boutique, se cobra el método de entrega de boutique seleccionado
-  const shippingFee = cartHasImportItems && !cartHasBoutiqueItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
-  
-  // Descuento por cupón activo
-  const couponDiscountAmount = appliedCoupon ? Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100) : 0;
-  const cartTotal = Math.max(0, cartSubtotal - couponDiscountAmount + shippingFee);
-  const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   // Cupones válidos predeterminados
   const VALID_COUPONS: Record<string, { discountPercent: number; description: string }> = {
@@ -4550,7 +4561,7 @@ export default function TiendaFoxDrop() {
                           </>
                         ) : isHolding ? (
                           <>
-                            <span>Confirmando ({holdProgress}%)</span>
+                            <span>Confirmando...</span>
                             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                           </>
                         ) : (
@@ -4653,7 +4664,7 @@ export default function TiendaFoxDrop() {
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Envío / Entrega:</span>
-                      <span className="font-bold">{confirmedOrderSummary.shippingFee === 0 ? 'Sin costo ($0.00)' : `$${confirmedOrderSummary.shippingFee.toFixed(0)} MXN`}</span>
+                      <span className="font-bold">{confirmedOrderSummary.shippingFee === 0 ? <span className="text-emerald-700 font-black">Gratis</span> : `$${confirmedOrderSummary.shippingFee.toFixed(0)} MXN`}</span>
                     </div>
                     <div className="flex justify-between text-sm font-black text-gray-900 pt-1 border-t border-gray-200">
                       <span>Total Pagado:</span>
