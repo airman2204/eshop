@@ -76,6 +76,17 @@ function matchesProductSearch(product: Product, query: string): boolean {
   });
 }
 
+// Normalizador seguro de imagenes (evita caidas por hotlink / CDN de proveedores externos como CJ Dropshipping)
+function getSafeProductImage(url: string | undefined): string {
+  if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
+  let clean = url.trim();
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (clean.includes('cjdropshipping.com') || clean.includes('aliyuncs.com')) {
+    return '/api/whatsapp/image-proxy?url=' + encodeURIComponent(clean);
+  }
+  return clean;
+}
+
 export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -2042,74 +2053,67 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-900/40 bg-gradient-to-r from-[#07241F] via-[#0E3D35] to-[#0A2E27] h-[145px] sm:h-[160px] w-full flex items-stretch">
-                    {/* Efectos de luz sutiles de fondo (glow premium) */}
-                    <div className="absolute -top-10 -left-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
-                    <div className="absolute -bottom-10 right-1/4 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] h-[140px] sm:h-[155px] w-full flex items-stretch">
+                    {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
+                    <img 
+                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      alt="FoxDrop Banner" 
+                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                    />
 
-                    {/* IMAGEN DE FONDO PERSONALIZADA SI ES UN SLIDE SUBIDO DESDE ADMIN */}
-                    {!isDefaultSlide && currentSlide.image_url && (
-                      <img 
-                        src={currentSlide.image_url} 
-                        alt="FoxDrop Banner" 
-                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-40 mix-blend-overlay"
-                      />
-                    )}
-
-                    {/* ZORRITO 3D OFICIAL INTEGRADO CON DELICADEZA */}
+                    {/* Zorrito oficial solo en slide por defecto */}
                     {isDefaultSlide && (
-                      <div className="absolute right-1 bottom-0 w-[42%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
+                      <div className="absolute right-[2%] bottom-0 w-[44%] h-[96%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
                           alt="FoxDrop Mascot" 
-                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
                         />
                       </div>
                     )}
 
-                    {/* CONTENIDO TIPOGRÁFICO DE ALTA GAMA */}
-                    <div className="relative z-20 w-[60%] p-3.5 sm:p-4 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-1 max-w-[210px]">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-[7.5px] font-black tracking-widest text-amber-200 uppercase">
-                            {currentSlide.subtitle || 'FoxDrop Boutique & Envíos'}
-                          </span>
+                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
+                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
+                      <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
+                        <div className="space-y-0.5 max-w-[210px]">
+                          {(currentSlide.subtitle || isDefaultSlide) && (
+                            <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                            </span>
+                          )}
+                          <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
+                            {isDefaultSlide 
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
+                              : currentSlide.title}
+                          </h2>
+                          {isDefaultSlide && (
+                            <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
+                              Descubre tesoros mundiales con envío de 24 a 48 hrs y calidad garantizada.
+                            </p>
+                          )}
                         </div>
 
-                        <h2 className="text-[13px] sm:text-[14px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
-                          {isDefaultSlide 
-                            ? (user?.name 
-                                ? `¡Hola, ${user.name.split(' ')[0]}! Lo mejor del mundo para ti.` 
-                                : 'Tesoros únicos, directo a tu puerta.')
-                            : currentSlide.title}
-                        </h2>
-
-                        <p className="text-[8.5px] sm:text-[9.5px] text-emerald-100/85 leading-snug font-medium line-clamp-2 drop-shadow-xs">
-                          {isDefaultSlide 
-                            ? 'Boutique física con entrega hoy y productos de importación a domicilio.' 
-                            : 'Garantía oficial y atención directa en cada compra.'}
-                        </p>
+                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                          <div className="pt-1 pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(currentSlide.cta_category || 'Todas');
+                                setActiveTab('all');
+                                const el = document.getElementById('catalog-section');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[8.5px] sm:text-[9.5px] font-black px-2.5 sm:px-3 py-1 rounded-full shadow-[0_2px_8px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
+                            >
+                              <span>{currentSlide.cta_text}</span>
+                              <ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                        <div className="pt-1 pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(currentSlide.cta_category || 'Todas');
-                              setActiveTab('all');
-                              const el = document.getElementById('catalog-section');
-                              el?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white text-[9px] sm:text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_2px_10px_rgba(223,127,45,0.4)] transition flex items-center gap-1 cursor-pointer w-fit"
-                          >
-                            <span>{currentSlide.cta_text}</span>
-                            <ArrowRight className="w-2.5 h-2.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
@@ -2143,74 +2147,67 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-3xl overflow-hidden shadow-xl border border-emerald-950/40 bg-gradient-to-r from-[#07241F] via-[#0E3D35] to-[#0A2E27] h-[200px] lg:h-[230px] w-full flex items-stretch">
-                    {/* Efectos de luz sutiles de fondo (glow refinado) */}
-                    <div className="absolute -top-16 -left-16 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-20 right-1/3 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] h-[190px] lg:h-[220px] w-full flex items-stretch">
+                    {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
+                    <img 
+                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      alt="FoxDrop Banner" 
+                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                    />
 
-                    {/* IMAGEN DE FONDO PERSONALIZADA SI ES UN SLIDE SUBIDO */}
-                    {!isDefaultSlide && currentSlide.image_url && (
-                      <img 
-                        src={currentSlide.image_url} 
-                        alt="FoxDrop Banner" 
-                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-40 mix-blend-overlay"
-                      />
-                    )}
-
-                    {/* EL ZORRO OFICIAL EN SU CAPA DERECHA LIMPIA */}
+                    {/* Zorrito oficial solo en slide por defecto */}
                     {isDefaultSlide && (
-                      <div className="absolute right-[4%] bottom-0 w-[38%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
+                      <div className="absolute right-[3%] bottom-0 w-[42%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
                           alt="FoxDrop Mascot" 
-                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
                         />
                       </div>
                     )}
 
-                    {/* CONTENIDO TIPOGRÁFICO DE ALTA GAMA */}
-                    <div className="relative z-20 w-[58%] p-6 lg:p-8 xl:p-9 flex flex-col justify-between pointer-events-none">
-                      <div className="space-y-2 max-w-[420px]">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit">
-                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                          <span className="text-[10px] font-black tracking-widest text-amber-200 uppercase">
-                            {currentSlide.subtitle || 'FoxDrop Boutique & Envíos Directos'}
-                          </span>
+                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
+                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
+                      <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
+                        <div className="space-y-1.5 max-w-[340px]">
+                          {(currentSlide.subtitle || isDefaultSlide) && (
+                            <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
+                            </span>
+                          )}
+                          <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
+                            {isDefaultSlide 
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
+                              : currentSlide.title}
+                          </h1>
+                          {isDefaultSlide && (
+                            <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
+                              Descubre tesoros mundiales con envío de 24 a 48 hrs y calidad garantizada.
+                            </p>
+                          )}
                         </div>
 
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight drop-shadow-sm">
-                          {isDefaultSlide 
-                            ? (user?.name 
-                                ? `¡Hola, ${user.name.split(' ')[0]}! Lo mejor del mundo, directo a tu puerta.` 
-                                : 'Tesoros únicos & novedades mundiales.')
-                            : currentSlide.title}
-                        </h1>
-
-                        <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium drop-shadow-xs max-w-[380px]">
-                          {isDefaultSlide 
-                            ? 'Disfruta de entregas inmediatas en artículos de Boutique y envíos directos con rastreo a todo México.' 
-                            : 'Compra con confianza: garantía protegida y seguimiento en tiempo real.'}
-                        </p>
+                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                          <div className="pt-2 pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(currentSlide.cta_category || 'Todas');
+                                setActiveTab('all');
+                                const el = document.getElementById('catalog-section');
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-4.5 py-2 rounded-full text-xs shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer w-fit group"
+                            >
+                              <span>{currentSlide.cta_text}</span>
+                              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                        <div className="pt-2 pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(currentSlide.cta_category || 'Todas');
-                              setActiveTab('all');
-                              const el = document.getElementById('catalog-section');
-                              el?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-black px-5 py-2.5 rounded-full text-xs shadow-[0_4px_16px_rgba(223,127,45,0.45)] transition transform hover:scale-102 flex items-center gap-2 cursor-pointer w-fit group"
-                          >
-                            <span>{currentSlide.cta_text}</span>
-                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
@@ -2465,21 +2462,28 @@ export default function TiendaFoxDrop() {
 
                   {/* IMAGEN DE PRODUCTO CON EFECTO SUAVE EN CONTENEDOR CREMA/MENTA */}
                   <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 mb-2.5 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
-                    {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
-                      <span className="absolute top-2 left-2 z-10 bg-indigo-950/80 backdrop-blur-xs text-indigo-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-indigo-400/30">
-                        ✈️ Envío Internacional (10-15 días)
-                      </span>
-                    ) : (
-                      <span className="absolute top-2 left-2 z-10 bg-emerald-950/80 backdrop-blur-xs text-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1 border border-emerald-400/30">
-                        ⚡ En Almacén • Entrega Hoy
-                      </span>
-                    )}
                     <img
-                      src={product.images[0]}
+                      src={getSafeProductImage(product.images?.[0])}
                       alt={product.title}
                       className="max-h-full w-auto object-contain group-hover:scale-108 transition-transform duration-300"
                       loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
+                      }}
                     />
+
+                    {/* Pleca de logística al pie de la foto para que NUNCA se encime con los badges de descuento / stock */}
+                    <div className="absolute bottom-2 left-2 right-2 pointer-events-none flex justify-center">
+                      {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
+                        <span className="bg-indigo-950/90 backdrop-blur-xs text-indigo-100 text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-sm border border-indigo-300/30 flex items-center gap-1">
+                          ✈️ Internacional (10-15 días)
+                        </span>
+                      ) : (
+                        <span className="bg-[#072520]/90 backdrop-blur-xs text-emerald-200 text-[9px] font-extrabold px-2 py-0.5 rounded-md shadow-sm border border-emerald-400/30 flex items-center gap-1">
+                          ⚡ En Almacén • Envío 24-48 hrs
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* DETALLES DE PRECIO Y VALORACIÓN */}
@@ -4761,8 +4765,11 @@ export default function TiendaFoxDrop() {
                   className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden cursor-crosshair group"
                 >
                   <img
-                    src={selectedProduct.images[activeModalImageIndex] || selectedProduct.images[0]}
+                    src={getSafeProductImage(selectedProduct.images?.[activeModalImageIndex] || selectedProduct.images?.[0])}
                     alt={selectedProduct.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
+                    }}
                     style={isZoomActive ? {
                       transform: 'scale(2.2)',
                       transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`
@@ -4991,7 +4998,7 @@ export default function TiendaFoxDrop() {
                       <button
                         type="button"
                         onClick={() => {
-                          const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible hoy?`;
+                          const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible en 24 a 48 hrs?`;
                           const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "";
                           const waUrl = whatsappNum 
                             ? `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`
