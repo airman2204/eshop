@@ -98,6 +98,9 @@ export default function TiendaFoxDrop() {
   // Filtros avanzados: Rango de precio
   const [priceFilter, setPriceFilter] = useState<'all' | 'under150' | '150to350' | 'above350'>('all');
 
+  // Segmentación exclusiva Mario & Nydia: 'boutique' (FoxDrop local/física) vs 'import' (CJ Directo a domicilio)
+  const [catalogSegment, setCatalogSegment] = useState<'all' | 'boutique' | 'import'>('all');
+
   // Búsqueda predictiva con historial y búsquedas populares
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -406,6 +409,11 @@ export default function TiendaFoxDrop() {
         setAccountTab(savedAccountTab);
       }
 
+      const savedCatalogSegment = sessionStorage.getItem('foxdrop_catalog_segment') as 'all' | 'boutique' | 'import';
+      if (savedCatalogSegment && ['all', 'boutique', 'import'].includes(savedCatalogSegment)) {
+        setCatalogSegment(savedCatalogSegment);
+      }
+
       // Restaurar perfil completo desde cache local de inmediato para que nunca parpadee vacío
       try {
         const cachedProfile = localStorage.getItem('foxdrop_cached_full_profile');
@@ -447,6 +455,12 @@ export default function TiendaFoxDrop() {
       sessionStorage.setItem('foxdrop_account_tab', accountTab);
     } catch {}
   }, [accountTab]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('foxdrop_catalog_segment', catalogSegment);
+    } catch {}
+  }, [catalogSegment]);
 
   // Guardar posición de scroll al desplazarse
   useEffect(() => {
@@ -693,6 +707,12 @@ export default function TiendaFoxDrop() {
     const isCjProduct = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
     if (isCjProduct && !isPrivilegedPartner) {
       return false;
+    }
+
+    // Segmentación exclusiva Mario & Nydia: alternar entre Boutique e Importación Directa
+    if (isPrivilegedPartner) {
+      if (catalogSegment === 'boutique' && isCjProduct) return false;
+      if (catalogSegment === 'import' && !isCjProduct) return false;
     }
 
     // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
@@ -2016,10 +2036,10 @@ export default function TiendaFoxDrop() {
       {currentView === 'store' ? (
         <>
           {/* ======================================================== */}
-          {/* 2. HERO BANNER PERSONALIZADO CON ZORRITO 3D & CARRUSEL */}
+          {/* 2. HERO BANNER REDISEÑADO: ELEGANTE, PREMIUM & LIMPIO */}
           {/* ======================================================== */}
           
-          {/* VERSIÓN MÓVIL (NATIVA 100% NÍTIDA) */}
+          {/* VERSIÓN MÓVIL (NATIVA 100% NÍTIDA, PREMIUM & SOFISTICADA) */}
           <section className="md:hidden pt-4 pb-2 px-4 w-full">
             {(() => {
               const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
@@ -2027,72 +2047,79 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] h-[135px] sm:h-[155px] w-full flex items-stretch">
-                    {/* 1. FONDO LIMPIO CON MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS */}
-                    <img 
-                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
-                      alt="FoxDrop Banner Background" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
-                    />
+                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-900/40 bg-gradient-to-r from-[#07241F] via-[#0E3D35] to-[#0A2E27] h-[145px] sm:h-[160px] w-full flex items-stretch">
+                    {/* Efectos de luz sutiles de fondo (glow premium) */}
+                    <div className="absolute -top-10 -left-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute -bottom-10 right-1/4 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
-                    {/* 2. EL ZORRITO EN SU CAPA INDEPENDIENTE (SOLO EN SLIDE POR DEFECTO PARA NO DUPLICAR EN SLIDES PERSONALIZADOS) */}
+                    {/* IMAGEN DE FONDO PERSONALIZADA SI ES UN SLIDE SUBIDO DESDE ADMIN */}
+                    {!isDefaultSlide && currentSlide.image_url && (
+                      <img 
+                        src={currentSlide.image_url} 
+                        alt="FoxDrop Banner" 
+                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-40 mix-blend-overlay"
+                      />
+                    )}
+
+                    {/* ZORRITO 3D OFICIAL INTEGRADO CON DELICADEZA */}
                     {isDefaultSlide && (
-                      <div className="absolute right-[2%] bottom-0 w-[44%] h-[96%] pointer-events-none z-10 flex items-end justify-center">
+                      <div className="absolute right-1 bottom-0 w-[42%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
                           alt="FoxDrop Mascot" 
-                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]"
                         />
                       </div>
                     )}
 
-                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
-                      <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-between pointer-events-none">
-                        <div className="space-y-0.5 max-w-[210px]">
-                          {(currentSlide.subtitle || isDefaultSlide) && (
-                            <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                            </span>
-                          )}
-                          <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
-                            {isDefaultSlide 
-                              ? (user?.name 
-                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                                  : '¡Hola! El mundo, directo a tu puerta.')
-                              : currentSlide.title}
-                          </h2>
-                          {isDefaultSlide && (
-                            <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
-                              Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                            </p>
-                          )}
+                    {/* CONTENIDO TIPOGRÁFICO DE ALTA GAMA */}
+                    <div className="relative z-20 w-[60%] p-3.5 sm:p-4 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-1 max-w-[210px]">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-[7.5px] font-black tracking-widest text-amber-200 uppercase">
+                            {currentSlide.subtitle || 'FoxDrop Boutique & Envíos'}
+                          </span>
                         </div>
 
-                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                          <div className="pt-1 pointer-events-auto">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(currentSlide.cta_category || 'Todas');
-                                setActiveTab('all');
-                                const el = document.getElementById('catalog-section');
-                                el?.scrollIntoView({ behavior: 'smooth' });
-                              }}
-                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[8.5px] sm:text-[9.5px] font-black px-2.5 sm:px-3 py-1 rounded-full shadow-[0_2px_8px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
-                            >
-                              <span>{currentSlide.cta_text}</span>
-                              <ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                            </button>
-                          </div>
-                        )}
+                        <h2 className="text-[13px] sm:text-[14px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
+                          {isDefaultSlide 
+                            ? (user?.name 
+                                ? `¡Hola, ${user.name.split(' ')[0]}! Lo mejor del mundo para ti.` 
+                                : 'Tesoros únicos, directo a tu puerta.')
+                            : currentSlide.title}
+                        </h2>
+
+                        <p className="text-[8.5px] sm:text-[9.5px] text-emerald-100/85 leading-snug font-medium line-clamp-2 drop-shadow-xs">
+                          {isDefaultSlide 
+                            ? 'Boutique física con entrega hoy y productos de importación a domicilio.' 
+                            : 'Garantía oficial y atención directa en cada compra.'}
+                        </p>
                       </div>
-                    )}
+
+                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                        <div className="pt-1 pointer-events-auto">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(currentSlide.cta_category || 'Todas');
+                              setActiveTab('all');
+                              const el = document.getElementById('catalog-section');
+                              el?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white text-[9px] sm:text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_2px_10px_rgba(223,127,45,0.4)] transition flex items-center gap-1 cursor-pointer w-fit"
+                          >
+                            <span>{currentSlide.cta_text}</span>
+                            <ArrowRight className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
                   {totalHeroSlides.length > 1 && (
-                    <div className="flex items-center justify-center gap-1.5 pt-1.5">
+                    <div className="flex items-center justify-center gap-1.5 pt-2">
                       {totalHeroSlides.map((_, dotIdx) => (
                         <button
                           key={dotIdx}
@@ -2113,7 +2140,7 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* VERSIÓN ESCRITORIO (A LO LARGO DEL TAMAÑO DE LA TIENDA max-w-7xl) */}
+          {/* VERSIÓN ESCRITORIO (A LO LARGO DEL TAMAÑO DE LA TIENDA max-w-7xl, ESTILO CORPORATIVO MINIMALISTA) */}
           <section className="hidden md:block pt-3 pb-2 px-4 sm:px-6 max-w-7xl mx-auto w-full">
             {(() => {
               const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
@@ -2121,72 +2148,79 @@ export default function TiendaFoxDrop() {
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] h-[190px] lg:h-[220px] w-full flex items-stretch">
-                    {/* 1. FONDO LIMPIO (MAPA, GLOBOS, AVIONES, PARACAÍDAS Y CURVAS) */}
-                    <img 
-                      src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
-                      alt="FoxDrop Banner Background" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
-                    />
+                  <div className="relative rounded-3xl overflow-hidden shadow-xl border border-emerald-950/40 bg-gradient-to-r from-[#07241F] via-[#0E3D35] to-[#0A2E27] h-[200px] lg:h-[230px] w-full flex items-stretch">
+                    {/* Efectos de luz sutiles de fondo (glow refinado) */}
+                    <div className="absolute -top-16 -left-16 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute -bottom-20 right-1/3 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                    {/* 2. EL ZORRO EN SU CAPA INDEPENDIENTE (SOLO EN SLIDE POR DEFECTO PARA NO DUPLICAR EN SLIDES PERSONALIZADOS) */}
+                    {/* IMAGEN DE FONDO PERSONALIZADA SI ES UN SLIDE SUBIDO */}
+                    {!isDefaultSlide && currentSlide.image_url && (
+                      <img 
+                        src={currentSlide.image_url} 
+                        alt="FoxDrop Banner" 
+                        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-40 mix-blend-overlay"
+                      />
+                    )}
+
+                    {/* EL ZORRO OFICIAL EN SU CAPA DERECHA LIMPIA */}
                     {isDefaultSlide && (
-                      <div className="absolute right-[3%] bottom-0 w-[42%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
+                      <div className="absolute right-[4%] bottom-0 w-[38%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
                           alt="FoxDrop Mascot" 
-                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
+                          className="max-h-full max-w-full object-contain object-bottom drop-shadow-[0_16px_32px_rgba(0,0,0,0.55)]"
                         />
                       </div>
                     )}
 
-                    {/* 3. CONTENIDO TIPOGRÁFICO VIVO EN CÓDIGO */}
-                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
-                      <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-between pointer-events-none">
-                        <div className="space-y-1.5 max-w-[340px]">
-                          {(currentSlide.subtitle || isDefaultSlide) && (
-                            <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
-                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
-                            </span>
-                          )}
-                          <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
-                            {isDefaultSlide 
-                              ? (user?.name 
-                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
-                                  : '¡Hola! El mundo, directo a tu puerta.')
-                              : currentSlide.title}
-                          </h1>
-                          {isDefaultSlide && (
-                            <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
-                              Descubre tesoros mundiales con envío rápido y calidad garantizada.
-                            </p>
-                          )}
+                    {/* CONTENIDO TIPOGRÁFICO DE ALTA GAMA */}
+                    <div className="relative z-20 w-[58%] p-6 lg:p-8 xl:p-9 flex flex-col justify-between pointer-events-none">
+                      <div className="space-y-2 max-w-[420px]">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 w-fit">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-[10px] font-black tracking-widest text-amber-200 uppercase">
+                            {currentSlide.subtitle || 'FoxDrop Boutique & Envíos Directos'}
+                          </span>
                         </div>
 
-                        {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                          <div className="pt-2 pointer-events-auto">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(currentSlide.cta_category || 'Todas');
-                                setActiveTab('all');
-                                const el = document.getElementById('catalog-section');
-                                el?.scrollIntoView({ behavior: 'smooth' });
-                              }}
-                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-4.5 py-2 rounded-full text-xs shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer w-fit group"
-                            >
-                              <span>{currentSlide.cta_text}</span>
-                              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                            </button>
-                          </div>
-                        )}
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-tight drop-shadow-sm">
+                          {isDefaultSlide 
+                            ? (user?.name 
+                                ? `¡Hola, ${user.name.split(' ')[0]}! Lo mejor del mundo, directo a tu puerta.` 
+                                : 'Tesoros únicos & novedades mundiales.')
+                            : currentSlide.title}
+                        </h1>
+
+                        <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium drop-shadow-xs max-w-[380px]">
+                          {isDefaultSlide 
+                            ? 'Disfruta de entregas inmediatas en artículos de Boutique y envíos directos con rastreo a todo México.' 
+                            : 'Compra con confianza: garantía protegida y seguimiento en tiempo real.'}
+                        </p>
                       </div>
-                    )}
+
+                      {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
+                        <div className="pt-2 pointer-events-auto">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(currentSlide.cta_category || 'Todas');
+                              setActiveTab('all');
+                              const el = document.getElementById('catalog-section');
+                              el?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="bg-[#DF7F2D] hover:bg-[#C96E24] active:scale-95 text-white font-black px-5 py-2.5 rounded-full text-xs shadow-[0_4px_16px_rgba(223,127,45,0.45)] transition transform hover:scale-102 flex items-center gap-2 cursor-pointer w-fit group"
+                          >
+                            <span>{currentSlide.cta_text}</span>
+                            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* DOTS INDICADORES DINÁMICOS DEBAJO DEL BANNER */}
                   {totalHeroSlides.length > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-2.5">
+                    <div className="flex items-center justify-center gap-2 pt-3">
                       {totalHeroSlides.map((_, dotIdx) => (
                         <button
                           key={dotIdx}
@@ -2267,6 +2301,41 @@ export default function TiendaFoxDrop() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* SEGMENTADOR EXCLUSIVO MARIO & NYDIA: BOUTIQUE VS IMPORTACIÓN */}
+            {isPrivilegedPartner && (
+              <div className="bg-slate-100 p-1 rounded-xl flex items-center text-xs font-black border border-slate-300/80 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setCatalogSegment('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    catalogSegment === 'all' ? 'bg-[#0F3E36] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Ver Todo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogSegment('boutique')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                    catalogSegment === 'boutique' ? 'bg-emerald-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Solo inventario físico FoxDrop"
+                >
+                  <span>🏪 Boutique FoxDrop</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogSegment('import')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                    catalogSegment === 'import' ? 'bg-indigo-700 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Solo productos de importación directa a tu domicilio"
+                >
+                  <span>✈️ Importación Directa</span>
+                </button>
+              </div>
+            )}
+
             {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
             <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
               <button
@@ -3929,7 +3998,10 @@ export default function TiendaFoxDrop() {
             )}
 
             {/* PASO 2: SELECCIÓN DE PAGO (SPEI O EFECTIVO) */}
-            {checkoutStep === 'payment' && (
+            {checkoutStep === 'payment' && (() => {
+              const hasImportItemsInCart = cart.some(i => (i.product.sku && i.product.sku.startsWith('CJ')) || (i.product.brand && i.product.brand.toLowerCase().includes('cj dropshipping')));
+
+              return (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
                 <div>
                   <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
@@ -3937,13 +4009,15 @@ export default function TiendaFoxDrop() {
                     <span>Método de Pago</span>
                   </h2>
                   <p className="text-xs text-gray-500 mt-1">
-                    Selecciona cómo deseas realizar tu pago para procesar la orden de inmediato.
+                    {hasImportItemsInCart 
+                      ? 'Tu pedido incluye artículos de importación directa a domicilio. Para estos productos el pago se procesa de forma segura mediante Tarjeta de Crédito/Débito o Mercado Pago.'
+                      : 'Selecciona cómo deseas realizar tu pago para procesar la orden de inmediato.'}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   {/* Opción Mercado Pago (Tarjetas, OXXO, Saldo) */}
-                  {checkoutSettings.mercadopago?.enabled !== false && isPrivilegedPartner && (
+                  {checkoutSettings.mercadopago?.enabled !== false && (isPrivilegedPartner || hasImportItemsInCart) && (
                     <div
                       onClick={() => setPaymentMethod('mercadopago')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -3959,18 +4033,17 @@ export default function TiendaFoxDrop() {
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
-                            <span>Tarjeta de Crédito / Débito, OXXO o Mercado Pago</span>
+                            <span>Tarjeta de Crédito / Débito o Mercado Pago</span>
                           </span>
                           <span className="text-[10px] text-sky-800 bg-sky-100 font-bold px-2 py-0.5 rounded-full">
                             {checkoutSettings.mercadopago?.sandbox !== false ? 'Modo Pruebas' : 'Inmediato'}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Paga seguro con Visa, Mastercard, AMEX, efectivo en OXXO o saldo Mercado Pago.
+                          Paga seguro con Visa, Mastercard, AMEX o saldo de Mercado Pago con acreditación inmediata.
                         </p>
                         <div className="flex items-center gap-2 mt-2 pt-1 border-t border-gray-100 text-[10px] font-bold text-gray-600">
-                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">💳 Tarjetas</span>
-                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">🏪 OXXO</span>
+                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200">💳 Visa / Mastercard / AMEX</span>
                           <span className="px-1.5 py-0.5 rounded bg-sky-100 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
                         </div>
 
@@ -4005,33 +4078,35 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* Opción SPEI */}
-                  <div
-                    onClick={() => setPaymentMethod('spei')}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
-                      paymentMethod === 'spei' ? 'border-[#0F3E36] bg-[#EDF5F7]/40' : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
-                      paymentMethod === 'spei' ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'spei' && <div className="w-2 h-2 bg-white rounded-full" />}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-sm text-gray-900">Transferencia Bancaria SPEI</span>
-                        <span className="text-[10px] text-emerald-800 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
-                          Sin comisión
-                        </span>
+                  {/* Opción SPEI (Oculta si hay productos de importación que requieren solo tarjeta/Mercado Pago) */}
+                  {!hasImportItemsInCart && (
+                    <div
+                      onClick={() => setPaymentMethod('spei')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
+                        paymentMethod === 'spei' ? 'border-[#0F3E36] bg-[#EDF5F7]/40' : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                        paymentMethod === 'spei' ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
+                      }`}>
+                        {paymentMethod === 'spei' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Transfiere desde tu app bancaria a nuestra cuenta oficial FoxDrop.
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-gray-900">Transferencia Bancaria SPEI</span>
+                          <span className="text-[10px] text-emerald-800 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
+                            Sin comisión
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Transfiere desde tu app bancaria a nuestra cuenta oficial FoxDrop.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Cuadro de datos SPEI */}
-                  {paymentMethod === 'spei' && (
+                  {!hasImportItemsInCart && paymentMethod === 'spei' && (
                     <div className="bg-[#0F3E36] text-white rounded-3xl p-6 space-y-4 shadow-md border border-emerald-950 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between border-b border-white/15 pb-3">
                         <span className="text-xs uppercase tracking-wider font-bold text-amber-300">
@@ -4129,8 +4204,8 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* Opción Efectivo */}
-                  {checkoutSettings.allowCashOnDelivery && (
+                  {/* Opción Efectivo (Solo disponible para pedidos regulares de boutique, no para importación internacional) */}
+                  {checkoutSettings.allowCashOnDelivery && !hasImportItemsInCart && (
                     <div
                       onClick={() => setPaymentMethod('cash')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -4225,7 +4300,8 @@ export default function TiendaFoxDrop() {
                   </button>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* PASO 3: COMPROBANTE DE COMPRA (DE LA TIENDA AL CLIENTE) */}
             {checkoutStep === 'success' && confirmedOrderSummary && (
@@ -4680,7 +4756,22 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       {/* 6. FICHA DE PRODUCTO: BOTTOM SHEET TÁCTIL (MÓVIL) Y MODAL (PC) */}
       {/* ======================================================== */}
-      {selectedProduct && (
+      {selectedProduct && (() => {
+        const isImportProd = (selectedProduct.sku && selectedProduct.sku.startsWith('CJ')) || (selectedProduct.brand && selectedProduct.brand.toLowerCase().includes('cj dropshipping'));
+        const displayDescription = isImportProd 
+          ? "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles." 
+          : selectedProduct.description;
+        const displayStock = isImportProd 
+          ? Math.min(20, selectedProduct.stock > 0 ? selectedProduct.stock : 20) 
+          : selectedProduct.stock;
+        
+        // Catálogo de recomendaciones cruzadas filtrado sin mezclar Boutique con Importación
+        const relatedCatalog = isImportProd
+          ? products.filter(p => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')))
+          : products.filter(p => !((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))));
+        const crossSellItems = getCrossSellRecommendations(selectedProduct, relatedCatalog, 2);
+
+        return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center sm:p-4">
           <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[88vh] sm:max-h-[90vh] overflow-y-auto p-5 sm:p-7 space-y-4 relative shadow-2xl animate-in slide-in-from-bottom duration-200">
             
@@ -4770,7 +4861,7 @@ export default function TiendaFoxDrop() {
                   </div>
 
                   <p className="text-xs text-gray-600 mt-2.5 leading-relaxed border-t border-gray-100 pt-2.5">
-                    {selectedProduct.description}
+                    {displayDescription}
                   </p>
 
                   {/* DESGLOSE DE PRODUCTOS INCLUIDOS EN ESTE COMBO */}
@@ -4806,29 +4897,27 @@ export default function TiendaFoxDrop() {
                     <span>Ganas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'} {clubSettings?.currencyName || 'puntos'}</strong> para tu <strong>Club Foxdrop</strong>.</span>
                   </div>
 
-
-
                   {/* DISPONIBILIDAD DE STOCK & BADGES */}
                   <div className="pt-2">
-                    {selectedProduct.stock <= 0 ? (
+                    {displayStock <= 0 ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                         <span className="w-2 h-2 rounded-full bg-rose-500"></span>
                         Agotado temporalmente
                       </span>
-                    ) : selectedProduct.stock === 1 ? (
+                    ) : displayStock === 1 ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse">
                         <span className="w-2 h-2 rounded-full bg-rose-600"></span>
-                        ¡Última pieza disponible en almacén!
+                        ¡Última pieza disponible!
                       </span>
-                    ) : selectedProduct.stock <= 3 ? (
+                    ) : displayStock <= 3 ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
                         <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                        ¡Solo quedan {selectedProduct.stock} piezas listas para entrega!
+                        ¡Solo quedan {displayStock} piezas listas para entrega!
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        {selectedProduct.stock} piezas listas para entrega
+                        {displayStock} piezas listas para entrega
                       </span>
                     )}
                   </div>
@@ -4836,7 +4925,7 @@ export default function TiendaFoxDrop() {
 
                 <div className="space-y-2.5 pt-2">
                   {/* SELECTOR DE CANTIDAD A COMPRAR */}
-                  {selectedProduct.stock > 0 && (
+                  {displayStock > 0 && (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-700">Cantidad a llevar:</span>
                       <div className="flex items-center gap-2">
@@ -4853,8 +4942,8 @@ export default function TiendaFoxDrop() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => setModalQuantity(prev => Math.min(selectedProduct.stock, prev + 1))}
-                          disabled={modalQuantity >= selectedProduct.stock}
+                          onClick={() => setModalQuantity(prev => Math.min(displayStock, prev + 1))}
+                          disabled={modalQuantity >= displayStock}
                           className="w-8 h-8 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -4863,23 +4952,45 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* BADGES OFICIALES DE PAGO CON TARJETA / MERCADO PAGO / OXXO (Solo visible para Mario y Nydia durante pruebas) */}
-                  {isPrivilegedPartner && (
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px] text-slate-600">
-                    <span className="font-bold flex items-center gap-1 text-slate-700">
-                      💳 Pagos Seguros:
-                    </span>
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">Tarjetas</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">OXXO</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">SPEI</span>
-                      <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
+                  {/* ESTRUCTURA VISUAL DE PASARELA DE PAGO: TARJETA DE CRÉDITO / DÉBITO O MERCADO PAGO */}
+                  {isImportProd ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Métodos de Pago Aceptados:</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          Pago 100% Seguro
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 bg-white border border-slate-200 rounded text-slate-700 shadow-2xs">💳 Tarjeta de Crédito</span>
+                        <span className="px-2 py-0.5 bg-white border border-slate-200 rounded text-slate-700 shadow-2xs">💳 Tarjeta de Débito</span>
+                        <span className="px-2 py-0.5 bg-sky-50 border border-sky-200 rounded text-sky-800 font-black shadow-2xs">⚡ Mercado Pago</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 leading-tight">
+                        * Los artículos de importación directa solo admiten pago con tarjeta o Mercado Pago para despacho inmediato.
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    isPrivilegedPartner && (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px] text-slate-600">
+                        <span className="font-bold flex items-center gap-1 text-slate-700">
+                          💳 Pagos Seguros:
+                        </span>
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">Tarjetas</span>
+                          <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">OXXO</span>
+                          <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">SPEI</span>
+                          <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {/* BOTÓN 1-CLIC: COMPRAR AHORA (ESTILO MERCADO LIBRE / AMAZON) */}
-                  {selectedProduct.stock > 0 && (
+                  {displayStock > 0 && (
                     <button
                       type="button"
                       onClick={() => {
@@ -4896,7 +5007,7 @@ export default function TiendaFoxDrop() {
 
                   {/* BOTÓN AGREGAR AL CARRITO */}
                   <button
-                    disabled={selectedProduct.stock <= 0}
+                    disabled={displayStock <= 0}
                     onClick={() => {
                       addToCart(selectedProduct, undefined, modalQuantity);
                       setSelectedProduct(null);
@@ -4905,7 +5016,7 @@ export default function TiendaFoxDrop() {
                   >
                     <ShoppingCart className="w-4 h-4" />
                     <span>
-                      {selectedProduct.stock <= 0 
+                      {displayStock <= 0 
                         ? 'Agotado' 
                         : modalQuantity > 1 
                           ? `Agregar ${modalQuantity} al carrito` 
@@ -4913,28 +5024,30 @@ export default function TiendaFoxDrop() {
                     </span>
                   </button>
 
-                  {/* FILA DE ACCIONES RÁPIDAS: WHATSAPP DIRECTO & COMPARTIR */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible hoy?`;
-                        const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "";
-                        const waUrl = whatsappNum 
-                          ? `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`
-                          : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-                        window.open(waUrl, '_blank');
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs truncate px-2"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span className="truncate">Pedir por WhatsApp</span>
-                    </button>
+                  {/* FILA DE ACCIONES RÁPIDAS: WHATSAPP DIRECTO (SOLO BOUTIQUE) & COMPARTIR */}
+                  <div className={`grid ${isImportProd ? 'grid-cols-1' : 'grid-cols-2'} gap-2 pt-1`}>
+                    {!isImportProd && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible hoy?`;
+                          const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "";
+                          const waUrl = whatsappNum 
+                            ? `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`
+                            : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                          window.open(waUrl, '_blank');
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs truncate px-2"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span className="truncate">Pedir por WhatsApp</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
                       onClick={() => {
-                        const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/tienda?sku=${selectedProduct.sku || selectedProduct.id}` : 'https://foxdrop.mx/tienda';
+                        const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/tienda?id=${selectedProduct.id}` : 'https://foxdrop.mx/tienda';
                         const shareText = `¡Mira este producto en FoxDrop! ${selectedProduct.title} por solo $${selectedProduct.publicPrice} MXN:\n${shareUrl}`;
                         if (navigator.share) {
                           navigator.share({ title: selectedProduct.title, text: shareText, url: shareUrl }).catch(() => {});
@@ -4959,16 +5072,14 @@ export default function TiendaFoxDrop() {
                     </button>
                   </div>
 
-
-
-                  {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS */}
-                  {getCrossSellRecommendations(selectedProduct, products, 2).length > 0 && (
+                  {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS (FILTRADOS SIN MEZCLAR CATÁLOGOS) */}
+                  {crossSellItems.length > 0 && (
                     <div className="border-t border-gray-100 pt-2.5">
                       <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-[#E65F2B]" /> Te podría interesar:
                       </p>
                       <div className="grid grid-cols-2 gap-2">
-                        {getCrossSellRecommendations(selectedProduct, products, 2).map((rec) => (
+                        {crossSellItems.map((rec) => (
                           <div
                             key={rec.id}
                             onClick={() => {
@@ -4992,7 +5103,8 @@ export default function TiendaFoxDrop() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* ======================================================== */}
       {/* 7. DRAWER DEL CARRITO & CHECKOUT COMPLETO */}

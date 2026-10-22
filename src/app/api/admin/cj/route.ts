@@ -85,13 +85,13 @@ export async function POST(req: NextRequest) {
       const insertRecord: any = {
         sku,
         title: importProduct.title,
-        description: importProduct.description || "📦 Producto de importación directa a tu domicilio. Entrega estimada de 10 a 15 días hábiles con guía de rastreo internacional.",
+        description: importProduct.description || "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.",
         category_id: categoryId,
         base_cost_usd: Number(importProduct.baseCostUsd) || 0,
         base_cost_mxn: Number(importProduct.baseCostMxn) || 0,
         shipping_cost_allocated: 0,
         public_price: Number(importProduct.publicPrice) || Math.round((Number(importProduct.baseCostMxn) || 100) * 1.8),
-        stock: 999, // Dropshipping tiene inventario virtual continuo en fábrica
+        stock: 20, // Inventario calibrado para venta ordenada
         images,
         is_active: true,
       };

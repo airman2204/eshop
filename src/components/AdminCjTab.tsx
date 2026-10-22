@@ -352,7 +352,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const costMxn = Math.round(safeUsd * safeRate);
     const salePrice = customPrices[item.id] || Math.round(costMxn * 2.2);
     const finalTitle = customTitles[item.id]?.trim() || item.name;
-    const finalDescription = customDescriptions[item.id]?.trim() || `📦 Producto viral de importación directa a tu domicilio. Tiempo de entrega internacional: 10 a 15 días hábiles con guía de rastreo. SKU CJ: ${item.sku}.`;
+    const finalDescription = customDescriptions[item.id]?.trim() || `Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.`;
 
     try {
       const token = getStoredAdminToken() || '';
