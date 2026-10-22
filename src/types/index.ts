@@ -139,7 +139,8 @@ export interface Order {
   /** Estado de preparación / logística del pedido */
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   /** Tipo de entrega acordado */
-  shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping' | string;
+  shippingType: 'puebla_local' | 'agreed_pickup' | 'national_shipping' | 'international_shipping' | string;
+  shippingAddress?: any;
   pickupPoint?: string;
   subtotal: number;
   shippingCost: number;

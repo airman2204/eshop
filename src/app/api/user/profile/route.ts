@@ -438,9 +438,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      if (orderData.status === "shipped" || orderData.status === "delivered") {
+      if (orderData.status === "shipped" || orderData.status === "delivered" || orderData.status === "processing") {
         return NextResponse.json({ 
-          error: "El pedido ya está en camino o fue entregado. Para devoluciones, por favor contacta a soporte por WhatsApp." 
+          error: "El pedido ya está en preparación en fábrica/almacén o en camino. Por seguridad logística, no es posible cancelarlo directamente. Por favor contacta a soporte por WhatsApp para asistirte." 
+        }, { status: 400 });
+      }
+
+      // Si la orden ya fue enviada a CJ Dropshipping
+      if (orderData.notes && orderData.notes.includes("[CJ-ORDER:")) {
+        return NextResponse.json({
+          error: "Tu pedido ya fue confirmado y emitido a fábrica internacional en CJ Dropshipping. No es posible cancelarlo. Contacta a soporte por WhatsApp."
         }, { status: 400 });
       }
 

@@ -174,6 +174,185 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, wishlist });
     }
 
+    // 6. ENVIAR ORDEN A CJ DROPSHIPPING (createOrderV2)
+    if (action === "dispatch_order_to_cj") {
+      const { orderId, logisticName, customAddress } = body;
+      if (!orderId) {
+        return NextResponse.json({ error: "orderId requerido" }, { status: 400 });
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createServerClient() as any;
+
+      // Obtener orden completa con sus items
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+      let query = supabase.from("orders").select("*, order_items(*)");
+      if (isUuid) query = query.eq("id", orderId);
+      else query = query.eq("order_number", orderId);
+
+      const { data: order, error: orderErr } = await query.maybeSingle();
+      if (orderErr || !order) {
+        return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+      }
+
+      if (order.notes && order.notes.includes("[CJ-ORDER:")) {
+        return NextResponse.json({ error: "Esta orden ya fue enviada previamente a CJ Dropshipping" }, { status: 400 });
+      }
+
+      const items = order.order_items || [];
+      if (items.length === 0) {
+        return NextResponse.json({ error: "La orden no contiene productos" }, { status: 400 });
+      }
+
+      // Obtener token activo de CJ
+      const { getCjAccessToken } = await import("@/lib/cjdropshipping");
+      const cjToken = await getCjAccessToken();
+
+      // Resolver productos y sus VIDs (Variant ID) en CJ
+      const cjProductsPayload: Array<{ vid: string; quantity: number; storeLineItemId?: string }> = [];
+
+      for (const item of items) {
+        let sku = "";
+        let vid = "";
+
+        // Intentar obtener sku desde catálogo si tiene product_id
+        if (item.product_id) {
+          const { data: pData } = await supabase
+            .from("products")
+            .select("sku")
+            .eq("id", item.product_id)
+            .maybeSingle();
+          if (pData?.sku) sku = pData.sku;
+        }
+
+        if (!sku && item.product_title) {
+          // Buscar en products por título
+          const { data: pByTitle } = await supabase
+            .from("products")
+            .select("sku")
+            .ilike("title", item.product_title.slice(0, 30) + "%")
+            .maybeSingle();
+          if (pByTitle?.sku) sku = pByTitle.sku;
+        }
+
+        // Consultar a CJ para resolver el Variant ID (VID)
+        if (sku) {
+          try {
+            // 1. Buscar en catálogo CJ con keyword para obtener el PID
+            const searchUrl = new URL("https://developers.cjdropshipping.com/api2.0/v1/product/listV2");
+            searchUrl.searchParams.set("keyWord", sku);
+            const sRes = await fetch(searchUrl.toString(), {
+              headers: { "CJ-Access-Token": cjToken },
+            });
+            const sJson = await sRes.json();
+            const cjProd = sJson.data?.content?.[0]?.productList?.[0];
+            const pid = cjProd?.pid || cjProd?.id;
+
+            if (pid) {
+              const detRes = await fetch(`https://developers.cjdropshipping.com/api2.0/v1/product/query?pid=${encodeURIComponent(pid)}`, {
+                headers: { "CJ-Access-Token": cjToken },
+              });
+              const detJson = await detRes.json();
+              const variants = detJson.data?.variants || [];
+              if (variants.length > 0) {
+                // Encontrar variante coincidente o usar la primera por defecto
+                const matched = variants.find((v: any) => v.variantSku === sku) || variants[0];
+                vid = matched.vid || "";
+              }
+            }
+          } catch (lookupErr) {
+            console.warn("Aviso al consultar variante en CJ:", lookupErr);
+          }
+        }
+
+        if (!vid) {
+          return NextResponse.json({
+            error: `No se pudo encontrar el ID de variante (VID) en CJ Dropshipping para el producto "${item.product_title}". Verifica el SKU oficial en CJ.`
+          }, { status: 400 });
+        }
+
+        cjProductsPayload.push({
+          vid,
+          quantity: Number(item.quantity) || 1,
+          storeLineItemId: String(item.id || item.product_id || ""),
+        });
+      }
+
+      // Resolver dirección
+      const rawAddress = customAddress || (typeof order.shipping_address === "object" ? order.shipping_address : {});
+      const customerName = (customAddress?.customerName || order.client_name || "Cliente FoxDrop").trim();
+      const customerPhone = (customAddress?.phone || order.client_phone || "0000000000").replace(/[^0-9+]/g, "");
+      const streetAddress = (customAddress?.street || rawAddress?.street || "Domicilio Conocido").trim();
+      const city = (customAddress?.city || rawAddress?.city || "Puebla").trim();
+      const province = (customAddress?.province || rawAddress?.province || rawAddress?.state || "Puebla").trim();
+      const zip = (customAddress?.zip || rawAddress?.zip || "72000").replace(/[^0-9]/g, "");
+
+      // Armar payload oficial createOrderV2 de CJ Dropshipping
+      const cjOrderBody = {
+        orderNumber: order.order_number || `FX-${order.id.slice(0, 8)}`,
+        shippingZip: zip,
+        shippingCountry: "Mexico",
+        shippingCountryCode: "MX",
+        shippingProvince: province,
+        shippingCity: city,
+        shippingAddress: streetAddress,
+        shippingCustomerName: customerName,
+        shippingPhone: customerPhone,
+        email: order.client_email || "contacto@foxdrop.com.mx",
+        remark: "FoxDrop e-commerce Mexico - Despacho Directo",
+        logisticName: logisticName || "CJPacket Ordinary",
+        payType: 3, // Crear orden sin cobro automático directo, lista para pagar en CJ Dashboard
+        products: cjProductsPayload,
+      };
+
+      const cjRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/shopping/order/createOrderV2", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "CJ-Access-Token": cjToken,
+        },
+        body: JSON.stringify(cjOrderBody),
+      });
+
+      const cjResult = await cjRes.json();
+
+      if (!cjRes.ok || !cjResult.result) {
+        return NextResponse.json({
+          error: cjResult.message || `Error devuelto por CJ: HTTP ${cjRes.status}`,
+          details: cjResult,
+        }, { status: 400 });
+      }
+
+      const cjOrderId = cjResult.data?.orderId || cjResult.data?.orderNumber || "CJ-CONFIRMED";
+
+      // Actualizar estado en Supabase: Cambiar a 'processing', añadir nota con CJ-ORDER y bloquear cancelación
+      const existingNotes = order.notes || "";
+      const updatedNotes = `${existingNotes} [CJ-ORDER:${cjOrderId}] (Enviado a CJ: ${new Date().toLocaleString("es-MX")})`.trim();
+
+      const { data: updatedOrder, error: updateErr } = await supabase
+        .from("orders")
+        .update({
+          status: "processing",
+          notes: updatedNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id)
+        .select()
+        .single();
+
+      if (updateErr) {
+        console.warn("Aviso actualizando orden local tras enviar a CJ:", updateErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        cjOrderId,
+        cjData: cjResult.data,
+        order: updatedOrder || order,
+        message: "Orden enviada exitosamente a CJ Dropshipping. Ya puedes visualizarla y autorizar su pago en tu panel de CJ.",
+      });
+    }
+
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });
   } catch (err: any) {
     console.error("Error en /api/admin/cj:", err);

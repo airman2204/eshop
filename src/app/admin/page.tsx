@@ -7,6 +7,7 @@ import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
 import AdminCjTab from '@/components/AdminCjTab';
+import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -330,7 +331,7 @@ export default function AdminCRM() {
   const [orderHistoryStatusFilter, setOrderHistoryStatusFilter] = useState<'all' | 'delivered' | 'cancelled' | 'pending' | 'processing' | 'shipped'>('all');
 
   // Filtro de canal en Pedidos Activos (Local Puebla vs Envío Nacional)
-  const [activeOrderShippingFilter, setActiveOrderShippingFilter] = useState<'all' | 'puebla_local' | 'national_shipping'>('all');
+  const [activeOrderShippingFilter, setActiveOrderShippingFilter] = useState<'all' | 'puebla_local' | 'national_shipping' | 'international_shipping'>('all');
 
   // Modal de Confirmación Segura de Eliminación (Sin window.confirm)
   const [confirmDeleteModal, setConfirmDeleteModal] = useState<{
@@ -355,6 +356,7 @@ export default function AdminCRM() {
 
   // 2. Generador de Etiquetas de Envío / Guías
   const [shippingLabelOrder, setShippingLabelOrder] = useState<Order | null>(null);
+  const [cjDispatchOrder, setCjDispatchOrder] = useState<Order | null>(null);
 
   // 3. Corte de Caja Diario (Z-Report)
   const [showZReportModal, setShowZReportModal] = useState(false);
@@ -4970,7 +4972,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <p className="text-slate-900 font-semibold">{order.clientName} <span className="text-slate-400 font-normal">• {order.clientPhone}</span></p>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500">
                         <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-600">
-                          {order.shippingType === 'puebla_local' ? 'Local Puebla' : 'Envío Nacional'}
+                          {order.shippingType === 'puebla_local' ? 'Local Puebla' : (order.shippingType === 'international_shipping' ? '✈️ Importación CJ' : 'Envío Nacional')}
                         </span>
                         {order.createdAt && (
                           <span>{new Date(order.createdAt).toLocaleDateString()}</span>
@@ -4994,6 +4996,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <option value="shipped">En camino</option>
                         <option value="delivered">Entregado</option>
                       </select>
+
+                      {/* Botón Despacho Internacional CJ */}
+                      {(order.shippingType === 'international_shipping' || (order.notes && order.notes.includes('[CJ-ORDER:'))) && (
+                        <button
+                          type="button"
+                          onClick={() => setCjDispatchOrder(order)}
+                          className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition text-xs font-bold border cursor-pointer shadow-2xs ${
+                            order.notes && order.notes.includes('[CJ-ORDER:')
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                              : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white border-transparent'
+                          }`}
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>{order.notes && order.notes.includes('[CJ-ORDER:') ? 'Ver en CJ' : 'Enviar a CJ'}</span>
+                        </button>
+                      )}
 
                       {/* Botón Imprimir Guía de Envío / Remisión */}
                       <button

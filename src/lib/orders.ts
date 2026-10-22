@@ -42,6 +42,30 @@ export interface CreateOrderInput {
  * automáticamente (incluyendo componentes vinculados si el artículo es un combo).
  */
 export async function createOrderInDb(input: CreateOrderInput) {
+  // 1. Intentar registrar a través de la API del servidor (bypassa RLS con Service Role de forma segura)
+  try {
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.orderNumber) {
+        return {
+          id: json.orderId,
+          orderNumber: json.orderNumber,
+        };
+      }
+    } else {
+      console.warn("Aviso en /api/orders, status:", res.status);
+    }
+  } catch (apiErr) {
+    console.warn("Fallo llamando a /api/orders, intentando cliente directo:", apiErr);
+  }
+
+  // 2. Fallback de cliente directo con Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
 
