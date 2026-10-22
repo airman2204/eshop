@@ -4687,6 +4687,19 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
+                  {/* BADGES OFICIALES DE PAGO CON TARJETA / MERCADO PAGO / OXXO */}
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px] text-slate-600">
+                    <span className="font-bold flex items-center gap-1 text-slate-700">
+                      💳 Pagos Seguros:
+                    </span>
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">Tarjetas</span>
+                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">OXXO</span>
+                      <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200">SPEI</span>
+                      <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-800">⚡ Mercado Pago</span>
+                    </div>
+                  </div>
+
                   {/* BOTÓN 1-CLIC: COMPRAR AHORA (ESTILO MERCADO LIBRE / AMAZON) */}
                   {selectedProduct.stock > 0 && (
                     <button
