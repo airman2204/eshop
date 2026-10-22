@@ -700,7 +700,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             }`}
           >
             <Truck className="w-3.5 h-3.5" />
-            <span>🇲🇽 En Bodega México (Entrega Exprés 2 a 5 Días)</span>
+            <span>🇲🇽 En Bodega México (Envío Exprés 2 a 5 Días a Domicilio)</span>
           </button>
         </div>
 

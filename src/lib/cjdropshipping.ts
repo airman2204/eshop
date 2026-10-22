@@ -142,11 +142,17 @@ export async function searchCjProducts(
   }
 
   const content = data.data.content || [];
-  const rawList: any[] = [];
+  let rawList: any[] = [];
   content.forEach((group: any) => {
     if (Array.isArray(group.productList)) {
       rawList.push(...group.productList);
     }
+  });
+
+  // Si se está filtrando bodega México o en general, descartar productos restringidos a "Self-pickup only" (que obligan a ir a recogerlos físicamente al almacén)
+  rawList = rawList.filter((p: any) => {
+    const title = String(p.nameEn || p.productNameEn || p.productName || "");
+    return !/self-pickup|pickup only|pick up only/i.test(title);
   });
 
   const parseCjPrice = (raw: any): number => {
