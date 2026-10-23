@@ -418,7 +418,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         {/* TIPO DE CAMBIO EN VIVO */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-center shrink-0 min-w-[170px]">
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Tipo de Cambio</span>
-          <span className="text-2xl font-black text-amber-400 font-mono mt-0.5 block">
+          <span className="text-2xl font-black text-amber-400 font-semibold mt-0.5 block">
             ${usdRate.toFixed(2)} MXN
           </span>
           <span className="text-[10px] text-emerald-400 font-medium">1 USD = ${usdRate.toFixed(2)} Pesos</span>
@@ -455,7 +455,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           <Heart className="w-4 h-4 fill-current" />
           <span>Wishlist Compartida (Preselección)</span>
           {wishlist.length > 0 && (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
               cjViewMode === 'wishlist' ? 'bg-white text-rose-600' : 'bg-rose-100 text-rose-700'
             }`}>
               {wishlist.length}
@@ -598,13 +598,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         <div className="bg-slate-50 rounded-xl p-2.5 space-y-1 text-[11px] border border-slate-100">
                           <div className="flex items-center justify-between text-slate-500">
                             <span>Costo Fábrica:</span>
-                            <span className="font-mono font-bold text-slate-700">
+                            <span className="font-bold text-slate-700">
                               ${safeUsd.toFixed(2)} USD (~${costMxn} MXN)
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-indigo-700 font-bold">
                             <span>Venta sugerida:</span>
-                            <span className="font-mono">${suggestedSale} MXN</span>
+                            <span className="font-semibold">${suggestedSale} MXN</span>
                           </div>
                           <div className="flex items-center justify-between text-emerald-600 font-black text-[10px] pt-1 border-t border-slate-200/60">
                             <span>Ganancia estimada:</span>
@@ -968,13 +968,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     <div className="bg-slate-50 rounded-xl p-2 space-y-1 text-[11px] border border-slate-100">
                       <div className="flex items-center justify-between text-slate-500">
                         <span>Costo Fábrica:</span>
-                        <span className="font-mono font-bold text-slate-700">
+                        <span className="font-bold text-slate-700">
                           ${safePriceUsd.toFixed(2)} USD (~${costMxn} MXN)
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-indigo-700 font-bold">
                         <span>Venta sugerida:</span>
-                        <span className="font-mono">${suggestedSale} MXN</span>
+                        <span className="font-semibold">${suggestedSale} MXN</span>
                       </div>
                       <div className="flex items-center justify-between text-emerald-600 font-black text-[10px] pt-0.5 border-t border-slate-200/60">
                         <span>Ganancia neta:</span>
@@ -1180,13 +1180,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       }`}>
                         <div className="flex items-center justify-between text-xs text-slate-600">
                           <span>{isMexicoStock ? 'Costo en Bodega México:' : 'Costo Fábrica (China):'}</span>
-                          <span className="font-mono font-bold text-slate-900 text-sm">
+                          <span className="font-bold text-slate-900 text-sm">
                             ${safeUsd.toFixed(2)} USD (~${costMxn} MXN)
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs text-slate-600">
                           <span>{isMexicoStock ? 'Paquetería Nacional (Estafeta / Fedex MX):' : 'Flete Internacional Estándar (CJPacket):'}</span>
-                          <span className={`font-mono font-bold ${isMexicoStock ? 'text-emerald-700' : 'text-slate-700'}`}>
+                          <span className={`font-bold ${isMexicoStock ? 'text-emerald-700' : 'text-slate-700'}`}>
                             {isMexicoStock ? '✓ Flete Incluido / Nacional' : '~$130 MXN'}
                           </span>
                         </div>
@@ -1198,13 +1198,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         </div>
                         <div className="flex items-center justify-between text-xs text-indigo-700 font-bold border-t border-slate-200/80 pt-2">
                           <span>Venta sugerida en FoxDrop:</span>
-                          <span className="font-mono text-base font-black text-indigo-900">
+                          <span className="font-semibold text-base font-black text-indigo-900">
                             ${suggestedSale} MXN
                           </span>
                         </div>
                         <div className="text-[11px] text-emerald-600 font-bold flex items-center justify-between bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
                           <span>Tu ganancia estimada por venta:</span>
-                          <span className="font-mono">
+                          <span className="font-semibold">
                             +${estimatedProfit} MXN
                           </span>
                         </div>
@@ -1218,7 +1218,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="text-slate-400 block font-medium">SKU Fábrica:</span>
-                        <span className="font-mono font-bold text-slate-800 break-all">{previewItem.sku || 'N/A'}</span>
+                        <span className="font-bold text-slate-800 break-all">{previewItem.sku || 'N/A'}</span>
                       </div>
                       <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                         <span className="text-slate-400 block font-medium">Categoría:</span>
@@ -1234,7 +1234,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       {previewDetail?.weight && (
                         <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
                           <span className="text-slate-400 block font-medium">Peso del paquete:</span>
-                          <span className="font-mono font-bold text-slate-800">{previewDetail.weight}</span>
+                          <span className="font-bold text-slate-800">{previewDetail.weight}</span>
                         </div>
                       )}
                     </div>
@@ -1263,7 +1263,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         {previewDetail.variants.slice(0, 12).map((v: any, i: number) => (
                           <div key={i} className="px-2.5 py-1 bg-slate-100/90 rounded-lg text-[11px] text-slate-700 font-medium border border-slate-200/80 flex items-center gap-1.5">
                             <span className="truncate max-w-[150px]">{v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i+1}`}</span>
-                            <span className="font-mono font-bold text-indigo-700">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)}</span>
+                            <span className="font-bold text-indigo-700">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
@@ -1323,7 +1323,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               />
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-800 line-clamp-2">{modalItem.name}</p>
-                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
                   Costo CJ: ${modalItem.priceUsd.toFixed(2)} USD (~${Math.round(modalItem.priceUsd * usdRate)} MXN)
                 </p>
               </div>
@@ -1365,7 +1365,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     type="number"
                     value={customPrices[modalItem.id] || 199}
                     onChange={(e) => setCustomPrices(prev => ({ ...prev, [modalItem.id]: Number(e.target.value) }))}
-                    className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-mono"
+                    className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-semibold"
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] pt-1 px-1">

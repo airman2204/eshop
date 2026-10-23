@@ -94,7 +94,7 @@ export default function AdminCjDispatchModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm">Validar & Enviar a CJ Dropshipping</h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200">
                   {order.id}
                 </span>
               </div>
@@ -121,7 +121,7 @@ export default function AdminCjDispatchModal({
               <p className="text-xs text-emerald-700">
                 La orden está blindada contra cancelaciones del cliente y puedes verla en tu panel oficial de CJ Dropshipping para gestionar el pago y despacho.
               </p>
-              <div className="p-2.5 bg-white rounded-xl border border-emerald-200 font-mono text-[11px] text-slate-800">
+              <div className="p-2.5 bg-white rounded-xl border border-emerald-200 font-semibold text-[11px] text-slate-800">
                 Nota: {order.notes}
               </div>
             </div>
@@ -134,7 +134,7 @@ export default function AdminCjDispatchModal({
               <p className="text-xs text-emerald-700 max-w-md mx-auto">
                 La orden se generó en tu cuenta de CJ con folio internacional:
               </p>
-              <div className="inline-block px-4 py-2 bg-white rounded-xl border border-emerald-300 font-mono font-bold text-sm text-slate-900 shadow-2xs">
+              <div className="inline-block px-4 py-2 bg-white rounded-xl border border-emerald-300 font-bold text-sm text-slate-900 shadow-2xs">
                 {successData.cjOrderId}
               </div>
               <p className="text-[11px] text-slate-500">
@@ -174,7 +174,7 @@ export default function AdminCjDispatchModal({
                           <p className="font-semibold text-slate-900 truncate">{item.product_title}</p>
                           <p className="text-[10px] text-slate-500">Cantidad: {item.quantity} ud(s)</p>
                         </div>
-                        <span className="font-mono font-bold text-slate-800">${item.price_at_purchase} MXN</span>
+                        <span className="font-bold text-slate-800">${item.price_at_purchase} MXN</span>
                       </div>
                     ))
                   ) : (
@@ -246,7 +246,7 @@ export default function AdminCjDispatchModal({
                       type="text"
                       value={zip}
                       onChange={e => setZip(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:bg-white focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:bg-white focus:outline-none focus:border-indigo-500"
                     />
                   </div>
 

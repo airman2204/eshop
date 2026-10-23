@@ -1552,7 +1552,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   )}
                 </h3>
                 <div className="flex items-center gap-2 text-[11px] text-[#8696A0] truncate">
-                  <span className="font-mono">+{activeChat.phone}</span>
+                  <span className="font-semibold">+{activeChat.phone}</span>
                   <span>•</span>
                   <span className="text-[#00A884] font-medium">en línea</span>
                 </div>
@@ -2085,7 +2085,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
             <div>
               <h3 className="font-extrabold text-base text-[#E9EDEF]">{callingModal.clientName}</h3>
-              <p className="text-xs text-[#8696A0] font-mono mt-0.5">+{callingModal.phone}</p>
+              <p className="text-xs text-[#8696A0] font-semibold mt-0.5">+{callingModal.phone}</p>
               <span className="inline-block mt-2 text-[11px] font-bold text-[#00A884] animate-pulse">
                 {callingModal.callType === 'video' ? 'Iniciando Videollamada...' : 'Llamando por WhatsApp...'}
               </span>
@@ -2214,7 +2214,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     <h4 className="font-extrabold text-[#E9EDEF] text-sm">
                       {myProfile?.name || 'FoxDrop Oficial'}
                     </h4>
-                    <p className="text-[11px] font-mono text-[#8696A0]">
+                    <p className="text-[11px] font-semibold text-[#8696A0]">
                       +{myProfile?.phone || 'WhatsApp Vinculado'}
                     </p>
                   </div>
@@ -2394,7 +2394,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
                             <span className="bg-[#111B21] text-amber-300 font-bold px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
                               <span>🏪 {item.suggestedStore || 'Bath & Body Works / Amazon'}</span>
-                              <span className="text-white font-mono font-black">${item.storePriceUSD} USD</span>
+                              <span className="text-white font-black">${item.storePriceUSD} USD</span>
                             </span>
                             {item.isLiveConfirmed ? (
                               <span className="text-emerald-300 bg-emerald-950/60 font-extrabold px-2 py-0.5 rounded-md border border-emerald-500/40 flex items-center gap-1">
@@ -2408,7 +2408,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                             ) : null}
                             {item.clientPrice && item.clientPrice !== 'N/A' && (
                               <span className="text-[#8696A0] bg-[#111B21] px-2 py-0.5 rounded-md border border-[#2A3942]">
-                                Ref. cliente: <b className="text-emerald-400 font-mono">{item.clientPrice}</b>
+                                Ref. cliente: <b className="text-emerald-400 font-semibold">{item.clientPrice}</b>
                               </span>
                             )}
                           </div>
@@ -2419,7 +2419,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       <div className="bg-[#111B21] rounded-xl p-2.5 border border-[#2A3942] grid grid-cols-3 gap-2 text-center text-[10px]">
                         <div className="space-y-0.5 border-r border-[#222E35] pr-1">
                           <span className="text-[#8696A0] block text-[9px] uppercase font-bold">Costo Puesto Mex</span>
-                          <span className="font-black font-mono text-white text-xs block">
+                          <span className="font-black font-semibold text-white text-xs block">
                             ${item.estimatedCostMXN || Math.round((item.storePriceUSD || 10) * 18.5 + 25)} MXN
                           </span>
                           <span className="text-[8px] text-[#8696A0] block">(USD + Envío)</span>
@@ -2427,7 +2427,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
                         <div className="space-y-0.5 border-r border-[#222E35] px-1">
                           <span className="text-amber-400 block text-[9px] uppercase font-black">Precio de Venta</span>
-                          <span className="font-black font-mono text-amber-300 text-xs block">
+                          <span className="font-black font-semibold text-amber-300 text-xs block">
                             ${item.suggestedSalePriceMXN || Math.round(((item.storePriceUSD || 10) * 18.5 + 25) * 1.55)} MXN
                           </span>
                           <span className="text-[8px] text-amber-400/80 block">Recomendado</span>
@@ -2435,7 +2435,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
                         <div className="space-y-0.5 pl-1">
                           <span className="text-emerald-400 block text-[9px] uppercase font-black">Tu Ganancia</span>
-                          <span className="font-black font-mono text-emerald-400 text-xs block">
+                          <span className="font-black font-semibold text-emerald-400 text-xs block">
                             +${item.estimatedProfitMXN || Math.round((item.suggestedSalePriceMXN || 320) - (item.estimatedCostMXN || 190))} MXN
                           </span>
                           <span className="text-[8px] text-emerald-300 font-bold block">

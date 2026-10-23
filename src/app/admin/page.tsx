@@ -3473,7 +3473,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="flex items-center gap-2.5">
                   <Package className={`w-4 h-4 ${crmSubTab === 'inventory' || crmSubTab === 'batches' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Inventario
                 </span>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {products.length}
                 </span>
               </button>
@@ -3495,7 +3495,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {activeOrders.length}
                   </span>
                 ) : (
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                     {orders.length}
                   </span>
                 )}
@@ -3542,7 +3542,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="flex items-center gap-2.5">
                   <Users className={`w-4 h-4 ${crmSubTab === 'clients' || crmSubTab === 'loyalty' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Clientes & Club
                 </span>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {clients.length}
                 </span>
               </button>
@@ -3656,7 +3656,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Search className="w-3.5 h-3.5 text-slate-400" />
                 <span className="hidden sm:inline text-slate-500">Buscar...</span>
-                <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-mono px-1.5 py-0.2 rounded-md shadow-2xs">
+                <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-semibold px-1.5 py-0.2 rounded-md shadow-2xs">
                   ⌘K
                 </kbd>
               </button>
@@ -3776,7 +3776,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Package className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Catálogo de Productos</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {products.length}
                 </span>
               </button>
@@ -3787,7 +3787,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Layers className="w-3.5 h-3.5 text-slate-400" />
                 <span>Lotes de Importación y Fletes</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {batches.length}
                 </span>
               </button>
@@ -3858,7 +3858,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
                   <Package className="w-3 h-3 text-[#E65F2B]" /> Total Unidades
                 </span>
-                <span className="text-lg sm:text-xl font-black font-mono text-white">
+                <span className="text-lg sm:text-xl font-black font-semibold text-white">
                   {totalInventoryUnits} <span className="text-[11px] font-normal text-slate-400">pzas</span>
                 </span>
                 <span className="text-[10px] text-slate-400 block truncate">
@@ -3870,7 +3870,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-blue-400" /> Capital Invertido
                 </span>
-                <span className="text-lg sm:text-xl font-black font-mono text-blue-300">
+                <span className="text-lg sm:text-xl font-black font-semibold text-blue-300">
                   ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-slate-400 block">
@@ -3882,7 +3882,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
                   <TrendingUp className="w-3 h-3 text-emerald-400" /> Valor en Piso
                 </span>
-                <span className="text-lg sm:text-xl font-black font-mono text-emerald-400">
+                <span className="text-lg sm:text-xl font-black font-semibold text-emerald-400">
                   ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-emerald-300/80 block">
@@ -3894,7 +3894,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
                   <Percent className="w-3 h-3 text-amber-400" /> Utilidad Estimada
                 </span>
-                <span className="text-lg sm:text-xl font-black font-mono text-amber-300">
+                <span className="text-lg sm:text-xl font-black font-semibold text-amber-300">
                   +${totalExpectedProfit.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 <span className="text-[10px] text-amber-400/80 font-bold block">
@@ -3920,7 +3920,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <span>Todos los lotes</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
                     inventoryBatchFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {products.length}
@@ -3948,7 +3948,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     >
                       <Package className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-[#E65F2B]'}`} />
                       <span>{b.batchName}</span>
-                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
                         isSelected ? 'bg-black/20 text-white' : 'bg-orange-100 text-orange-900 font-bold'
                       }`}>
                         {countForBatch}
@@ -3974,7 +3974,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <span>Todos</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
                     {products.length}
                   </span>
                 </button>
@@ -3989,7 +3989,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <span className={`w-2 h-2 rounded-full ${stockFilter === 'low_stock' ? 'bg-white' : 'bg-amber-500'}`}></span>
                   <span>Bajo Stock (1 a 3)</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
                     {countLowStock}
                   </span>
                 </button>
@@ -4004,7 +4004,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <span className={`w-2 h-2 rounded-full ${stockFilter === 'out_of_stock' ? 'bg-white' : 'bg-rose-500'}`}></span>
                   <span>Agotados (0)</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
                     {countOutOfStock}
                   </span>
                 </button>
@@ -4019,7 +4019,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <span className={`w-2 h-2 rounded-full ${stockFilter === 'healthy' ? 'bg-white' : 'bg-emerald-500'}`}></span>
                   <span>Stock Óptimo (&gt;3)</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
                     {countHealthy}
                   </span>
                 </button>
@@ -4034,7 +4034,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Layers className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Combos</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
                     {countCombos}
                   </span>
                 </button>
@@ -4049,7 +4049,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Power className="w-3.5 h-3.5 text-slate-400" />
                   <span>Inactivos</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
                     {countInactive}
                   </span>
                 </button>
@@ -4280,9 +4280,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 </span>
                               );
                             })()}
-                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
+                            <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono">
+                          <td className="py-3.5 px-4 font-semibold">
                             <span className="font-black text-slate-900 block text-xs">
                               ${p.totalCostMxn.toFixed(2)}
                             </span>
@@ -4292,7 +4292,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
                           
                           {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA Y BADGE DE OFERTA */}
-                          <td className="py-3.5 px-4 font-mono font-black bg-emerald-50/40">
+                          <td className="py-3.5 px-4 font-black bg-emerald-50/40">
                             {editingPriceId === p.id ? (
                               <div className="flex items-center gap-1">
                                 <span className="text-slate-400 font-bold">$</span>
@@ -4311,7 +4311,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   onBlur={() => {
                                     handleQuickPriceSave(p, parseFloat(editingPriceValue));
                                   }}
-                                  className="w-20 px-1.5 py-0.5 bg-white border-2 border-emerald-500 rounded text-xs font-mono font-bold text-slate-900 focus:outline-none shadow-xs"
+                                  className="w-20 px-1.5 py-0.5 bg-white border-2 border-emerald-500 rounded text-xs font-bold text-slate-900 focus:outline-none shadow-xs"
                                 />
                               </div>
                             ) : (
@@ -4348,7 +4348,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             )}
                           </td>
 
-                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
+                          <td className="py-3.5 px-4 font-bold text-emerald-600">
                             +${p.profitUnit.toFixed(2)} <span className="text-[10px] text-slate-400">({p.marginPercent.toFixed(0)}%)</span>
                           </td>
                           
@@ -4363,7 +4363,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <span className={`min-w-[42px] px-1.5 py-0.5 text-center font-mono font-bold text-xs rounded-md ${
+                              <span className={`min-w-[42px] px-1.5 py-0.5 text-center font-bold text-xs rounded-md ${
                                 isOutOfStock ? 'bg-rose-100 text-rose-700 font-black' :
                                 isLowStock ? 'bg-amber-100 text-amber-800 font-black' :
                                 'text-slate-800'
@@ -4579,7 +4579,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   </span>
                                 );
                               })()}
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 font-semibold">
                                 +${p.shippingCostAllocated.toFixed(0)} flete
                               </span>
                             </div>
@@ -4601,7 +4601,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className={`px-2 py-0.5 text-xs font-mono font-black rounded-md ${
+                            <span className={`px-2 py-0.5 text-xs font-black rounded-md ${
                               isOutOfStock ? 'bg-rose-100 text-rose-700' :
                               isLowStock ? 'bg-amber-100 text-amber-800' :
                               'bg-white border border-slate-200 text-slate-900'
@@ -4622,8 +4622,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center items-center">
                           <div>
                             <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo Total</span>
-                            <span className="text-xs font-mono font-black text-slate-700">${p.totalCostMxn.toFixed(2)}</span>
-                            <span className="text-[9px] font-mono text-slate-400 block">Base: ${p.baseCostMxn.toFixed(2)}</span>
+                            <span className="text-xs font-black text-slate-700">${p.totalCostMxn.toFixed(2)}</span>
+                            <span className="text-[9px] font-semibold text-slate-400 block">Base: ${p.baseCostMxn.toFixed(2)}</span>
                           </div>
                           <div className="border-x border-slate-200 px-1">
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta (toca)</span>
@@ -4638,7 +4638,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   else if (e.key === 'Escape') setEditingPriceId(null);
                                 }}
                                 onBlur={() => handleQuickPriceSave(p, parseFloat(editingPriceValue))}
-                                className="w-full text-center px-1 py-0.5 bg-white border border-emerald-500 rounded text-xs font-mono font-bold text-slate-900"
+                                className="w-full text-center px-1 py-0.5 bg-white border border-emerald-500 rounded text-xs font-bold text-slate-900"
                               />
                             ) : (
                               <button
@@ -4647,7 +4647,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   setEditingPriceId(p.id);
                                   setEditingPriceValue(p.publicPrice.toString());
                                 }}
-                                className="text-xs font-mono font-black text-emerald-700 hover:bg-emerald-100/60 px-1.5 py-0.5 rounded transition inline-flex items-center gap-0.5"
+                                className="text-xs font-black text-emerald-700 hover:bg-emerald-100/60 px-1.5 py-0.5 rounded transition inline-flex items-center gap-0.5"
                               >
                                 <span>${p.publicPrice.toFixed(0)}</span>
                                 <Edit3 className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
@@ -4656,7 +4656,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </div>
                           <div>
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Ganancia</span>
-                            <span className="text-xs font-mono font-black text-emerald-600">+${p.profitUnit.toFixed(0)}</span>
+                            <span className="text-xs font-black text-emerald-600">+${p.profitUnit.toFixed(0)}</span>
                           </div>
                         </div>
 
@@ -4725,7 +4725,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Package className="w-3.5 h-3.5 text-slate-400" />
                 <span>Catálogo de Productos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {products.length}
                 </span>
               </button>
@@ -4736,7 +4736,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Layers className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Lotes de Importación y Fletes</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {batches.length}
                 </span>
               </button>
@@ -4831,7 +4831,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Truck className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Activos</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold">
                   {activeOrders.length}
                 </span>
               </button>
@@ -4842,7 +4842,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <History className="w-3.5 h-3.5 text-slate-400" />
                 <span>Historial General</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {orders.length}
                 </span>
               </button>
@@ -4853,7 +4853,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Ban className="w-3.5 h-3.5 text-slate-400" />
                 <span>Cancelados</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {cancelledOrders.length}
                 </span>
               </button>
@@ -4864,7 +4864,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />
                 <span>Carritos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {abandonedCarts.length}
                 </span>
               </button>
@@ -4875,7 +4875,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <FileText className="w-3.5 h-3.5 text-slate-400" />
                 <span>Encargos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {specialOrders.length}
                 </span>
               </button>
@@ -4910,7 +4910,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <span>📍 Local Puebla</span>
-                  <span className="font-mono text-[10px] opacity-80">
+                  <span className="font-semibold text-[10px] opacity-80">
                     ({activeOrders.filter(o => o.shippingType === 'puebla_local' || o.shippingType === 'agreed_pickup').length})
                   </span>
                 </button>
@@ -4924,7 +4924,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <span>📦 Envío Nacional</span>
-                  <span className="font-mono text-[10px] opacity-80">
+                  <span className="font-semibold text-[10px] opacity-80">
                     ({activeOrders.filter(o => o.shippingType === 'national_shipping').length})
                   </span>
                 </button>
@@ -4960,7 +4960,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   <div key={order.id} className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs shadow-xs hover:border-slate-300 transition">
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2.5">
-                        <span className="font-mono font-bold text-slate-900 text-sm tracking-tight">{order.id}</span>
+                        <span className="font-bold text-slate-900 text-sm tracking-tight">{order.id}</span>
                         <span className={`px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
                           order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
                           order.status === 'shipped' ? 'bg-sky-50 text-sky-700 border border-sky-200/60' :
@@ -4983,7 +4983,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                       <div className="text-right">
                         <span className="text-slate-400 text-[10px] block font-medium">Total</span>
-                        <span className="text-base font-bold text-slate-900 font-mono">${order.total.toFixed(2)} MXN</span>
+                        <span className="text-base font-bold text-slate-900 font-semibold">${order.total.toFixed(2)} MXN</span>
                       </div>
 
                       <select
@@ -5123,7 +5123,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Truck className="w-3.5 h-3.5 text-slate-400" />
                   <span>Activos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {activeOrders.length}
                   </span>
                 </button>
@@ -5134,7 +5134,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <History className="w-3.5 h-3.5 text-[#E65F2B]" />
                   <span>Historial General</span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                     {orders.length}
                   </span>
                 </button>
@@ -5145,7 +5145,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Ban className="w-3.5 h-3.5 text-slate-400" />
                   <span>Cancelados</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {cancelledOrders.length}
                   </span>
                 </button>
@@ -5156,7 +5156,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />
                   <span>Carritos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {abandonedCarts.length}
                   </span>
                 </button>
@@ -5167,7 +5167,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <FileText className="w-3.5 h-3.5 text-slate-400" />
                   <span>Encargos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {specialOrders.length}
                   </span>
                 </button>
@@ -5185,7 +5185,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-xl font-bold">
+                  <span className="text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-xl font-bold">
                     {filteredHistory.length} registros encontrados
                   </span>
                 </div>
@@ -5358,7 +5358,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         {/* Información del Pedido */}
                         <div className="space-y-2 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-extrabold text-slate-900 text-sm font-mono">{order.id}</span>
+                            <span className="font-extrabold text-slate-900 text-sm font-semibold">{order.id}</span>
                             
                             {/* Insignia Canal de Venta */}
                             <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] flex items-center gap-1 ${
@@ -5395,7 +5395,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-slate-700">
                             <p className="font-bold text-slate-900">
-                              {order.clientName || 'Cliente FoxDrop'} • <span className="font-normal text-slate-500 font-mono">{order.clientPhone}</span>
+                              {order.clientName || 'Cliente FoxDrop'} • <span className="font-normal text-slate-500 font-semibold">{order.clientPhone}</span>
                             </p>
                             <span className="text-slate-400 hidden sm:inline">•</span>
                             <p className="text-slate-600 text-[11px]">
@@ -5488,7 +5488,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Truck className="w-3.5 h-3.5 text-slate-400" />
                 <span>Activos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {activeOrders.length}
                 </span>
               </button>
@@ -5499,7 +5499,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <History className="w-3.5 h-3.5 text-slate-400" />
                 <span>Historial General</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {orders.length}
                 </span>
               </button>
@@ -5510,7 +5510,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Ban className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Cancelados</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {cancelledOrders.length}
                 </span>
               </button>
@@ -5521,7 +5521,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />
                 <span>Carritos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {abandonedCarts.length}
                 </span>
               </button>
@@ -5532,7 +5532,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <FileText className="w-3.5 h-3.5 text-slate-400" />
                 <span>Encargos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {specialOrders.length}
                 </span>
               </button>
@@ -5612,7 +5612,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Users className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Directorio de Clientes</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {clients.length}
                 </span>
               </button>
@@ -5666,7 +5666,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                             </div>
                           </td>
-                          <td className="py-3.5 px-4 font-mono text-[11px]">
+                          <td className="py-3.5 px-4 font-semibold text-[11px]">
                             <div className="text-slate-800">{client.phone}</div>
                             <div className="text-slate-400 text-[10px]">{client.email}</div>
                           </td>
@@ -5675,13 +5675,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               <span>{tier.badge}</span> {tier.name}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-black text-[#E65F2B] text-sm">
+                          <td className="py-3.5 px-4 font-black text-[#E65F2B] text-sm">
                             {client.loyaltyPoints} pts
                           </td>
                           <td className="py-3.5 px-4 font-bold text-slate-800">
                             {client.ordersCount} compras
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">
+                          <td className="py-3.5 px-4 font-bold text-emerald-700">
                             ${client.totalSpent?.toFixed(2)} MXN
                           </td>
                           <td className="py-3.5 px-4 text-right">
@@ -5734,7 +5734,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Truck className="w-3.5 h-3.5 text-slate-400" />
                 <span>Activos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {activeOrders.length}
                 </span>
               </button>
@@ -5745,7 +5745,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <History className="w-3.5 h-3.5 text-slate-400" />
                 <span>Historial General</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {orders.length}
                 </span>
               </button>
@@ -5756,7 +5756,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Ban className="w-3.5 h-3.5 text-slate-400" />
                 <span>Cancelados</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {cancelledOrders.length}
                 </span>
               </button>
@@ -5767,7 +5767,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />
                 <span>Carritos</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {abandonedCarts.length}
                 </span>
               </button>
@@ -5778,7 +5778,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <FileText className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Encargos</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {specialOrders.length}
                 </span>
               </button>
@@ -5800,7 +5800,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div className="space-y-1.5 max-w-xl">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-900 text-sm">{special.client_name || 'Cliente FoxDrop'}</span>
-                        <span className="text-slate-500 font-mono text-[11px]">• {special.client_phone}</span>
+                        <span className="text-slate-500 font-semibold text-[11px]">• {special.client_phone}</span>
                         <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase ${
                           special.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
                           special.status === 'quoted' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
@@ -5872,31 +5872,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Ventas Realizadas (Órdenes Activas y Entregadas)
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-400 font-semibold">
                   {completedOrders.length} pedido{completedOrders.length === 1 ? '' : 's'}
                 </span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Ingresos Totales</span>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${realizedRevenue.toFixed(2)}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-semibold tracking-tight">${realizedRevenue.toFixed(2)}</p>
                   <span className="text-[11px] text-slate-400 block truncate">Facturación bruta en MXN</span>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Costo de Mercancía</span>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-700 font-mono tracking-tight">${realizedCost.toFixed(2)}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-700 font-semibold tracking-tight">${realizedCost.toFixed(2)}</p>
                   <span className="text-[11px] text-slate-400 block truncate">Base + flete prorrateado</span>
                 </div>
                 <div className="bg-white border border-emerald-200/60 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-emerald-700 text-xs font-medium">Utilidad Neta</span>
-                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono tracking-tight">
+                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-semibold tracking-tight">
                     {realizedProfit >= 0 ? `+$${realizedProfit.toFixed(2)}` : `-$${Math.abs(realizedProfit).toFixed(2)}`}
                   </p>
                   <span className="text-[11px] text-emerald-600 font-medium block truncate">Ganancia efectiva neta</span>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Margen Real</span>
-                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-mono tracking-tight">{realizedMargin.toFixed(1)}%</p>
+                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-semibold tracking-tight">{realizedMargin.toFixed(1)}%</p>
                   <span className="text-[11px] text-slate-400 block truncate">Retorno sobre la venta</span>
                 </div>
               </div>
@@ -5908,31 +5908,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                   Inventario en Almacén (Proyección del Catálogo Activo)
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-400 font-semibold">
                   {totalInventoryUnits} piezas
                 </span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Inversión en Stock</span>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${totalInvestment.toFixed(2)}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-semibold tracking-tight">${totalInvestment.toFixed(2)}</p>
                   <span className="text-[11px] text-slate-400 block truncate">Capital activo en bodega</span>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Ventas Proyectadas</span>
-                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-mono tracking-tight">${totalExpectedRevenue.toFixed(2)}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900 font-semibold tracking-tight">${totalExpectedRevenue.toFixed(2)}</p>
                   <span className="text-[11px] text-emerald-600 font-medium block truncate">
                     Al 100% de venta
                   </span>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Ganancia Proyectada</span>
-                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-mono tracking-tight">+${totalExpectedProfit.toFixed(2)}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-emerald-600 font-semibold tracking-tight">+${totalExpectedProfit.toFixed(2)}</p>
                   <span className="text-[11px] text-slate-400 block truncate">Utilidad bruta esperada</span>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Margen Catálogo</span>
-                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-mono tracking-tight">{avgMargin.toFixed(1)}%</p>
+                  <p className="text-xl sm:text-2xl font-bold text-[#E65F2B] font-semibold tracking-tight">{avgMargin.toFixed(1)}%</p>
                   <span className="text-[11px] text-slate-400 block truncate">Margen promedio catálogo</span>
                 </div>
               </div>
@@ -5972,7 +5972,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Truck className="w-3.5 h-3.5 text-slate-400" />
                   <span>Activos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {activeOrders.length}
                   </span>
                 </button>
@@ -5983,7 +5983,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <History className="w-3.5 h-3.5 text-slate-400" />
                   <span>Historial General</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {orders.length}
                   </span>
                 </button>
@@ -5994,7 +5994,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <Ban className="w-3.5 h-3.5 text-slate-400" />
                   <span>Cancelados</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {cancelledOrders.length}
                   </span>
                 </button>
@@ -6005,7 +6005,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <AlertTriangle className="w-3.5 h-3.5 text-[#E65F2B]" />
                   <span>Carritos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                  <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                     {abandonedCarts.length}
                   </span>
                 </button>
@@ -6016,7 +6016,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <FileText className="w-3.5 h-3.5 text-slate-400" />
                   <span>Encargos</span>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {specialOrders.length}
                   </span>
                 </button>
@@ -6286,7 +6286,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#E65F2B]" />
                 <span>Carrusel Hero & Banners</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-mono">
+                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
                   {slides.length}
                 </span>
               </button>
@@ -6717,7 +6717,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Users className="w-3.5 h-3.5 text-slate-400" />
                 <span>Directorio de Clientes</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {clients.length}
                 </span>
               </button>
@@ -6903,7 +6903,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       }
                     }}
                     placeholder="10"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-bold"
                   />
                   <span className="text-[10px] text-slate-400 block mt-1">
                     Ej: $10 gastados = 1 {clubSettings.currencySymbol} ganada.
@@ -6933,7 +6933,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       }
                     }}
                     placeholder="0.10"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-mono font-bold"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B] font-bold"
                   />
                   <span className="text-[10px] text-slate-400 block mt-1">
                     Valor de canje para calcular el pasivo financiero.
@@ -6949,7 +6949,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
                 <p className="text-orange-900 leading-relaxed">
                   Por cada compra de <strong>$500.00 MXN</strong>, el cliente recibirá{' '}
-                  <span className="font-mono font-black text-[#E65F2B] bg-white px-2 py-0.5 rounded-md border border-orange-200">
+                  <span className="font-black text-[#E65F2B] bg-white px-2 py-0.5 rounded-md border border-orange-200">
                     +{Math.floor(500 / (Number(clubSettings.pesosPerPoint) || 10))} {clubSettings.currencySymbol} {clubSettings.currencyName}
                   </span>
                   , con un valor de recompensa estimado de{' '}
@@ -7027,7 +7027,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           setClubSettings({ ...clubSettings, tiers: updated });
                         }}
                         placeholder="0"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 bg-white"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-900 bg-white"
                       />
                     </div>
 
@@ -7058,7 +7058,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             setClubSettings({ ...clubSettings, tiers: updated });
                           }}
                           placeholder="0"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl font-mono font-bold text-[#E65F2B] bg-white pr-8"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-[#E65F2B] bg-white pr-8"
                         />
                         <Percent className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
@@ -7095,7 +7095,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               >
                 <Sparkles className="w-3.5 h-3.5 text-slate-400" />
                 <span>Carrusel Hero & Banners</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-mono text-slate-600">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {slides.length}
                 </span>
               </button>
@@ -7224,7 +7224,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           step="1"
                           value={method.price}
                           onChange={e => handleUpdateShippingMethod(method.id, { price: Math.max(0, Number(e.target.value) || 0) })}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
                         />
                       </div>
                     </div>
@@ -7350,7 +7350,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       bankTransfer: { ...checkoutSettings.bankTransfer, clabe: e.target.value.replace(/[^0-9]/g, '') }
                     })}
                     placeholder="012680015948372619"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#E65F2B]"
                   />
                 </div>
 
@@ -7381,7 +7381,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       bankTransfer: { ...checkoutSettings.bankTransfer, accountNumber: e.target.value }
                     })}
                     placeholder="Ej. 5428780313554651"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-[#E65F2B]"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#E65F2B]"
                   />
                 </div>
               </div>
@@ -7501,7 +7501,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             accessToken: e.target.value.trim(),
                           }
                         })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
@@ -7522,7 +7522,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             publicKey: e.target.value.trim(),
                           }
                         })}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-sky-500"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
                       />
                     </div>
                   </div>
@@ -8318,7 +8318,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                 <span className="text-[10px] text-stone-400">100% Gratis en Gemini Web</span>
                               </div>
 
-                              <div className="p-2.5 bg-black/50 rounded-xl border border-white/10 text-[11px] text-stone-300 font-mono leading-relaxed max-h-24 overflow-y-auto selection:bg-[#E3B888] selection:text-stone-950">
+                              <div className="p-2.5 bg-black/50 rounded-xl border border-white/10 text-[11px] text-stone-300 font-semibold leading-relaxed max-h-24 overflow-y-auto selection:bg-[#E3B888] selection:text-stone-950">
                                 {dayVisualPrompt}
                               </div>
                             </div>
@@ -8862,7 +8862,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 />
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{soldProduct.title}</h4>
-                  <span className="text-[10px] text-slate-400 block font-mono">SKU: {soldProduct.sku || 'N/A'}</span>
+                  <span className="text-[10px] text-slate-400 block font-semibold">SKU: {soldProduct.sku || 'N/A'}</span>
                   <span className="text-[11px] text-slate-600 font-bold block mt-0.5">
                     Stock actual disponible: <strong className="text-slate-900">{soldProduct.stock} piezas</strong>
                   </span>
@@ -8882,7 +8882,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       max={soldProduct.stock}
                       value={soldQuantity}
                       onChange={e => setSoldQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#E65F2B]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-[#E65F2B]"
                     />
                   </div>
 
@@ -8897,7 +8897,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       step="1"
                       value={soldPriceUnit}
                       onChange={e => setSoldPriceUnit(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono font-bold focus:outline-none focus:border-[#E65F2B]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-bold focus:outline-none focus:border-[#E65F2B]"
                     />
                   </div>
                 </div>
@@ -8919,11 +8919,11 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs space-y-1">
                   <div className="flex justify-between items-center text-emerald-900">
                     <span>Nuevo Stock restante:</span>
-                    <strong className="font-mono">{Math.max(0, soldProduct.stock - soldQuantity)} piezas</strong>
+                    <strong className="font-semibold">{Math.max(0, soldProduct.stock - soldQuantity)} piezas</strong>
                   </div>
                   <div className="flex justify-between items-center text-emerald-900">
                     <span>Total que se sumará a tus ventas:</span>
-                    <strong className="font-mono text-sm font-black text-emerald-800">
+                    <strong className="font-semibold text-sm font-black text-emerald-800">
                       ${(soldPriceUnit * soldQuantity).toFixed(2)} MXN
                     </strong>
                   </div>
@@ -9018,7 +9018,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       placeholder="7501000123456"
                       value={newSku}
                       onChange={e => setNewSku(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-mono text-xs focus:outline-none focus:border-[#E65F2B]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-900 font-semibold text-xs focus:outline-none focus:border-[#E65F2B]"
                     />
                   </div>
                 </div>
@@ -9260,7 +9260,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       </select>
                     </div>
                     <div className="sm:col-span-4 text-right">
-                      <span className="text-[11px] font-black text-orange-950 font-mono">
+                      <span className="text-[11px] font-black text-orange-950 font-semibold">
                         +${shippingPerUnit.toFixed(2)} MXN flete
                       </span>
                     </div>
@@ -9316,12 +9316,12 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       )}
                     </div>
                     <div className="mt-1 flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400 font-mono">
+                      <span className="text-slate-400 font-semibold">
                         {costInputMode === 'mxn'
                           ? `Aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
                           : `Equivale a $${costMxn.toFixed(2)} MXN`}
                       </span>
-                      <span className="text-slate-600 font-bold font-mono">
+                      <span className="text-slate-600 font-bold font-semibold">
                         +${shippingPerUnit.toFixed(2)} flete = <strong className="text-slate-900">${totalCostUnitMxn.toFixed(2)}</strong>
                       </span>
                     </div>
@@ -9331,7 +9331,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-slate-700 font-bold text-xs">Precio Venta Público (MXN):</label>
-                      <span className="font-bold text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-mono">
+                      <span className="font-bold text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
                         +{priceMarkupPercent}% sobre costo
                       </span>
                     </div>
@@ -9357,7 +9357,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                     <div className="pt-1 space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
                         <span>100% (Duplicar)</span>
-                        <span className="font-mono font-bold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                        <span className="font-bold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200">
                           {priceMarkupPercent}%
                         </span>
                         <span>190% (Casi el triple)</span>
@@ -9389,15 +9389,15 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
                   <div>
                     <span className="text-slate-600 block text-[11px]">
-                      Costo Total: <strong className="text-slate-900 font-mono">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
+                      Costo Total: <strong className="text-slate-900 font-semibold">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
                     </span>
-                    <span className="text-xs font-black text-emerald-700 font-mono">
+                    <span className="text-xs font-black text-emerald-700 font-semibold">
                       Ganancia Neta en Pesos: +${profitUnit.toFixed(2)} MXN (+{priceMarkupPercent}% de incremento)
                     </span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block uppercase">Margen Bruto</span>
-                    <span className="text-sm font-black text-slate-900 font-mono">{marginPercent.toFixed(1)}%</span>
+                    <span className="text-sm font-black text-slate-900 font-semibold">{marginPercent.toFixed(1)}%</span>
                   </div>
                 </div>
 
@@ -9481,13 +9481,13 @@ ESTÉTICA Y CONCEPTO VISUAL:
                         <span className="text-[10px] text-slate-500 block">Precio de Oferta al Cliente:</span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-slate-400 line-through text-xs">${newPublicPrice}</span>
-                          <span className="text-sm font-black text-[#E65F2B] font-mono">${promoPrice} MXN</span>
+                          <span className="text-sm font-black text-[#E65F2B] font-semibold">${promoPrice} MXN</span>
                         </div>
                       </div>
 
                       <div>
                         <span className="text-[10px] text-slate-500 block">Ganancia Tras Descuento:</span>
-                        <span className="text-xs font-black text-emerald-700 font-mono">
+                        <span className="text-xs font-black text-emerald-700 font-semibold">
                           +${promoProfit.toFixed(2)} MXN
                         </span>
                       </div>
@@ -9495,7 +9495,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] text-slate-500 block">Margen de Ganancia:</span>
                         <div className="inline-flex items-center gap-1">
-                          <span className={`text-xs font-black font-mono ${isPromoMarginSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          <span className={`text-xs font-black font-semibold ${isPromoMarginSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
                             {promoMarginPercent.toFixed(1)}%
                           </span>
                           {isPromoMarginSafe ? (
@@ -9700,7 +9700,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                 />
                                 <span className="font-semibold text-slate-800 truncate max-w-[200px]">{p.title}</span>
                               </div>
-                              <span className="text-[10px] text-slate-500 font-mono">Stock: {p.stock}</span>
+                              <span className="text-[10px] text-slate-500 font-semibold">Stock: {p.stock}</span>
                             </label>
                           );
                         })}
@@ -9787,7 +9787,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       placeholder="0"
                       value={batchShippingCostInput}
                       onChange={e => setBatchShippingCostInput(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold"
                     />
                   </div>
                   <div>
@@ -9799,7 +9799,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       placeholder="1"
                       value={batchUnitsInput}
                       onChange={e => setBatchUnitsInput(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold"
                     />
                   </div>
                 </div>
@@ -9898,7 +9898,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                           </div>
                           <span className="text-[10px] text-gray-400 block mt-0.5">{new Date(ord.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <span className="font-mono font-black text-slate-900 text-sm">
+                        <span className="font-black text-slate-900 text-sm">
                           ${ord.total.toFixed(2)} MXN
                         </span>
                       </div>
@@ -10097,7 +10097,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10px] font-mono text-slate-400">
+                            <span className="text-[10px] font-semibold text-slate-400">
                               {prod.sku} • {prod.category}
                             </span>
                           </div>
@@ -10146,7 +10146,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       >
                         <div className="truncate flex-1">
                           <p className="font-bold text-slate-900 truncate">{item.product.title}</p>
-                          <p className="text-[10px] text-slate-500 font-mono">
+                          <p className="text-[10px] text-slate-500 font-semibold">
                             ${item.product.publicPrice.toFixed(2)} c/u • SKU: {item.product.sku}
                           </p>
                         </div>
@@ -10351,7 +10351,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 <div className="p-4 space-y-2.5 text-xs text-slate-700">
                   <div className="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Folio de Venta</span>
-                    <span className="font-mono font-black text-sm text-[#E65F2B]">{posCompletedTicket.orderNumber}</span>
+                    <span className="font-black text-sm text-[#E65F2B]">{posCompletedTicket.orderNumber}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-1 text-[11px]">
@@ -10369,7 +10369,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
 
                   <div className="text-[11px] pb-1 border-b border-dashed border-slate-200">
                     <span className="text-[9px] text-slate-400 font-bold block uppercase">Teléfono Registrado</span>
-                    <span className="font-mono font-bold text-sky-700">{posCompletedTicket.clientPhone}</span>
+                    <span className="font-bold text-sky-700">{posCompletedTicket.clientPhone}</span>
                   </div>
 
                   {/* Lista de Artículos */}
@@ -10384,7 +10384,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                           <span className="text-slate-800 font-medium truncate max-w-[190px]">
                             {item.quantity}x {item.product.title}
                           </span>
-                          <span className="font-mono font-bold text-slate-900 shrink-0">
+                          <span className="font-bold text-slate-900 shrink-0">
                             ${(item.product.publicPrice * item.quantity).toFixed(2)}
                           </span>
                         </div>
@@ -10402,7 +10402,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                     </div>
                     <div className="flex justify-between items-baseline pt-1">
                       <span className="font-black text-slate-900 text-sm">TOTAL PAGADO:</span>
-                      <span className="font-mono font-black text-xl text-[#0F3E36]">
+                      <span className="font-black text-xl text-[#0F3E36]">
                         ${posCompletedTicket.total.toFixed(2)} MXN
                       </span>
                     </div>
@@ -10413,7 +10413,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                     <span className="font-bold text-amber-900 flex items-center gap-1">
                       ⭐ Club FoxDrop:
                     </span>
-                    <span className="font-mono font-black text-sm text-[#E65F2B]">
+                    <span className="font-black text-sm text-[#E65F2B]">
                       +{posCompletedTicket.pointsEarned} Puntos
                     </span>
                   </div>
@@ -10552,7 +10552,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       </div>
                       <div className="flex justify-between border-b pb-1.5">
                         <span className="text-slate-500">Teléfono:</span>
-                        <span className="font-mono">{viewingTicketOrder.clientPhone}</span>
+                        <span className="font-semibold">{viewingTicketOrder.clientPhone}</span>
                       </div>
                       <div className="flex justify-between border-b pb-1.5">
                         <span className="text-slate-500">Total:</span>
@@ -10783,7 +10783,7 @@ ${ticketImg}
                 <div>
                   <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-2">
                     Kardex de Inventario
-                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded font-mono font-bold">
+                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded font-bold">
                       {kardexProduct.sku || 'SIN-SKU'}
                     </span>
                   </h3>
@@ -10805,7 +10805,7 @@ ${ticketImg}
             <div className="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-3 gap-2 text-center text-xs">
               <div className="bg-white p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-400 block uppercase">Stock Actual</span>
-                <span className={`text-base font-mono font-black ${
+                <span className={`text-base font-black ${
                   kardexProduct.stock <= 0 ? 'text-rose-600' : kardexProduct.stock <= 3 ? 'text-amber-600' : 'text-emerald-700'
                 }`}>
                   {kardexProduct.stock} pzas
@@ -10813,13 +10813,13 @@ ${ticketImg}
               </div>
               <div className="bg-white p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-slate-400 block uppercase">Costo Unitario</span>
-                <span className="text-base font-mono font-black text-slate-800">
+                <span className="text-base font-black text-slate-800">
                   ${kardexProduct.totalCostMxn?.toFixed(2)}
                 </span>
               </div>
               <div className="bg-white p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-bold text-emerald-600 block uppercase">Precio Público</span>
-                <span className="text-base font-mono font-black text-emerald-700">
+                <span className="text-base font-black text-emerald-700">
                   ${kardexProduct.publicPrice?.toFixed(2)}
                 </span>
               </div>
@@ -10885,10 +10885,10 @@ ${ticketImg}
                         </div>
 
                         <div className="text-right">
-                          <span className="font-mono font-black text-rose-600 text-sm block">
+                          <span className="font-black text-rose-600 text-sm block">
                             -{m.qty} {m.qty === 1 ? 'pza' : 'pzas'}
                           </span>
-                          <span className="font-mono text-[10px] text-slate-500">
+                          <span className="font-semibold text-[10px] text-slate-500">
                             ${m.total.toFixed(2)} MXN
                           </span>
                         </div>
@@ -11033,7 +11033,7 @@ ${ticketImg}
                   .map(p => (
                     <div key={p.id} className="flex items-center justify-between text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200">
                       <span className="font-bold truncate max-w-[260px]">{p.title}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Actual: {p.category}</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Actual: {p.category}</span>
                     </div>
                   ))}
               </div>
@@ -11183,8 +11183,8 @@ ${ticketImg}
                       <div key={p.id} className="flex items-center justify-between text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200">
                         <span className="font-bold truncate max-w-[200px]">{p.title}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-400 line-through font-mono">${p.publicPrice}</span>
-                          <span className="font-black text-[#E65F2B] font-mono">${previewPromo}</span>
+                          <span className="text-slate-400 line-through font-semibold">${p.publicPrice}</span>
+                          <span className="font-black text-[#E65F2B] font-semibold">${previewPromo}</span>
                           <span className={`text-[10px] font-bold ${previewMargin >= 50 ? 'text-emerald-700' : 'text-amber-600'}`}>
                             ({previewMargin.toFixed(0)}% util.)
                           </span>
@@ -11243,7 +11243,7 @@ ${ticketImg}
                     value={bulkDiscountSelected > 0 && ![10, 15, 20, 25, 30, 40].includes(bulkDiscountSelected) ? bulkDiscountSelected : ''}
                     onChange={(e) => setBulkDiscountSelected(Math.max(0, Math.min(80, parseInt(e.target.value) || 0)))}
                     placeholder="25"
-                    className="w-12 text-xs font-bold text-slate-900 outline-none text-right font-mono"
+                    className="w-12 text-xs font-bold text-slate-900 outline-none text-right font-semibold"
                   />
                   <span className="text-xs font-bold text-slate-400">%</span>
                 </div>
@@ -11439,7 +11439,7 @@ ${ticketImg}
                 const nextSize = bubbleSize === 'sm' ? 'md' : bubbleSize === 'md' ? 'lg' : 'sm';
                 updateBubbleSize(nextSize);
               }}
-              className="text-[9px] text-emerald-400 hover:text-emerald-300 font-mono px-1 rounded hover:bg-white/10"
+              className="text-[9px] text-emerald-400 hover:text-emerald-300 font-semibold px-1 rounded hover:bg-white/10"
               title={`Tamaño burbuja actual: ${bubbleSize.toUpperCase()}. Clic para cambiar.`}
             >
               {bubbleSize === 'sm' ? 'S' : bubbleSize === 'md' ? 'M' : 'G'}
@@ -11690,7 +11690,7 @@ ${ticketImg}
                 }`}>
                   <div className="whitespace-pre-line font-normal">{msg.text}</div>
                   <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-slate-200/40">
-                    <span className={`text-[9px] font-mono ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
+                    <span className={`text-[9px] font-semibold ${msg.sender === 'user' ? 'text-slate-300' : 'text-slate-400'}`}>
                       {msg.timestamp}
                     </span>
                   </div>
@@ -11803,7 +11803,7 @@ ${ticketImg}
                   <X className="w-4 h-4" />
                 </button>
               )}
-              <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-mono px-2 py-0.5 rounded shadow-2xs">
+              <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-semibold px-2 py-0.5 rounded shadow-2xs">
                 ESC
               </kbd>
             </div>
@@ -11867,10 +11867,10 @@ ${ticketImg}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="font-bold text-slate-900 group-hover:text-[#E65F2B] truncate">{p.title}</p>
-                                  <p className="text-[11px] text-slate-400 font-mono">SKU: {p.sku || 'Sin SKU'} • Stock: {p.stock} pzas</p>
+                                  <p className="text-[11px] text-slate-400 font-semibold">SKU: {p.sku || 'Sin SKU'} • Stock: {p.stock} pzas</p>
                                 </div>
                               </div>
-                              <span className="font-bold font-mono text-slate-900">${p.publicPrice.toFixed(2)}</span>
+                              <span className="font-bold font-semibold text-slate-900">${p.publicPrice.toFixed(2)}</span>
                             </button>
                           ))}
                         </div>
@@ -11897,12 +11897,12 @@ ${ticketImg}
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-900 group-hover:text-[#E65F2B] font-mono">{o.id}</p>
+                                  <p className="font-bold text-slate-900 group-hover:text-[#E65F2B] font-semibold">{o.id}</p>
                                   <p className="text-[11px] text-slate-400 truncate">{o.clientName} • {o.clientPhone}</p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <span className="font-bold font-mono text-slate-900 block">${o.total.toFixed(2)}</span>
+                                <span className="font-bold font-semibold text-slate-900 block">${o.total.toFixed(2)}</span>
                                 <span className="text-[10px] text-slate-400 capitalize">{o.status}</span>
                               </div>
                             </button>
@@ -11935,7 +11935,7 @@ ${ticketImg}
                                 </div>
                                 <div className="min-w-0">
                                   <p className="font-bold text-slate-900 group-hover:text-[#E65F2B]">{c.name}</p>
-                                  <p className="text-[11px] text-slate-400 font-mono">{c.phone}</p>
+                                  <p className="text-[11px] text-slate-400 font-semibold">{c.phone}</p>
                                 </div>
                               </div>
                               <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
@@ -11992,7 +11992,7 @@ ${ticketImg}
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Folio de Pedido</span>
-                  <span className="text-base font-black font-mono text-slate-900 block">{shippingLabelOrder.id}</span>
+                  <span className="text-base font-black font-semibold text-slate-900 block">{shippingLabelOrder.id}</span>
                   <span className="text-[10px] text-slate-500">{new Date(shippingLabelOrder.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -12004,7 +12004,7 @@ ${ticketImg}
                     Destinatario
                   </span>
                   <p className="font-bold text-sm text-slate-900">{shippingLabelOrder.clientName}</p>
-                  <p className="font-mono text-xs text-slate-700 mt-0.5">{shippingLabelOrder.clientPhone}</p>
+                  <p className="font-semibold text-xs text-slate-700 mt-0.5">{shippingLabelOrder.clientPhone}</p>
                 </div>
 
                 <div>
@@ -12087,7 +12087,7 @@ ${ticketImg}
                       <th className="py-2 px-3 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 font-mono">
+                  <tbody className="divide-y divide-slate-100 font-semibold">
                     {shippingLabelOrder.order_items?.map((item, idx) => (
                       <tr key={idx}>
                         <td className="py-2 px-3 font-bold text-slate-900">{item.quantity}x</td>
@@ -12100,7 +12100,7 @@ ${ticketImg}
                   <tfoot>
                     <tr className="bg-slate-50 font-bold">
                       <td colSpan={3} className="py-2.5 px-3 text-right font-sans">Total del Pedido:</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-sm text-[#E65F2B]">${shippingLabelOrder.total.toFixed(2)} MXN</td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-sm text-[#E65F2B]">${shippingLabelOrder.total.toFixed(2)} MXN</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -12196,19 +12196,19 @@ ${ticketImg}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
                     <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Ventas del Día</span>
-                    <span className="text-xl font-black text-slate-900 font-mono">${totalDayRevenue.toFixed(2)}</span>
+                    <span className="text-xl font-black text-slate-900 font-semibold">${totalDayRevenue.toFixed(2)}</span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">{selectedDateOrders.length} transacciones</span>
                   </div>
 
                   <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
                     <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Costo Estimado</span>
-                    <span className="text-xl font-black text-slate-600 font-mono">${totalDayCost.toFixed(2)}</span>
+                    <span className="text-xl font-black text-slate-600 font-semibold">${totalDayCost.toFixed(2)}</span>
                     <span className="text-[10px] text-slate-400 block mt-0.5">Base + flete</span>
                   </div>
 
                   <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200 text-center">
                     <span className="text-[10px] font-bold text-emerald-700 uppercase block mb-1">Utilidad Neta</span>
-                    <span className="text-xl font-black text-emerald-700 font-mono">+${totalDayProfit.toFixed(2)}</span>
+                    <span className="text-xl font-black text-emerald-700 font-semibold">+${totalDayProfit.toFixed(2)}</span>
                     <span className="text-[10px] text-emerald-600 block mt-0.5 font-bold">
                       {totalDayRevenue > 0 ? `${((totalDayProfit / totalDayRevenue) * 100).toFixed(1)}% margen` : '0%'}
                     </span>
@@ -12220,7 +12220,7 @@ ${ticketImg}
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     Desglose por Método de Cobro
                   </span>
-                  <div className="space-y-1.5 font-mono">
+                  <div className="space-y-1.5 font-semibold">
                     <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                       <span className="font-sans text-slate-700 font-medium flex items-center gap-2">
                         💵 Efectivo en Mostrador (POS):
@@ -12258,10 +12258,10 @@ ${ticketImg}
                       {selectedDateOrders.map(o => (
                         <div key={o.id} className="pt-1.5 first:pt-0 flex items-center justify-between text-[11px]">
                           <div>
-                            <span className="font-mono font-bold text-slate-900">{o.id}</span>
+                            <span className="font-bold text-slate-900">{o.id}</span>
                             <span className="text-slate-500 font-sans ml-2">{o.clientName}</span>
                           </div>
-                          <span className="font-mono font-bold text-slate-900">${o.total.toFixed(2)}</span>
+                          <span className="font-bold text-slate-900">${o.total.toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -12382,7 +12382,7 @@ ${ticketImg}
                     value={bulkStockDeltaInput}
                     onChange={e => setBulkStockDeltaInput(parseInt(e.target.value) || 0)}
                     placeholder="Ej. +5 o -2"
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono text-sm font-bold text-center focus:outline-none focus:border-slate-900"
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 font-semibold text-sm font-bold text-center focus:outline-none focus:border-slate-900"
                   />
                 </div>
               </div>
@@ -12394,7 +12394,7 @@ ${ticketImg}
                     key={val}
                     type="button"
                     onClick={() => setBulkStockDeltaInput(val)}
-                    className="py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-mono font-bold text-xs transition"
+                    className="py-1 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
                   >
                     {val > 0 ? `+${val}` : val}
                   </button>
@@ -12544,7 +12544,7 @@ ${ticketImg}
                           <rect x="147" y="0" width="4" height="36" fill="#000" />
                           <rect x="154" y="0" width="2" height="36" fill="#000" />
                         </svg>
-                        <span className="font-mono text-[9px] font-bold text-slate-600 tracking-widest mt-0.5">
+                        <span className="font-semibold text-[9px] font-bold text-slate-600 tracking-widest mt-0.5">
                           {displaySku}
                         </span>
                       </div>
@@ -12552,7 +12552,7 @@ ${ticketImg}
                       {/* Precio */}
                       <div className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 flex items-center justify-between">
                         <span className="text-[10px] text-slate-500 font-bold uppercase">PRECIO:</span>
-                        <span className="text-sm font-black text-slate-900 font-mono">
+                        <span className="text-sm font-black text-slate-900 font-semibold">
                           ${p.publicPrice.toFixed(2)} MXN
                         </span>
                       </div>
