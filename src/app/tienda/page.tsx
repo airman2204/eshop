@@ -2894,7 +2894,7 @@ export default function TiendaFoxDrop() {
                                 <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border ${statusBadge.bg}`}>
                                   {statusBadge.label}
                                 </span>
-                                <span className="font-mono font-bold text-xs text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                <span className="font-bold text-xs text-slate-700 bg-white px-2.5 py-0.5 rounded-md border border-slate-200">
                                   {order.order_number || order.id}
                                 </span>
                               </div>
@@ -2994,7 +2994,7 @@ export default function TiendaFoxDrop() {
                                         </div>
 
                                         <div className="flex items-center gap-2 shrink-0">
-                                          <span className="font-extrabold text-slate-900 font-mono text-xs">
+                                          <span className="font-extrabold text-slate-900 text-xs tracking-tight">
                                             ${(Number(item.price_at_purchase) * item.quantity).toFixed(2)}
                                           </span>
                                           {matchedProd && (
@@ -3128,9 +3128,12 @@ export default function TiendaFoxDrop() {
                                         <MapPin className="w-4 h-4 text-[#0F3E36]" />
                                         <span>Dirección de Entrega:</span>
                                       </div>
-                                      <p className="text-slate-600 pl-6">
-                                        {formattedAddress || order.pickup_point || 'Domicilio registrado por el cliente'}
-                                      </p>
+                                      <div className="text-slate-700 pl-6 space-y-0.5 leading-relaxed">
+                                        <p className="font-bold text-slate-900">{formattedAddress || order.pickup_point || 'Domicilio registrado'}</p>
+                                        {addr.references && (
+                                          <p className="text-[11px] text-slate-500 italic">Ref: {addr.references}</p>
+                                        )}
+                                      </div>
                                       <p className="text-[11px] text-slate-400 pl-6">
                                         {isInternational ? '✈️ Paquetería Internacional directa a tu domicilio (10-15 días)' : '🚚 Entrega local express (24-48 hrs)'}
                                       </p>
@@ -3142,7 +3145,7 @@ export default function TiendaFoxDrop() {
                                         <div className="flex items-center gap-2 font-bold text-sky-950">
                                           <Truck className="w-4 h-4 text-sky-600" />
                                           <span>Guía de rastreo:</span>
-                                          <span className="font-mono text-sky-800 bg-white px-2 py-0.5 rounded border border-sky-200">
+                                          <span className="font-bold text-sky-800 bg-white px-2 py-0.5 rounded border border-sky-200">
                                             {order.tracking_number || order.trackingNumber}
                                           </span>
                                         </div>
@@ -3173,7 +3176,7 @@ export default function TiendaFoxDrop() {
                                       </div>
                                       <div className="flex justify-between text-slate-600">
                                         <span>Subtotal artículos:</span>
-                                        <span className="font-mono font-medium text-slate-900">${Number(order.subtotal || order.total).toFixed(2)} MXN</span>
+                                        <span className="font-semibold text-slate-900">${Number(order.subtotal || order.total).toFixed(2)} MXN</span>
                                       </div>
                                       <div className="flex justify-between text-slate-600">
                                         <span>Costo de envío:</span>
@@ -3183,7 +3186,7 @@ export default function TiendaFoxDrop() {
                                       </div>
                                       <div className="flex justify-between font-black text-sm text-slate-900 pt-2 border-t border-slate-100">
                                         <span>Total Pagado:</span>
-                                        <span className="text-[#DF7F2D] text-base font-mono">${Number(order.total).toFixed(2)} MXN</span>
+                                        <span className="text-[#DF7F2D] text-base font-extrabold">${Number(order.total).toFixed(2)} MXN</span>
                                       </div>
                                     </div>
                                   </div>
