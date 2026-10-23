@@ -84,6 +84,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
+  const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
 
   // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
@@ -326,6 +327,39 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     }
   };
 
+  const triggerTranslation = async (item: CjItem, baseDesc?: string) => {
+    setTranslatingId(item.id);
+    try {
+      const token = getStoredAdminToken() || '';
+      const res = await fetch('/api/admin/cj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'translate_item',
+          adminToken: token,
+          title: item.name,
+          description: baseDesc || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.title) {
+          setCustomTitles(prev => ({ ...prev, [item.id]: data.title }));
+        }
+        if (data.description) {
+          setCustomDescriptions(prev => ({ ...prev, [item.id]: data.description }));
+        }
+      }
+    } catch (err) {
+      console.warn('Error traduciendo con Gemini:', err);
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
   const handleOpenImportModal = (item: CjItem, extraDetail?: any) => {
     setModalItem(item);
     const safeUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0;
@@ -337,13 +371,17 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     setCustomTitles(prev => ({ ...prev, [item.id]: item.name }));
 
     // Si viene la descripción detallada del modal grande, guardarla
-    if (extraDetail?.description) {
-      const cleanDesc = extraDetail.description.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+    const rawDesc = extraDetail?.description || previewDetail?.description || '';
+    if (rawDesc) {
+      const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
       setCustomDescriptions(prev => ({
         ...prev,
         [item.id]: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional: 10 a 15 días hábiles.` : ''
       }));
     }
+
+    // Auto-disparar traducción a español con IA al abrir el modal para que no quede en inglés
+    triggerTranslation(item, rawDesc);
   };
 
   const handleConfirmImport = async () => {
@@ -1331,9 +1369,20 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Título comercial en español:
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700">
+                    Título comercial en español:
+                  </label>
+                  <button
+                    type="button"
+                    disabled={Boolean(translatingId)}
+                    onClick={() => triggerTranslation(modalItem, previewDetail?.description || '')}
+                    className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
+                  >
+                    <Sparkles className={`w-3 h-3 ${translatingId ? 'animate-spin' : ''}`} />
+                    <span>{translatingId ? 'Traduciendo...' : 'Re-traducir con IA'}</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={customTitles[modalItem.id] || modalItem.name}
@@ -1343,15 +1392,22 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                  Descripción del producto en español:
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-700">
+                    Descripción del producto en español:
+                  </label>
+                  {translatingId && (
+                    <span className="text-[10px] text-indigo-500 font-semibold animate-pulse">
+                      Generando descripción persuasiva...
+                    </span>
+                  )}
+                </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   placeholder="Descripción detallada del producto para la tienda..."
                   value={customDescriptions[modalItem.id] !== undefined ? customDescriptions[modalItem.id] : ''}
                   onChange={(e) => setCustomDescriptions(prev => ({ ...prev, [modalItem.id]: e.target.value }))}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none leading-relaxed"
                 />
               </div>
 

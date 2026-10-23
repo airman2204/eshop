@@ -8,6 +8,77 @@ import { searchCjProducts, getCjProductDetails } from "@/lib/cjdropshipping";
 import { verifyAdminToken, checkRateLimit } from "@/lib/security";
 import { createServerClient } from "@/lib/supabase/server";
 
+// Helper para traducir títulos y descripciones de CJ a español comercial mexicano
+async function translateCjItem(title: string, rawDesc?: string): Promise<{ title: string; description: string }> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const cleanDesc = (rawDesc || "")
+    .replace(/<[^>]*>?/gm, " ")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1500);
+
+  if (!apiKey || apiKey === "TU_API_KEY_AQUI") {
+    return {
+      title: title.trim(),
+      description: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional asegurada: 10 a 15 días hábiles.` : "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.",
+    };
+  }
+
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.5-flash"];
+
+  const prompt = `Actúa como un experto en redacción de e-commerce y marketing para FoxDrop México.
+Traduce y optimiza al español de México este producto procedente de CJ Dropshipping para venderlo en nuestra tienda.
+
+TÍTULO EN INGLÉS:
+${title}
+
+DESCRIPCIÓN ORIGINAL:
+${cleanDesc || "N/A"}
+
+REGLAS DE TRADUCCIÓN:
+1. "title": Atractivo, conciso, comercial, sin palabras en chino ni códigos raros. Máximo 60-70 caracteres.
+2. "description": Redactada de forma persuasiva, clara y profesional en español. Incluye viñetas breves con beneficios y características clave. Concluye indicando: "✈️ Envío internacional directo a domicilio (10 a 15 días hábiles)."
+3. Responde ÚNICAMENTE un objeto JSON válido con las llaves "title" y "description".`;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            responseMimeType: "application/json",
+          },
+        }),
+      });
+
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (parsed.title) {
+          return {
+            title: String(parsed.title).trim(),
+            description: String(parsed.description || "").trim(),
+          };
+        }
+      }
+    } catch (e) {
+      console.warn(`Aviso: Intento de traducción con ${model} falló:`, e);
+    }
+  }
+
+  return {
+    title: title.trim(),
+    description: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional asegurada: 10 a 15 días hábiles.` : "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.",
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
@@ -48,6 +119,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, detail });
     }
 
+    // 2.1 Traducir producto al español con IA
+    if (action === "translate_item") {
+      const { title, description } = body;
+      if (!title) {
+        return NextResponse.json({ error: "title requerido para traducir" }, { status: 400 });
+      }
+      const translated = await translateCjItem(title, description);
+      return NextResponse.json({ success: true, ...translated });
+    }
+
     // 3. Importar producto de CJ a catálogo local de FoxDrop
     if (action === "import_cj_product") {
       if (!importProduct || !importProduct.title) {
@@ -82,10 +163,28 @@ export async function POST(req: NextRequest) {
         ? importProduct.images
         : (importProduct.imageUrl ? [importProduct.imageUrl] : ["/no-image.svg"]);
 
+      // Si el título parece estar en inglés o el usuario no editó la descripción, auto-traducir con Gemini
+      let finalTitle = importProduct.title.trim();
+      let finalDesc = (importProduct.description || "").trim();
+
+      const seemsEnglish = /[a-zA-Z]{4,}/.test(finalTitle) && !/[áéíóúÁÉÍÓÚñÑ]/.test(finalTitle) && (
+        /\b(and|with|for|the|light|tree|gift|usb|home|car|led|phone|holder|case|cable|set|pack)\b/i.test(finalTitle)
+      );
+
+      if (importProduct.autoTranslate || (!finalDesc && seemsEnglish) || finalDesc.includes("<div") || finalDesc.includes("<p")) {
+        try {
+          const tr = await translateCjItem(finalTitle, finalDesc);
+          if (tr.title) finalTitle = tr.title;
+          if (tr.description) finalDesc = tr.description;
+        } catch (trErr) {
+          console.warn("Aviso al auto-traducir en importación:", trErr);
+        }
+      }
+
       const insertRecord: any = {
         sku,
-        title: importProduct.title,
-        description: importProduct.description || "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.",
+        title: finalTitle,
+        description: finalDesc || "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.",
         category_id: categoryId,
         base_cost_usd: Number(importProduct.baseCostUsd) || 0,
         base_cost_mxn: Number(importProduct.baseCostMxn) || 0,
