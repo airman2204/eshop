@@ -94,10 +94,24 @@ export default function AdminCRM() {
       const url = new URL(window.location.href);
       if (url.searchParams.get('tab') !== crmSubTab) {
         url.searchParams.set('tab', crmSubTab);
-        window.history.replaceState({}, '', url.toString());
+        window.history.pushState({ tab: crmSubTab }, '', url.toString());
       }
     } catch {}
   }, [crmSubTab]);
+
+  // Manejar el botón "Atrás" del navegador / celular cuando está en pestañas secundarias (especialmente WhatsApp)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = (event: PopStateEvent) => {
+      const stateTab = event.state?.tab;
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTab = (stateTab || urlParams.get('tab') || 'inventory') as any;
+      setCrmSubTab(urlTab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleSwitchTab = (tab: typeof crmSubTab) => {
     setCrmSubTab(tab);
@@ -3623,17 +3637,37 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
       {/* CONTENEDOR DERECHO (HEADER SUPERIOR + MAIN) */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* HEADER SUPERIOR (Oculto en móvil si estamos dentro de la pestaña de WhatsApp para que se sienta como App nativa) */}
-        <header className={`border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-40 ${crmSubTab === 'whatsapp' ? 'hidden md:block' : ''}`}>
-          <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        {/* HEADER SUPERIOR */}
+        <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-40">
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 transition shrink-0"
-                title="Abrir menú lateral"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+              {crmSubTab === 'whatsapp' ? (
+                <div className="flex items-center gap-2 md:hidden">
+                  <button
+                    onClick={() => setCrmSubTab('inventory')}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xs active:scale-95 transition"
+                    title="Salir al inventario"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-[#E65F2B]" />
+                    <span>Panel</span>
+                  </button>
+                  <button
+                    onClick={() => setMobileSidebarOpen(true)}
+                    className="p-1.5 rounded-xl text-slate-600 hover:bg-slate-100 transition"
+                    title="Abrir menú lateral"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="md:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 transition shrink-0"
+                  title="Abrir menú lateral"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h1 className="font-bold text-sm xs:text-base sm:text-lg text-slate-900 tracking-tight truncate">
@@ -8876,6 +8910,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 adminSessionName={currentPartner}
                 initialPhone={whatsappTarget?.phone}
                 initialMessage={whatsappTarget?.message}
+                onClose={() => setCrmSubTab('inventory')}
                 onSelectAnyChat={() => {
                   if (whatsappTarget) setWhatsappTarget(null);
                 }}
