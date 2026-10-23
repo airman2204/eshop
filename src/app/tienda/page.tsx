@@ -9,7 +9,8 @@ import {
   ArrowRight, Plus, Minus, CreditCard, Sparkles, Send, CheckCircle2, Monitor, Shirt, Home as HomeIcon,
   Gamepad2, Heart, Phone, Mail, ArrowUpRight, Download, Sparkle, Tag, MessageSquare, RefreshCw,
   Package, MapPin, Award, Trash2, Edit3, ExternalLink, ArrowLeft, Check, ShoppingBag, Copy,
-  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp, TrendingUp, Coins, Loader2
+  Clock, AlertTriangle, Ban, Bell, BellRing, Volume2, Zap, Share2, ThumbsUp, TrendingUp, Coins, Loader2,
+  ChevronDown
 } from 'lucide-react';
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
@@ -354,6 +355,7 @@ export default function TiendaFoxDrop() {
   const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'pos' | 'cancelled'>('all');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
+  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<string>>(new Set());
 
   // Modal de Cancelación de Pedido estilo Amazon / Mercado Libre
   const [showClientCancelModal, setShowClientCancelModal] = useState(false);
@@ -3089,14 +3091,104 @@ export default function TiendaFoxDrop() {
 
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedOrderForDetail(order)}
+                                    onClick={() => {
+                                      setExpandedOrderIds(prev => {
+                                        const next = new Set(prev);
+                                        const ordKey = order.id || order.order_number;
+                                        if (next.has(ordKey)) next.delete(ordKey);
+                                        else next.add(ordKey);
+                                        return next;
+                                      });
+                                    }}
                                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F3E36] hover:bg-[#154E45] text-white font-bold text-xs transition cursor-pointer shadow-2xs"
                                   >
-                                    <span>Detalle</span>
-                                    <ArrowRight className="w-3.5 h-3.5" />
+                                    <span>{expandedOrderIds.has(order.id || order.order_number) ? 'Ocultar Detalle' : 'Ver Detalle'}</span>
+                                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expandedOrderIds.has(order.id || order.order_number) ? 'rotate-180' : ''}`} />
                                   </button>
                                 </div>
                               </div>
+
+                              {/* DROP ACORDEÓN: DETALLE INTEGRADO ESTILO MERCADO LIBRE / AMAZON (SIN MODALES) */}
+                              {expandedOrderIds.has(order.id || order.order_number) && (() => {
+                                const isInternational = order.shipping_type === 'international_shipping' || 
+                                  (order.notes && (order.notes.includes('[IMPORTACION') || order.notes.includes('[CJ-ORDER:')));
+
+                                // Resolver tarjeta y terminación seria
+                                const cardMatch = order.notes && order.notes.match(/\[CARD:([^\]]+)\]/);
+                                const cardDesc = cardMatch ? cardMatch[1] : (order.payment_method === 'card' || order.payment_method === 'mercadopago' ? 'Tarjeta terminada en 3764' : 'Efectivo');
+
+                                const addr = typeof order.shipping_address === 'object' && order.shipping_address !== null ? order.shipping_address : {};
+                                const formattedAddress = [addr.street, addr.colonia, addr.city, addr.zip ? `C.P. ${addr.zip}` : ''].filter(Boolean).join(', ');
+
+                                return (
+                                  <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 animate-in fade-in duration-150">
+                                    {/* Dirección de Entrega */}
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                                      <div className="flex items-center gap-2 font-bold text-slate-800">
+                                        <MapPin className="w-4 h-4 text-[#0F3E36]" />
+                                        <span>Dirección de Entrega:</span>
+                                      </div>
+                                      <p className="text-slate-600 pl-6">
+                                        {formattedAddress || order.pickup_point || 'Domicilio registrado por el cliente'}
+                                      </p>
+                                      <p className="text-[11px] text-slate-400 pl-6">
+                                        {isInternational ? '✈️ Paquetería Internacional directa a tu domicilio (10-15 días)' : '🚚 Entrega local express (24-48 hrs)'}
+                                      </p>
+                                    </div>
+
+                                    {/* Guía de Rastreo si existe */}
+                                    {(order.tracking_number || order.trackingNumber) && (
+                                      <div className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-2 font-bold text-sky-950">
+                                          <Truck className="w-4 h-4 text-sky-600" />
+                                          <span>Guía de rastreo:</span>
+                                          <span className="font-mono text-sky-800 bg-white px-2 py-0.5 rounded border border-sky-200">
+                                            {order.tracking_number || order.trackingNumber}
+                                          </span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const tr = order.tracking_number || order.trackingNumber;
+                                            if (navigator?.clipboard && tr) {
+                                              navigator.clipboard.writeText(tr);
+                                              alert("Guía copiada: " + tr);
+                                            }
+                                          }}
+                                          className="px-2.5 py-1 bg-sky-600 text-white font-bold rounded-lg text-[11px]"
+                                        >
+                                          Copiar
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {/* Desglose de Pago Limpio */}
+                                    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
+                                      <div className="flex justify-between text-slate-600">
+                                        <span>Método de pago:</span>
+                                        <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                          <CreditCard className="w-3.5 h-3.5 text-slate-700" />
+                                          <span>{cardDesc}</span>
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between text-slate-600">
+                                        <span>Subtotal artículos:</span>
+                                        <span className="font-mono font-medium text-slate-900">${Number(order.subtotal || order.total).toFixed(2)} MXN</span>
+                                      </div>
+                                      <div className="flex justify-between text-slate-600">
+                                        <span>Costo de envío:</span>
+                                        <span className="font-bold text-emerald-600">
+                                          {Number(order.shipping_cost) > 0 ? `${Number(order.shipping_cost).toFixed(2)} MXN` : 'Gratis'}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between font-black text-sm text-slate-900 pt-2 border-t border-slate-100">
+                                        <span>Total Pagado:</span>
+                                        <span className="text-[#DF7F2D] text-base font-mono">${Number(order.total).toFixed(2)} MXN</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         );
