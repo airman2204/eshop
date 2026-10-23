@@ -106,6 +106,7 @@ export default function TiendaFoxDrop() {
   const [activeTab, setActiveTab] = useState<'new' | 'deals' | 'all'>('new');
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
@@ -1477,6 +1478,8 @@ export default function TiendaFoxDrop() {
   const cartItemCount = cart.reduce((a, b) => a + b.quantity, 0);
 
   const handleFinishOrder = async () => {
+    if (isSubmittingOrder) return;
+    setIsSubmittingOrder(true);
     try {
       // 1. Si el método es Mercado Pago, procesamos la orden y redirigimos a la pasarela
       if (paymentMethod === 'mercadopago') {
@@ -1581,11 +1584,13 @@ export default function TiendaFoxDrop() {
           } else {
             alert(mpData.error || 'Error al conectar con la pasarela de pago.');
             setRedirectingToMp(false);
+            setIsSubmittingOrder(false);
             return;
           }
         } catch (mpErr: any) {
           alert('Error de conexión con la pasarela: ' + (mpErr.message || 'Intenta de nuevo'));
           setRedirectingToMp(false);
+          setIsSubmittingOrder(false);
           return;
         }
       }
@@ -1631,6 +1636,7 @@ export default function TiendaFoxDrop() {
       localStorage.removeItem('foxdrop_cart_items_v1');
     } catch {}
     setCart([]);
+    setIsSubmittingOrder(false);
   };
 
   // Cupones válidos predeterminados
@@ -4588,11 +4594,18 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
 
-                  {/* BOTÓN CON LLENADO PROGRESIVO ANTICLICKS ACCIDENTALES (HOLD TO CONFIRM) ESTILO MERCADO LIBRE */}
+                  {/* BOTÓN DE CONFIRMACIÓN CON LOADER Y ESTADO VISUAL CLARO */}
                   <div className="flex flex-col items-center sm:items-end select-none">
                     <button
                       type="button"
+                      disabled={isSubmittingOrder || holdProgress >= 100}
+                      onClick={() => {
+                        if (!isSubmittingOrder) {
+                          handleFinishOrder();
+                        }
+                      }}
                       onMouseDown={() => {
+                        if (isSubmittingOrder) return;
                         setIsHolding(true);
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
@@ -4620,6 +4633,7 @@ export default function TiendaFoxDrop() {
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
                       }}
                       onTouchStart={() => {
+                        if (isSubmittingOrder) return;
                         setIsHolding(true);
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
@@ -4641,31 +4655,43 @@ export default function TiendaFoxDrop() {
                         setHoldProgress(0);
                         if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
                       }}
-                      className="relative overflow-hidden w-full sm:w-auto bg-[#3483FA] hover:bg-[#2968C8] text-white font-bold px-10 py-3.5 rounded-xl text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 select-none tracking-tight"
+                      className={`relative overflow-hidden w-full sm:w-auto text-white font-bold px-10 py-3.5 rounded-xl text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 select-none tracking-tight ${
+                        isSubmittingOrder || holdProgress >= 100
+                          ? 'bg-[#1F62C7] opacity-90 cursor-wait'
+                          : 'bg-[#3483FA] hover:bg-[#2968C8] cursor-pointer active:scale-98'
+                      }`}
                     >
                       {/* Barra de progreso de llenado que crece hacia la derecha */}
                       <div
                         className="absolute inset-y-0 left-0 bg-[#1F62C7] transition-all ease-linear"
-                        style={{ width: `${holdProgress}%` }}
+                        style={{ width: isSubmittingOrder ? '100%' : `${holdProgress}%` }}
                       />
 
                       {/* Contenido del botón */}
                       <span className="relative z-10 flex items-center gap-2 font-bold text-sm">
-                        {holdProgress >= 100 ? (
+                        {isSubmittingOrder || holdProgress >= 100 ? (
                           <>
-                            <span>Procesando...</span>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                            <span>{paymentMethod === 'mercadopago' ? 'Conectando con Mercado Pago...' : 'Procesando tu pedido...'}</span>
                           </>
                         ) : isHolding ? (
                           <>
-                            <span>Confirmando...</span>
                             <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                            <span>Confirmando...</span>
                           </>
                         ) : (
-                          <span>Pagar y finalizar</span>
+                          <>
+                            <span>{paymentMethod === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Confirmar Pedido'}</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
                         )}
                       </span>
                     </button>
+                    {isSubmittingOrder && (
+                      <p className="text-[11px] text-slate-500 font-medium mt-1.5 animate-pulse text-center sm:text-right">
+                        Por favor espera un momento, no cierres esta ventana...
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
