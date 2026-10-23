@@ -52,6 +52,8 @@ export interface CjProductItem {
   sku: string;
   image: string;
   priceUsd: number;
+  maxPriceUsd?: number;
+  priceRangeStr?: string;
   categoryName?: string;
   variantsCount?: number;
   listedNum?: number;
@@ -172,18 +174,33 @@ export async function searchCjProducts(
     return match ? parseFloat(match[0]) : 0;
   };
 
+  // Extrae el precio máximo si CJ devuelve un rango como "4.79 -- 10.93" para proteger margen
+  const parseCjMaxPrice = (raw: any): number => {
+    if (typeof raw === "number") return isNaN(raw) ? 0 : raw;
+    if (!raw) return 0;
+    const str = String(raw).trim();
+    const matches = str.match(/[\d]+(?:\.[\d]+)?/g);
+    if (!matches || matches.length === 0) return 0;
+    const nums = matches.map(m => parseFloat(m)).filter(n => !isNaN(n));
+    return nums.length > 0 ? Math.max(...nums) : 0;
+  };
+
   const products: CjProductItem[] = rawList.map((p: any) => {
     const stock = Number(p.warehouseInventoryNum ?? p.totalVerifiedInventory ?? 0);
     const isVerified = p.verifiedWarehouse === 1 || p.verifiedWarehouse === 2 || p.autStatus === "1";
     const isReadyToShip = p.productType === "4" || stock > 50 || p.saleStatus === "3";
     const hasVideo = Boolean(p.isVideo || p.isVedio || (Array.isArray(p.videoList) && p.videoList.length > 0));
+    const minPrice = parseCjPrice(p.sellPrice ?? p.price);
+    const maxPrice = parseCjMaxPrice(p.sellPrice ?? p.price) || minPrice;
 
     return {
       id: String(p.id || p.pid || p.sku || Math.random()),
       name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
       sku: String(p.sku || ""),
       image: String(p.bigImage || p.productImage || ""),
-      priceUsd: parseCjPrice(p.sellPrice ?? p.price),
+      priceUsd: minPrice,
+      maxPriceUsd: maxPrice,
+      priceRangeStr: String(p.sellPrice ?? p.price ?? ""),
       categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
       variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
       listedNum: Number(p.listedNum) || 0,
@@ -243,5 +260,47 @@ export async function getCjProductDetails(productId: string) {
     throw new Error(`Error obteniendo detalle de CJ: HTTP ${res?.status || 500}`);
   }
 
-  return await res.json();
+  const detailJson = await res.json();
+
+  // Cotizar flete internacional real hacia México (MX) con la primera variante disponible
+  if (detailJson?.result && detailJson?.data) {
+    const variants = detailJson.data.variants;
+    if (Array.isArray(variants) && variants.length > 0 && variants[0].vid) {
+      try {
+        const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
+          method: "POST",
+          headers: {
+            "CJ-Access-Token": token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            startCountryCode: "CN",
+            endCountryCode: "MX",
+            products: [{ quantity: 1, vid: variants[0].vid }],
+          }),
+        });
+        if (freightRes.ok) {
+          const freightJson = await freightRes.json();
+          if (freightJson?.result && Array.isArray(freightJson.data) && freightJson.data.length > 0) {
+            // Ordenar opciones por precio de flete ascendente para mostrar la opción más económica a México
+            const sortedOptions = [...freightJson.data]
+              .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
+              .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
+            if (sortedOptions.length > 0) {
+              detailJson.data.realFreightToMx = {
+                cheapestUsd: sortedOptions[0].logisticPrice,
+                logisticName: sortedOptions[0].logisticName,
+                logisticAging: sortedOptions[0].logisticAging,
+                allOptions: sortedOptions.slice(0, 5),
+              };
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Aviso al cotizar flete real a MX:", e);
+      }
+    }
+  }
+
+  return detailJson;
 }
