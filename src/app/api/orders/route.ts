@@ -83,14 +83,17 @@ export async function POST(req: NextRequest) {
 
     // 2. Insertar ítems del pedido
     if (items && items.length > 0) {
-      const orderItems = items.map((item: any) => ({
-        order_id: order.id,
-        product_id: item.product?.id && !String(item.product.id).startsWith("PROD-") ? item.product.id : null,
-        product_title: item.product?.title || "Producto",
-        quantity: Number(item.quantity) || 1,
-        price_at_purchase: Number(item.product?.publicPrice) || 0,
-        cost_at_purchase: Number(item.product?.totalCostMxn || item.product?.baseCostMxn) || 0,
-      }));
+      const orderItems = items.map((item: any) => {
+        const rawProdId = item.product?.id ? String(item.product.id).split("__")[0] : "";
+        return {
+          order_id: order.id,
+          product_id: rawProdId && !rawProdId.startsWith("PROD-") ? rawProdId : null,
+          product_title: item.product?.title || "Producto",
+          quantity: Number(item.quantity) || 1,
+          price_at_purchase: Number(item.product?.publicPrice) || 0,
+          cost_at_purchase: Number(item.product?.totalCostMxn || item.product?.baseCostMxn) || 0,
+        };
+      });
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) {

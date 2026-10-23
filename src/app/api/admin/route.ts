@@ -419,17 +419,21 @@ export async function POST(req: NextRequest) {
           if (error) throw error;
           const prods = data || [];
 
-          // Combinar con marcas asignadas guardadas en JSON storage para compatibilidad 100% garantizada
+          // Combinar con marcas y extras (videos/variantes) guardados en JSON storage
           try {
-            const { data: bFile } = await supabase.storage
-              .from("product-images")
-              .download("_system/product_brands.json");
-            if (bFile) {
-              const bMap = JSON.parse(await bFile.text() || "{}");
-              prods.forEach((p: any) => {
-                if (bMap[p.id]) p.brand = bMap[p.id];
-              });
-            }
+            const [bRes, exRes] = await Promise.all([
+              supabase.storage.from("product-images").download("_system/product_brands.json").catch(() => ({ data: null })),
+              supabase.storage.from("product-images").download("_system/product_extras.json").catch(() => ({ data: null })),
+            ]);
+            const bMap = bRes?.data ? JSON.parse(await bRes.data.text() || "{}") : {};
+            const exMap = exRes?.data ? JSON.parse(await exRes.data.text() || "{}") : {};
+            prods.forEach((p: any) => {
+              if (bMap[p.id]) p.brand = bMap[p.id];
+              if (exMap[p.id]) {
+                if (Array.isArray(exMap[p.id].videos)) p.videos = exMap[p.id].videos;
+                if (Array.isArray(exMap[p.id].variants)) p.variants = exMap[p.id].variants;
+              }
+            });
           } catch {}
 
           return prods;
@@ -614,17 +618,21 @@ export async function POST(req: NextRequest) {
       if (error) throw error;
       const prods = data || [];
 
-      // Mapear marcas desde Storage
+      // Mapear marcas y extras (videos/variantes) desde Storage
       try {
-        const { data: bFile } = await supabase.storage
-          .from("product-images")
-          .download("_system/product_brands.json");
-        if (bFile) {
-          const bMap = JSON.parse(await bFile.text() || "{}");
-          prods.forEach((p: any) => {
-            if (bMap[p.id]) p.brand = bMap[p.id];
-          });
-        }
+        const [bRes, exRes] = await Promise.all([
+          supabase.storage.from("product-images").download("_system/product_brands.json").catch(() => ({ data: null })),
+          supabase.storage.from("product-images").download("_system/product_extras.json").catch(() => ({ data: null })),
+        ]);
+        const bMap = bRes?.data ? JSON.parse(await bRes.data.text() || "{}") : {};
+        const exMap = exRes?.data ? JSON.parse(await exRes.data.text() || "{}") : {};
+        prods.forEach((p: any) => {
+          if (bMap[p.id]) p.brand = bMap[p.id];
+          if (exMap[p.id]) {
+            if (Array.isArray(exMap[p.id].videos)) p.videos = exMap[p.id].videos;
+            if (Array.isArray(exMap[p.id].variants)) p.variants = exMap[p.id].variants;
+          }
+        });
       } catch {}
 
       return NextResponse.json({ success: true, data: prods });

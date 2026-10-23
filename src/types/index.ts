@@ -69,6 +69,21 @@ export interface Product {
   cjProductId?: string;
   /** SKU original en CJ */
   cjSku?: string;
+  /** Lista de URLs de videos del producto (MP4) */
+  videos?: string[];
+  /** Variantes disponibles para que el cliente elija en la tienda (color, tamaño, capacidad) con su precio individual */
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  sku?: string;
+  image?: string;
+  baseCostUsd?: number;
+  costUsd?: number;
+  costMxn?: number;
+  publicPrice: number;
 }
 
 /**

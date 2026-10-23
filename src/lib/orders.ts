@@ -376,68 +376,60 @@ export async function updateOrderStatusInDb(orderId: string, status: string, not
       console.warn("Aviso en /api/admin update_order_status:", errJson.error || res.statusText);
     }
   } catch (apiErr) {
-    console.warn("Fallo llamando /api/admin para actualizar orden, intentando cliente directo:", apiErr);
+    console.warn("Fallo llamando /api/admin para actualizar orden, intentando /api/orders:", apiErr);
   }
 
-  // Fallback con API de usuario autenticado
+  // Fallback directo al endpoint de órdenes con Service Role (/api/orders PATCH)
   try {
-    const resUser = await fetch("/api/user/profile", {
-      method: "POST",
+    const resPatch = await fetch("/api/orders", {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "cancel_order",
-        orderId,
-        reason: notes || "Cancelado desde panel de administración",
+        orderNumber: orderId,
+        status,
+        notes,
       }),
     });
-    if (resUser.ok) {
-      const jsonUser = await resUser.json().catch(() => ({}));
-      if (jsonUser.success) return true;
+    if (resPatch.ok) {
+      const jsonPatch = await resPatch.json().catch(() => ({}));
+      if (jsonPatch.success) return true;
     }
-  } catch (userApiErr) {
-    console.warn("Fallback /api/user/profile también falló:", userApiErr);
+  } catch (patchErr) {
+    console.warn("Fallback PATCH /api/orders también falló:", patchErr);
   }
 
-  // Fallback directo a Supabase
+  // Fallback directo a Supabase cuidando validación UUID vs order_number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
   const updatePayload: Record<string, any> = { status, updated_at: new Date().toISOString() };
   if (notes !== undefined) {
     updatePayload.notes = notes;
   }
-  const { error } = await supabase
-    .from("orders")
-    .update(updatePayload)
-    .or(`id.eq.${orderId},order_number.eq.${orderId}`);
-
-  if (error) {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+  if (isUuid) {
+    await supabase.from("orders").update(updatePayload).eq("id", orderId);
+  } else {
     await supabase.from("orders").update(updatePayload).eq("order_number", orderId);
   }
   return true;
 }
 
 export async function cancelOrderAsClient(orderId: string, reason: string) {
-  try {
-    const res = await fetch("/api/user/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "cancel_order",
-        orderId,
-        reason,
-      }),
-    });
+  const res = await fetch("/api/user/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "cancel_order",
+      orderId,
+      reason,
+    }),
+  });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.error || "No se pudo cancelar el pedido");
-    }
-    return json;
-  } catch (apiErr: any) {
-    console.warn("Fallo llamando /api/user/profile para cancelar, intentando /api/admin:", apiErr);
-    // Fallback vía /api/admin
-    return await updateOrderStatusInDb(orderId, "cancelled", `Cancelado por el cliente: ${reason}`);
+  const json = await res.json();
+  if (!res.ok) {
+    throw new Error(json.error || "No se pudo cancelar el pedido");
   }
+  return json;
 }
 
 export async function deleteOrderInDb(orderId: string) {

@@ -49,18 +49,26 @@ export async function POST(req: NextRequest) {
       const isApproved = status === "approved";
       const isRejected = status === "rejected" || status === "cancelled" || status === "refunded";
 
-      // Consultar estado previo para no descontar stock dos veces
+      // Consultar estado previo para no descontar stock dos veces ni sobreescribir estado ya confirmado
       const { data: prevOrder } = await supabase
         .from("orders")
-        .select("id, payment_status, order_items(*)")
+        .select("id, status, payment_status, order_items(*)")
         .eq("order_number", orderNumber)
         .maybeSingle();
+
+      // El estado del pedido permanece en 'pending' ("Por Confirmar") aunque el pago sea aprobado,
+      // hasta que el administrador confirme el pedido o lo envíe a CJ Dropshipping.
+      const nextOrderStatus = isRejected
+        ? "cancelled"
+        : prevOrder?.status && prevOrder.status !== "pending"
+        ? prevOrder.status
+        : "pending";
 
       const { data: updatedOrder } = await supabase
         .from("orders")
         .update({
           payment_status: isApproved ? "paid" : isRejected ? "failed" : status,
-          status: isApproved ? "processing" : isRejected ? "cancelled" : "pending",
+          status: nextOrderStatus,
           ...(isRejected ? { notes: "Pago rechazado o no completado en Mercado Pago" } : {}),
           updated_at: new Date().toISOString(),
         })

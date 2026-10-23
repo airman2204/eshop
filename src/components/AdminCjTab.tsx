@@ -101,6 +101,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewDetail, setPreviewDetail] = useState<{
     images: string[];
+    videos?: { id: string; url: string; coverUrl?: string; duration?: string }[];
     description: string;
     variants: any[];
     weight?: string;
@@ -112,6 +113,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     };
   } | null>(null);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
+  const [selectedPreviewVideo, setSelectedPreviewVideo] = useState<string | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
 
   // Bloquear el scroll de la página principal cuando el modal esté abierto
@@ -273,6 +275,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const handleOpenPreview = async (item: CjItem) => {
     setPreviewItem(item);
     setSelectedPreviewImage(item.image);
+    setSelectedPreviewVideo(null);
     setPreviewLoading(true);
     setPreviewDetail(null);
 
@@ -290,6 +293,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           : (d.bigImage ? [d.bigImage] : [item.image]);
         
         const variantsArr = Array.isArray(d.variants) ? d.variants : [];
+        const videosArr = Array.isArray(d.videos) ? d.videos : [];
         let maxVarUsd = 0;
         let minVarUsd = 0;
         if (variantsArr.length > 0) {
@@ -317,6 +321,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
         setPreviewDetail({
           images: imgSet,
+          videos: videosArr,
           description: d.description || '',
           variants: variantsArr,
           weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
@@ -409,6 +414,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           setModalItem(prev => prev ? { ...prev, maxPriceUsd: maxVarUsd } : prev);
           setPreviewDetail({
             images: Array.isArray(d.productImageSet) && d.productImageSet.length > 0 ? d.productImageSet : [item.image],
+            videos: Array.isArray(d.videos) ? d.videos : [],
             description: d.description || '',
             variants: variantsArr,
             weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
@@ -433,6 +439,25 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const finalTitle = customTitles[item.id]?.trim() || item.name;
     const finalDescription = customDescriptions[item.id]?.trim() || `Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.`;
 
+    // Preparar videos e importar variantes con sus costos y precios calculados
+    const videoUrls = (previewDetail?.videos || []).map((v: any) => v.url).filter(Boolean);
+    const ratio = costMxn > 0 ? salePrice / costMxn : 1.45;
+    const mappedVariants = (previewDetail?.variants || []).map((v: any, idx: number) => {
+      const varCostUsd = Number(v.variantSellPrice) || baseUsd;
+      const varLandedUsd = varCostUsd + realFreightUsd;
+      const varLandedMxn = Math.round(varLandedUsd * safeRate);
+      const varPublicPrice = Math.max(varLandedMxn + 45, Math.round(varLandedMxn * Math.max(1.25, ratio)));
+      return {
+        id: String(v.vid || `var-${idx}`),
+        name: String(v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`),
+        sku: String(v.variantSku || `${item.sku}-${idx + 1}`),
+        image: v.variantImage || item.image,
+        costUsd: Number(varLandedUsd.toFixed(2)),
+        costMxn: varLandedMxn,
+        publicPrice: varPublicPrice,
+      };
+    });
+
     try {
       const res = await fetchAdminCjApi({
         action: 'import_cj_product',
@@ -445,6 +470,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           publicPrice: salePrice,
           imageUrl: item.image,
           images: previewDetail?.images && previewDetail.images.length > 0 ? previewDetail.images : [item.image],
+          videos: videoUrls,
+          variants: mappedVariants,
           description: finalDescription,
         },
       });
@@ -1283,12 +1310,21 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
             {/* CONTENIDO PRINCIPAL */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* COLUMNA IZQUIERDA: GALERÍA DE FOTOS EN GRANDE */}
+              {/* COLUMNA IZQUIERDA: GALERÍA DE FOTOS Y VIDEOS EN GRANDE */}
               <div className="space-y-3">
-                {/* FOTO PRINCIPAL ENORME */}
+                {/* FOTO O VIDEO PRINCIPAL ENORME */}
                 <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 relative group flex items-center justify-center shadow-inner">
                   {previewLoading && !selectedPreviewImage ? (
                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                  ) : selectedPreviewVideo ? (
+                    <video
+                      key={selectedPreviewVideo}
+                      src={selectedPreviewVideo}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain bg-black"
+                    />
                   ) : (
                     <img
                       src={getSafeImageUrl(selectedPreviewImage || previewItem.image)}
@@ -1298,16 +1334,38 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   )}
                 </div>
 
-                {/* MINIATURAS DEL SET DE FOTOS DE CJ */}
-                {previewDetail?.images && previewDetail.images.length > 1 && (
+                {/* MINIATURAS DE VIDEOS Y FOTOS DE CJ */}
+                {((previewDetail?.videos && previewDetail.videos.length > 0) || (previewDetail?.images && previewDetail.images.length > 1)) && (
                   <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                    {previewDetail.images.map((img, idx) => {
-                      const isSelected = selectedPreviewImage === img;
+                    {previewDetail?.videos?.map((vid, vIdx) => {
+                      const isVidSelected = selectedPreviewVideo === vid.url;
+                      return (
+                        <button
+                          key={`vid-${vIdx}`}
+                          type="button"
+                          onClick={() => setSelectedPreviewVideo(vid.url)}
+                          className={`px-3 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer flex flex-col items-center justify-center bg-slate-900 text-white ${
+                            isVidSelected
+                              ? 'border-indigo-500 ring-2 ring-indigo-300'
+                              : 'border-slate-700 hover:border-indigo-400 opacity-90 hover:opacity-100'
+                          }`}
+                          title="Reproducir video oficial del producto"
+                        >
+                          <span className="text-xs font-black">🎬 Video {vIdx + 1}</span>
+                          {vid.duration && <span className="text-[9px] text-slate-300">{vid.duration}</span>}
+                        </button>
+                      );
+                    })}
+                    {previewDetail?.images?.map((img, idx) => {
+                      const isSelected = !selectedPreviewVideo && selectedPreviewImage === img;
                       return (
                         <button
                           key={idx}
                           type="button"
-                          onClick={() => setSelectedPreviewImage(img)}
+                          onClick={() => {
+                            setSelectedPreviewVideo(null);
+                            setSelectedPreviewImage(img);
+                          }}
                           className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer ${
                             isSelected
                               ? 'border-indigo-600 ring-2 ring-indigo-200'
@@ -1469,19 +1527,46 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     </div>
                   )}
 
-                  {/* VARIANTES DEL PRODUCTO */}
+                  {/* VARIANTES DEL PRODUCTO CON CÁLCULO INDIVIDUAL */}
                   {previewDetail?.variants && previewDetail.variants.length > 0 && (
                     <div className="space-y-1.5 text-xs">
                       <span className="font-bold text-slate-700 block">
-                        Variantes disponibles ({previewDetail.variants.length}):
+                        Variantes que se importarán ({previewDetail.variants.length}):
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {previewDetail.variants.slice(0, 12).map((v: any, i: number) => (
-                          <div key={i} className="px-2.5 py-1 bg-slate-100/90 rounded-lg text-[11px] text-slate-700 font-medium border border-slate-200/80 flex items-center gap-1.5">
-                            <span className="truncate max-w-[150px]">{v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i+1}`}</span>
-                            <span className="font-bold text-indigo-700">${Number(v.variantSellPrice || previewItem.priceUsd).toFixed(2)}</span>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                        {previewDetail.variants.map((v: any, i: number) => {
+                          const vUsd = Number(v.variantSellPrice || previewItem.priceUsd);
+                          const fUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
+                          const safeR = usdRate || 18;
+                          const vLandedMxn = Math.round((vUsd + fUsd) * safeR);
+                          const vSaleMxn = Math.max(vLandedMxn + 45, Math.round(vLandedMxn * 1.45));
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                if (v.variantImage) {
+                                  setSelectedPreviewVideo(null);
+                                  setSelectedPreviewImage(v.variantImage);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 bg-slate-100/90 hover:bg-indigo-50 rounded-xl text-[11px] text-slate-700 font-medium border border-slate-200/80 hover:border-indigo-300 flex items-center gap-2 transition cursor-pointer text-left"
+                              title={`Costo CJ: $${vUsd.toFixed(2)} USD + Envío: $${fUsd.toFixed(2)} USD (~$${vLandedMxn} MXN) → Venta sugerida: $${vSaleMxn} MXN`}
+                            >
+                              {v.variantImage && (
+                                <img src={getSafeImageUrl(v.variantImage)} alt="" className="w-6 h-6 rounded object-cover shrink-0" />
+                              )}
+                              <div>
+                                <span className="font-bold text-slate-900 block truncate max-w-[140px]">
+                                  {v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i + 1}`}
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  Costo: <strong className="text-slate-700">${vUsd.toFixed(2)} USD</strong> • Venta: <strong className="text-indigo-700">${vSaleMxn} MXN</strong>
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

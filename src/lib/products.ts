@@ -34,6 +34,8 @@ export interface DatabaseProduct {
   is_combo?: boolean;
   combo_product_ids?: string[] | null;
   discount_percent?: number | null;
+  videos?: string[] | null;
+  variants?: any[] | null;
   categories?: {
     id: string;
     name: string;

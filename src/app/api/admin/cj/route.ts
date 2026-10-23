@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message || "Error al crear producto" }, { status: 500 });
       }
 
-      // Asignar marca / procedencia CJ Dropshipping
+      // Asignar marca / procedencia CJ Dropshipping y guardar videos + variantes en Storage
       if (data?.id) {
         try {
           let bMap: Record<string, string> = {};
@@ -249,7 +249,35 @@ export async function POST(req: NextRequest) {
               contentType: "application/json",
               upsert: true,
             });
+          data.brand = "CJ Dropshipping";
         } catch {}
+
+        // Guardar videos y variantes si existen
+        const videosArr = Array.isArray(importProduct.videos) ? importProduct.videos.filter(Boolean) : [];
+        const variantsArr = Array.isArray(importProduct.variants) ? importProduct.variants : [];
+        if (videosArr.length > 0 || variantsArr.length > 0) {
+          try {
+            let extrasMap: Record<string, { videos?: string[]; variants?: any[] }> = {};
+            const { data: exFile } = await supabase.storage
+              .from("product-images")
+              .download("_system/product_extras.json");
+            if (exFile) extrasMap = JSON.parse(await exFile.text() || "{}");
+            extrasMap[data.id] = {
+              ...(videosArr.length > 0 ? { videos: videosArr } : {}),
+              ...(variantsArr.length > 0 ? { variants: variantsArr } : {}),
+            };
+            await supabase.storage
+              .from("product-images")
+              .upload("_system/product_extras.json", Buffer.from(JSON.stringify(extrasMap, null, 2)), {
+                contentType: "application/json",
+                upsert: true,
+              });
+            data.videos = videosArr;
+            data.variants = variantsArr;
+          } catch (exErr) {
+            console.warn("Aviso guardando product_extras.json:", exErr);
+          }
+        }
       }
 
       return NextResponse.json({ success: true, product: data });

@@ -90,8 +90,15 @@ export async function searchCjProducts(
   const url = new URL("https://developers.cjdropshipping.com/api2.0/v1/product/listV2");
   url.searchParams.set("page", page.toString());
   url.searchParams.set("size", Math.min(Math.max(size, 1), 50).toString());
+  url.searchParams.set("features", "enable_video");
   if (query && query.trim()) {
-    url.searchParams.set("keyWord", query.trim());
+    let qClean = query.trim();
+    // Si el usuario copió el SKU con sufijo de variante o SPU de la web de CJ (ej. CJJT1318735MN o CJJT131873501AZ), normalizar al SKU raíz de CJ
+    const cjSkuMatch = qClean.match(/^(CJ[A-Z]{2}\d{7})[A-Z0-9]+$/i);
+    if (cjSkuMatch) {
+      qClean = cjSkuMatch[1];
+    }
+    url.searchParams.set("keyWord", qClean);
   }
   if (categoryId && categoryId.trim()) {
     url.searchParams.set("categoryId", categoryId.trim());
@@ -265,41 +272,72 @@ export async function getCjProductDetails(productId: string) {
   // Cotizar flete internacional real hacia México (MX) con la primera variante disponible
   if (detailJson?.result && detailJson?.data) {
     const variants = detailJson.data.variants;
-    if (Array.isArray(variants) && variants.length > 0 && variants[0].vid) {
-      try {
-        const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
-          method: "POST",
-          headers: {
-            "CJ-Access-Token": token,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            startCountryCode: "CN",
-            endCountryCode: "MX",
-            products: [{ quantity: 1, vid: variants[0].vid }],
-          }),
-        });
-        if (freightRes.ok) {
-          const freightJson = await freightRes.json();
-          if (freightJson?.result && Array.isArray(freightJson.data) && freightJson.data.length > 0) {
-            // Ordenar opciones por precio de flete ascendente para mostrar la opción más económica a México
-            const sortedOptions = [...freightJson.data]
-              .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
-              .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
-            if (sortedOptions.length > 0) {
-              detailJson.data.realFreightToMx = {
-                cheapestUsd: sortedOptions[0].logisticPrice,
-                logisticName: sortedOptions[0].logisticName,
-                logisticAging: sortedOptions[0].logisticAging,
-                allOptions: sortedOptions.slice(0, 5),
-              };
+    // En paralelo: Cotizar flete internacional real hacia México (MX) y consultar videos oficiales del producto
+    await Promise.all([
+      (async () => {
+        if (Array.isArray(variants) && variants.length > 0 && variants[0].vid) {
+          try {
+            const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
+              method: "POST",
+              headers: {
+                "CJ-Access-Token": token,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                startCountryCode: "CN",
+                endCountryCode: "MX",
+                products: [{ quantity: 1, vid: variants[0].vid }],
+              }),
+            });
+            if (freightRes.ok) {
+              const freightJson = await freightRes.json();
+              if (freightJson?.result && Array.isArray(freightJson.data) && freightJson.data.length > 0) {
+                const sortedOptions = [...freightJson.data]
+                  .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
+                  .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
+                if (sortedOptions.length > 0) {
+                  detailJson.data.realFreightToMx = {
+                    cheapestUsd: sortedOptions[0].logisticPrice,
+                    logisticName: sortedOptions[0].logisticName,
+                    logisticAging: sortedOptions[0].logisticAging,
+                    allOptions: sortedOptions.slice(0, 5),
+                  };
+                }
+              }
             }
+          } catch (e) {
+            console.warn("Aviso al cotizar flete real a MX:", e);
           }
         }
-      } catch (e) {
-        console.warn("Aviso al cotizar flete real a MX:", e);
-      }
-    }
+      })(),
+      (async () => {
+        try {
+          const videoRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/product/queryVideosByProductId", {
+            method: "POST",
+            headers: {
+              "CJ-Access-Token": token,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ productId }),
+          });
+          if (videoRes.ok) {
+            const videoJson = await videoRes.json();
+            if (videoJson?.success && Array.isArray(videoJson.data) && videoJson.data.length > 0) {
+              detailJson.data.videos = videoJson.data
+                .filter((v: any) => v.videoUrl && typeof v.videoUrl === "string")
+                .map((v: any) => ({
+                  id: v.id || v.videoId,
+                  url: v.videoUrl,
+                  coverUrl: v.coverURL || undefined,
+                  duration: v.duration || undefined,
+                }));
+            }
+          }
+        } catch (vErr) {
+          console.warn("Aviso consultando videos de CJ:", vErr);
+        }
+      })(),
+    ]);
   }
 
   return detailJson;

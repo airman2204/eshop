@@ -149,6 +149,14 @@ export default function TiendaFoxDrop() {
   // Zoom interactivo en modal de producto
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [zoomCoords, setZoomCoords] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+  const [selectedModalVideo, setSelectedModalVideo] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedVariantIndex(0);
+    setSelectedModalVideo(null);
+    setActiveModalImageIndex(0);
+  }, [selectedProduct?.id]);
 
   // Cupones de descuento promocionales en checkout
   const [couponInput, setCouponInput] = useState('');
@@ -254,13 +262,13 @@ export default function TiendaFoxDrop() {
             setCart([]);
             resolveAbandonedCart(user?.phone, user?.email);
 
-            // Asegurar que la orden quede marcada como pagada y en preparación (y borrar su carrito abandonado en servidor)
+            // Asegurar que la orden quede marcada como pagada pero permaneciendo en 'pending' ("Por Confirmar")
+            // hasta que el administrador la valide o la envíe a CJ Dropshipping
             fetch('/api/orders', {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 orderNumber: orderSuccess,
-                status: 'processing',
                 paymentStatus: 'paid',
               }),
             }).catch(() => {});
@@ -667,6 +675,7 @@ export default function TiendaFoxDrop() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
   // Proceso de Checkout en la plataforma
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
@@ -1303,6 +1312,38 @@ export default function TiendaFoxDrop() {
       unsubscribe();
     };
   }, [user, fullProfile]);
+
+  // Reloj en tiempo real (cada 1s) para apagar el botón de cancelar exactamente a los 2 minutos,
+  // y sincronización silenciosa cada 8s para reflejar cancelaciones o confirmaciones del Admin sin refrescar
+  useEffect(() => {
+    if (currentView !== 'account') return;
+
+    const tickInterval = setInterval(() => {
+      setNowTick(Date.now());
+    }, 1000);
+
+    const syncOrdersInterval = setInterval(async () => {
+      const userPhone = user?.phone || fullProfile?.phone;
+      const userEmail = user?.email || fullProfile?.email;
+      const userId = user?.id || fullProfile?.id;
+      if (!userPhone && !userEmail && !userId) return;
+      try {
+        const freshOrders = await getClientOrderHistory(userPhone || userEmail || '', {
+          userId,
+          phone: userPhone || undefined,
+          email: userEmail || undefined,
+        });
+        if (Array.isArray(freshOrders) && freshOrders.length > 0) {
+          setUserOrders(freshOrders);
+        }
+      } catch {}
+    }, 8000);
+
+    return () => {
+      clearInterval(tickInterval);
+      clearInterval(syncOrdersInterval);
+    };
+  }, [currentView, user, fullProfile]);
 
   // Manejador de cancelación al estilo Amazon / Mercado Libre
   const handleExecuteClientCancellation = async (e: React.FormEvent) => {
@@ -3215,21 +3256,53 @@ export default function TiendaFoxDrop() {
                                     </a>
                                   )}
 
-                                  {(order.status === 'pending' || order.status === 'processing') && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setCancellingClientOrder(order);
-                                        setClientCancelReason('Encontré un mejor precio / Ya no lo necesito');
-                                        setClientCancelNotes('');
-                                        setShowClientCancelModal(true);
-                                      }}
-                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer"
-                                    >
-                                      <Ban className="w-3.5 h-3.5 text-rose-600" />
-                                      <span>Cancelar</span>
-                                    </button>
-                                  )}
+                                  {(() => {
+                                    const createdMs = order.created_at ? new Date(order.created_at).getTime() : 0;
+                                    const elapsedMs = createdMs ? Math.max(0, nowTick - createdMs) : Infinity;
+                                    const remainingSec = Math.max(0, Math.ceil((2 * 60 * 1000 - elapsedMs) / 1000));
+                                    const isSentToCj = Boolean(order.notes && order.notes.includes('[CJ-ORDER:'));
+                                    const canClientCancel = order.status === 'pending' && remainingSec > 0 && !isSentToCj && !isPos;
+                                    const countdownStr = `${Math.floor(remainingSec / 60)}:${String(remainingSec % 60).padStart(2, '0')}`;
+
+                                    if (canClientCancel) {
+                                      return (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCancellingClientOrder(order);
+                                            setClientCancelReason('Encontré un mejor precio / Ya no lo necesito');
+                                            setClientCancelNotes('');
+                                            setShowClientCancelModal(true);
+                                          }}
+                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer"
+                                          title="Puedes cancelar directamente durante los primeros 2 minutos o antes de que sea confirmado"
+                                        >
+                                          <Ban className="w-3.5 h-3.5 text-rose-600" />
+                                          <span>Cancelar ({countdownStr})</span>
+                                        </button>
+                                      );
+                                    }
+
+                                    if (!isCancelled && !isPos && order.status !== 'delivered') {
+                                      return (
+                                        <button
+                                          type="button"
+                                          disabled
+                                          title={
+                                            order.status !== 'pending' || isSentToCj
+                                              ? 'El pedido ya fue confirmado por la tienda y no puede cancelarse directamente'
+                                              : 'El periodo de 2 minutos para cancelación directa ha finalizado'
+                                          }
+                                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed opacity-75"
+                                        >
+                                          <Ban className="w-3.5 h-3.5 text-slate-400" />
+                                          <span>Cancelar</span>
+                                        </button>
+                                      );
+                                    }
+
+                                    return null;
+                                  })()}
 
                                   <button
                                     type="button"
@@ -5285,11 +5358,26 @@ export default function TiendaFoxDrop() {
       {selectedProduct && (() => {
         const isImportProd = (selectedProduct.sku && selectedProduct.sku.startsWith('CJ')) || (selectedProduct.brand && selectedProduct.brand.toLowerCase().includes('cj dropshipping'));
         const displayDescription = isImportProd 
-          ? "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles." 
+          ? (selectedProduct.description || "Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.")
           : selectedProduct.description;
         const displayStock = isImportProd 
           ? Math.min(20, selectedProduct.stock > 0 ? selectedProduct.stock : 20) 
           : selectedProduct.stock;
+
+        const hasVariants = Array.isArray(selectedProduct.variants) && selectedProduct.variants.length > 0;
+        const activeVariant = hasVariants ? (selectedProduct.variants![selectedVariantIndex] || selectedProduct.variants![0]) : null;
+        const effectivePrice = activeVariant && activeVariant.publicPrice > 0 ? activeVariant.publicPrice : selectedProduct.publicPrice;
+        const productToBuy = activeVariant
+          ? {
+              ...selectedProduct,
+              id: `${selectedProduct.id}__${activeVariant.id}`,
+              sku: activeVariant.sku || selectedProduct.sku,
+              title: `${selectedProduct.title} (${activeVariant.name})`,
+              publicPrice: effectivePrice,
+              totalCostMxn: activeVariant.costMxn || selectedProduct.totalCostMxn,
+              images: activeVariant.image ? [activeVariant.image, ...selectedProduct.images] : selectedProduct.images,
+            }
+          : selectedProduct;
         
         // Catálogo de recomendaciones cruzadas filtrado sin mezclar Boutique con Importación
         const relatedCatalog = isImportProd
@@ -5312,12 +5400,13 @@ export default function TiendaFoxDrop() {
             </button>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
-              {/* IMAGEN PRINCIPAL Y SELECTOR DE FOTOS MÚLTIPLES */}
+              {/* IMAGEN O VIDEO PRINCIPAL Y SELECTOR DE MULTIMEDIA */}
               <div className="space-y-3">
                 <div 
-                  onMouseEnter={() => setIsZoomActive(true)}
+                  onMouseEnter={() => !selectedModalVideo && setIsZoomActive(true)}
                   onMouseLeave={() => setIsZoomActive(false)}
                   onMouseMove={(e) => {
+                    if (selectedModalVideo) return;
                     const rect = e.currentTarget.getBoundingClientRect();
                     const x = ((e.clientX - rect.left) / rect.width) * 100;
                     const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -5325,40 +5414,72 @@ export default function TiendaFoxDrop() {
                   }}
                   className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-100 relative overflow-hidden cursor-crosshair group"
                 >
-                  <img
-                    src={getSafeProductImage(selectedProduct.images?.[activeModalImageIndex] || selectedProduct.images?.[0])}
-                    alt={selectedProduct.title}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
-                    }}
-                    style={isZoomActive ? {
-                      transform: 'scale(2.2)',
-                      transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`
-                    } : {}}
-                    className="max-h-full object-contain transition-transform duration-100 ease-out pointer-events-none select-none"
-                  />
+                  {selectedModalVideo ? (
+                    <video
+                      key={selectedModalVideo}
+                      src={selectedModalVideo}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain rounded-xl bg-black"
+                    />
+                  ) : (
+                    <img
+                      src={getSafeProductImage(
+                        (activeVariant?.image && activeModalImageIndex === -1)
+                          ? activeVariant.image
+                          : (selectedProduct.images?.[activeModalImageIndex] || selectedProduct.images?.[0])
+                      )}
+                      alt={selectedProduct.title}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
+                      }}
+                      style={isZoomActive ? {
+                        transform: 'scale(2.2)',
+                        transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`
+                      } : {}}
+                      className="max-h-full object-contain transition-transform duration-100 ease-out pointer-events-none select-none"
+                    />
+                  )}
                   {selectedProduct.isCombo && (
                     <span className="absolute top-3 left-3 bg-[#E65F2B] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 z-10 pointer-events-none">
                       <Sparkles className="w-3 h-3" /> COMBO PROMOCIONAL
                     </span>
                   )}
                   {/* Pista visual de zoom */}
-                  <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full opacity-60 group-hover:opacity-100 transition pointer-events-none flex items-center gap-1">
-                    <Search className="w-2.5 h-2.5" />
-                    <span>Pasa el cursor para zoom</span>
-                  </div>
+                  {!selectedModalVideo && (
+                    <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full opacity-60 group-hover:opacity-100 transition pointer-events-none flex items-center gap-1">
+                      <Search className="w-2.5 h-2.5" />
+                      <span>Pasa el cursor para zoom</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Miniaturas de galería si tiene más de 1 imagen */}
-                {selectedProduct.images && selectedProduct.images.length > 1 && (
+                {/* Miniaturas de videos y galería de fotos */}
+                {((selectedProduct.videos && selectedProduct.videos.length > 0) || (selectedProduct.images && selectedProduct.images.length > 1)) && (
                   <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {selectedProduct.images.map((imgUrl, i) => (
+                    {selectedProduct.videos?.map((vidUrl, vIdx) => (
+                      <button
+                        key={`vid-${vIdx}`}
+                        type="button"
+                        onClick={() => setSelectedModalVideo(vidUrl)}
+                        className={`px-3 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center bg-slate-900 text-white ${
+                          selectedModalVideo === vidUrl ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <span className="text-[11px] font-black">🎬 Video {vIdx + 1}</span>
+                      </button>
+                    ))}
+                    {selectedProduct.images?.map((imgUrl, i) => (
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setActiveModalImageIndex(i)}
+                        onClick={() => {
+                          setSelectedModalVideo(null);
+                          setActiveModalImageIndex(i);
+                        }}
                         className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
-                          activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300 bg-white'
+                          !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
                       >
                         <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
@@ -5381,13 +5502,56 @@ export default function TiendaFoxDrop() {
                   <h3 className="text-lg sm:text-xl font-black text-[#1F2D3D] leading-snug mt-1">{selectedProduct.title}</h3>
                   
                   <div className="mt-2 flex items-baseline space-x-2">
-                    <span className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">${selectedProduct.publicPrice.toFixed(0)} <span className="text-sm font-normal text-gray-400">MXN</span></span>
+                    <span className="text-2xl sm:text-3xl font-black text-gray-950 tracking-tight">${effectivePrice.toFixed(0)} <span className="text-sm font-normal text-gray-400">MXN</span></span>
                     {selectedProduct.discountPercent && selectedProduct.discountPercent > 0 ? (
                       <span className="text-xs text-gray-400 line-through">
-                        ${(selectedProduct.publicPrice / (1 - (selectedProduct.discountPercent / 100))).toFixed(0)} MXN
+                        ${(effectivePrice / (1 - (selectedProduct.discountPercent / 100))).toFixed(0)} MXN
                       </span>
                     ) : null}
                   </div>
+
+                  {/* SELECTOR DE VARIANTES DEL PRODUCTO */}
+                  {hasVariants && (
+                    <div className="mt-3 space-y-1.5 border-t border-gray-100 pt-2.5">
+                      <span className="text-[11px] font-extrabold text-slate-700 block">
+                        Elige versión / opción ({selectedProduct.variants!.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                        {selectedProduct.variants!.map((v, vIdx) => {
+                          const isSelectedVar = selectedVariantIndex === vIdx;
+                          return (
+                            <button
+                              key={v.id || vIdx}
+                              type="button"
+                              onClick={() => {
+                                setSelectedVariantIndex(vIdx);
+                                setSelectedModalVideo(null);
+                                if (v.image) setActiveModalImageIndex(-1);
+                              }}
+                              className={`px-2.5 py-1.5 rounded-xl border text-left transition cursor-pointer flex items-center gap-2 text-xs ${
+                                isSelectedVar
+                                  ? 'border-[#0F3E36] bg-[#0F3E36]/5 ring-2 ring-[#0F3E36]/20 font-bold text-[#0F3E36]'
+                                  : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700 font-medium'
+                              }`}
+                            >
+                              {v.image && (
+                                <img
+                                  src={getSafeProductImage(v.image)}
+                                  alt={v.name}
+                                  className="w-6 h-6 rounded object-cover shrink-0"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }}
+                                />
+                              )}
+                              <div>
+                                <span className="block text-[11px] leading-tight">{v.name}</span>
+                                <span className="block text-[10px] font-black text-[#E65F2B]">${v.publicPrice.toFixed(0)} MXN</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   <p className="text-xs text-gray-600 mt-2.5 leading-relaxed border-t border-gray-100 pt-2.5">
                     {displayDescription}
@@ -5423,7 +5587,7 @@ export default function TiendaFoxDrop() {
                   {/* CLUB FOXDROP PUNTOS */}
                   <div className="mt-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 flex items-center gap-2 text-[11px] text-amber-900 font-medium">
                     <Sparkles className="w-4 h-4 text-[#E65F2B] shrink-0" />
-                    <span>Ganas <strong>+{calculateEarnedPoints(selectedProduct.publicPrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'} {clubSettings?.currencyName || 'puntos'}</strong> para tu <strong>Club Foxdrop</strong>.</span>
+                    <span>Ganas <strong>+{calculateEarnedPoints(effectivePrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'} {clubSettings?.currencyName || 'puntos'}</strong> para tu <strong>Club Foxdrop</strong>.</span>
                   </div>
 
                   {/* DISPONIBILIDAD DE STOCK & BADGES */}
@@ -5523,14 +5687,14 @@ export default function TiendaFoxDrop() {
                     <button
                       type="button"
                       onClick={() => {
-                        addToCart(selectedProduct, undefined, modalQuantity);
+                        addToCart(productToBuy, undefined, modalQuantity);
                         setSelectedProduct(null);
                         handleCheckoutInit();
                       }}
                       className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-3 rounded-xl text-xs sm:text-sm transition shadow-md cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                      <span>Comprar Ahora • ${ (selectedProduct.publicPrice * modalQuantity).toFixed(0) } MXN</span>
+                      <span>Comprar Ahora • ${ (effectivePrice * modalQuantity).toFixed(0) } MXN</span>
                     </button>
                   )}
 
@@ -5538,7 +5702,7 @@ export default function TiendaFoxDrop() {
                   <button
                     disabled={displayStock <= 0}
                     onClick={() => {
-                      addToCart(selectedProduct, undefined, modalQuantity);
+                      addToCart(productToBuy, undefined, modalQuantity);
                       setSelectedProduct(null);
                     }}
                     className="w-full bg-[#E65F2B] hover:bg-[#D45321] active:scale-98 disabled:bg-gray-400 text-white font-black py-2.5 rounded-xl text-xs sm:text-sm transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
