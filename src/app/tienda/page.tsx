@@ -253,7 +253,7 @@ export default function TiendaFoxDrop() {
             // Pago no completado o rechazado: MANTENER CARRITO INTACTO y mostrar error formal
             setPaymentNotice({
               type: 'error',
-              message: 'No pudimos procesar el cobro a tu tarjeta. Tus artículos se mantienen guardados en tu carrito para que puedas verificar los datos bancarios o utilizar otra tarjeta.'
+              message: 'Tu pago no fue completado o fue rechazado por el banco. Tus productos siguen seguros en tu carrito para que puedas verificar los datos de tu tarjeta o intentar con otro método de pago.'
             });
             setIsCartOpen(true);
             window.history.replaceState({}, '', window.location.pathname);
@@ -1582,13 +1582,13 @@ export default function TiendaFoxDrop() {
             window.location.href = mpData.initPoint;
             return;
           } else {
-            alert(mpData.error || 'Error al conectar con la pasarela de pago.');
+            alert(mpData.error || 'No fue posible iniciar el proceso de cobro en este momento. Por favor intenta de nuevo.');
             setRedirectingToMp(false);
             setIsSubmittingOrder(false);
             return;
           }
         } catch (mpErr: any) {
-          alert('Error de conexión con la pasarela: ' + (mpErr.message || 'Intenta de nuevo'));
+          alert('Hubo un inconveniente al conectar con el servicio de cobro. Por favor verifica tu conexión o intenta nuevamente.');
           setRedirectingToMp(false);
           setIsSubmittingOrder(false);
           return;
@@ -4374,7 +4374,7 @@ export default function TiendaFoxDrop() {
                         {/* Explicación Checkout Pro transparente */}
                         <div className="pt-2 border-t border-gray-100">
                           <p className="text-xs text-slate-500 leading-relaxed">
-                            Al confirmar tu pedido, se abrirá la pasarela blindada de <strong className="text-slate-800">Mercado Pago</strong> para pagar de forma segura con tu tarjeta, con protección total antifraude.
+                            Al confirmar tu pedido, se abrirá la plataforma de cobro seguro de <strong className="text-slate-800">Mercado Pago</strong> para pagar directamente con tu tarjeta, con cifrado bancario y protección al comprador.
                           </p>
                         </div>
                       </div>
