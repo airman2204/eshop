@@ -244,15 +244,15 @@ export default function TiendaFoxDrop() {
             setCart([]);
             setPaymentNotice({
               type: 'success',
-              message: `¡Pago acreditado con éxito para la orden ${orderSuccess}! Ya estamos preparando tu pedido.`
+              message: `Pago confirmado con éxito. Tu pedido ${orderSuccess} ha sido procesado.`
             });
             // Limpiar query params de la URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (orderFailure || paymentStatus === 'rejected' || paymentStatus === 'null') {
-            // Pago no completado o rechazado: MANTENER CARRITO INTACTO y mostrar error
+            // Pago no completado o rechazado: MANTENER CARRITO INTACTO y mostrar error formal
             setPaymentNotice({
               type: 'error',
-              message: 'Tu pago no fue completado o fue rechazado por la pasarela. Tus productos siguen seguros en tu carrito para que puedas verificar los datos de tu tarjeta.'
+              message: 'No pudimos procesar el cobro a tu tarjeta. Tus artículos se mantienen guardados en tu carrito para que puedas verificar los datos bancarios o utilizar otra tarjeta.'
             });
             setIsCartOpen(true);
             window.history.replaceState({}, '', window.location.pathname);
@@ -3952,7 +3952,7 @@ export default function TiendaFoxDrop() {
                   {paymentNotice.type === 'error' ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                 </div>
                 <div className="flex-1 text-xs sm:text-sm">
-                  <p className="font-extrabold">{paymentNotice.type === 'error' ? 'Pago no completado' : '¡Pago Exitoso!'}</p>
+                  <p className="font-extrabold">{paymentNotice.type === 'error' ? 'Pago no procesado' : 'Pago confirmado'}</p>
                   <p className="mt-0.5 opacity-90 leading-relaxed">{paymentNotice.message}</p>
                 </div>
                 <button
