@@ -1637,7 +1637,7 @@ export default function TiendaFoxDrop() {
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
           <span className="font-extrabold text-[#0F3E36]">envíos seguros a todo México</span>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-600 font-medium">entregas personales con opción de pago contra entrega</span>
+          <span className="text-gray-600 font-medium">pagos protegidos vía transferencia SPEI y entrega garantizada</span>
           <span className="text-gray-400 hidden sm:inline">|</span>
           <button 
             type="button" 
@@ -1964,7 +1964,7 @@ export default function TiendaFoxDrop() {
 
         {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN PLECA TRANSPARENTE CON HOVER Y ACTIVO */}
         <div className="border-t border-white/10 bg-[#0B332C]/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2 text-xs sm:text-[13px] font-extrabold tracking-tight">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start md:justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
             
             {/* NUEVOS INGRESOS */}
             <button
@@ -4983,16 +4983,16 @@ export default function TiendaFoxDrop() {
                   </div>
                   <div>
                     <span className="font-bold text-white block text-xs">Transferencia SPEI</span>
-                    <span className="text-[10px] text-white/60">Acreditación instantánea 24/7</span>
+                    <span className="text-[10px] text-white/60">Acreditación instantánea 24/7 sin comisión</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl hover:bg-white/10 transition">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold shrink-0">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-white block text-xs">Pago Contra Entrega</span>
-                    <span className="text-[10px] text-white/60">Efectivo al recibir tu paquete</span>
+                    <span className="font-bold text-white block text-xs">Tarjetas de Débito & Crédito</span>
+                    <span className="text-[10px] text-white/60">Disponible para importación internacional</span>
                   </div>
                 </div>
               </div>
@@ -5036,16 +5036,16 @@ export default function TiendaFoxDrop() {
                 </div>
                 <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
                   <p>
-                    <strong className="text-gray-900 block font-bold mb-0.5">📍 Entregas Personales Acordadas:</strong>
-                    Coordinamos entregas directas y seguras en puntos céntricos o a domicilio. Puedes pagar en efectivo contra entrega o vía SPEI.
+                    <strong className="text-gray-900 block font-bold mb-0.5">📦 Envíos Nacionales e Internacionales:</strong>
+                    Enviamos a cualquier código postal de la República Mexicana mediante paqueterías certificadas con número de rastreo oficial.
                   </p>
                   <p>
-                    <strong className="text-gray-900 block font-bold mb-0.5">📦 Envíos Nacionales:</strong>
-                    Enviamos a cualquier código postal de la República Mexicana mediante paqueterías certificadas con número de rastreo.
+                    <strong className="text-gray-900 block font-bold mb-0.5">💳 Medios de Pago Protegidos:</strong>
+                    Aceptamos transferencias electrónicas SPEI con acreditación inmediata y pago con tarjetas bancarias de débito/crédito para pedidos de importación.
                   </p>
                   <p>
-                    <strong className="text-gray-900 block font-bold mb-0.5">⏱️ Tiempos de Preparación:</strong>
-                    Los pedidos se preparan e inspeccionan en un plazo de 24 a 48 horas hábiles.
+                    <strong className="text-gray-900 block font-bold mb-0.5">⏱️ Tiempos de Entrega:</strong>
+                    Los pedidos de catálogo local se despachan en 24 a 48 horas hábiles. Los pedidos de importación directa tienen un tiempo de tránsito asegurado de 10 a 15 días hábiles.
                   </p>
                 </div>
                 <div className="pt-1">
