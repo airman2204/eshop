@@ -19,6 +19,19 @@ export async function POST(req: NextRequest) {
       if (isValidUuid(cartId)) {
         await supabase.from("abandoned_carts").delete().eq("id", cartId);
       }
+      if (clientPhone || clientEmail || userId) {
+        let q = supabase.from("abandoned_carts").delete();
+        if (clientPhone && clientEmail) {
+          q = q.or(`client_phone.eq.${clientPhone},client_email.eq.${clientEmail}`);
+        } else if (clientPhone) {
+          q = q.eq("client_phone", clientPhone);
+        } else if (clientEmail) {
+          q = q.eq("client_email", clientEmail);
+        } else if (userId && isValidUuid(userId)) {
+          q = q.eq("user_id", userId);
+        }
+        await q;
+      }
       return NextResponse.json({ success: true, cartId: null, message: "Carrito vaciado" });
     }
 

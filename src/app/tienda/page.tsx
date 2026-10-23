@@ -237,13 +237,22 @@ export default function TiendaFoxDrop() {
           const paymentStatus = urlParams.get('payment_status');
 
           if (orderSuccess && paymentStatus === 'approved') {
-            // Pago exitoso en Mercado Pago: vaciamos carrito, cargamos comprobante y mostramos pantalla de éxito
+            // Pago exitoso en Mercado Pago: vaciamos carrito, limpiamos carrito abandonado y cargamos comprobante
             try {
+              const currentCartId = localStorage.getItem('foxdrop_cart_id');
+              if (currentCartId) {
+                fetch('/api/cart/sync', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ cartId: currentCartId, items: [] })
+                }).catch(() => {});
+              }
               localStorage.removeItem('foxdrop_cart_id');
               localStorage.removeItem('foxdrop_cart_items_v1');
               sessionStorage.removeItem('foxdrop_pending_mp_order');
             } catch {}
             setCart([]);
+            resolveAbandonedCart(user?.phone, user?.email);
 
             // Recuperar los datos del pedido para mostrar de inmediato el Comprobante Oficial (Paso 3)
             fetch(`/api/orders?orderNumber=${encodeURIComponent(orderSuccess)}`)
@@ -294,7 +303,22 @@ export default function TiendaFoxDrop() {
             // Limpiar query params de la URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (orderFailure || paymentStatus === 'rejected' || paymentStatus === 'null') {
-            // Pago no completado o rechazado: MANTENER CARRITO INTACTO y mostrar error formal
+            // Pago no completado o rechazado: MANTENER CARRITO INTACTO y marcar el pedido fallido como cancelado
+            const failedOrderNum = orderFailure || (typeof window !== 'undefined' ? sessionStorage.getItem('foxdrop_pending_mp_order') : null);
+            if (failedOrderNum) {
+              fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderNumber: failedOrderNum,
+                  status: 'cancelled',
+                  paymentStatus: 'failed',
+                  notes: 'Intento de pago no completado o rechazado por la entidad bancaria.'
+                })
+              }).catch(e => console.warn('No se pudo marcar orden como cancelada:', e));
+              try { sessionStorage.removeItem('foxdrop_pending_mp_order'); } catch {}
+            }
+
             setPaymentNotice({
               type: 'error',
               message: 'Tu pago no fue completado o fue rechazado por el banco. Tus productos siguen seguros en tu carrito para que puedas verificar los datos de tu tarjeta o intentar con otro método de pago.'

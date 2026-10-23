@@ -33,7 +33,7 @@ import {
   getAgentChatHistory, saveAgentChatHistory
 } from '@/lib/admin';
 import { getCheckoutSettings, saveCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
-import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders } from '@/lib/orders';
+import { getAdminOrders, getSpecialOrders, updateSpecialOrderStatus, updateOrderStatusInDb, deleteOrderInDb, createPhysicalSaleOrder, subscribeToAllOrders, subscribeToAbandonedCarts } from '@/lib/orders';
 import { authenticateAdmin, updateAdminPassword, AdminSession, fetchAgentApi } from '@/lib/adminAuth';
 import { uploadProductImage, uploadProductImageUrl } from '@/lib/storage';
 import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
@@ -1086,8 +1086,91 @@ export default function AdminCRM() {
       }
     });
 
+    // Suscripción en Tiempo Real para Carritos Abandonados
+    const unsubscribeCarts = subscribeToAbandonedCarts((payload) => {
+      const { eventType, new: newCart, old: oldCart } = payload;
+      if (eventType === 'INSERT' && newCart) {
+        setAbandonedCarts(prev => {
+          if (prev.some(c => c.id === newCart.id)) return prev;
+          return [{
+            id: newCart.id,
+            clientName: newCart.client_name || 'Cliente Invitado',
+            clientPhone: newCart.client_phone || '',
+            clientEmail: newCart.client_email,
+            items: newCart.items || [],
+            total: Number(newCart.total) || 0,
+            followedUp: Boolean(newCart.followed_up),
+            lastActive: newCart.last_active || new Date().toISOString(),
+          }, ...prev];
+        });
+      } else if (eventType === 'UPDATE' && newCart) {
+        setAbandonedCarts(prev => prev.map(c => {
+          if (c.id === newCart.id) {
+            return {
+              ...c,
+              clientName: newCart.client_name || c.clientName,
+              clientPhone: newCart.client_phone || c.clientPhone,
+              clientEmail: newCart.client_email !== undefined ? newCart.client_email : c.clientEmail,
+              items: newCart.items || c.items,
+              total: Number(newCart.total) || c.total,
+              followedUp: Boolean(newCart.followed_up),
+              lastActive: newCart.last_active || c.lastActive,
+            };
+          }
+          return c;
+        }));
+      } else if (eventType === 'DELETE' && oldCart) {
+        setAbandonedCarts(prev => prev.filter(c => c.id !== oldCart.id));
+      }
+    });
+
+    // Polling de respaldo cada 12 segundos para asegurar sincronización total sin recargar
+    const pollingInterval = setInterval(() => {
+      getAdminOrders().then(freshOrders => {
+        if (freshOrders && freshOrders.length > 0) {
+          const mapped: Order[] = freshOrders.map((o: any) => ({
+            id: o.order_number || o.id,
+            dbId: o.id,
+            orderNumber: o.order_number || o.id,
+            clientName: o.client_name,
+            clientPhone: o.client_phone,
+            clientEmail: o.client_email,
+            status: o.status || 'pending',
+            shippingType: o.shipping_type || 'puebla_local',
+            pickupPoint: o.pickup_point,
+            subtotal: Number(o.subtotal) || 0,
+            shippingCost: Number(o.shipping_cost) || 0,
+            total: Number(o.total) || 0,
+            trackingNumber: o.tracking_number,
+            createdAt: o.created_at,
+            itemsCount: o.order_items?.length || 1,
+            notes: o.notes || undefined,
+            paymentMethod: o.payment_method || (o.order_number?.startsWith('FX-POS') ? 'cash' : undefined),
+            paymentStatus: o.payment_status || 'pending',
+            order_items: o.order_items || [],
+          }));
+          setOrders(mapped);
+        }
+      }).catch(() => {});
+
+      getAdminAbandonedCarts().then(freshCarts => {
+        if (Array.isArray(freshCarts)) {
+          setAbandonedCarts(freshCarts);
+        }
+      }).catch(() => {});
+    }, 12000);
+
+    // Solicitar permiso para notificaciones del navegador si aún no se ha decidido
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      try {
+        Notification.requestPermission();
+      } catch {}
+    }
+
     return () => {
       unsubscribe();
+      unsubscribeCarts();
+      clearInterval(pollingInterval);
     };
   }, [adminSession, audioEnabled]);
 
@@ -5061,10 +5144,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <span className={`px-2.5 py-0.5 rounded-full font-semibold text-[11px] ${
                           order.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
                           order.status === 'shipped' ? 'bg-sky-50 text-sky-700 border border-sky-200/60' :
-                          'bg-amber-50 text-amber-700 border border-amber-200/60'
+                          (order.status === 'pending' || order.paymentStatus === 'pending') ? 'bg-amber-50 text-amber-700 border border-amber-200/60' :
+                          'bg-indigo-50 text-indigo-700 border border-indigo-200/60'
                         }`}>
-                          {order.status === 'delivered' ? 'Entregado' : order.status === 'shipped' ? 'En camino' : 'En preparación'}
+                          {order.status === 'delivered' ? 'Entregado' : 
+                           order.status === 'shipped' ? 'En camino' : 
+                           (order.status === 'pending' || order.paymentStatus === 'pending') ? 'Pendiente' : 
+                           'En preparación'}
                         </span>
+                        {order.paymentStatus === 'paid' ? (
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded-md font-semibold text-[10px]">
+                            ✓ Pagado
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 text-amber-700 border border-amber-200/60 px-2 py-0.5 rounded-md font-semibold text-[10px]">
+                            ⏳ Pago Pendiente
+                          </span>
+                        )}
                       </div>
                       <p className="text-slate-900 font-semibold">{order.clientName} <span className="text-slate-400 font-normal">• {order.clientPhone}</span></p>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500">

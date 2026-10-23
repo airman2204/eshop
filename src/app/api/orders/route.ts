@@ -186,3 +186,42 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Error consultando orden" }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const { orderNumber, status, paymentStatus, notes } = body;
+
+    if (!orderNumber) {
+      return NextResponse.json({ error: "orderNumber requerido" }, { status: 400 });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createServerClient() as any;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumber);
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (status !== undefined) updateData.status = status;
+    if (paymentStatus !== undefined) updateData.payment_status = paymentStatus;
+    if (notes !== undefined) updateData.notes = notes;
+
+    let query = supabase.from("orders").update(updateData);
+    if (isUuid) {
+      query = query.eq("id", orderNumber);
+    } else {
+      query = query.eq("order_number", orderNumber);
+    }
+
+    const { data, error } = await query.select().maybeSingle();
+    if (error) {
+      console.error("Error al actualizar orden:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, order: data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Error al actualizar orden" }, { status: 500 });
+  }
+}
