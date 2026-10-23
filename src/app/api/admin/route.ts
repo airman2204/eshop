@@ -1035,7 +1035,6 @@ export async function POST(req: NextRequest) {
 
       const payload: any = { updated_at: new Date().toISOString() };
       if (product.title !== undefined) payload.title = product.title;
-      if (product.brand !== undefined) payload.brand = product.brand ? product.brand.trim() : null;
       if (product.sku !== undefined) payload.sku = product.sku;
       if (product.description !== undefined) payload.description = product.description;
       if (product.baseCostUsd !== undefined) payload.base_cost_usd = product.baseCostUsd;
@@ -1084,9 +1083,10 @@ export async function POST(req: NextRequest) {
         .select("*, categories(id, name, slug, icon)")
         .single();
 
-      // Si falla por columnas combo o discount_percent no existentes, reintentamos omitiéndolas
-      if (error && (error.message?.includes("discount_percent") || error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("combo") || error.details?.includes("discount_percent"))) {
+      // Si falla por columnas que no existen en el esquema SQL remoto, reintentamos omitiéndolas
+      if (error && (error.message?.includes("brand") || error.message?.includes("discount_percent") || error.message?.includes("combo_product_ids") || error.message?.includes("is_combo") || error.details?.includes("brand") || error.details?.includes("combo") || error.details?.includes("discount_percent"))) {
         console.warn("Columnas no encontradas al actualizar, reintentando actualización básica:", error.message);
+        delete payload.brand;
         delete payload.is_combo;
         delete payload.combo_product_ids;
         delete payload.discount_percent;
@@ -1101,6 +1101,26 @@ export async function POST(req: NextRequest) {
       }
 
       if (error) throw error;
+
+      // Guardar la marca del producto en el mapa permanente de marcas en Storage
+      if (product.brand !== undefined && id) {
+        try {
+          let bMap: Record<string, string> = {};
+          const { data: bFile } = await supabase.storage
+            .from("product-images")
+            .download("_system/product_brands.json");
+          if (bFile) bMap = JSON.parse(await bFile.text() || "{}");
+          if (product.brand && product.brand.trim()) {
+            bMap[id] = product.brand.trim();
+          } else {
+            delete bMap[id];
+          }
+          await supabase.storage.from("product-images").upload("_system/product_brands.json", Buffer.from(JSON.stringify(bMap, null, 2)), { contentType: "application/json", upsert: true });
+        } catch (bErr) {
+          console.warn("Aviso guardando marca en Storage:", bErr);
+        }
+      }
+
       return NextResponse.json({ success: true, data });
     }
 
