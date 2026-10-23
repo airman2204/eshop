@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import FoxDropLogo from '@/components/FoxDropLogo';
-import { FileText, ArrowLeft, Truck, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
+import { FileText, ArrowLeft, Truck, ShieldCheck, RefreshCw, AlertCircle, Scale, Globe, CheckCircle2 } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Términos y Condiciones',
-  description: 'Términos y Condiciones de Compra y Uso de FoxDrop México. Garantías, envíos, métodos de pago y devoluciones.',
+  title: 'Términos y Condiciones de Compra y Uso | FoxDrop México',
+  description: 'Términos y Condiciones oficiales de FoxDrop México conformes a la Ley Federal de Protección al Consumidor (PROFECO) y regulaciones de comercio electrónico. Políticas de envío, garantías, cancelaciones y devoluciones.',
   robots: { index: true, follow: true },
 };
 
@@ -36,85 +36,153 @@ export default function TerminosPage() {
         {/* ENCABEZADO */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold text-[#DF7F2D] uppercase tracking-wider">
-            <FileText className="w-4 h-4" />
-            <span>Términos del Servicio</span>
+            <Scale className="w-4 h-4" />
+            <span>Marco Legal & Protección al Consumidor</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0F3E36] tracking-tight">
-            Términos y Condiciones de Compra
+            Términos y Condiciones de Compra y Uso
           </h1>
-          <p className="text-xs text-gray-500 font-medium">
-            Última actualización: Enero de {currentYear}. Regulaciones de compra, logística, pagos y garantías de FoxDrop.
+          <p className="text-xs text-gray-500 font-medium leading-relaxed">
+            Última actualización: Octubre de {currentYear}. Regulaciones conformes a la Ley Federal de Protección al Consumidor (PROFECO), Código de Comercio de los Estados Unidos Mexicanos y normativas de comercio digital.
           </p>
         </div>
 
-        {/* SECCIONES */}
+        {/* SECCIONES LEGALES */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-xs space-y-8 text-xs sm:text-sm text-gray-700 leading-relaxed">
           
-          <section className="space-y-2">
+          {/* 1. OBJETO Y ACEPTACIÓN */}
+          <section className="space-y-2.5">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              1. Aceptación de los Términos
+              1. Objeto, Ámbito de Aplicación y Aceptación
             </h2>
             <p>
-              Al acceder, navegar o realizar pedidos en <strong className="text-[#0F3E36]">foxdrop.mx</strong>, el usuario acepta de manera expresa y sin reservas los presentes Términos y Condiciones. Si no está de acuerdo con alguno de ellos, le solicitamos abstenerse de utilizar el servicio.
+              El presente contrato de Términos y Condiciones regula el acceso, navegación, uso y compras realizadas a través del sitio web oficial <strong className="text-[#0F3E36]">foxdrop.mx</strong> (en adelante, la &quot;Plataforma&quot;), operado comercialmente por FoxDrop México.
+            </p>
+            <p>
+              Al navegar en la Plataforma, crear una cuenta o formalizar un pedido, el usuario declara ser mayor de edad con plena capacidad legal para obligarse conforme a las leyes mercantiles de los Estados Unidos Mexicanos y acepta de manera íntegra, expresa y vinculante los presentes Términos.
             </p>
           </section>
 
-          <section className="space-y-2">
+          {/* 2. CATÁLOGO, DISPONIBILIDAD Y PRECIOS */}
+          <section className="space-y-2.5">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              2. Precios, Moneda y Disponibilidad
+              2. Catálogo de Productos, Precios y Divisa
             </h2>
             <p>
-              Todos los precios exhibidos en la tienda se encuentran expresados en <strong>Pesos Mexicanos (MXN)</strong>. FoxDrop se reserva el derecho de ajustar precios en función de la oferta internacional y costos de importación antes de la confirmación de una orden. Los productos están sujetos a disponibilidad de inventario.
+              Todos los precios exhibidos en la Plataforma se encuentran debidamente expresados en <strong>Pesos Mexicanos (MXN)</strong> e incluyen los impuestos aplicables. Los precios exhibidos al momento de finalizar la compra son definitivos.
             </p>
-          </section>
-
-          <section className="space-y-2">
-            <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              3. Modalidades de Pago Aceptadas
-            </h2>
-            <p>Para mayor seguridad y transparencia de nuestros clientes, los pagos se efectúan a través de:</p>
+            <p>
+              FoxDrop comercializa dos modalidades de productos claramente identificadas en la Plataforma:
+            </p>
             <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
-              <li><strong>Efectivo contra entrega:</strong> Disponible para entregas locales y puntos de encuentro acordados.</li>
-              <li><strong>Transferencia bancaria SPEI:</strong> Directa a cuenta oficial, sin cobro de comisiones intermedias.</li>
+              <li><strong>Inventario Boutique / Entrega Inmediata:</strong> Productos físicamente resguardados en almacén local en México con entrega en 24 a 48 horas hábiles.</li>
+              <li><strong>Artículos de Importación Directa:</strong> Artículos seleccionados de novedades globales que se despachan directamente de fábrica internacional al domicilio del cliente en México, con tiempo de tránsito estimado de 10 a 15 días hábiles.</li>
             </ul>
           </section>
 
-          <section className="space-y-2">
+          {/* 3. MÉTODOS DE PAGO Y SEGURIDAD TRANSACCIONAL */}
+          <section className="space-y-2.5">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              4. Políticas de Envío y Tiempos de Entrega
+              3. Métodos de Pago y Seguridad de las Transacciones
             </h2>
             <p>
-              Los pedidos se procesan y empacan en un periodo de 24 a 48 horas hábiles. Para entregas locales se coordinan horarios y puntos convenientes con el comprador. Para envíos nacionales, se proporciona número de guía y seguimiento en tiempo real.
+              FoxDrop garantiza compras 100% seguras y cifradas mediante las siguientes pasarelas y mecanismos oficiales:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
+              <li><strong>Tarjetas de Crédito y Débito (Visa, Mastercard, American Express):</strong> Procesadas de forma segura a través de la pasarela certificada de <strong>Mercado Pago</strong> bajo estándares internacionales PCI-DSS nivel 1. FoxDrop no almacena números de tarjeta ni códigos de seguridad CVV.</li>
+              <li><strong>Mercado Pago Checkout Pro:</strong> Con saldo en cuenta Mercado Pago, dinero electrónico o efectivo en puntos de conveniencia autorizados.</li>
+              <li><strong>Transferencia Electrónica Interbancaria (SPEI):</strong> Directa a las cuentas bancarias oficiales de FoxDrop identificadas con CLABE interbancaria.</li>
+              <li><strong>Efectivo en Mostrador / Entrega Local:</strong> Aplicable exclusivamente para pedidos con modalidad de entrega acordada física en Puebla.</li>
+            </ul>
+          </section>
+
+          {/* 4. POLÍTICAS DE ENVÍO Y TIEMPOS DE TRÁNSITO */}
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
+              4. Políticas de Envío, Despacho y Tiempos de Entrega
+            </h2>
+            <p>
+              Una vez acreditado el pago de la orden:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
+              <li><strong>Envíos Locales (Puebla y Zona Metropolitana):</strong> Se entregan en 24 a 48 horas hábiles mediante repartidor propio o punto de entrega convenido.</li>
+              <li><strong>Envíos Nacionales:</strong> Se despachan vía paqueterías certificadas (FedEx, Estafeta, DHL, Paquetexpress) con tiempos de tránsito de 2 a 5 días hábiles y número de rastreo asignado.</li>
+              <li><strong>Envíos de Importación Directa:</strong> Cuentan con <strong>Envío Gratis incluido</strong>. El tiempo estimado de arribo a domicilio en México es de <strong>10 a 15 días hábiles</strong>. Se genera guía internacional de seguimiento consultable desde la cuenta del cliente.</li>
+            </ul>
+            <p className="text-xs text-gray-500 italic">
+              El cliente es responsable de proporcionar una dirección exacta, código postal verídico, referencias claras y número de teléfono celular con WhatsApp activo para la entrega por parte del operador logístico.
             </p>
           </section>
 
-          <section className="space-y-2">
+          {/* 5. POLÍTICA DE CANCELACIONES Y REEMBOLSOS */}
+          <section className="space-y-2.5">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              5. Garantía y Devoluciones
+              5. Política de Cancelaciones y Reembolsos
             </h2>
             <p>
-              Todos los artículos gozan de garantía FoxDrop contra defectos de fabricación o daños derivados del traslado. El cliente cuenta con un plazo de <strong>7 días naturales</strong> a partir de la recepción para solicitar el cambio o reembolso correspondiente.
+              Conforme a los lineamientos de PROFECO y la naturaleza de las operaciones logísticas:
             </p>
+            <div className="space-y-2">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                <span className="font-bold text-[#0F3E36] block">A. Cancelación Previa al Despacho:</span>
+                <p className="text-xs text-gray-600">
+                  El cliente podrá cancelar su orden directamente desde el panel &quot;Mis Pedidos&quot; sin penalización alguna mientras la orden se encuentre en estado <strong>Pendiente de Confirmación / En Revisión</strong>. El reembolso se tramitará de forma inmediata al mismo método de pago original o como saldo a favor si el cliente así lo solicita.
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl space-y-1">
+                <span className="font-bold text-amber-900 block">B. Bloqueo de Cancelación tras Emisión a Fábrica / Tránsito:</span>
+                <p className="text-xs text-amber-800">
+                  Una vez que la orden pasa a estado <strong>En Preparación en Fábrica Internacional</strong> o <strong>En Camino</strong>, el pedido queda legal y operativamente comprometido en la cadena de suministro internacional y embalaje aduanal. En esta etapa, no se admiten cancelaciones unilaterales en la plataforma web, debiendo esperar a la recepción física del producto para tramitar cualquier garantía o devolución conforme a la Cláusula 6.
+                </p>
+              </div>
+            </div>
           </section>
 
-
-          <section className="space-y-2">
+          {/* 6. GARANTÍA DE SATISFACCIÓN Y DERECHO DE RETRACTO */}
+          <section className="space-y-2.5">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              6. Propiedad Intelectual y Deslinde de Marcas Comerciales
+              6. Garantía de Satisfacción, Devoluciones y Daños de Traslado
             </h2>
             <p>
-              FoxDrop México es un comercio minorista independiente dedicado a la importación y reventa de artículos originales y legítimos en territorio mexicano. Todas las marcas registradas, logotipos, nombres de modelos y signos distintivos que pudieran mencionarse o exhibirse en este sitio web pertenecen de manera exclusiva a sus respectivos titulares y fabricantes internacionales.
+              En estricto apego al <strong>Artículo 92 y 93 de la Ley Federal de Protección al Consumidor</strong>:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
+              <li><strong>Defectos de fábrica o fallas mecánicas/eléctricas:</strong> Todos los productos cuentan con <strong>30 días naturales de garantía</strong> directa con FoxDrop a partir del día de entrega física.</li>
+              <li><strong>Daños derivados de la paquetería:</strong> Si el producto llega roto, abollado o con piezas faltantes, el cliente deberá reportarlo dentro de las <strong>48 horas posteriores</strong> a la entrega enviando fotografía o video del empaque a nuestro WhatsApp oficial para el reemplazo inmediato de la pieza sin costo.</li>
+              <li><strong>Condiciones para devolución:</strong> El producto debe devolverse con su caja original, accesorios, etiquetas y manuales. Por normas de salubridad y COFEPRIS, los productos cosméticos, de higiene personal o uso íntimo abiertos no admiten devoluciones por retracto voluntario, salvo defecto de fabricación comprobable.</li>
+            </ul>
+          </section>
+
+          {/* 7. PROPIEDAD INTELECTUAL Y DESLINDE NOMINATIVO DE MARCAS */}
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
+              7. Propiedad Intelectual, Deslinde de Responsabilidad y Principio de Agotamiento de Marca
+            </h2>
+            <p>
+              FoxDrop México opera como una comercializadora y minorista independiente. Todos los nombres comerciales, marcas registradas, logotipos y diseños de terceros que pudieran exhibirse en la Plataforma (tales como Bath & Body Works, Victoria&apos;s Secret, Nike, Apple u otros) son propiedad exclusiva de sus respectivos titulares y fabricantes.
             </p>
             <p className="text-gray-600 text-xs">
-              El uso y exhibición de los nombres comerciales se realiza bajo el principio de agotamiento de los derechos de marca (Art. 171 de la Ley Federal de Protección a la Propiedad Industrial), teniendo carácter estrictamente nominativo, referencial e informativo para identificar la procedencia y autenticidad física de los productos puestos a disposición del consumidor final, sin que esto implique relación comercial directa, asociación, patrocinio o representación oficial por parte de las marcas citadas.
+              La mención de marcas en la Plataforma se realiza de conformidad con el <strong>Artículo 171 de la Ley Federal de Protección a la Propiedad Industrial</strong> (Principio de Agotamiento de Derechos de Marca), teniendo un uso estrictamente nominativo y referencial para informar al consumidor final sobre la naturaleza, compatibilidad y autenticidad física de los bienes puestos a la venta, sin implicar afiliación, patrocinio, distribución oficial exclusiva o representación legal de dichas corporaciones.
             </p>
           </section>
+
+          {/* 8. JURISDICCIÓN Y LEY APLICABLE */}
+          <section className="space-y-2.5">
+            <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
+              8. Jurisdicción y Legislación Aplicable
+            </h2>
+            <p>
+              Para la interpretación, cumplimiento y resolución de cualquier controversia derivada del presente contrato, las partes acuerdan someterse en primera instancia al procedimiento conciliatorio de la <strong>Procuraduría Federal del Consumidor (PROFECO)</strong>, y en caso de subsistir diferencias, a la jurisdicción de los <strong>Tribunales Competentes en el Estado de Puebla, México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.
+            </p>
+          </section>
+
         </div>
       </main>
 
       {/* FOOTER */}
       <footer className="bg-[#0F3E36] text-white py-6 px-4 text-center text-xs border-t border-[#175248]">
-        <p className="text-[#D3E0DC]">© {currentYear} FoxDrop México. Todos los derechos reservados.</p>
+        <p className="text-[#D3E0DC]">© {currentYear} FoxDrop México. Registro y Cumplimiento Mercantil Mexicano.</p>
       </footer>
     </div>
   );

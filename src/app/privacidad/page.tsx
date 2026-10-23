@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import FoxDropLogo from '@/components/FoxDropLogo';
-import { ShieldCheck, ArrowLeft, Lock, FileText, CheckCircle2, Phone, Mail } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, Lock, FileText, CheckCircle2, Phone, Mail, Scale } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Aviso de Privacidad',
-  description: 'Aviso de Privacidad Integral de FoxDrop México conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).',
+  title: 'Aviso de Privacidad Integral | FoxDrop México',
+  description: 'Aviso de Privacidad Integral de FoxDrop México conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP). Protocolos de seguridad bancaria, cifrado y derechos ARCO.',
   robots: { index: true, follow: true },
 };
 
@@ -37,13 +37,13 @@ export default function PrivacidadPage() {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold text-[#DF7F2D] uppercase tracking-wider">
             <ShieldCheck className="w-4 h-4" />
-            <span>Legal y Protección de Datos</span>
+            <span>Legal y Protección de Datos Personales</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#0F3E36] tracking-tight">
             Aviso de Privacidad Integral
           </h1>
-          <p className="text-xs text-gray-500 font-medium">
-            Última actualización: Enero de {currentYear}. Cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).
+          <p className="text-xs text-gray-500 font-medium leading-relaxed">
+            Última actualización: Octubre de {currentYear}. En estricto cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento en los Estados Unidos Mexicanos.
           </p>
         </div>
 
@@ -56,107 +56,103 @@ export default function PrivacidadPage() {
               <span className="text-[#DF7F2D]">1.</span> Identidad y Domicilio del Responsable
             </h2>
             <p>
-              <strong>FoxDrop México</strong> (en adelante &quot;FoxDrop&quot;), con operaciones en los Estados Unidos Mexicanos y portal web oficial{' '}
-              <strong className="text-[#0F3E36]">foxdrop.mx</strong>, es el responsable legítimo del uso, almacenamiento, confidencialidad y protección de sus datos personales.
+              <strong>FoxDrop México</strong> (en lo sucesivo &quot;FoxDrop&quot;), con sede de operaciones en el Estado de Puebla, México, y portal digital oficial{' '}
+              <strong className="text-[#0F3E36]">foxdrop.mx</strong>, es el responsable legítimo del uso, resguardo, confidencialidad y tratamiento de los datos personales que usted nos proporcione.
             </p>
           </section>
 
           {/* 2. DATOS RECABADOS */}
           <section className="space-y-3">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36] flex items-center gap-2">
-              <span className="text-[#DF7F2D]">2.</span> Datos Personales que Recabamos
+              <span className="text-[#DF7F2D]">2.</span> Datos Personales Sujetos a Tratamiento
             </h2>
-            <p>Para brindarle nuestros servicios de compra, entrega y fidelidad, recabamos los siguientes datos:</p>
+            <p>Para la debida prestación de los servicios comerciales, recabamos las siguientes categorías de datos personales:</p>
             <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
-              <li><strong>Datos de Identificación y Contacto:</strong> Nombre(s), Apellido(s), dirección de correo electrónico y número telefónico celular (WhatsApp).</li>
-              <li><strong>Datos de Entrega y Logística:</strong> Calle, número exterior e interior, colonia, municipio o alcaldía, código postal y referencias de entrega.</li>
-              <li><strong>Datos de Transacción:</strong> Historial de pedidos realizados, artículos adquiridos, montos totales y puntos acumulados en Club FoxDrop.</li>
+              <li><strong>Datos de Identificación y Contacto:</strong> Nombre completo, número de teléfono móvil celular (con WhatsApp activo para coordinación de entrega) y correo electrónico.</li>
+              <li><strong>Datos de Destino y Logística:</strong> Calle, número exterior e interior, colonia, municipio o alcaldía, entidad federativa, código postal y referencias específicas del inmueble para la correcta entrega de paquetes.</li>
+              <li><strong>Datos Transaccionales:</strong> Folio de compra, artículos adquiridos, monto total liquidado, fecha de compra y estatus de rastreo.</li>
             </ul>
-            <p className="text-xs bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-emerald-900 font-medium">
-              🔒 <strong>Nota importante sobre datos financieros:</strong> FoxDrop <strong>no almacena</strong> números completos de tarjetas de crédito o débito ni códigos de seguridad CVV. Los pagos se gestionan mediante efectivo contra entrega local o transferencias directas SPEI bancarias protegidas.
-            </p>
+
+            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 text-xs space-y-1 font-medium">
+              <div className="flex items-center gap-2 font-bold text-emerald-800">
+                <Lock className="w-4 h-4 text-emerald-600" />
+                <span>Seguridad y Blindaje de Datos Financieros:</span>
+              </div>
+              <p className="text-emerald-900 leading-relaxed">
+                FoxDrop <strong>NO almacena, conserva ni tiene acceso</strong> a los 16 dígitos completos de sus tarjetas bancarias ni a los códigos de seguridad (CVV/CVC). El procesamiento de pagos con tarjeta de crédito y débito se delega íntegramente a <strong>Mercado Pago</strong> bajo cifrado bancario TLS 1.3 con certificación PCI-DSS Nivel 1.
+              </p>
+            </div>
           </section>
 
-          {/* 3. FINALIDADES */}
+          {/* 3. FINALIDADES DEL TRATAMIENTO */}
           <section className="space-y-3">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36] flex items-center gap-2">
-              <span className="text-[#DF7F2D]">3.</span> Finalidades del Tratamiento de Datos
+              <span className="text-[#DF7F2D]">3.</span> Finalidades Primarias y Secundarias
             </h2>
-            <p>Sus datos personales son recabados para las siguientes finalidades necesarias:</p>
             <div className="space-y-2">
-              <div className="p-3.5 bg-[#FAF6F0] rounded-2xl border border-gray-100 space-y-1">
-                <span className="font-bold text-[#0F3E36] block">A. Finalidades Primarias (necesarias para el servicio):</span>
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                <span className="font-bold text-[#0F3E36] block">A. Finalidades Primarias (necesarias para la relación comercial):</span>
                 <ul className="list-disc pl-5 space-y-1 text-gray-600 text-xs">
-                  <li>Crear y autenticar su cuenta de usuario mediante códigos de un solo uso (OTP).</li>
-                  <li>Procesar, preparar, empacar y enviar los artículos adquiridos en el catálogo o pedidos especiales.</li>
-                  <li>Coordinar puntos de encuentro y horarios de entrega personal o emitir guías de paquetería nacional.</li>
-                  <li>Enviar notificaciones de confirmación de pedido y estatus de rastreo vía WhatsApp o correo electrónico.</li>
-                  <li>Atender aclaraciones, garantías y procesos de devolución.</li>
+                  <li>Identificar al comprador y verificar la autenticidad de los pedidos.</li>
+                  <li>Procesar, preparar, embalar y gestionar el despacho aduanal y de paquetería de los bienes adquiridos.</li>
+                  <li>Generar y remitir la confirmación de orden, comprobante digital y número de guía de seguimiento.</li>
+                  <li>Notificar oportunamente el estatus del pedido y coordinar la recepción en domicilio o punto de entrega.</li>
+                  <li>Gestionar solicitudes de garantía, aclaraciones, devoluciones o cancelaciones autorizadas.</li>
                 </ul>
               </div>
 
-              <div className="p-3.5 bg-[#FAF6F0] rounded-2xl border border-gray-100 space-y-1">
-                <span className="font-bold text-[#0F3E36] block">B. Finalidades Secundarias (opcionales):</span>
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+                <span className="font-bold text-[#0F3E36] block">B. Finalidades Secundarias (no indispensables):</span>
                 <ul className="list-disc pl-5 space-y-1 text-gray-600 text-xs">
-                  <li>Asignar puntos de recompensa y beneficios exclusivos a través del programa Club FoxDrop.</li>
-                  <li>Enviar promociones especiales, novedades o encuestas de satisfacción (el usuario puede darse de baja en cualquier momento).</li>
+                  <li>Acumulación y canje de beneficios dentro del programa de lealtad Club FoxDrop.</li>
+                  <li>Envío de notificaciones de promociones, novedades de catálogo o encuestas de satisfacción del cliente.</li>
                 </ul>
               </div>
             </div>
           </section>
 
-          {/* 4. TRANSFERENCIA */}
+          {/* 4. TRANSFERENCIA Y OPERADORES LOGÍSTICOS */}
           <section className="space-y-2">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36] flex items-center gap-2">
               <span className="text-[#DF7F2D]">4.</span> Transferencia de Datos Personales
             </h2>
             <p>
-              FoxDrop únicamente transfiere sus datos de contacto y entrega a empresas de paquetería certificadas (ej. FedEx, Estafeta, DHL o mensajería local asignada) con el fin exclusivo de cumplir con la entrega física de sus pedidos.
+              Con fundamento en el <strong>Artículo 37 de la LFPDPPP</strong>, sus datos de contacto y domicilio podrán ser transferidos sin necesidad de consentimiento expreso a empresas de paquetería y transporte formalmente constituidas (tales como FedEx, Estafeta, Paquetexpress, Correos de México o mensajeros locales asignados), con el fin exclusivo e improrrogable de llevar a cabo la entrega física del paquete en su domicilio.
             </p>
-            <p className="font-semibold text-rose-700">
-              FoxDrop jamás vende, renta ni transfiere sus datos personales a terceros con fines de comercialización ni publicidad ajena.
+            <p className="font-bold text-rose-800 text-xs">
+              FoxDrop México NO comercializa, renta, vende ni lucra bajo ninguna circunstancia con las bases de datos de sus clientes.
             </p>
           </section>
 
           {/* 5. DERECHOS ARCO */}
           <section className="space-y-2">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36] flex items-center gap-2">
-              <span className="text-[#DF7F2D]">5.</span> Ejercicio de Derechos ARCO
+              <span className="text-[#DF7F2D]">5.</span> Ejercicio de Derechos ARCO y Revocación del Consentimiento
             </h2>
             <p>
-              Usted tiene derecho en cualquier momento a ejercer sus derechos de <strong>Acceso, Rectificación, Cancelación y Oposición (ARCO)</strong>, así como revocar el consentimiento que nos haya otorgado para el tratamiento de sus datos personales.
+              Usted tiene en todo momento el derecho de <strong>Acceso, Rectificación, Cancelación y Oposición (Derechos ARCO)</strong> respecto de sus datos personales en posesión de FoxDrop.
             </p>
             <p>
-              Para ejercer cualquiera de estos derechos, basta con enviar un mensaje de solicitud directa a nuestra línea oficial de atención con el asunto <em>&quot;Ejercicio de Derechos ARCO&quot;</em> indicando su nombre y correo registrado.
+              Para ejercer dichos derechos, únicamente debe comunicarse a través de nuestros canales oficiales señalados al calce o desde la sección &quot;Mi Cuenta &gt; Ajustes &gt; Eliminar Cuenta&quot;, acreditando la titularidad de su cuenta registrada. Su solicitud será atendida y procesada en un plazo máximo de 5 días hábiles.
             </p>
           </section>
 
-          {/* 6. COOKIES */}
-          <section className="space-y-2">
-            <h2 className="text-base sm:text-lg font-black text-[#0F3E36] flex items-center gap-2">
-              <span className="text-[#DF7F2D]">6.</span> Uso de Cookies y Tecnologías de Rastreo
-            </h2>
-            <p>
-              Nuestro sitio web <strong className="text-[#0F3E36]">foxdrop.mx</strong> utiliza cookies y tecnologías afines para asegurar el funcionamiento del carrito de compras, recordar su sesión y generar estadísticas agregadas anónimas sobre el rendimiento del catálogo. Usted puede configurar en cualquier momento sus preferencias a través de nuestro banner de cookies.
-            </p>
-          </section>
-
-          {/* 7. CONTACTO */}
+          {/* 6. MODIFICACIONES Y CONTACTO */}
           <section className="space-y-3 pt-4 border-t border-gray-100">
             <h2 className="text-base sm:text-lg font-black text-[#0F3E36]">
-              Contacto y Dudas de Privacidad
+              6. Actualizaciones y Contacto Oficial
             </h2>
             <p>
-              Si tiene preguntas o inquietudes respecto a la privacidad de sus datos en FoxDrop, estamos a su entera disposición:
+              FoxDrop se reserva el derecho de modificar o actualizar en cualquier momento el presente Aviso de Privacidad derivado de reformas legislativas o políticas internas. Cualquier modificación sustancial se publicará oportunamente en <strong className="text-[#0F3E36]">foxdrop.mx/privacidad</strong>.
             </p>
-            <div className="flex flex-wrap gap-4 text-xs font-semibold">
+            <div className="flex flex-wrap gap-4 text-xs font-semibold pt-1">
               <div className="flex items-center gap-2 bg-[#FAF6F0] p-3 rounded-2xl border border-gray-200">
                 <Phone className="w-4 h-4 text-emerald-600" />
-                <span>WhatsApp: {process.env.NEXT_PUBLIC_WHATSAPP_PHONE || 'Atención en Línea'}</span>
+                <span>WhatsApp de Atención Oficial: {process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '221 216 4504'}</span>
               </div>
               <div className="flex items-center gap-2 bg-[#FAF6F0] p-3 rounded-2xl border border-gray-200">
                 <Mail className="w-4 h-4 text-[#DF7F2D]" />
-                <span>Sitio: https://foxdrop.mx</span>
+                <span>Portal: https://foxdrop.mx</span>
               </div>
             </div>
           </section>
@@ -167,7 +163,7 @@ export default function PrivacidadPage() {
 
       {/* FOOTER */}
       <footer className="bg-[#0F3E36] text-white py-6 px-4 text-center text-xs border-t border-[#175248]">
-        <p className="text-[#D3E0DC]">© {currentYear} FoxDrop México. Todos los derechos reservados.</p>
+        <p className="text-[#D3E0DC]">© {currentYear} FoxDrop México. Cumplimiento con la Ley Federal de Protección de Datos Personales (LFPDPPP).</p>
       </footer>
     </div>
   );

@@ -2364,18 +2364,20 @@ export default function TiendaFoxDrop() {
               >
                 Lo Nuevo
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'deals' ? 'bg-[#DF7F2D] text-white shadow-xs' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Ofertas 🔥
-              </button>
+              {dealsProducts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('deals');
+                    setSelectedCategory('Todas');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'deals' ? 'bg-[#DF7F2D] text-white shadow-xs' : 'hover:text-[#0F3E36]'
+                  }`}
+                >
+                  Ofertas 🔥
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -4885,19 +4887,21 @@ export default function TiendaFoxDrop() {
                     Novedades e Importaciones
                   </button>
                 </li>
-                <li>
-                  <button 
-                    onClick={() => {
-                      setActiveTab('deals');
-                      setSelectedCategory('Todas');
-                      const el = document.getElementById('catalog-section');
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="hover:text-white hover:underline transition text-left cursor-pointer"
-                  >
-                    Ofertas & Descuentos
-                  </button>
-                </li>
+                {dealsProducts.length > 0 && (
+                  <li>
+                    <button 
+                      onClick={() => {
+                        setActiveTab('deals');
+                        setSelectedCategory('Todas');
+                        const el = document.getElementById('catalog-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="hover:text-white hover:underline transition text-left cursor-pointer"
+                    >
+                      Ofertas & Descuentos
+                    </button>
+                  </li>
+                )}
                 <li>
                   <button 
                     onClick={() => setShowCustomOrderModal(true)}
