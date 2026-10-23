@@ -1654,19 +1654,9 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       <header className="bg-[#0F3E36] sticky top-0 z-40 shadow-md text-white border-b border-[#0B332C]">
         
-        {/* FILA SUPERIOR (DESKTOP): UTILIDADES (Tienda física, Sign In, Rewards, Favoritos, Carrito) */}
+        {/* FILA SUPERIOR (DESKTOP): UTILIDADES (Sign In, Rewards, Favoritos, Carrito) */}
         <div className="hidden md:block border-b border-white/10 bg-[#0B332C]/70">
           <div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-end gap-6 text-[11px] font-semibold text-white/80">
-            {/* UBICACIÓN / PUNTOS DE ENTREGA */}
-            <button
-              type="button"
-              onClick={() => setInfoModal('envios')}
-              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
-            >
-              <MapPin className="w-3.5 h-3.5 text-[#DF7F2D]" />
-              <span>entregas y envíos</span>
-            </button>
-
             {/* MI CUENTA / INICIAR SESIÓN */}
             {user ? (
               <button
