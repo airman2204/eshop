@@ -989,6 +989,8 @@ export default function AdminCRM() {
           createdAt: newRecord.created_at || new Date().toISOString(),
           itemsCount: 1,
           notes: newRecord.notes,
+          paymentMethod: newRecord.payment_method || (newRecord.order_number?.startsWith('FX-POS') ? 'cash' : undefined),
+          paymentStatus: newRecord.payment_status || 'pending',
           order_items: [],
         };
 
@@ -1012,6 +1014,8 @@ export default function AdminCRM() {
               createdAt: o.created_at,
               itemsCount: o.order_items?.length || 1,
               notes: o.notes || undefined,
+              paymentMethod: o.payment_method || (o.order_number?.startsWith('FX-POS') ? 'cash' : undefined),
+              paymentStatus: o.payment_status || 'pending',
               order_items: o.order_items || [],
             }));
             setOrders(mapped);
@@ -1020,40 +1024,47 @@ export default function AdminCRM() {
           }
         });
 
-        // Reproducir sonido de caja registradora / venta
-        if (audioEnabled) {
-          soundManager.playOrderCreated();
-        }
+        // Solo emitir alerta de ¡Nueva Compra Recibida! si NO es un intento de Mercado Pago pendiente de pago
+        const isPendingMp = newRecord.payment_method === 'mercadopago' && newRecord.payment_status !== 'paid';
+        if (!isPendingMp) {
+          // Reproducir sonido de caja registradora / venta
+          if (audioEnabled) {
+            soundManager.playOrderCreated();
+          }
 
-        // Mostrar notificación flotante interactiva
-        setAdminRealtimeToast({
-          id: `toast-${Date.now()}`,
-          type: 'new_order',
-          title: '¡Nueva Compra Recibida!',
-          message: `${formattedOrder.clientName} ordenó $${formattedOrder.total.toLocaleString('es-MX')} MXN (${formattedOrder.id})`,
-          orderId: formattedOrder.id,
-        });
+          // Mostrar notificación flotante interactiva
+          setAdminRealtimeToast({
+            id: `toast-${Date.now()}`,
+            type: 'new_order',
+            title: '¡Nueva Compra Recibida!',
+            message: `${formattedOrder.clientName} ordenó $${formattedOrder.total.toLocaleString('es-MX')} MXN (${formattedOrder.id})`,
+            orderId: formattedOrder.id,
+          });
 
-        // Notificación de escritorio del navegador si está permitido
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-          try {
-            new Notification('🛒 ¡Nueva compra en FoxDrop!', {
-              body: `${formattedOrder.clientName} - Total: $${formattedOrder.total} MXN`,
-              icon: '/icons/icon-192x192.png',
-            });
-          } catch {}
+          // Notificación de escritorio del navegador si está permitido
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('🛒 ¡Nueva compra en FoxDrop!', {
+                body: `${formattedOrder.clientName} - Total: $${formattedOrder.total} MXN`,
+                icon: '/icons/icon-192x192.png',
+              });
+            } catch {}
+          }
         }
       } else if (eventType === 'UPDATE' && newRecord) {
-        // Estado o datos de pedido modificados (por cliente o repartidor)
+        // Estado o datos de pedido modificados (por cliente, pasarela o repartidor)
         const orderId = newRecord.order_number || newRecord.id;
         const newStatus = newRecord.status;
         const isCancelled = newStatus === 'cancelled';
+        const justPaid = newRecord.payment_status === 'paid' && oldRecord?.payment_status !== 'paid';
 
         setOrders(prev => prev.map(o => {
           if (o.id === orderId || o.id === newRecord.id || o.id === newRecord.order_number) {
             return {
               ...o,
               status: newRecord.status || o.status,
+              paymentMethod: newRecord.payment_method || o.paymentMethod,
+              paymentStatus: newRecord.payment_status || o.paymentStatus,
               notes: newRecord.notes !== undefined ? newRecord.notes : o.notes,
               trackingNumber: newRecord.tracking_number !== undefined ? newRecord.tracking_number : o.trackingNumber,
             };
@@ -1061,7 +1072,24 @@ export default function AdminCRM() {
           return o;
         }));
 
-        if (isCancelled) {
+        if (justPaid) {
+          if (audioEnabled) soundManager.playOrderCreated();
+          setAdminRealtimeToast({
+            id: `toast-${Date.now()}`,
+            type: 'new_order',
+            title: '¡Pago Confirmado y Nueva Compra!',
+            message: `El pedido ${orderId} (${newRecord.client_name || 'Cliente'}) por $${Number(newRecord.total || 0).toLocaleString('es-MX')} MXN fue acreditado con éxito.`,
+            orderId,
+          });
+          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('💳 ¡Pago Acreditado en FoxDrop!', {
+                body: `${newRecord.client_name || 'Cliente'} - Pedido ${orderId} ($${newRecord.total} MXN)`,
+                icon: '/icons/icon-192x192.png',
+              });
+            } catch {}
+          }
+        } else if (isCancelled) {
           if (audioEnabled) soundManager.playOrderCancelled();
           setAdminRealtimeToast({
             id: `toast-${Date.now()}`,
@@ -3296,12 +3324,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
     }
   };
 
-  // Pedidos activos (Exclusivamente pedidos en línea en proceso: pendiente, preparación o en camino.
+  // Pedidos activos (Exclusivamente pedidos en línea confirmados o en proceso:
+  // Si el método es Mercado Pago, solo aparece en Activos cuando el pago ha sido acreditado ('paid') o ya pasó a preparación ('processing'/'shipped').
   // Las ventas en físico (POS) se entregan en el acto y los pedidos entregados/cancelados pasan automáticamente al Historial).
   const activeOrders = orders.filter(o => 
     o.status !== 'cancelled' && 
     o.status !== 'delivered' && 
-    !o.id.startsWith('FX-POS')
+    !o.id.startsWith('FX-POS') &&
+    !(o.paymentMethod === 'mercadopago' && o.paymentStatus !== 'paid' && o.status === 'pending')
   );
   // Pedidos cancelados (historial separado de bajas)
   const cancelledOrders = orders.filter(o => o.status === 'cancelled');

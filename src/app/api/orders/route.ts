@@ -97,49 +97,70 @@ export async function POST(req: NextRequest) {
         console.warn("Aviso al insertar items de orden:", itemsError);
       }
 
-      // 3. Descontar inventario (tanto individual como componentes de combos)
-      for (const item of items) {
-        const prod = item.product;
-        const qtyPurchased = Number(item.quantity) || 1;
-        if (!prod) continue;
+      // 3. Descontar inventario (solo si NO es Mercado Pago pendiente; en Mercado Pago se descuenta al acreditarse el pago)
+      if (paymentMethod !== "mercadopago") {
+        for (const item of items) {
+          const prod = item.product;
+          const qtyPurchased = Number(item.quantity) || 1;
+          if (!prod) continue;
 
-        // Si es combo
-        if (prod.isCombo && Array.isArray(prod.comboProductIds) && prod.comboProductIds.length > 0) {
-          for (const subProdId of prod.comboProductIds) {
+          // Si es combo
+          if (prod.isCombo && Array.isArray(prod.comboProductIds) && prod.comboProductIds.length > 0) {
+            for (const subProdId of prod.comboProductIds) {
+              try {
+                const { data: subData } = await supabase
+                  .from("products")
+                  .select("stock")
+                  .eq("id", subProdId)
+                  .maybeSingle();
+
+                if (subData && typeof subData.stock === "number") {
+                  const updatedStock = Math.max(0, subData.stock - qtyPurchased);
+                  await supabase.from("products").update({ stock: updatedStock }).eq("id", subProdId);
+                }
+              } catch (comboErr) {
+                console.warn(`Error descontando stock de combo ${subProdId}:`, comboErr);
+              }
+            }
+          }
+
+          // Descontar inventario del artículo en catálogo
+          if (prod.id && !String(prod.id).startsWith("PROD-")) {
             try {
-              const { data: subData } = await supabase
+              const { data: pData } = await supabase
                 .from("products")
                 .select("stock")
-                .eq("id", subProdId)
+                .eq("id", prod.id)
                 .maybeSingle();
 
-              if (subData && typeof subData.stock === "number") {
-                const updatedStock = Math.max(0, subData.stock - qtyPurchased);
-                await supabase.from("products").update({ stock: updatedStock }).eq("id", subProdId);
+              if (pData && typeof pData.stock === "number") {
+                const updatedStock = Math.max(0, pData.stock - qtyPurchased);
+                await supabase.from("products").update({ stock: updatedStock }).eq("id", prod.id);
               }
-            } catch (comboErr) {
-              console.warn(`Error descontando stock de combo ${subProdId}:`, comboErr);
+            } catch (stockErr) {
+              console.warn(`Error descontando stock de producto ${prod.id}:`, stockErr);
             }
           }
         }
+      }
+    }
 
-        // Descontar inventario del artículo en catálogo
-        if (prod.id && !String(prod.id).startsWith("PROD-")) {
-          try {
-            const { data: pData } = await supabase
-              .from("products")
-              .select("stock")
-              .eq("id", prod.id)
-              .maybeSingle();
-
-            if (pData && typeof pData.stock === "number") {
-              const updatedStock = Math.max(0, pData.stock - qtyPurchased);
-              await supabase.from("products").update({ stock: updatedStock }).eq("id", prod.id);
-            }
-          } catch (stockErr) {
-            console.warn(`Error descontando stock de producto ${prod.id}:`, stockErr);
-          }
+    // 4. Si el método de pago NO es Mercado Pago (ej. SPEI, efectivo o contra entrega), el carrito ya se convirtió en orden definitiva: borrar de carritos abandonados
+    if (paymentMethod && paymentMethod !== "mercadopago") {
+      try {
+        let q = supabase.from("abandoned_carts").delete();
+        if (clientPhone && clientEmail) {
+          q = q.or(`client_phone.eq.${clientPhone},client_email.eq.${clientEmail}`);
+        } else if (clientPhone) {
+          q = q.eq("client_phone", clientPhone);
+        } else if (clientEmail) {
+          q = q.eq("client_email", clientEmail);
+        } else if (userId) {
+          q = q.eq("user_id", userId);
         }
+        await q;
+      } catch (cartCleanupErr) {
+        console.warn("Aviso limpiando carrito abandonado tras crear orden:", cartCleanupErr);
       }
     }
 
@@ -200,6 +221,15 @@ export async function PATCH(req: NextRequest) {
     const supabase = createServerClient() as any;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumber);
 
+    // Consultar estado previo para saber si debemos descontar stock al pasar a 'paid'
+    let prevQuery = supabase.from("orders").select("id, payment_status, payment_method, order_items(*)");
+    if (isUuid) {
+      prevQuery = prevQuery.eq("id", orderNumber);
+    } else {
+      prevQuery = prevQuery.eq("order_number", orderNumber);
+    }
+    const { data: prevOrder } = await prevQuery.maybeSingle();
+
     const updateData: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
@@ -218,6 +248,46 @@ export async function PATCH(req: NextRequest) {
     if (error) {
       console.error("Error al actualizar orden:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Si la orden era de Mercado Pago y apenas acaba de acreditarse el pago ('paid'), descontar inventario ahora
+    if (
+      prevOrder &&
+      prevOrder.payment_method === "mercadopago" &&
+      prevOrder.payment_status !== "paid" &&
+      paymentStatus === "paid" &&
+      Array.isArray(prevOrder.order_items)
+    ) {
+      for (const item of prevOrder.order_items) {
+        if (item.product_id) {
+          try {
+            const { data: pData } = await supabase
+              .from("products")
+              .select("stock")
+              .eq("id", item.product_id)
+              .maybeSingle();
+            if (pData && typeof pData.stock === "number") {
+              const updatedStock = Math.max(0, pData.stock - (Number(item.quantity) || 1));
+              await supabase.from("products").update({ stock: updatedStock }).eq("id", item.product_id);
+            }
+          } catch {}
+        }
+      }
+    }
+
+    // Si el pago fue confirmado (paid) o la orden pasó a preparación/entregada, borrar carrito abandonado
+    if (data && (paymentStatus === "paid" || status === "processing" || status === "delivered")) {
+      let q = supabase.from("abandoned_carts").delete();
+      if (data.client_phone && data.client_email) {
+        q = q.or(`client_phone.eq.${data.client_phone},client_email.eq.${data.client_email}`);
+      } else if (data.client_phone) {
+        q = q.eq("client_phone", data.client_phone);
+      } else if (data.client_email) {
+        q = q.eq("client_email", data.client_email);
+      } else if (data.user_id) {
+        q = q.eq("user_id", data.user_id);
+      }
+      await q;
     }
 
     return NextResponse.json({ success: true, order: data });

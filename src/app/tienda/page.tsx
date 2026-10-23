@@ -254,6 +254,17 @@ export default function TiendaFoxDrop() {
             setCart([]);
             resolveAbandonedCart(user?.phone, user?.email);
 
+            // Asegurar que la orden quede marcada como pagada y en preparación (y borrar su carrito abandonado en servidor)
+            fetch('/api/orders', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderNumber: orderSuccess,
+                status: 'processing',
+                paymentStatus: 'paid',
+              }),
+            }).catch(() => {});
+
             // Recuperar los datos del pedido para mostrar de inmediato el Comprobante Oficial (Paso 3)
             fetch(`/api/orders?orderNumber=${encodeURIComponent(orderSuccess)}`)
               .then(res => res.json())
@@ -289,6 +300,35 @@ export default function TiendaFoxDrop() {
                   try {
                     sessionStorage.setItem('foxdrop_confirmed_order_summary', JSON.stringify(summary));
                   } catch {}
+
+                  // Enviar confirmación por WhatsApp y analítica una vez que el pago de Mercado Pago fue aprobado
+                  if (ord.client_phone) {
+                    fetch("/api/whatsapp", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "order_confirmed",
+                        orderNumber: ord.order_number || orderSuccess,
+                        clientName: ord.client_name || "Cliente",
+                        clientPhone: ord.client_phone,
+                        total: Number(ord.total) || 0,
+                        shippingType: ord.shipping_type || "national_shipping",
+                        pickupPoint: ord.pickup_point || "Envío a domicilio",
+                      }),
+                    }).catch(() => {});
+                  }
+
+                  trackEcommerceEvent('purchase', {
+                    transaction_id: ord.order_number || orderSuccess,
+                    value: Number(ord.total) || 0,
+                    currency: 'MXN',
+                    items: orderItems.map((i: any) => ({
+                      item_id: i.product.id,
+                      item_name: i.product.title,
+                      price: i.product.publicPrice,
+                      quantity: i.quantity,
+                    })),
+                  });
                 }
               })
               .catch(err => console.warn("Aviso cargando detalle de orden confirmada:", err));
@@ -1594,34 +1634,36 @@ export default function TiendaFoxDrop() {
         date: new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
       });
 
-      // Enviar notificación automática por WhatsApp si tiene teléfono
-      if (user?.phone) {
-        fetch("/api/whatsapp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "order_confirmed",
-            orderNumber: created.orderNumber,
-            clientName: user?.name || "Cliente",
-            clientPhone: user?.phone,
-            total: cartTotal,
-            shippingType: isPersonalDelivery ? "agreed_pickup" : (cartHasImportItems ? "international_shipping" : "puebla_local"),
-            pickupPoint: isPersonalDelivery ? "Entrega personal / Acordar punto" : `${shippingAddress.street}, ${shippingAddress.city}`,
-          }),
-        }).catch(err => console.warn("WhatsApp notification error:", err));
-      }
+      // Enviar notificación automática por WhatsApp y analítica SOLO si NO es Mercado Pago (en Mercado Pago se envía una vez que el pago es aprobado)
+      if (paymentMethod !== 'mercadopago') {
+        if (user?.phone) {
+          fetch("/api/whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "order_confirmed",
+              orderNumber: created.orderNumber,
+              clientName: user?.name || "Cliente",
+              clientPhone: user?.phone,
+              total: cartTotal,
+              shippingType: isPersonalDelivery ? "agreed_pickup" : (cartHasImportItems ? "international_shipping" : "puebla_local"),
+              pickupPoint: isPersonalDelivery ? "Entrega personal / Acordar punto" : `${shippingAddress.street}, ${shippingAddress.city}`,
+            }),
+          }).catch(err => console.warn("WhatsApp notification error:", err));
+        }
 
-      trackEcommerceEvent('purchase', {
-        transaction_id: created.orderNumber,
-        value: cartTotal,
-        currency: 'MXN',
-        items: cart.map(i => ({
-          item_id: i.product.id,
-          item_name: i.product.title,
-          price: i.product.publicPrice,
-          quantity: i.quantity,
-        })),
-      });
+        trackEcommerceEvent('purchase', {
+          transaction_id: created.orderNumber,
+          value: cartTotal,
+          currency: 'MXN',
+          items: cart.map(i => ({
+            item_id: i.product.id,
+            item_name: i.product.title,
+            price: i.product.publicPrice,
+            quantity: i.quantity,
+          })),
+        });
+      }
 
       // Si el cliente eligió Mercado Pago, invocamos la preferencia y redirigimos
       // IMPORTANTE: NO vaciamos el carrito aquí. El carrito se mantiene intacto hasta que Mercado Pago confirme el pago aprobado.
