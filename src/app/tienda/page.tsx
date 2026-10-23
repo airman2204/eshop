@@ -539,7 +539,7 @@ export default function TiendaFoxDrop() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash' | 'mercadopago'>('spei');
+  const [paymentMethod, setPaymentMethod] = useState<'spei' | 'cash' | 'mercadopago'>('mercadopago');
 
   // Identificar si el usuario actual es Mario o Nydia (vía sesión Admin o cuenta de usuario)
   const isPrivilegedPartner = (() => {
