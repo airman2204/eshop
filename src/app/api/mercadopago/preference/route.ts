@@ -100,8 +100,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const isSandbox = mpConfig?.sandbox === true || accessToken.startsWith("TEST-");
-    const initPoint = isSandbox && response.sandbox_init_point ? response.sandbox_init_point : response.init_point;
+    // En Checkout Pro, la URL clásica de sandbox (sandbox.mercadopago.com.mx) tiene
+    // incompatibilidades reportadas oficialmente por Mercado Pago que causan la pantalla roja.
+    // La recomendación oficial de Mercado Pago para procesar pruebas con credenciales APP_USR-
+    // es redirigir a `init_point` estándar.
+    const initPoint = response.init_point || response.sandbox_init_point;
 
     return NextResponse.json({
       success: true,
