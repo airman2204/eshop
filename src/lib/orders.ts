@@ -440,17 +440,40 @@ export async function deleteOrderInDb(orderId: string) {
     });
 
     if (res.ok) {
-      return true;
+      const json = await res.json().catch(() => ({}));
+      if (json.success) return true;
     }
   } catch (apiErr) {
-    console.warn("Fallo llamando /api/admin para eliminar orden, intentando directo:", apiErr);
+    console.warn("Fallo llamando /api/admin para eliminar orden, intentando /api/orders:", apiErr);
   }
 
-  // Fallback
+  // Fallback con Service Role en /api/orders DELETE
+  try {
+    const resDel = await fetch(`/api/orders?orderNumber=${encodeURIComponent(orderId)}`, {
+      method: "DELETE",
+    });
+    if (resDel.ok) {
+      const jsonDel = await resDel.json().catch(() => ({}));
+      if (jsonDel.success) return true;
+    }
+  } catch (delErr) {
+    console.warn("Fallback DELETE /api/orders también falló:", delErr);
+  }
+
+  // Fallback directo cuidando validación UUID vs order_number
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
-  await supabase.from("order_items").delete().or(`order_id.eq.${orderId}`);
-  await supabase.from("orders").delete().or(`id.eq.${orderId},order_number.eq.${orderId}`);
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+  if (isUuid) {
+    await supabase.from("order_items").delete().eq("order_id", orderId);
+    await supabase.from("orders").delete().eq("id", orderId);
+  } else {
+    const { data: found } = await supabase.from("orders").select("id").eq("order_number", orderId).maybeSingle();
+    if (found?.id) {
+      await supabase.from("order_items").delete().eq("order_id", found.id);
+    }
+    await supabase.from("orders").delete().eq("order_number", orderId);
+  }
   return true;
 }
 

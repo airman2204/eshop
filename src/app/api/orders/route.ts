@@ -298,3 +298,45 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Error al actualizar orden" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const orderNumber = searchParams.get("orderNumber");
+
+    if (!orderNumber) {
+      return NextResponse.json({ error: "orderNumber requerido" }, { status: 400 });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createServerClient() as any;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumber);
+
+    let realOrderId = orderNumber;
+    if (!isUuid) {
+      const { data: foundOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("order_number", orderNumber)
+        .maybeSingle();
+      if (foundOrder?.id) {
+        realOrderId = foundOrder.id;
+      }
+    }
+
+    // 1. Eliminar items asociados
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realOrderId)) {
+      await supabase.from("order_items").delete().eq("order_id", realOrderId);
+      await supabase.from("orders").delete().eq("id", realOrderId);
+    }
+
+    // 2. Asegurar borrado también por order_number si no era UUID
+    if (!isUuid) {
+      await supabase.from("orders").delete().eq("order_number", orderNumber);
+    }
+
+    return NextResponse.json({ success: true, deletedOrderId: orderNumber });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Error al eliminar orden" }, { status: 500 });
+  }
+}

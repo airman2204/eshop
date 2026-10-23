@@ -735,6 +735,7 @@ export default function AdminCRM() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const deletedOrderIdsRef = useRef<Set<string>>(new Set());
 
   // Cargar y sincronizar voces nativas del navegador (evento onvoiceschanged)
   useEffect(() => {
@@ -1155,8 +1156,11 @@ export default function AdminCRM() {
     // Polling de respaldo cada 12 segundos para asegurar sincronización total sin recargar
     const pollingInterval = setInterval(() => {
       getAdminOrders().then(freshOrders => {
-        if (freshOrders && freshOrders.length > 0) {
-          const mapped: Order[] = freshOrders.map((o: any) => ({
+        if (Array.isArray(freshOrders)) {
+          const filtered = freshOrders.filter(
+            (o: any) => !deletedOrderIdsRef.current.has(o.id) && !deletedOrderIdsRef.current.has(o.order_number)
+          );
+          const mapped: Order[] = filtered.map((o: any) => ({
             id: o.order_number || o.id,
             dbId: o.id,
             orderNumber: o.order_number || o.id,
@@ -2961,9 +2965,15 @@ export default function AdminCRM() {
       title: `Eliminar Pedido ${orderId}`,
       description: 'Esta acción borrará definitivamente este pedido del sistema y la base de datos.',
       onConfirm: async () => {
-        setOrders(prev => prev.filter(o => o.id !== orderId));
+        const target = orders.find(o => o.id === orderId || o.dbId === orderId || o.orderNumber === orderId);
+        deletedOrderIdsRef.current.add(orderId);
+        if (target?.id) deletedOrderIdsRef.current.add(target.id);
+        if (target?.dbId) deletedOrderIdsRef.current.add(target.dbId);
+        if (target?.orderNumber) deletedOrderIdsRef.current.add(target.orderNumber);
+
+        setOrders(prev => prev.filter(o => o.id !== orderId && o.dbId !== orderId && o.orderNumber !== orderId));
         try {
-          await deleteOrderInDb(orderId);
+          await deleteOrderInDb(target?.orderNumber || target?.id || orderId);
         } catch (err) {
           console.error("Error al eliminar pedido:", err);
           alert("No se pudo eliminar el pedido en la base de datos.");

@@ -45,9 +45,13 @@ export function getStoredAdminEmail(): string | null {
  */
 export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
   const token = getStoredAdminToken();
+  const email = getStoredAdminEmail();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (email) {
+    headers["x-admin-email"] = email;
   }
 
   // Si ya nos pasaron un objeto tipo { method: 'POST', body: '...' }
@@ -59,10 +63,15 @@ export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
     });
   }
 
+  const payload =
+    bodyOrOptions && typeof bodyOrOptions === "object"
+      ? { ...bodyOrOptions, adminToken: token, adminEmail: email }
+      : bodyOrOptions;
+
   return fetch("/api/admin", {
     method: "POST",
     headers,
-    body: JSON.stringify(bodyOrOptions),
+    body: JSON.stringify(payload),
   });
 }
 
