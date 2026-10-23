@@ -237,16 +237,60 @@ export default function TiendaFoxDrop() {
           const paymentStatus = urlParams.get('payment_status');
 
           if (orderSuccess && paymentStatus === 'approved') {
-            // Pago exitoso en Mercado Pago: vaciamos carrito y mostramos éxito
+            // Pago exitoso en Mercado Pago: vaciamos carrito, cargamos comprobante y mostramos pantalla de éxito
             try {
               localStorage.removeItem('foxdrop_cart_id');
               localStorage.removeItem('foxdrop_cart_items_v1');
+              sessionStorage.removeItem('foxdrop_pending_mp_order');
             } catch {}
             setCart([]);
+
+            // Recuperar los datos del pedido para mostrar de inmediato el Comprobante Oficial (Paso 3)
+            fetch(`/api/orders?orderNumber=${encodeURIComponent(orderSuccess)}`)
+              .then(res => res.json())
+              .then(json => {
+                if (json.success && json.order) {
+                  const ord = json.order;
+                  const orderItems = Array.isArray(ord.order_items) && ord.order_items.length > 0
+                    ? ord.order_items.map((it: any) => ({
+                        product: {
+                          id: it.product_id,
+                          title: it.product_title || 'Producto FoxDrop',
+                          images: it.product_image ? [it.product_image] : [],
+                          publicPrice: Number(it.price_at_purchase) || 0,
+                        },
+                        quantity: Number(it.quantity) || 1,
+                      }))
+                    : [];
+
+                  const summary = {
+                    orderNumber: ord.order_number || orderSuccess,
+                    items: orderItems,
+                    subtotal: Number(ord.subtotal) || Number(ord.total) || 0,
+                    shippingFee: Number(ord.shipping_cost) || 0,
+                    total: Number(ord.total) || 0,
+                    shippingMethodName: ord.shipping_type === 'puebla_local' ? 'Envío Local Puebla' : (ord.shipping_type === 'agreed_pickup' ? 'Entrega Personal' : 'Envío Nacional / Internacional'),
+                    isPersonalDelivery: ord.shipping_type === 'agreed_pickup',
+                    paymentMethod: 'mercadopago',
+                    date: ord.created_at ? new Date(ord.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleDateString('es-MX'),
+                  };
+
+                  setConfirmedOrderId(ord.order_number || orderSuccess);
+                  setConfirmedOrderSummary(summary);
+                  try {
+                    sessionStorage.setItem('foxdrop_confirmed_order_summary', JSON.stringify(summary));
+                  } catch {}
+                }
+              })
+              .catch(err => console.warn("Aviso cargando detalle de orden confirmada:", err));
+
             setPaymentNotice({
               type: 'success',
               message: `Pago confirmado con éxito. Tu pedido ${orderSuccess} ha sido procesado.`
             });
+            setCheckoutStep('success');
+            setCurrentView('checkout');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             // Limpiar query params de la URL
             window.history.replaceState({}, '', window.location.pathname);
           } else if (orderFailure || paymentStatus === 'rejected' || paymentStatus === 'null') {

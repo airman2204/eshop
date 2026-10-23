@@ -154,3 +154,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Error interno al crear orden" }, { status: 500 });
   }
 }
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const orderNumber = searchParams.get("orderNumber");
+
+    if (!orderNumber) {
+      return NextResponse.json({ error: "orderNumber requerido" }, { status: 400 });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createServerClient() as any;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumber);
+
+    let query = supabase.from("orders").select("*, order_items(*)");
+    if (isUuid) {
+      query = query.eq("id", orderNumber);
+    } else {
+      query = query.eq("order_number", orderNumber);
+    }
+
+    const { data: order, error } = await query.maybeSingle();
+
+    if (error || !order) {
+      return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, order });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Error consultando orden" }, { status: 500 });
+  }
+}
