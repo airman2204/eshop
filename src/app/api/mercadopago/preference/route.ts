@@ -100,7 +100,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const initPoint = mpConfig?.sandbox === false ? response.init_point : (response.sandbox_init_point || response.init_point);
+    const isSandbox = mpConfig?.sandbox === true || accessToken.startsWith("TEST-");
+    const initPoint = isSandbox && response.sandbox_init_point ? response.sandbox_init_point : response.init_point;
 
     return NextResponse.json({
       success: true,

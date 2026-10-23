@@ -4305,61 +4305,11 @@ export default function TiendaFoxDrop() {
                           </div>
                         </div>
 
-                        {/* TARJETAS GUARDADAS Y BOTÓN AGREGAR OTRA TARJETA */}
-                        <div className="pt-2 border-t border-gray-100 space-y-2">
-                          {fullProfile?.cards && fullProfile.cards.length > 0 ? (
-                            <div className="space-y-2">
-                              <span className="text-[11px] font-bold text-gray-700 block">
-                                Tarjeta seleccionada para este cobro:
-                              </span>
-                              <div className="flex flex-wrap items-center gap-2">
-                                {fullProfile.cards.map((c: any) => (
-                                  <div
-                                    key={c.id}
-                                    className="bg-white border-2 border-sky-400 shadow-2xs rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs text-sky-950 font-medium"
-                                  >
-                                    <span className="font-black uppercase tracking-wider text-[9px] bg-slate-900 text-white px-1.5 py-0.5 rounded">
-                                      {c.brand}
-                                    </span>
-                                    <span className="font-mono font-bold">•••• {c.last4}</span>
-                                    <span className="text-[10px] text-gray-400">({c.expMonth}/{c.expYear})</span>
-                                    {c.isDefault && (
-                                      <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                        Predeterminada
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowCardModal(true);
-                                  }}
-                                  className="text-xs font-bold text-[#009EE3] hover:text-[#007EB5] hover:underline flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[#009EE3]/50 hover:border-[#009EE3] bg-sky-50/50 cursor-pointer transition"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                  <span>Agregar otra tarjeta</span>
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between pt-1">
-                              <span className="text-xs text-gray-500">Paga con cualquier tarjeta de crédito o débito mediante Mercado Pago</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShowCardModal(true);
-                                }}
-                                className="text-xs font-bold text-[#009EE3] hover:underline flex items-center gap-1 cursor-pointer"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span>+ Agregar tarjeta</span>
-                              </button>
-                            </div>
-                          )}
+                        {/* Explicación Checkout Pro transparente */}
+                        <div className="pt-2 border-t border-gray-100">
+                          <p className="text-xs text-slate-500 leading-relaxed">
+                            Al confirmar tu pedido, se abrirá la pasarela blindada de <strong className="text-slate-800">Mercado Pago</strong> para pagar de forma segura con tu tarjeta o cuenta guardada, con protección total antifraude.
+                          </p>
                         </div>
                       </div>
                     </div>
