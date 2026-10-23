@@ -41,6 +41,14 @@ import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
 import { generateTicketCanvasDataUrl } from '@/lib/ticketCanvas';
 
+const getSafeAdminImageUrl = (url: string | undefined): string => {
+  if (!url || typeof url !== 'string' || !url.startsWith('http')) return '/no-image.svg';
+  if (url.includes('cjdropshipping.com') || url.includes('cf.cjdropshipping.com')) {
+    return `/api/whatsapp/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
 export default function AdminCRM() {
   // Estado de Autenticación y Seguridad
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
@@ -264,6 +272,7 @@ export default function AdminCRM() {
   const [savingSold, setSavingSold] = useState(false);
 
   // Estados de Mejora de Inventario (Filtro por stock, categoría, estado y carga masiva)
+  const [inventoryScope, setInventoryScope] = useState<'physical' | 'cj_international'>('physical');
   const [stockFilter, setStockFilter] = useState<'all' | 'low_stock' | 'out_of_stock' | 'healthy' | 'combos' | 'inactive'>('all');
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('all');
   const [inventoryBatchFilter, setInventoryBatchFilter] = useState<string>('all');
@@ -1884,6 +1893,11 @@ export default function AdminCRM() {
 
   // Filtrado de productos mejorado
   const filteredProducts = products.filter(p => {
+    // 0. Separación de Doble Inventario: Stock Físico (Boutique) vs Catálogo Virtual (CJ Dropshipping)
+    const isCj = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+    if (inventoryScope === 'physical' && isCj) return false;
+    if (inventoryScope === 'cj_international' && !isCj) return false;
+
     // 1. Filtro por término de búsqueda
     const matchesSearch = !searchTerm.trim() || 
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -3767,26 +3781,53 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {crmSubTab === 'inventory' && (
           <div className="space-y-5">
-            {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO */}
-            <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3">
-              <button
-                type="button"
-                onClick={() => setCrmSubTab('inventory')}
-                className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-900 text-white shadow-xs cursor-pointer"
-              >
-                <Package className="w-3.5 h-3.5 text-[#E65F2B]" />
-                <span>Catálogo de Productos</span>
-                <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-semibold">
-                  {products.length}
-                </span>
-              </button>
+            {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO: SEPARACIÓN DE DOBLE INVENTARIO */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInventoryScope('physical')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    inventoryScope === 'physical'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Package className={`w-3.5 h-3.5 ${inventoryScope === 'physical' ? 'text-[#E65F2B]' : 'text-slate-400'}`} />
+                  <span>📦 Inventario Físico (Bodega / Boutique)</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'physical' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {products.filter(p => !((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')))).length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInventoryScope('cj_international')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    inventoryScope === 'cj_international'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <Globe className={`w-3.5 h-3.5 ${inventoryScope === 'cj_international' ? 'text-indigo-200' : 'text-slate-400'}`} />
+                  <span>✈️ Catálogo Virtual (Importación CJ)</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'cj_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {products.filter(p => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))).length}
+                  </span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setCrmSubTab('batches')}
-                className="px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer self-start sm:self-auto"
               >
                 <Layers className="w-3.5 h-3.5 text-slate-400" />
-                <span>Lotes de Importación y Fletes</span>
+                <span>Lotes de Fletes Prorrateados</span>
                 <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                   {batches.length}
                 </span>
@@ -4179,7 +4220,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               {/* VISTA DESKTOP (TABLA COMPLETA) */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-600">
+                <table className="w-full text-left text-xs text-slate-600 min-w-[980px]">
                   <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 uppercase text-[10px]">
                     <tr>
                       <th className="py-3 px-3 w-10 text-center">
@@ -4196,14 +4237,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           )}
                         </button>
                       </th>
-                      <th className="py-3 px-4">Artículo</th>
-                      <th className="py-3 px-4">Lote / Flete</th>
-                      <th className="py-3 px-4 font-black text-slate-900">Costo Total</th>
-                      <th className="py-3 px-4 text-emerald-600 font-black">Precio Venta</th>
-                      <th className="py-3 px-4 text-emerald-700">Utilidad</th>
-                      <th className="py-3 px-4 text-center">Stock Rápido</th>
-                      <th className="py-3 px-4 text-center">En Tienda</th>
-                      <th className="py-3 px-4 text-right">Acciones</th>
+                      <th className="py-3 px-4 min-w-[220px]">Artículo</th>
+                      <th className="py-3 px-4 min-w-[130px]">Lote / Flete</th>
+                      <th className="py-3 px-4 font-black text-slate-900 min-w-[100px]">Costo Total</th>
+                      <th className="py-3 px-4 text-emerald-600 font-black min-w-[110px]">Precio Venta</th>
+                      <th className="py-3 px-4 text-emerald-700 min-w-[90px]">Utilidad</th>
+                      <th className="py-3 px-4 text-center min-w-[130px]">Stock Rápido</th>
+                      <th className="py-3 px-4 text-center min-w-[95px]">En Tienda</th>
+                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs min-w-[190px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -4241,7 +4282,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
                               <div className="relative shrink-0">
-                                <img src={p.images[0]} alt="" className="w-11 h-11 object-cover rounded-lg border border-slate-200 shrink-0" />
+                                <img 
+                                  src={getSafeAdminImageUrl(p.images[0])} 
+                                  alt="" 
+                                  className="w-11 h-11 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-50" 
+                                  onError={(e: any) => {
+                                    if (e.target && e.target.src !== '/no-image.svg') {
+                                      e.target.src = '/no-image.svg';
+                                    }
+                                  }}
+                                />
                                 {p.images.length > 1 && (
                                   <span className="absolute -bottom-1 -right-1 bg-slate-900 text-white text-[9px] font-bold px-1 rounded-sm shadow-2xs">
                                     +{p.images.length}
@@ -4408,7 +4458,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
 
                           {/* ACCIONES */}
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/80 shadow-xs">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => handleOpenSoldModal(p)}
@@ -4528,9 +4578,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                           <div className="relative shrink-0">
                             <img 
-                              src={p.images[0]} 
+                              src={getSafeAdminImageUrl(p.images[0])} 
                               alt="" 
                               className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50" 
+                              onError={(e: any) => {
+                                if (e.target && e.target.src !== '/no-image.svg') {
+                                  e.target.src = '/no-image.svg';
+                                }
+                              }}
                             />
                             {p.images.length > 1 && (
                               <span className="absolute -bottom-1 -right-1 bg-slate-900 text-white text-[9px] font-bold px-1 rounded-sm shadow-2xs">
