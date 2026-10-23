@@ -229,6 +229,34 @@ export default function TiendaFoxDrop() {
               setSelectedProduct(found);
             }
           }
+
+          // Detección de retorno de pasarela de pago (Mercado Pago)
+          const orderSuccess = urlParams.get('order_success');
+          const orderFailure = urlParams.get('order_failure');
+          const paymentStatus = urlParams.get('payment_status');
+
+          if (orderSuccess && paymentStatus === 'approved') {
+            // Pago exitoso en Mercado Pago: vaciamos carrito y mostramos éxito
+            try {
+              localStorage.removeItem('foxdrop_cart_id');
+              localStorage.removeItem('foxdrop_cart_items_v1');
+            } catch {}
+            setCart([]);
+            setPaymentNotice({
+              type: 'success',
+              message: `¡Pago acreditado con éxito para la orden ${orderSuccess}! Ya estamos preparando tu pedido.`
+            });
+            // Limpiar query params de la URL
+            window.history.replaceState({}, '', window.location.pathname);
+          } else if (orderFailure || paymentStatus === 'rejected' || paymentStatus === 'null') {
+            // Pago no completado o rechazado: MANTENER CARRITO INTACTO y mostrar error
+            setPaymentNotice({
+              type: 'error',
+              message: 'Tu pago no fue completado o fue rechazado por la pasarela. Tus productos siguen seguros en tu carrito para que puedas verificar los datos de tu tarjeta.'
+            });
+            setIsCartOpen(true);
+            window.history.replaceState({}, '', window.location.pathname);
+          }
         }
       } catch (err) {
         console.error("Error loading products from Supabase:", err);
@@ -573,6 +601,7 @@ export default function TiendaFoxDrop() {
     return false;
   })();
   const [redirectingToMp, setRedirectingToMp] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [clabeCopied, setClabeCopied] = useState(false);
   const [cardCopied, setCardCopied] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
@@ -1524,6 +1553,7 @@ export default function TiendaFoxDrop() {
       });
 
       // Si el cliente eligió Mercado Pago, invocamos la preferencia y redirigimos
+      // IMPORTANTE: NO vaciamos el carrito aquí. El carrito se mantiene intacto hasta que Mercado Pago confirme el pago aprobado.
       if (paymentMethod === 'mercadopago') {
         try {
           const mpRes = await fetch('/api/mercadopago/preference', {
@@ -1541,30 +1571,22 @@ export default function TiendaFoxDrop() {
           });
           const mpData = await mpRes.json();
           if (mpRes.ok && mpData.initPoint) {
-            // Limpiar carrito local antes de ir a pagar
+            // Guardamos temporalmente el pedido pendiente para asociarlo cuando vuelva
             try {
-              const currentCartId = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_cart_id') : null;
-              if (currentCartId) {
-                fetch('/api/cart/sync', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ cartId: currentCartId, items: [] }),
-                });
-              }
-              localStorage.removeItem('foxdrop_cart_id');
-              localStorage.removeItem('foxdrop_cart_items_v1');
+              sessionStorage.setItem('foxdrop_pending_mp_order', created.orderNumber);
             } catch {}
-            setCart([]);
             // Redirigir al Checkout Pro oficial de Mercado Pago
             window.location.href = mpData.initPoint;
             return;
           } else {
-            alert(mpData.error || 'Error al conectar con Mercado Pago. Puedes pagar por SPEI o Efectivo.');
+            alert(mpData.error || 'Error al conectar con la pasarela de pago.');
             setRedirectingToMp(false);
+            return;
           }
         } catch (mpErr: any) {
-          alert('Error de conexión con Mercado Pago: ' + (mpErr.message || 'Intenta de nuevo'));
+          alert('Error de conexión con la pasarela: ' + (mpErr.message || 'Intenta de nuevo'));
           setRedirectingToMp(false);
+          return;
         }
       }
     } catch (err) {
@@ -3917,6 +3939,32 @@ export default function TiendaFoxDrop() {
         <div className="w-full flex-1 animate-in fade-in duration-200 bg-[#F5F2EC] py-6 sm:py-10">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
 
+            {/* AVISO DE PAGO FALLIDO O EXITOSO RETORNADO POR MERCADO PAGO */}
+            {paymentNotice && (
+              <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 ${
+                paymentNotice.type === 'error'
+                  ? 'bg-rose-50 border-rose-200 text-rose-900'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              }`}>
+                <div className={`p-2 rounded-xl shrink-0 ${
+                  paymentNotice.type === 'error' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
+                }`}>
+                  {paymentNotice.type === 'error' ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                </div>
+                <div className="flex-1 text-xs sm:text-sm">
+                  <p className="font-extrabold">{paymentNotice.type === 'error' ? 'Pago no completado' : '¡Pago Exitoso!'}</p>
+                  <p className="mt-0.5 opacity-90 leading-relaxed">{paymentNotice.message}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentNotice(null)}
+                  className="p-1 text-slate-400 hover:text-slate-600 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Barra superior de navegación dentro de checkout */}
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <button
@@ -4269,8 +4317,8 @@ export default function TiendaFoxDrop() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Opción Mercado Pago (Tarjetas, OXXO, Saldo) */}
-                  {checkoutSettings.mercadopago?.enabled !== false && (isPrivilegedPartner || hasImportItemsInCart) && (
+                  {/* Opción Tarjeta (Mercado Pago / Visa / Mastercard / AMEX) */}
+                  {checkoutSettings.mercadopago?.enabled !== false && (
                     <div
                       onClick={() => setPaymentMethod('mercadopago')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -4320,7 +4368,7 @@ export default function TiendaFoxDrop() {
                         {/* Explicación Checkout Pro transparente */}
                         <div className="pt-2 border-t border-gray-100">
                           <p className="text-xs text-slate-500 leading-relaxed">
-                            Al confirmar tu pedido, se abrirá la pasarela blindada de <strong className="text-slate-800">Mercado Pago</strong> para pagar de forma segura con tu tarjeta o cuenta guardada, con protección total antifraude.
+                            Al confirmar tu pedido, se abrirá la pasarela blindada de <strong className="text-slate-800">Mercado Pago</strong> para pagar de forma segura con tu tarjeta, con protección total antifraude.
                           </p>
                         </div>
                       </div>
