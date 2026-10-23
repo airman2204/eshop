@@ -369,13 +369,36 @@ export async function updateOrderStatusInDb(orderId: string, status: string, not
     });
 
     if (res.ok) {
-      return true;
+      const json = await res.json().catch(() => ({}));
+      if (json.success) return true;
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      console.warn("Aviso en /api/admin update_order_status:", errJson.error || res.statusText);
     }
   } catch (apiErr) {
     console.warn("Fallo llamando /api/admin para actualizar orden, intentando cliente directo:", apiErr);
   }
 
-  // Fallback
+  // Fallback con API de usuario autenticado
+  try {
+    const resUser = await fetch("/api/user/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "cancel_order",
+        orderId,
+        reason: notes || "Cancelado desde panel de administración",
+      }),
+    });
+    if (resUser.ok) {
+      const jsonUser = await resUser.json().catch(() => ({}));
+      if (jsonUser.success) return true;
+    }
+  } catch (userApiErr) {
+    console.warn("Fallback /api/user/profile también falló:", userApiErr);
+  }
+
+  // Fallback directo a Supabase
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = getSupabaseBrowserClient() as any;
   const updatePayload: Record<string, any> = { status, updated_at: new Date().toISOString() };

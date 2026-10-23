@@ -133,6 +133,9 @@ export interface ClientProfile {
 export interface Order {
   /** Folio único (ej. FX-293849 o FX-POS-1029) */
   id: string;
+  /** UUID primario en base de datos */
+  dbId?: string;
+  orderNumber?: string;
   clientName: string;
   clientPhone: string;
   clientEmail?: string;

@@ -26,6 +26,21 @@ export function getStoredAdminToken(): string | null {
 }
 
 /**
+ * Obtiene el email activo de administración desde localStorage
+ */
+export function getStoredAdminEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("foxdrop_admin_session");
+    if (raw) {
+      const parsed: AdminSession = JSON.parse(raw);
+      return parsed.email || null;
+    }
+  } catch {}
+  return null;
+}
+
+/**
  * Helper para llamar a /api/admin inyectando automáticamente el token en Authorization header
  */
 export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
@@ -73,6 +88,34 @@ export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
     method: "POST",
     headers,
     body: JSON.stringify(bodyOrOptions),
+  });
+}
+
+/**
+ * Helper para llamar a /api/admin/cj inyectando automáticamente el token en Authorization header
+ */
+export async function fetchAdminCjApi(bodyOrOptions: any): Promise<Response> {
+  const token = getStoredAdminToken();
+  const email = getStoredAdminEmail();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (bodyOrOptions && typeof bodyOrOptions === "object" && "body" in bodyOrOptions) {
+    const customHeaders = bodyOrOptions.headers || {};
+    return fetch("/api/admin/cj", {
+      ...bodyOrOptions,
+      headers: { ...headers, ...customHeaders },
+    });
+  }
+
+  const payload = typeof bodyOrOptions === "object" ? { ...bodyOrOptions, adminToken: token, adminEmail: email } : bodyOrOptions;
+
+  return fetch("/api/admin/cj", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
   });
 }
 

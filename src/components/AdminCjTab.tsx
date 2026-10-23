@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info, Share2, Copy, Bookmark, Heart, ThumbsUp, ThumbsDown, Trash2, Truck } from 'lucide-react';
-import { getStoredAdminToken } from '@/lib/adminAuth';
+import { getStoredAdminToken, getStoredAdminEmail, fetchAdminCjApi } from '@/lib/adminAuth';
 
 interface CjItem {
   id: string;
@@ -128,23 +128,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     setSearching(true);
     setHasSearched(true);
     try {
-      const token = getStoredAdminToken() || '';
-      const resCj = await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          action: 'search_products',
-          query: finalQuery,
-          categoryId: catToUse || undefined,
-          countryCode: countryToUse === 'MX' ? 'MX' : undefined,
-          sortOrder: sortToUse,
-          page: targetPage,
-          size: 18,
-          adminToken: token,
-        }),
+      const resCj = await fetchAdminCjApi({
+        action: 'search_products',
+        query: finalQuery,
+        categoryId: catToUse || undefined,
+        countryCode: countryToUse === 'MX' ? 'MX' : undefined,
+        sortOrder: sortToUse,
+        page: targetPage,
+        size: 18,
       });
 
       const data = await resCj.json();
@@ -166,15 +157,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const loadWishlist = async () => {
     setLoadingWishlist(true);
     try {
-      const token = getStoredAdminToken() || '';
-      const res = await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ action: 'get_wishlist', adminToken: token }),
-      });
+      const res = await fetchAdminCjApi({ action: 'get_wishlist' });
       const data = await res.json();
       if (data.success && Array.isArray(data.wishlist)) {
         setWishlist(data.wishlist);
@@ -189,15 +172,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const persistWishlist = async (updated: WishlistItem[]) => {
     setWishlist(updated);
     try {
-      const token = getStoredAdminToken() || '';
-      await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ action: 'save_wishlist', wishlist: updated, adminToken: token }),
-      });
+      await fetchAdminCjApi({ action: 'save_wishlist', wishlist: updated });
     } catch {
       // Fallback
     }
@@ -278,18 +253,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     setPreviewDetail(null);
 
     try {
-      const token = getStoredAdminToken() || '';
-      const res = await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          action: 'get_product_detail',
-          pid: item.id,
-          adminToken: token,
-        }),
+      const res = await fetchAdminCjApi({
+        action: 'get_product_detail',
+        pid: item.id,
       });
 
       const data = await res.json();
@@ -330,19 +296,10 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const triggerTranslation = async (item: CjItem, baseDesc?: string) => {
     setTranslatingId(item.id);
     try {
-      const token = getStoredAdminToken() || '';
-      const res = await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          action: 'translate_item',
-          adminToken: token,
-          title: item.name,
-          description: baseDesc || '',
-        }),
+      const res = await fetchAdminCjApi({
+        action: 'translate_item',
+        title: item.name,
+        description: baseDesc || '',
       });
       const data = await res.json();
       if (data.success) {
@@ -397,28 +354,19 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const finalDescription = customDescriptions[item.id]?.trim() || `Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.`;
 
     try {
-      const token = getStoredAdminToken() || '';
-      const res = await fetch('/api/admin/cj', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      const res = await fetchAdminCjApi({
+        action: 'import_cj_product',
+        importProduct: {
+          title: finalTitle,
+          sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
+          categoryName: item.categoryName || 'Novedades & Gadgets',
+          baseCostUsd: safeUsd,
+          baseCostMxn: costMxn,
+          publicPrice: salePrice,
+          imageUrl: item.image,
+          images: previewDetail?.images && previewDetail.images.length > 0 ? previewDetail.images : [item.image],
+          description: finalDescription,
         },
-        body: JSON.stringify({
-          action: 'import_cj_product',
-          adminToken: token,
-          importProduct: {
-            title: finalTitle,
-            sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
-            categoryName: item.categoryName || 'Novedades & Gadgets',
-            baseCostUsd: safeUsd,
-            baseCostMxn: costMxn,
-            publicPrice: salePrice,
-            imageUrl: item.image,
-            images: previewDetail?.images && previewDetail.images.length > 0 ? previewDetail.images : [item.image],
-            description: finalDescription,
-          },
-        }),
       });
 
       const data = await res.json();

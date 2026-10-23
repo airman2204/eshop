@@ -861,6 +861,8 @@ export default function AdminCRM() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mappedOrders: Order[] = dbOrders.map((o: any) => ({
           id: o.order_number || o.id,
+          dbId: o.id,
+          orderNumber: o.order_number || o.id,
           clientName: o.client_name,
           clientPhone: o.client_phone,
           clientEmail: o.client_email,
@@ -995,6 +997,8 @@ export default function AdminCRM() {
           if (freshOrders && freshOrders.length > 0) {
             const mapped: Order[] = freshOrders.map((o: any) => ({
               id: o.order_number || o.id,
+              dbId: o.id,
+              orderNumber: o.order_number || o.id,
               clientName: o.client_name,
               clientPhone: o.client_phone,
               clientEmail: o.client_email,
@@ -2201,6 +2205,8 @@ export default function AdminCRM() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mappedOrders: Order[] = dbOrders.map((o: any) => ({
           id: o.order_number || o.id,
+          dbId: o.id,
+          orderNumber: o.order_number || o.id,
           clientName: o.client_name,
           clientPhone: o.client_phone,
           clientEmail: o.client_email,
@@ -2777,18 +2783,20 @@ export default function AdminCRM() {
 
   // Actualizar Estado de Pedido (o Cancelarlo)
   const updateOrderStatus = async (orderId: string, newStatus: Order['status'], notes?: string) => {
-    const targetOrder = orders.find(o => o.id === orderId);
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus, ...(notes !== undefined ? { notes } : {}) } : o));
+    const targetOrder = orders.find(o => o.id === orderId || o.dbId === orderId || o.orderNumber === orderId);
+    const identifierToUpdate = targetOrder?.orderNumber || targetOrder?.id || orderId;
+
+    setOrders(orders.map(o => (o.id === orderId || o.orderNumber === orderId || o.dbId === orderId) ? { ...o, status: newStatus, ...(notes !== undefined ? { notes } : {}) } : o));
 
     try {
-      await updateOrderStatusInDb(orderId, newStatus, notes);
+      await updateOrderStatusInDb(identifierToUpdate, newStatus, notes);
       if (targetOrder?.clientPhone && targetOrder.clientPhone !== 'Mostrador / Histórica') {
         fetch("/api/whatsapp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "status_update",
-            orderNumber: targetOrder.id,
+            orderNumber: targetOrder.orderNumber || targetOrder.id,
             clientName: targetOrder.clientName,
             clientPhone: targetOrder.clientPhone,
             newStatus,
@@ -2804,8 +2812,8 @@ export default function AdminCRM() {
               id: Date.now().toString(),
               type: 'status_update',
               title: `WhatsApp Enviado a ${targetOrder.clientName || 'Cliente'}`,
-              message: `Notificación automática enviada: Pedido ${targetOrder.id} ahora está "${newStatus}".`,
-              orderId: targetOrder.id,
+              message: `Notificación automática enviada: Pedido ${targetOrder.orderNumber || targetOrder.id} ahora está "${newStatus}".`,
+              orderId: targetOrder.orderNumber || targetOrder.id,
             });
             setTimeout(() => setAdminRealtimeToast(null), 6000);
           }
