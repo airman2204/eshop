@@ -12012,7 +12012,7 @@ ${ticketImg}
                     Tipo de Entrega
                   </span>
                   <span className="inline-block px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-900 text-white">
-                    {shippingLabelOrder.shippingType === 'puebla_local' ? '📍 Entrega Local (Puebla)' : '📦 Paquetería Nacional'}
+                    {(shippingLabelOrder.shippingType === 'international_shipping' || (shippingLabelOrder.notes && (shippingLabelOrder.notes.includes('[IMPORTACION') || shippingLabelOrder.notes.includes('[CJ-ORDER:')))) ? '✈️ Importación Internacional' : (shippingLabelOrder.shippingType === 'puebla_local' ? '📍 Entrega Local (Puebla)' : '📦 Paquetería Nacional')}
                   </span>
                   <p className="text-[11px] text-slate-500 mt-1 capitalize">
                     Método de Pago: <strong>{shippingLabelOrder.paymentMethod}</strong>
@@ -12030,7 +12030,7 @@ ${ticketImg}
                           Dirección de Entrega
                         </span>
                         <p className="text-slate-800 font-medium">
-                          {addr.street || ''} {addr.number || ''}, Col. {addr.colonia || ''}, C.P. {addr.postalCode || addr.zip || ''}, {addr.city || 'Puebla'}, {addr.state || 'Puebla'}
+                          {[addr.street, addr.number, addr.colonia ? `Col. ${addr.colonia}` : '', addr.postalCode || addr.zip ? `C.P. ${addr.postalCode || addr.zip}` : '', addr.city, addr.state].filter(Boolean).join(', ')}
                         </p>
                         {addr.references && (
                           <p className="text-[10px] text-slate-500 italic mt-0.5">Ref: {addr.references}</p>
@@ -12054,7 +12054,18 @@ ${ticketImg}
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
                           Notas del Pedido / Entrega
                         </span>
-                        <p className="text-slate-800 font-medium italic">{shippingLabelOrder.notes}</p>
+                        {(() => {
+                          const cleanNotes = shippingLabelOrder.notes
+                            .replace(/\[IMPORTACION[^\]]*\]/g, '')
+                            .replace(/\[CARD:[^\]]*\]/g, '')
+                            .replace(/\[CJ-ORDER:[^\]]*\]/g, '')
+                            .trim();
+                          return cleanNotes ? (
+                            <p className="text-slate-800 font-medium italic">{cleanNotes}</p>
+                          ) : (
+                            <p className="text-slate-500 font-normal">Sin notas adicionales de entrega.</p>
+                          );
+                        })()}
                       </div>
                     );
                   }
