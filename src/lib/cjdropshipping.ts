@@ -56,6 +56,10 @@ export interface CjProductItem {
   variantsCount?: number;
   listedNum?: number;
   countryCode?: string;
+  stock?: number;
+  verifiedWarehouse?: boolean;
+  readyToShip?: boolean;
+  hasVideo?: boolean;
 }
 
 /**
@@ -67,7 +71,12 @@ export async function searchCjProducts(
   size = 18,
   categoryId?: string,
   countryCode?: string,
-  sortOrder?: "sales_desc" | "sales_asc" | "price_asc" | "price_desc"
+  sortOrder?: "sales_desc" | "sales_asc" | "price_asc" | "price_desc",
+  filters?: {
+    readyToShipOnly?: boolean;
+    verifiedWarehouseOnly?: boolean;
+    minStock?: number;
+  }
 ): Promise<{
   products: CjProductItem[];
   total: number;
@@ -163,21 +172,43 @@ export async function searchCjProducts(
     return match ? parseFloat(match[0]) : 0;
   };
 
-  const products: CjProductItem[] = rawList.map((p: any) => ({
-    id: String(p.id || p.pid || p.sku || Math.random()),
-    name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
-    sku: String(p.sku || ""),
-    image: String(p.bigImage || p.productImage || ""),
-    priceUsd: parseCjPrice(p.sellPrice ?? p.price),
-    categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
-    variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
-    listedNum: Number(p.listedNum) || 0,
-    countryCode: countryCode ? countryCode.toUpperCase() : (p.countryCode || (p.verifiedWarehouse === 2 && p.productType === '5' ? 'MX' : 'CN')),
-  }));
+  const products: CjProductItem[] = rawList.map((p: any) => {
+    const stock = Number(p.warehouseInventoryNum ?? p.totalVerifiedInventory ?? 0);
+    const isVerified = p.verifiedWarehouse === 1 || p.verifiedWarehouse === 2 || p.autStatus === "1";
+    const isReadyToShip = p.productType === "4" || stock > 50 || p.saleStatus === "3";
+    const hasVideo = Boolean(p.isVideo || p.isVedio || (Array.isArray(p.videoList) && p.videoList.length > 0));
+
+    return {
+      id: String(p.id || p.pid || p.sku || Math.random()),
+      name: String(p.nameEn || p.productNameEn || p.productName || "Producto CJ"),
+      sku: String(p.sku || ""),
+      image: String(p.bigImage || p.productImage || ""),
+      priceUsd: parseCjPrice(p.sellPrice ?? p.price),
+      categoryName: String(p.categoryName || p.threeCategoryName || p.twoCategoryName || p.oneCategoryName || "Gadgets & Novedades"),
+      variantsCount: Array.isArray(p.variants) ? p.variants.length : 1,
+      listedNum: Number(p.listedNum) || 0,
+      countryCode: countryCode ? countryCode.toUpperCase() : (p.countryCode || (p.verifiedWarehouse === 2 && p.productType === '5' ? 'MX' : 'CN')),
+      stock,
+      verifiedWarehouse: isVerified,
+      readyToShip: isReadyToShip,
+      hasVideo,
+    };
+  });
+
+  let filteredProducts = products;
+  if (filters?.readyToShipOnly) {
+    filteredProducts = filteredProducts.filter(p => p.readyToShip);
+  }
+  if (filters?.verifiedWarehouseOnly) {
+    filteredProducts = filteredProducts.filter(p => p.verifiedWarehouse);
+  }
+  if (typeof filters?.minStock === "number" && filters.minStock > 0) {
+    filteredProducts = filteredProducts.filter(p => (p.stock || 0) >= (filters.minStock as number));
+  }
 
   return {
-    products,
-    total: data.data.totalRecords || products.length,
+    products: filteredProducts,
+    total: filteredProducts.length !== products.length ? filteredProducts.length : (data.data.totalRecords || products.length),
     page: data.data.pageNumber || page,
     totalPages: data.data.totalPages || 1,
   };

@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { action, query, page, size, pid, categoryId, countryCode, sortOrder, importProduct } = body;
+    const { action, query, page, size, pid, categoryId, countryCode, sortOrder, importProduct, readyToShipOnly, verifiedWarehouseOnly, minStock } = body;
 
     // 1. Búsqueda de productos en CJ
     if (action === "search_products") {
@@ -114,7 +114,12 @@ export async function POST(req: NextRequest) {
         Number(size) || 18,
         categoryId,
         countryCode,
-        sortOrder
+        sortOrder,
+        {
+          readyToShipOnly: Boolean(readyToShipOnly),
+          verifiedWarehouseOnly: Boolean(verifiedWarehouseOnly),
+          minStock: typeof minStock === "number" ? minStock : undefined,
+        }
       );
       return NextResponse.json({ success: true, ...results });
     }

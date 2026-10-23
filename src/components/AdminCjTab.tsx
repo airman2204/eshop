@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info, Share2, Copy, Bookmark, Heart, ThumbsUp, ThumbsDown, Trash2, Truck } from 'lucide-react';
+import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info, Share2, Copy, Bookmark, Heart, ThumbsUp, ThumbsDown, Trash2, Truck, ShieldCheck, Zap, Video, CheckCircle2 } from 'lucide-react';
 import { getStoredAdminToken, getStoredAdminEmail, fetchAdminCjApi } from '@/lib/adminAuth';
 
 interface CjItem {
@@ -13,6 +13,10 @@ interface CjItem {
   categoryName?: string;
   listedNum?: number;
   countryCode?: string;
+  stock?: number;
+  verifiedWarehouse?: boolean;
+  readyToShip?: boolean;
+  hasVideo?: boolean;
 }
 
 export interface WishlistItem extends CjItem {
@@ -72,6 +76,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<'ALL' | 'MX'>('ALL');
   const [sortOrder, setSortOrder] = useState<'sales_desc' | 'sales_asc' | 'price_asc' | 'price_desc'>('sales_desc');
+  const [readyToShipOnly, setReadyToShipOnly] = useState(false);
+  const [verifiedWarehouseOnly, setVerifiedWarehouseOnly] = useState(false);
+  const [minStockFilter, setMinStockFilter] = useState<number>(0);
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<CjItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -116,12 +123,18 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     overrideQuery?: string,
     overrideCategory?: string,
     overrideCountry?: 'ALL' | 'MX',
-    overrideSortOrder?: 'sales_desc' | 'sales_asc' | 'price_asc' | 'price_desc'
+    overrideSortOrder?: 'sales_desc' | 'sales_asc' | 'price_asc' | 'price_desc',
+    overrideReadyToShip?: boolean,
+    overrideVerified?: boolean,
+    overrideMinStock?: number
   ) => {
     const queryToUse = overrideQuery !== undefined ? overrideQuery : searchQuery;
     const catToUse = overrideCategory !== undefined ? overrideCategory : selectedCategory;
     const countryToUse = overrideCountry !== undefined ? overrideCountry : selectedCountry;
     const sortToUse = overrideSortOrder !== undefined ? overrideSortOrder : sortOrder;
+    const readyToShipToUse = overrideReadyToShip !== undefined ? overrideReadyToShip : readyToShipOnly;
+    const verifiedToUse = overrideVerified !== undefined ? overrideVerified : verifiedWarehouseOnly;
+    const minStockToUse = overrideMinStock !== undefined ? overrideMinStock : minStockFilter;
     
     // Si no hay texto ni categoría seleccionada, buscar tendencias generales
     const finalQuery = (queryToUse || '').trim();
@@ -134,6 +147,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         categoryId: catToUse || undefined,
         countryCode: countryToUse === 'MX' ? 'MX' : undefined,
         sortOrder: sortToUse,
+        readyToShipOnly: readyToShipToUse,
+        verifiedWarehouseOnly: verifiedToUse,
+        minStock: minStockToUse > 0 ? minStockToUse : undefined,
         page: targetPage,
         size: 18,
       });
@@ -842,6 +858,79 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             ))}
           </div>
         </div>
+
+        {/* FILTROS AVANZADOS DE CONFIABILIDAD Y CALIDAD FOXDROP */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="font-bold text-slate-700">Filtros de Calidad y Fiabilidad para Cliente:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Ready to Ship */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !readyToShipOnly;
+                setReadyToShipOnly(nextVal);
+                setPage(1);
+                handleSearch(1, searchQuery, selectedCategory, selectedCountry, sortOrder, nextVal, verifiedWarehouseOnly, minStockFilter);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                readyToShipOnly
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+              title="Filtra solo artículos con stock listo para despacho inmediato (<48h)"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>⚡ Ready to Ship (Despacho &lt; 48h)</span>
+              {readyToShipOnly && <Check className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Verified Warehouse / Supplier */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !verifiedWarehouseOnly;
+                setVerifiedWarehouseOnly(nextVal);
+                setPage(1);
+                handleSearch(1, searchQuery, selectedCategory, selectedCountry, sortOrder, readyToShipOnly, nextVal, minStockFilter);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                verifiedWarehouseOnly
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+              title="Filtra proveedores y almacenes auditados con baja tasa de defectos"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>🛡️ Proveedores Verificados</span>
+              {verifiedWarehouseOnly && <Check className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Stock mínimo > 100 unidades */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = minStockFilter > 0 ? 0 : 100;
+                setMinStockFilter(nextVal);
+                setPage(1);
+                handleSearch(1, searchQuery, selectedCategory, selectedCountry, sortOrder, readyToShipOnly, verifiedWarehouseOnly, nextVal);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                minStockFilter > 0
+                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+              }`}
+              title="Asegura que el proveedor tenga más de 100 unidades en inventario físico real"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>📦 Stock &gt; 100 Unidades</span>
+              {minStockFilter > 0 && <Check className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* RESULTADOS DE PRODUCTOS */}
@@ -911,6 +1000,22 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         {prod.countryCode === 'MX' || selectedCountry === 'MX' ? '🇲🇽 Stock MX (2-5d)' : '✈️ Dropship'}
                       </span>
 
+                      {/* BADGES DE CALIDAD */}
+                      <div className="absolute bottom-1.5 left-1.5 z-10 flex flex-wrap gap-1">
+                        {prod.readyToShip && (
+                          <span className="bg-amber-500/95 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-xs">
+                            <Zap className="w-2.5 h-2.5 fill-current" />
+                            <span>&lt;48h</span>
+                          </span>
+                        )}
+                        {prod.verifiedWarehouse && (
+                          <span className="bg-emerald-600/95 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-xs">
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                            <span>Verificado</span>
+                          </span>
+                        )}
+                      </div>
+
                       {/* BOTÓN WISHLIST CORAZÓN */}
                       <button
                         type="button"
@@ -958,6 +1063,12 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                           ${safePriceUsd.toFixed(2)} USD (~${costMxn} MXN)
                         </span>
                       </div>
+                      {typeof prod.stock === 'number' && prod.stock > 0 && (
+                        <div className="flex items-center justify-between text-slate-500 text-[10px]">
+                          <span>Stock almacén:</span>
+                          <span className="font-semibold text-slate-700">{prod.stock.toLocaleString()} pzas</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-indigo-700 font-bold">
                         <span>Venta sugerida:</span>
                         <span className="font-semibold">${suggestedSale} MXN</span>
