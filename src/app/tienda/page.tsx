@@ -1541,8 +1541,20 @@ export default function TiendaFoxDrop() {
           });
           const mpData = await mpRes.json();
           if (mpRes.ok && mpData.initPoint) {
-            // Limpiar carrito local
-            localStorage.removeItem('foxdrop_cart_id');
+            // Limpiar carrito local antes de ir a pagar
+            try {
+              const currentCartId = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_cart_id') : null;
+              if (currentCartId) {
+                fetch('/api/cart/sync', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ cartId: currentCartId, items: [] }),
+                });
+              }
+              localStorage.removeItem('foxdrop_cart_id');
+              localStorage.removeItem('foxdrop_cart_items_v1');
+            } catch {}
+            setCart([]);
             // Redirigir al Checkout Pro oficial de Mercado Pago
             window.location.href = mpData.initPoint;
             return;
