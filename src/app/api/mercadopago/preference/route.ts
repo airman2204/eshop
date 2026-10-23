@@ -74,7 +74,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://foxdrop.mx").replace(/\/$/, "");
+    // Determinar la URL pública real del dominio (nunca enviar localhost a Mercado Pago)
+    const hostHeader = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+    let appUrl = "https://tienda.foxdrop.mx";
+    if (hostHeader && !hostHeader.includes("localhost") && !hostHeader.includes("127.0.0.1")) {
+      const proto = req.headers.get("x-forwarded-proto") || "https";
+      appUrl = `${proto}://${hostHeader}`.replace(/\/$/, "");
+    } else if (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")) {
+      appUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    }
 
     // 4. Crear la preferencia de pago
     const response = await preference.create({
@@ -93,6 +101,7 @@ export async function POST(req: NextRequest) {
           failure: `${appUrl}/tienda?order_failure=${encodeURIComponent(orderNumber)}`,
         },
         auto_return: "approved",
+        binary_mode: true,
         notification_url: `${appUrl}/api/mercadopago/webhook`,
         metadata: {
           order_number: orderNumber,
