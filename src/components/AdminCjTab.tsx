@@ -228,13 +228,17 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     await persistWishlist(updated);
   };
 
-  // Carga inicial automática de productos virales/novedades globales o abrir producto compartido por URL
+  // Carga inicial automática de productos virales/novedades globales
   useEffect(() => {
     loadWishlist();
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const sharedPid = urlParams.get('cj_pid');
       if (sharedPid) {
+        // Limpiar el parámetro de la URL inmediatamente para que no vuelva a abrirse en bucle
+        const newUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+
         // Abrir directamente el producto compartido cargando su detalle completo por PID
         handleOpenPreview({
           id: sharedPid,

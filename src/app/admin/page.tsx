@@ -4972,7 +4972,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <p className="text-slate-900 font-semibold">{order.clientName} <span className="text-slate-400 font-normal">• {order.clientPhone}</span></p>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500">
                         <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-600">
-                          {order.shippingType === 'puebla_local' ? 'Local Puebla' : (order.shippingType === 'international_shipping' ? '✈️ Importación CJ' : 'Envío Nacional')}
+                          {order.shippingType === 'puebla_local' ? 'Local Puebla' : ((order.shippingType === 'international_shipping' || (order.notes && order.notes.includes('[IMPORTACION'))) ? '✈️ Importación CJ' : 'Envío Nacional')}
                         </span>
                         {order.createdAt && (
                           <span>{new Date(order.createdAt).toLocaleDateString()}</span>
@@ -4998,7 +4998,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </select>
 
                       {/* Botón Despacho Internacional CJ */}
-                      {(order.shippingType === 'international_shipping' || (order.notes && order.notes.includes('[CJ-ORDER:'))) && (
+                      {(order.shippingType === 'international_shipping' || (order.notes && (order.notes.includes('[IMPORTACION') || order.notes.includes('[CJ-ORDER:')))) && (
                         <button
                           type="button"
                           onClick={() => setCjDispatchOrder(order)}
