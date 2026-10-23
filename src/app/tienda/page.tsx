@@ -1660,10 +1660,7 @@ export default function TiendaFoxDrop() {
             {/* UBICACIÓN / PUNTOS DE ENTREGA */}
             <button
               type="button"
-              onClick={() => {
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => setInfoModal('envios')}
               className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
             >
               <MapPin className="w-3.5 h-3.5 text-[#DF7F2D]" />
@@ -1719,14 +1716,17 @@ export default function TiendaFoxDrop() {
             <button
               type="button"
               onClick={() => {
-                setActiveTab('all');
-                if (currentView === 'account') setCurrentView('store');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
+                if (!user) {
+                  openAuthModal();
+                } else {
+                  setAccountTab('favorites');
+                  setCurrentView('account');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
               }}
               className="flex items-center gap-1.5 hover:text-white transition cursor-pointer relative text-white/80"
             >
-              <Heart className="w-3.5 h-3.5 text-[#DF7F2D]" />
+              <Heart className={`w-3.5 h-3.5 ${favorites.length > 0 ? 'text-rose-400 fill-rose-400' : 'text-[#DF7F2D]'}`} />
               <span>favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
             </button>
           </div>
