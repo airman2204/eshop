@@ -152,6 +152,8 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
   } | null>(null);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
   const [selectedPreviewVideo, setSelectedPreviewVideo] = useState<string | null>(null);
+  const [selectedPreviewVariantIdx, setSelectedPreviewVariantIdx] = useState<number>(0);
+  const [previewMarginMult, setPreviewMarginMult] = useState<number>(1.22);
   const [copiedShare, setCopiedShare] = useState(false);
 
   // Bloquear el scroll de la página principal cuando el modal esté abierto
@@ -314,6 +316,8 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     setPreviewItem(item);
     setSelectedPreviewImage(item.image);
     setSelectedPreviewVideo(null);
+    setSelectedPreviewVariantIdx(0);
+    setPreviewMarginMult(1.22);
     setPreviewLoading(true);
     setPreviewDetail(null);
 
@@ -1446,6 +1450,14 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                           onClick={() => {
                             setSelectedPreviewVideo(null);
                             setSelectedPreviewImage(img);
+                            if (previewDetail?.variants && previewDetail.variants.length > 0) {
+                              const matchedIdx = previewDetail.variants.findIndex(
+                                (v: any) => v.variantImage && v.variantImage.trim() === img.trim()
+                              );
+                              if (matchedIdx !== -1) {
+                                setSelectedPreviewVariantIdx(matchedIdx);
+                              }
+                            }
                           }}
                           className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer ${
                             isSelected
@@ -1465,30 +1477,111 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                 )}
               </div>
 
-              {/* COLUMNA DERECHA: DATOS DE FÁBRICA Y RENTABILIDAD */}
+              {/* COLUMNA DERECHA: DATOS DE FÁBRICA Y RENTABILIDAD EN VIVO POR OPCIÓN */}
               <div className="space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
-                  {/* PRECIOS Y COSTOS */}
+                  {/* SELECTOR DE OPCIONES / VARIANTES ARRIBA PARA CAMBIAR COSTOS EN VIVO */}
+                  {previewDetail?.variants && previewDetail.variants.length > 0 && (
+                    <div className="space-y-2 bg-slate-50/90 p-3 rounded-2xl border border-slate-200/90">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">
+                          1. Elige una Opción / Modelo ({previewDetail.variants.length} disponibles):
+                        </span>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/70">
+                          Clic para ver su costo exacto
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1">
+                        {previewDetail.variants.map((v: any, i: number) => {
+                          const isSelectedVar = selectedPreviewVariantIdx === i;
+                          const vUsd = Number(v.variantSellPrice || previewItem.priceUsd);
+                          const fUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
+                          const safeR = usdRate || 18;
+                          const vCostMxn = Math.round(vUsd * safeR);
+                          const vFreightMxn = fUsd > 0 ? Math.round(fUsd * safeR) : 120;
+                          const vLandedMxn = vCostMxn + vFreightMxn;
+                          const vSaleMxn = Math.max(99, Math.round(vLandedMxn * previewMarginMult));
+                          const vLabel = v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i + 1}`;
+
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPreviewVariantIdx(i);
+                                if (v.variantImage) {
+                                  setSelectedPreviewVideo(null);
+                                  setSelectedPreviewImage(v.variantImage);
+                                }
+                              }}
+                              className={`p-2 rounded-xl text-[11px] font-medium border flex items-center gap-2.5 transition cursor-pointer text-left ${
+                                isSelectedVar
+                                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-200'
+                                  : 'bg-white hover:bg-indigo-50/60 text-slate-700 border-slate-200/90 hover:border-indigo-300'
+                              }`}
+                            >
+                              {v.variantImage && (
+                                <img
+                                  src={getSafeImageUrl(v.variantImage)}
+                                  alt=""
+                                  className="w-8 h-8 rounded-lg object-cover shrink-0 border border-black/10 bg-white"
+                                />
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className={`font-black block truncate text-xs ${isSelectedVar ? 'text-white' : 'text-slate-900'}`} title={vLabel}>
+                                  {vLabel}
+                                </span>
+                                <span className={`text-[10px] block ${isSelectedVar ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                  Fábrica: <strong>${vUsd.toFixed(2)} USD</strong> (~${vCostMxn}) → Venta: <strong>${vSaleMxn} MXN</strong>
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DESGLOSE MATEMÁTICO PASO A PASO DE LA OPCIÓN SELECCIONADA */}
                   {(() => {
                     const isMexicoStock = previewItem.countryCode === 'MX' || selectedCountry === 'MX';
                     const safeRate = usdRate || 18;
+                    const variantsList = previewDetail?.variants || [];
+                    const activeVariant = variantsList[selectedPreviewVariantIdx] || variantsList[0] || null;
+                    const activeVariantName = activeVariant
+                      ? (activeVariant.variantKey || activeVariant.variantNameEn || activeVariant.variantSku || `Opción ${selectedPreviewVariantIdx + 1}`)
+                      : 'Modelo Estándar';
+
+                    // Costo en USD de la opción seleccionada (si hay variantes, usa el de la variante activa; si no, el del producto)
+                    const activeUsd = activeVariant && Number(activeVariant.variantSellPrice) > 0
+                      ? Number(activeVariant.variantSellPrice)
+                      : previewItem.priceUsd;
+                    const activeCostMxn = Math.round(activeUsd * safeRate);
+
+                    // Rango general por si tiene varias opciones
                     const minUsd = previewItem.priceUsd;
                     const maxUsd = previewItem.maxPriceUsd && previewItem.maxPriceUsd > minUsd ? previewItem.maxPriceUsd : minUsd;
-                    const costMxn = Math.round(maxUsd * safeRate);
-                    const minCostMxn = Math.round(minUsd * safeRate);
 
-                    // Cotización real de flete desde CJ hacia México (si está disponible)
+                    // Cotización real de flete desde CJ hacia México
                     const realFreight = previewDetail?.realFreightToMx;
                     const realFreightUsd = realFreight?.cheapestUsd || 0;
                     const realFreightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (isMexicoStock ? 0 : 120);
-                    const totalLandedMxn = minCostMxn + realFreightMxn;
+
+                    // Suma EXACTA de la opción seleccionada + flete
+                    const totalLandedUsd = activeUsd + (isMexicoStock ? 0 : realFreightUsd);
+                    const totalLandedMxn = activeCostMxn + realFreightMxn;
                     const isHighShipping = !isMexicoStock && realFreightMxn > 300;
 
-                    // Precio sugerido modo LANZAMIENTO (+22% sobre costo puesto en México) para competir contra Temu / TikTok Shop
-                    const suggestedSale = isMexicoStock 
-                      ? Math.round(minCostMxn * 1.35) 
-                      : Math.max(99, Math.round(totalLandedMxn * 1.22));
+                    // Precios según los 3 niveles de margen para comparar
+                    const launchSale = isMexicoStock ? Math.round(activeCostMxn * 1.35) : Math.max(99, Math.round(totalLandedMxn * 1.22));
+                    const standardSale = isMexicoStock ? Math.round(activeCostMxn * 1.45) : Math.max(119, Math.round(totalLandedMxn * 1.32));
+                    const highSale = isMexicoStock ? Math.round(activeCostMxn * 1.60) : Math.max(149, Math.round(totalLandedMxn * 1.45));
+
+                    const suggestedSale = isMexicoStock
+                      ? Math.round(activeCostMxn * 1.35)
+                      : Math.max(99, Math.round(totalLandedMxn * previewMarginMult));
                     const estimatedProfit = Math.max(0, suggestedSale - totalLandedMxn);
+                    const marginPercentLabel = Math.round((previewMarginMult - 1) * 100);
 
                     return (
                       <div className={`p-4 rounded-2xl border space-y-2.5 ${
@@ -1498,50 +1591,147 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                           ? 'bg-gradient-to-br from-emerald-50/60 to-slate-50 border-emerald-200' 
                           : 'bg-gradient-to-br from-indigo-50/50 to-slate-50 border-indigo-100'
                       }`}>
-                        <div className="flex items-center justify-between text-xs text-slate-600">
-                          <span>{isMexicoStock ? 'Costo en Bodega México:' : 'Costo Fábrica (China):'}</span>
-                          <span className="font-bold text-slate-900 text-sm">
-                            {maxUsd > minUsd
-                              ? `$${minUsd.toFixed(2)} - $${maxUsd.toFixed(2)} USD (~$${minCostMxn} - $${costMxn} MXN)`
-                              : `$${minUsd.toFixed(2)} USD (~$${costMxn} MXN)`}
+                        {/* ENCABEZADO DEL CÁLCULO: INDICA QUÉ OPCIÓN SE ESTÁ CALCULANDO */}
+                        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/80">
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 block">
+                              Cálculo paso a paso (TC: ${safeRate.toFixed(2)} MXN/USD)
+                            </span>
+                            <span className="text-xs font-black text-slate-900 truncate block" title={activeVariantName}>
+                              Opción activa: {activeVariantName}
+                            </span>
+                          </div>
+                          {maxUsd > minUsd && (
+                            <span className="text-[10px] font-semibold text-slate-500 bg-white/90 px-2 py-1 rounded-lg border border-slate-200 shrink-0">
+                              Rango total: ${minUsd.toFixed(2)} – ${maxUsd.toFixed(2)} USD
+                            </span>
+                          )}
+                        </div>
+
+                        {/* PASO A: COSTO DE FÁBRICA DE LA OPCIÓN SELECCIONADA */}
+                        <div className="flex items-center justify-between text-xs text-slate-700">
+                          <span>
+                            <strong>A)</strong> {isMexicoStock ? 'Costo Bodega MX (esta opción):' : 'Costo Fábrica China (esta opción):'}
+                          </span>
+                          <span className="font-black text-slate-900 text-sm">
+                            ${activeUsd.toFixed(2)} USD × ${safeRate.toFixed(2)} = <span className="text-indigo-700">${activeCostMxn} MXN</span>
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-slate-600">
+
+                        {/* PASO B: FLETE REAL CJ */}
+                        <div className="flex items-center justify-between text-xs text-slate-700">
                           <span>
+                            <strong>B)</strong>{' '}
                             {isMexicoStock
-                              ? 'Paquetería Nacional (Estafeta / Fedex MX):'
+                              ? 'Paquetería Nacional:'
                               : realFreight?.logisticName
-                              ? `Flete Real CJ a México (${realFreight.logisticName}):`
+                              ? `Flete CJ a México (${realFreight.logisticName}):`
                               : 'Flete Internacional a México:'}
                           </span>
-                          <span className={`font-bold ${isMexicoStock ? 'text-emerald-700' : isHighShipping ? 'text-rose-700' : 'text-slate-800'}`}>
+                          <span className={`font-black ${isMexicoStock ? 'text-emerald-700' : isHighShipping ? 'text-rose-700' : 'text-slate-900'}`}>
                             {isMexicoStock
-                              ? '✓ Flete Incluido / Nacional'
+                              ? '✓ $0 MXN (Incluido)'
                               : previewLoading
                               ? 'Cotizando en CJ...'
                               : realFreightUsd > 0
-                              ? `$${realFreightUsd.toFixed(2)} USD (~$${realFreightMxn} MXN)`
-                              : `~$${realFreightMxn} MXN`}
+                              ? `+$${realFreightUsd.toFixed(2)} USD × $${safeRate.toFixed(2)} = +$${realFreightMxn} MXN`
+                              : `+$${realFreightMxn} MXN`}
                           </span>
                         </div>
+
+                        {/* PASO C: SUMA COSTO TOTAL REAL (A + B) */}
                         {!isMexicoStock && (
-                          <div className="flex items-center justify-between text-xs text-slate-800 font-bold bg-white/80 px-2.5 py-1.5 rounded-xl border border-slate-200/70">
-                            <span>Costo Total Real (Producto + Envío CJ):</span>
-                            <span className="text-slate-900">
-                              ${(maxUsd + realFreightUsd).toFixed(2)} USD (~${totalLandedMxn} MXN)
+                          <div className="flex items-center justify-between text-xs text-slate-900 font-black bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
+                            <span>
+                              <strong>C) Costo Total (A + B):</strong> (${activeCostMxn} + ${realFreightMxn} MXN)
+                            </span>
+                            <span className="text-slate-900 text-sm">
+                              ${totalLandedUsd.toFixed(2)} USD = <span className="text-rose-700">${totalLandedMxn} MXN</span>
                             </span>
                           </div>
                         )}
+
                         {isHighShipping && (
                           <div className="p-2.5 rounded-xl bg-amber-100/90 border border-amber-300 text-[11px] text-amber-950 flex items-start gap-2 leading-snug">
                             <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                             <div>
                               <span className="font-black block">⚠️ Producto voluminoso o pesado ({previewDetail?.weight || 'Alto volumen'})</span>
-                              <span>El flete aéreo desde China cuesta <strong>~${realFreightMxn} MXN</strong>. El precio de venta sugerido ya incluye este flete para proteger tu ganancia y nunca perder dinero.</span>
+                              <span>El flete aéreo desde China cuesta <strong>~${realFreightMxn} MXN</strong>. El precio de venta sugerido ya incluye este flete para proteger tu ganancia.</span>
                             </div>
                           </div>
                         )}
-                        <div className="flex items-center justify-between text-xs text-slate-500">
+
+                        {/* SELECTOR DE MARGEN PARA COMPARAR EN VIVO */}
+                        {!isMexicoStock && (
+                          <div className="pt-1 space-y-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 block">
+                              <strong>D) Elige el margen para comparar el precio final:</strong>
+                            </span>
+                            <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewMarginMult(1.22)}
+                                className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                  previewMarginMult === 1.22
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                                    : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                🔥 +22% (${launchSale})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewMarginMult(1.32)}
+                                className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                  previewMarginMult === 1.32
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                    : 'bg-white hover:bg-indigo-50 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                ⚖️ +32% (${standardSale})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewMarginMult(1.45)}
+                                className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                  previewMarginMult === 1.45
+                                    ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
+                                    : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                💎 +45% (${highSale})
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* FÓRMULA DEL PRECIO DE VENTA SUGERIDO */}
+                        <div className="flex items-center justify-between text-xs text-indigo-800 font-bold border-t border-slate-200/80 pt-2">
+                          <div>
+                            <span className="block">Precio Final Sugerido en FoxDrop:</span>
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              Fórmula: ${totalLandedMxn} MXN Costo Total × {previewMarginMult.toFixed(2)} (+{marginPercentLabel}% margen)
+                            </span>
+                          </div>
+                          <span className="text-lg font-black text-indigo-950">
+                            ${suggestedSale.toLocaleString('es-MX')} MXN
+                          </span>
+                        </div>
+
+                        {/* FÓRMULA DE LA GANANCIA LIBRE */}
+                        <div className="text-[11px] text-emerald-800 font-bold flex items-center justify-between bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200/90">
+                          <div>
+                            <span className="block">Tu Ganancia Libre Estimada:</span>
+                            <span className="text-[10px] font-semibold text-emerald-700">
+                              Fórmula: ${suggestedSale} Venta − ${totalLandedMxn} Costo Total (Prod + Envío)
+                            </span>
+                          </div>
+                          <span className="font-black text-sm text-emerald-700">
+                            +${estimatedProfit.toLocaleString('es-MX')} MXN
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                           <span>Tiempo de Entrega al Cliente:</span>
                           <span className="font-bold text-slate-800">
                             {isMexicoStock
@@ -1549,18 +1739,6 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                               : realFreight?.logisticAging
                               ? `✈️ ${realFreight.logisticAging} Días Hábiles (Internacional)`
                               : '✈️ 10 a 15 Días Hábiles (Internacional)'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-indigo-700 font-bold border-t border-slate-200/80 pt-2">
-                          <span>Venta sugerida en FoxDrop (Con Flete + Margen):</span>
-                          <span className="font-semibold text-base font-black text-indigo-900">
-                            ${suggestedSale.toLocaleString('es-MX')} MXN
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-emerald-700 font-bold flex items-center justify-between bg-emerald-50 px-2.5 py-1.5 rounded-xl border border-emerald-200/80">
-                          <span>Tu ganancia libre estimada por venta:</span>
-                          <span className="font-black text-xs">
-                            +${estimatedProfit.toLocaleString('es-MX')} MXN
                           </span>
                         </div>
                       </div>
@@ -1605,50 +1783,6 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                         className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 text-[11px] leading-relaxed [&_img]:hidden [&_p]:mb-1 [&_br]:content-['']"
                         dangerouslySetInnerHTML={{ __html: previewDetail.description }}
                       />
-                    </div>
-                  )}
-
-                  {/* VARIANTES DEL PRODUCTO CON CÁLCULO INDIVIDUAL */}
-                  {previewDetail?.variants && previewDetail.variants.length > 0 && (
-                    <div className="space-y-1.5 text-xs">
-                      <span className="font-bold text-slate-700 block">
-                        Variantes que se importarán ({previewDetail.variants.length}):
-                      </span>
-                      <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
-                        {previewDetail.variants.map((v: any, i: number) => {
-                          const vUsd = Number(v.variantSellPrice || previewItem.priceUsd);
-                          const fUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
-                          const safeR = usdRate || 18;
-                          const vLandedMxn = Math.round((vUsd + fUsd) * safeR);
-                          const vSaleMxn = Math.max(vLandedMxn + 25, Math.round(vLandedMxn * 1.22));
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => {
-                                if (v.variantImage) {
-                                  setSelectedPreviewVideo(null);
-                                  setSelectedPreviewImage(v.variantImage);
-                                }
-                              }}
-                              className="px-2.5 py-1.5 bg-slate-100/90 hover:bg-indigo-50 rounded-xl text-[11px] text-slate-700 font-medium border border-slate-200/80 hover:border-indigo-300 flex items-center gap-2 transition cursor-pointer text-left"
-                              title={`Costo CJ: $${vUsd.toFixed(2)} USD + Envío: $${fUsd.toFixed(2)} USD (~$${vLandedMxn} MXN) → Venta sugerida: $${vSaleMxn} MXN`}
-                            >
-                              {v.variantImage && (
-                                <img src={getSafeImageUrl(v.variantImage)} alt="" className="w-6 h-6 rounded object-cover shrink-0" />
-                              )}
-                              <div>
-                                <span className="font-bold text-slate-900 block truncate max-w-[140px]">
-                                  {v.variantKey || v.variantNameEn || v.variantSku || `Opción ${i + 1}`}
-                                </span>
-                                <span className="text-[10px] text-slate-500">
-                                  Costo: <strong className="text-slate-700">${vUsd.toFixed(2)} USD</strong> • Venta: <strong className="text-indigo-700">${vSaleMxn} MXN</strong>
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
                     </div>
                   )}
                 </div>

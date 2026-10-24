@@ -801,7 +801,7 @@ export default function TiendaFoxDrop() {
     }
   }, []);
 
-  // Lista total de slides: El slide de bienvenida oficial SIEMPRE es el primero, seguido de los slides activos adicionales
+  // Lista total de slides: El slide de bienvenida oficial SIEMPRE es el primero, seguido de Especial Navidad y slides activos adicionales
   const defaultWelcomeSlide: CarouselSlide = {
     id: 'default-welcome',
     title: user?.name 
@@ -815,9 +815,25 @@ export default function TiendaFoxDrop() {
     is_active: true,
   };
 
+  const hasNavidadCategory = products.some(
+    p => (p.category || '').trim().toLowerCase() === 'navidad' && (p.stock > 0 || p.isSpecialOrder)
+  );
+
+  const navidadHeroSlide: CarouselSlide = {
+    id: 'navidad-festive-slide',
+    title: '🎄 Especial de Navidad FoxDrop: Regalos y Decoración Mágica',
+    subtitle: '✨ TEMPORADA NAVIDEÑA · PRECIOS DE LANZAMIENTO',
+    image_url: '/banner-bg-official.png',
+    cta_text: 'Ver Colección de Navidad 🎁',
+    cta_category: 'Navidad',
+    sort_order: 1,
+    is_active: true,
+  };
+
   const totalHeroSlides: CarouselSlide[] = [
     defaultWelcomeSlide,
-    ...slides.filter(s => s.is_active && s.id !== 'default-welcome')
+    ...(hasNavidadCategory ? [navidadHeroSlide] : []),
+    ...slides.filter(s => s.is_active && s.id !== 'default-welcome' && s.id !== 'navidad-festive-slide')
   ];
 
   // Avance automático suave de slides con tiempo configurable desde el Admin (por defecto 8 segundos)
@@ -850,16 +866,23 @@ export default function TiendaFoxDrop() {
     'hogar': HomeIcon,
     'juguetes': Gamepad2,
     'deportes': Heart,
+    'navidad': Sparkles,
   };
 
-  // Categorías calculadas dinámicamente: SOLO categorías que contengan al menos 1 producto
+  // Categorías calculadas dinámicamente: SOLO categorías que contengan al menos 1 producto, con Navidad destacada al principio
   const dynamicCategories = Array.from(
     new Set(
       products
         .map(p => p.category?.trim())
         .filter((cat): cat is string => Boolean(cat && cat.length > 0))
     )
-  );
+  ).sort((a, b) => {
+    const aIsNav = a.trim().toLowerCase() === 'navidad';
+    const bIsNav = b.trim().toLowerCase() === 'navidad';
+    if (aIsNav && !bIsNav) return -1;
+    if (!aIsNav && bIsNav) return 1;
+    return 0;
+  });
 
   const popularCategories = dynamicCategories.map(catName => {
     const key = catName.toLowerCase();
@@ -875,13 +898,6 @@ export default function TiendaFoxDrop() {
     const matchSearch = matchesProductSearch(p, searchTerm);
     const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
-    
-    // Si el producto es de importación CJ Dropshipping recién dado de alta, solo mostrarlo a Mario y Nydia
-    const isCjProduct = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
-    if (isCjProduct && !isPrivilegedPartner) {
-      return false;
-    }
-
 
     // Filtro por stock: Solo mostrar productos disponibles para compra inmediata o por encargo especial
     const matchStock = p.stock > 0 || p.isSpecialOrder;
@@ -2130,9 +2146,51 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
+        {/* ANIMACIONES DE LUCES NAVIDEÑAS QUE PRENDEN Y APAGAN */}
+        <style>{`
+          @keyframes xmasLightCycleA {
+            0%, 100% { opacity: 1; filter: brightness(1.35); transform: scale(1.08); }
+            45%, 55% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+          }
+          @keyframes xmasLightCycleB {
+            0%, 10% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+            50%, 90% { opacity: 1; filter: brightness(1.35); transform: scale(1.08); }
+            100% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+          }
+          @keyframes xmasLightCycleC {
+            0%, 30%, 100% { opacity: 1; filter: brightness(1.4); transform: scale(1.1); }
+            60%, 85% { opacity: 0.2; filter: brightness(0.45); transform: scale(0.85); box-shadow: none !important; }
+          }
+          .xmas-bulb-red {
+            background: radial-gradient(circle at 35% 35%, #ff9999, #ff1e1e 60%, #990000);
+            box-shadow: 0 0 8px 2px rgba(255, 38, 38, 0.95), 0 0 16px 4px rgba(255, 38, 38, 0.55);
+            animation: xmasLightCycleA 1.4s infinite ease-in-out;
+          }
+          .xmas-bulb-gold {
+            background: radial-gradient(circle at 35% 35%, #fff6b3, #ffcc00 60%, #b38600);
+            box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.95), 0 0 16px 4px rgba(255, 200, 0, 0.55);
+            animation: xmasLightCycleB 1.4s infinite ease-in-out;
+          }
+          .xmas-bulb-green {
+            background: radial-gradient(circle at 35% 35%, #b3ffcc, #00e64d 60%, #006622);
+            box-shadow: 0 0 8px 2px rgba(0, 230, 77, 0.95), 0 0 16px 4px rgba(0, 230, 77, 0.55);
+            animation: xmasLightCycleC 1.6s infinite ease-in-out;
+          }
+          .xmas-bulb-blue {
+            background: radial-gradient(circle at 35% 35%, #b3f0ff, #00bfff 60%, #0059b3);
+            box-shadow: 0 0 8px 2px rgba(0, 191, 255, 0.95), 0 0 16px 4px rgba(0, 191, 255, 0.55);
+            animation: xmasLightCycleA 1.7s infinite ease-in-out 0.4s;
+          }
+          .xmas-bulb-warm {
+            background: radial-gradient(circle at 35% 35%, #ffffff, #ffe699 60%, #cc9900);
+            box-shadow: 0 0 8px 2px rgba(255, 235, 160, 0.95), 0 0 14px 4px rgba(255, 215, 100, 0.55);
+            animation: xmasLightCycleB 1.5s infinite ease-in-out 0.25s;
+          }
+        `}</style>
+
         {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN PLECA TRANSPARENTE CON HOVER Y ACTIVO */}
         <div className="border-t border-white/10 bg-[#0B332C]/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start md:justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start md:justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
             
             {/* NUEVOS INGRESOS */}
             <button
@@ -2156,6 +2214,51 @@ export default function TiendaFoxDrop() {
             {/* CATEGORÍAS POPULARES DE FOXDROP */}
             {popularCategories.map((cat) => {
               const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
+              const isNavidad = cat.name.trim().toLowerCase() === 'navidad';
+
+              if (isNavidad) {
+                return (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.name);
+                      setActiveTab('all');
+                      if (currentView === 'account') setCurrentView('store');
+                      const el = document.getElementById('catalog-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className={`relative shrink-0 cursor-pointer group px-3.5 py-1 rounded-full transition-all duration-300 flex items-center gap-2 ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-[#991B1B] via-[#14532D] to-[#991B1B] text-white ring-2 ring-amber-300 shadow-[0_0_16px_rgba(255,215,0,0.55)] scale-105'
+                        : 'bg-gradient-to-r from-[#7F1D1D]/90 via-[#0F3E36] to-[#7F1D1D]/90 text-amber-100 hover:text-white border border-amber-300/50 shadow-[0_0_12px_rgba(220,38,38,0.4)] hover:scale-105'
+                    }`}
+                  >
+                    {/* Guirnalda superior de foquitos navideños que prenden y apagan */}
+                    <span className="absolute -top-1.5 left-2 right-2 flex items-center justify-between pointer-events-none">
+                      <span className="w-2 h-2 rounded-full xmas-bulb-red" />
+                      <span className="w-2 h-2 rounded-full xmas-bulb-gold" />
+                      <span className="w-2 h-2 rounded-full xmas-bulb-green" />
+                      <span className="w-2 h-2 rounded-full xmas-bulb-blue" />
+                      <span className="w-2 h-2 rounded-full xmas-bulb-warm" />
+                      <span className="w-2 h-2 rounded-full xmas-bulb-red" />
+                    </span>
+                    {/* Guirnalda inferior de foquitos navideños */}
+                    <span className="absolute -bottom-1.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-green" />
+                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-warm" />
+                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-red" />
+                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-gold" />
+                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-blue" />
+                    </span>
+                    <span className="text-sm leading-none">🎄</span>
+                    <span className="font-black tracking-wide text-amber-200 group-hover:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] capitalize">
+                      {cat.name}
+                    </span>
+                    <span className="w-2 h-2 rounded-full xmas-bulb-gold" />
+                  </button>
+                );
+              }
 
               return (
                 <button
@@ -2275,19 +2378,34 @@ export default function TiendaFoxDrop() {
             {(() => {
               const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
               const isDefaultSlide = currentSlide.id === 'default-welcome';
+              const isNavidadSlide = currentSlide.id === 'navidad-festive-slide' || (currentSlide.cta_category || '').trim().toLowerCase() === 'navidad';
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-md border border-emerald-950/40 bg-[#0E3D35] h-[140px] sm:h-[155px] w-full flex items-stretch">
+                  <div className={`relative rounded-2xl overflow-hidden shadow-md border h-[140px] sm:h-[155px] w-full flex items-stretch ${
+                    isNavidadSlide ? 'border-amber-400/70 bg-gradient-to-r from-[#58111A] via-[#0E3D35] to-[#14532D]' : 'border-emerald-950/40 bg-[#0E3D35]'
+                  }`}>
                     {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
                     <img 
                       src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
                       alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none ${isNavidadSlide ? 'opacity-45 mix-blend-overlay' : ''}`}
                     />
 
-                    {/* Zorrito oficial solo en slide por defecto */}
-                    {isDefaultSlide && (
+                    {/* GUIRNALDA DE LUCES NAVIDEÑAS QUE PRENDEN Y APAGAN EN EL SLIDE DE NAVIDAD */}
+                    {isNavidadSlide && (
+                      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-around px-2 pt-1 pointer-events-none">
+                        {['red', 'gold', 'green', 'blue', 'warm', 'red', 'gold', 'green', 'blue', 'warm', 'red', 'gold'].map((color, idx) => (
+                          <div key={idx} className="flex flex-col items-center">
+                            <span className="w-1 h-1 bg-slate-800 rounded-t-xs" />
+                            <span className={`w-2.5 h-3 rounded-full xmas-bulb-${color}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Zorrito oficial en slide por defecto o en Especial Navidad */}
+                    {(isDefaultSlide || isNavidadSlide) && (
                       <div className="absolute right-[2%] bottom-0 w-[44%] h-[96%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
@@ -2369,19 +2487,34 @@ export default function TiendaFoxDrop() {
             {(() => {
               const currentSlide = totalHeroSlides[activeSlide % totalHeroSlides.length] || defaultWelcomeSlide;
               const isDefaultSlide = currentSlide.id === 'default-welcome';
+              const isNavidadSlide = currentSlide.id === 'navidad-festive-slide' || (currentSlide.cta_category || '').trim().toLowerCase() === 'navidad';
 
               return (
                 <div>
-                  <div className="relative rounded-2xl overflow-hidden shadow-lg border border-emerald-950/40 bg-[#0E3D35] h-[190px] lg:h-[220px] w-full flex items-stretch">
+                  <div className={`relative rounded-2xl overflow-hidden shadow-lg border h-[190px] lg:h-[220px] w-full flex items-stretch ${
+                    isNavidadSlide ? 'border-amber-400/70 bg-gradient-to-r from-[#58111A] via-[#0E3D35] to-[#14532D]' : 'border-emerald-950/40 bg-[#0E3D35]'
+                  }`}>
                     {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
                     <img 
                       src={isDefaultSlide ? '/banner-bg-official.png' : (currentSlide.image_url || '/banner-bg-official.png')} 
                       alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none ${isNavidadSlide ? 'opacity-45 mix-blend-overlay' : ''}`}
                     />
 
-                    {/* Zorrito oficial solo en slide por defecto */}
-                    {isDefaultSlide && (
+                    {/* GUIRNALDA DE LUCES NAVIDEÑAS QUE PRENDEN Y APAGAN EN EL SLIDE DE NAVIDAD */}
+                    {isNavidadSlide && (
+                      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-around px-4 pt-1 pointer-events-none">
+                        {['red', 'gold', 'green', 'blue', 'warm', 'red', 'gold', 'green', 'blue', 'warm', 'red', 'gold', 'green', 'blue', 'warm', 'red', 'gold', 'green', 'blue', 'warm'].map((color, idx) => (
+                          <div key={idx} className="flex flex-col items-center">
+                            <span className="w-1.5 h-1.5 bg-slate-800 rounded-t-xs" />
+                            <span className={`w-3 h-3.5 rounded-full xmas-bulb-${color}`} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Zorrito oficial en slide por defecto o en Especial Navidad */}
+                    {(isDefaultSlide || isNavidadSlide) && (
                       <div className="absolute right-[3%] bottom-0 w-[42%] h-[98%] pointer-events-none z-10 flex items-end justify-center">
                         <img 
                           src="/fox-mascot-tight.png" 
