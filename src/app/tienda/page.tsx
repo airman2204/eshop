@@ -829,31 +829,7 @@ export default function TiendaFoxDrop() {
     return () => clearInterval(interval);
   }, [totalHeroSlides.length, storeSettings?.carouselIntervalSeconds]);
 
-  // Sincronizar carrito abandonado en segundo plano cuando el cliente tiene artículos e información de contacto
-  useEffect(() => {
-    if (!cart || cart.length === 0) return;
-    const phone = user?.phone;
-    const email = user?.email;
-    if (!phone && !email) return;
-
-    const timer = setTimeout(() => {
-      const currentTotal = cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0);
-      trackAbandonedCart({
-        clientName: user?.name || 'Cliente Invitado',
-        clientPhone: phone || '',
-        clientEmail: email || undefined,
-        items: cart.map(item => ({
-          title: item.product.title,
-          quantity: item.quantity,
-          price: item.product.publicPrice,
-          image: item.product.images?.[0] || undefined,
-        })),
-        total: currentTotal,
-      });
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [cart, user]);
+  // El carrito abandonado ya se sincroniza en tiempo real vía /api/cart/sync (useEffect superior)
 
 
   // Categorías calculadas dinámicamente de los productos existentes en la tienda

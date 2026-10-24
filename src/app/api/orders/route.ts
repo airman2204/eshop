@@ -224,8 +224,8 @@ export async function PATCH(req: NextRequest) {
     const supabase = createServerClient() as any;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumber);
 
-    // Consultar estado previo para saber si debemos descontar stock al pasar a 'paid'
-    let prevQuery = supabase.from("orders").select("id, payment_status, payment_method, order_items(*)");
+    // Consultar estado previo para saber si debemos descontar stock al pasar a 'paid' o devolver stock al pasar a 'cancelled'
+    let prevQuery = supabase.from("orders").select("id, status, payment_status, payment_method, order_items(*)");
     if (isUuid) {
       prevQuery = prevQuery.eq("id", orderNumber);
     } else {
@@ -272,6 +272,31 @@ export async function PATCH(req: NextRequest) {
             if (pData && typeof pData.stock === "number") {
               const updatedStock = Math.max(0, pData.stock - (Number(item.quantity) || 1));
               await supabase.from("products").update({ stock: updatedStock }).eq("id", item.product_id);
+            }
+          } catch {}
+        }
+      }
+    }
+
+    // Si la orden acaba de ser cancelada y ya había descontado stock, restaurar el inventario
+    if (
+      prevOrder &&
+      prevOrder.status !== "cancelled" &&
+      status === "cancelled" &&
+      (prevOrder.payment_status === "paid" || (prevOrder.payment_method && prevOrder.payment_method !== "mercadopago")) &&
+      Array.isArray(prevOrder.order_items)
+    ) {
+      for (const item of prevOrder.order_items) {
+        if (item.product_id) {
+          try {
+            const { data: pData } = await supabase
+              .from("products")
+              .select("stock")
+              .eq("id", item.product_id)
+              .maybeSingle();
+            if (pData && typeof pData.stock === "number") {
+              const restoredStock = pData.stock + (Number(item.quantity) || 1);
+              await supabase.from("products").update({ stock: restoredStock }).eq("id", item.product_id);
             }
           } catch {}
         }

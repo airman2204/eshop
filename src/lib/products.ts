@@ -100,6 +100,8 @@ export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
     discountPercent: Number(dbProd.discount_percent) || 0,
     isActive: dbProd.is_active ?? true,
     brand: detectProductBrand(dbProd.title, dbProd.brand),
+    videos: Array.isArray(dbProd.videos) ? dbProd.videos : [],
+    variants: Array.isArray(dbProd.variants) ? dbProd.variants : [],
   };
 }
 

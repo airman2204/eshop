@@ -80,9 +80,13 @@ export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
  */
 export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
   const token = getStoredAdminToken();
+  const email = getStoredAdminEmail();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (email) {
+    headers["x-admin-email"] = email;
   }
 
   if (bodyOrOptions && typeof bodyOrOptions === "object" && "body" in bodyOrOptions) {
@@ -93,10 +97,15 @@ export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
     });
   }
 
+  const payload =
+    bodyOrOptions && typeof bodyOrOptions === "object"
+      ? { ...bodyOrOptions, adminToken: token, adminEmail: email }
+      : bodyOrOptions;
+
   return fetch("/api/admin/agent", {
     method: "POST",
     headers,
-    body: JSON.stringify(bodyOrOptions),
+    body: JSON.stringify(payload),
   });
 }
 

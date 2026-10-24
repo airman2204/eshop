@@ -1267,8 +1267,36 @@ export async function POST(req: NextRequest) {
 
     if (action === "delete_product") {
       if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+      // Desvincular items históricos en order_items para evitar bloqueos de llave foránea
+      try {
+        await supabase.from("order_items").update({ product_id: null }).eq("product_id", id);
+      } catch {}
+
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
+
+      // Limpiar referencias en product_brands.json y product_extras.json
+      try {
+        const { data: bFile } = await supabase.storage.from("product-images").download("_system/product_brands.json");
+        if (bFile) {
+          const bMap = JSON.parse(await bFile.text() || "{}");
+          if (bMap[id]) {
+            delete bMap[id];
+            await supabase.storage.from("product-images").upload("_system/product_brands.json", Buffer.from(JSON.stringify(bMap, null, 2)), { contentType: "application/json", upsert: true });
+          }
+        }
+      } catch {}
+      try {
+        const { data: exFile } = await supabase.storage.from("product-images").download("_system/product_extras.json");
+        if (exFile) {
+          const exMap = JSON.parse(await exFile.text() || "{}");
+          if (exMap[id]) {
+            delete exMap[id];
+            await supabase.storage.from("product-images").upload("_system/product_extras.json", Buffer.from(JSON.stringify(exMap, null, 2)), { contentType: "application/json", upsert: true });
+          }
+        }
+      } catch {}
+
       return NextResponse.json({ success: true, deletedId: id });
     }
 
@@ -1322,12 +1350,21 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "orderId y status requeridos" }, { status: 400 });
       }
 
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
+
+      // Consultar estado previo para devolver stock si se cancela una orden que ya había descontado stock
+      let prevQuery = supabase.from("orders").select("id, status, payment_status, payment_method, order_items(*)");
+      if (isUuid) {
+        prevQuery = prevQuery.eq("id", orderId);
+      } else {
+        prevQuery = prevQuery.eq("order_number", orderId);
+      }
+      const { data: prevOrder } = await prevQuery.maybeSingle();
+
       const updatePayload: any = { status, updated_at: new Date().toISOString() };
       if (notes !== undefined) {
         updatePayload.notes = notes;
       }
-
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
 
       let updateQuery;
       if (isUuid) {
@@ -1337,6 +1374,32 @@ export async function POST(req: NextRequest) {
       }
 
       const { data, error } = await updateQuery.select().maybeSingle();
+
+      // Si se canceló la orden y no estaba cancelada antes, restaurar el stock de los artículos
+      if (
+        !error &&
+        prevOrder &&
+        prevOrder.status !== "cancelled" &&
+        status === "cancelled" &&
+        (prevOrder.payment_status === "paid" || (prevOrder.payment_method && prevOrder.payment_method !== "mercadopago")) &&
+        Array.isArray(prevOrder.order_items)
+      ) {
+        for (const item of prevOrder.order_items) {
+          if (item.product_id) {
+            try {
+              const { data: pData } = await supabase
+                .from("products")
+                .select("stock")
+                .eq("id", item.product_id)
+                .maybeSingle();
+              if (pData && typeof pData.stock === "number") {
+                const restoredStock = pData.stock + (Number(item.quantity) || 1);
+                await supabase.from("products").update({ stock: restoredStock }).eq("id", item.product_id);
+              }
+            } catch {}
+          }
+        }
+      }
 
       if (error || !data) {
         // Fallback: intentar por el otro campo por si acaso

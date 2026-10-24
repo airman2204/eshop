@@ -484,6 +484,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: updateErr.message }, { status: 500 });
       }
 
+      // 3. Si el pedido ya había descontado stock (pago acreditado o método distinto de Mercado Pago pendiente), devolver el stock al catálogo
+      const shouldRestoreStock =
+        orderData.payment_status === "paid" ||
+        (orderData.payment_method && orderData.payment_method !== "mercadopago");
+
+      if (shouldRestoreStock && Array.isArray(orderData.order_items)) {
+        for (const item of orderData.order_items) {
+          if (item.product_id) {
+            try {
+              const { data: pData } = await supabase
+                .from("products")
+                .select("stock")
+                .eq("id", item.product_id)
+                .maybeSingle();
+              if (pData && typeof pData.stock === "number") {
+                const restoredStock = pData.stock + (Number(item.quantity) || 1);
+                await supabase.from("products").update({ stock: restoredStock }).eq("id", item.product_id);
+              }
+            } catch {}
+          }
+        }
+      }
+
       // Notificar automáticamente por WhatsApp sobre la cancelación del pedido
       if (orderData.client_phone) {
         try {

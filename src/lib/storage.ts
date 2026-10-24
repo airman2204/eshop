@@ -1,3 +1,5 @@
+import { fetchAdminApi, getStoredAdminEmail, getStoredAdminToken } from "./adminAuth";
+
 /**
  * Sube una imagen local usando la ruta segura del servidor (/api/admin).
  * Esto asegura que:
@@ -9,8 +11,15 @@ export async function uploadProductImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
+  const headers: Record<string, string> = {};
+  const token = getStoredAdminToken();
+  const email = getStoredAdminEmail();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (email) headers["x-admin-email"] = email;
+
   const res = await fetch("/api/admin", {
     method: "POST",
+    headers,
     body: formData,
   });
 
@@ -31,13 +40,9 @@ export async function uploadProductImage(file: File): Promise<string> {
  * Sube o transfiere una imagen desde una URL remota o Data URL pegada directamente.
  */
 export async function uploadProductImageUrl(imageUrl: string): Promise<string> {
-  const res = await fetch("/api/admin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "upload_image_url",
-      imageUrl,
-    }),
+  const res = await fetchAdminApi({
+    action: "upload_image_url",
+    imageUrl,
   });
 
   if (!res.ok) {
@@ -54,16 +59,12 @@ export async function uploadProductImageUrl(imageUrl: string): Promise<string> {
  * Si se le pasa inputImage y customPrompt, la IA ambienta el producto en el contexto deseado (ej. dentro de un carro, en la cocina, en uso real).
  */
 export async function generateProductImageWithAi(title: string, category?: string, inputImage?: string, customPrompt?: string): Promise<string> {
-  const res = await fetch("/api/admin", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "generate_ai_image",
-      title,
-      category,
-      inputImage,
-      customPrompt,
-    }),
+  const res = await fetchAdminApi({
+    action: "generate_ai_image",
+    title,
+    category,
+    inputImage,
+    customPrompt,
   });
 
   if (!res.ok) {
