@@ -99,7 +99,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
   const [previewItem, setPreviewItem] = useState<CjItem | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [loadingModalDetail, setLoadingModalDetail] = useState(false);
   const [previewDetail, setPreviewDetail] = useState<{
+    pid?: string;
     images: string[];
     videos?: { id: string; url: string; coverUrl?: string; duration?: string }[];
     description: string;
@@ -320,6 +322,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         } : prev);
 
         setPreviewDetail({
+          pid: item.id,
           images: imgSet,
           videos: videosArr,
           description: d.description || '',
@@ -368,8 +371,18 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const baseUsd = typeof item.maxPriceUsd === 'number' && item.maxPriceUsd > item.priceUsd ? item.maxPriceUsd : (typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0);
     const costMxn = Math.round(baseUsd * safeRate);
 
-    // Si tenemos la cotización real de flete a México desde CJ, incluirla en el costo total real
-    const realFreightUsd = extraDetail?.realFreightToMx?.cheapestUsd || previewDetail?.realFreightToMx?.cheapestUsd || 0;
+    // IMPORTANTE: Solo reutilizar detalle previo si corresponde EXACTAMENTE al mismo producto (pid === item.id)
+    const matchedDetail = extraDetail?.pid === item.id
+      ? extraDetail
+      : (previewDetail?.pid === item.id ? previewDetail : null);
+
+    if (!matchedDetail) {
+      // Limpiar inmediatamente cualquier detalle residual de un producto anterior
+      setPreviewDetail(null);
+    }
+
+    // Si tenemos la cotización real de flete a México desde CJ para ESTE producto, incluirla en el costo total real
+    const realFreightUsd = matchedDetail?.realFreightToMx?.cheapestUsd || 0;
     const freightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (item.countryCode === 'MX' || selectedCountry === 'MX' ? 0 : 140);
     const totalLandedCostMxn = costMxn + freightMxn;
 
@@ -377,22 +390,22 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const suggestedPrice = Math.max(149, Math.round(totalLandedCostMxn * 1.45));
     setCustomPrices(prev => ({ ...prev, [item.id]: suggestedPrice }));
     setCustomTitles(prev => ({ ...prev, [item.id]: item.name }));
+    setCustomDescriptions(prev => ({ ...prev, [item.id]: '' }));
 
-    // Si viene la descripción detallada del modal grande, guardarla
-    let rawDesc = extraDetail?.description || previewDetail?.description || '';
-    if (rawDesc) {
-      const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
-      setCustomDescriptions(prev => ({
-        ...prev,
-        [item.id]: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional: 10 a 15 días hábiles.` : ''
-      }));
-    }
-
-    // Auto-disparar traducción a español con IA al abrir el modal para que no quede en inglés
-    triggerTranslation(item, rawDesc);
-
-    // Si no teníamos aún la cotización real de flete (porque abrió directo desde la tarjeta), consultarla en segundo plano
-    if (!extraDetail?.realFreightToMx && !previewDetail?.realFreightToMx && item.countryCode !== 'MX' && selectedCountry !== 'MX') {
+    if (matchedDetail) {
+      // Ya tenemos la descripción real de ESTE producto: traducir de inmediato
+      const rawDesc = matchedDetail.description || '';
+      if (rawDesc) {
+        const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+        setCustomDescriptions(prev => ({
+          ...prev,
+          [item.id]: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional: 10 a 15 días hábiles.` : ''
+        }));
+      }
+      triggerTranslation(item, rawDesc);
+    } else {
+      // Abrió directo desde la tarjeta: consultar primero el detalle real de ESTE producto (fotos, variantes, flete y descripción propia)
+      setLoadingModalDetail(true);
       try {
         const res = await fetchAdminCjApi({
           action: 'get_product_detail',
@@ -410,18 +423,29 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           const fUsd = d.realFreightToMx?.cheapestUsd || 0;
           const updatedLandedMxn = Math.round((maxVarUsd + fUsd) * safeRate);
           const updatedSuggested = Math.max(149, Math.round(updatedLandedMxn * 1.45));
+          const realName = d.productNameEn || d.productName || item.name;
+          const realDesc = d.description || '';
+
           setCustomPrices(prev => ({ ...prev, [item.id]: updatedSuggested }));
-          setModalItem(prev => prev ? { ...prev, maxPriceUsd: maxVarUsd } : prev);
+          setModalItem(prev => prev && prev.id === item.id ? { ...prev, name: realName, maxPriceUsd: maxVarUsd } : prev);
           setPreviewDetail({
+            pid: item.id,
             images: Array.isArray(d.productImageSet) && d.productImageSet.length > 0 ? d.productImageSet : [item.image],
             videos: Array.isArray(d.videos) ? d.videos : [],
-            description: d.description || '',
+            description: realDesc,
             variants: variantsArr,
             weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
             realFreightToMx: d.realFreightToMx || undefined,
           });
+          triggerTranslation({ ...item, name: realName }, realDesc);
+        } else {
+          triggerTranslation(item, '');
         }
-      } catch {}
+      } catch {
+        triggerTranslation(item, '');
+      } finally {
+        setLoadingModalDetail(false);
+      }
     }
   };
 
@@ -430,9 +454,12 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const item = modalItem;
     setImportingId(item.id);
 
+    // Garantizar que solo se use el detalle si pertenece estrictamente al producto actual
+    const activeDetail = previewDetail?.pid === item.id ? previewDetail : null;
+
     const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
     const baseUsd = typeof item.maxPriceUsd === 'number' && item.maxPriceUsd > item.priceUsd ? item.maxPriceUsd : (typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0);
-    const realFreightUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
+    const realFreightUsd = activeDetail?.realFreightToMx?.cheapestUsd || 0;
     const totalUsd = baseUsd + realFreightUsd;
     const costMxn = Math.round(totalUsd * safeRate);
     const salePrice = customPrices[item.id] || Math.round(costMxn * 1.45);
@@ -440,9 +467,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const finalDescription = customDescriptions[item.id]?.trim() || `Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.`;
 
     // Preparar videos e importar variantes con sus costos y precios calculados
-    const videoUrls = (previewDetail?.videos || []).map((v: any) => v.url).filter(Boolean);
+    const videoUrls = (activeDetail?.videos || []).map((v: any) => v.url).filter(Boolean);
     const ratio = costMxn > 0 ? salePrice / costMxn : 1.45;
-    const mappedVariants = (previewDetail?.variants || []).map((v: any, idx: number) => {
+    const mappedVariants = (activeDetail?.variants || []).map((v: any, idx: number) => {
       const varCostUsd = Number(v.variantSellPrice) || baseUsd;
       const varLandedUsd = varCostUsd + realFreightUsd;
       const varLandedMxn = Math.round(varLandedUsd * safeRate);
@@ -462,6 +489,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
       const res = await fetchAdminCjApi({
         action: 'import_cj_product',
         importProduct: {
+          pid: item.id,
           title: finalTitle,
           sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
           categoryName: item.categoryName || 'Novedades & Gadgets',
@@ -469,7 +497,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           baseCostMxn: costMxn,
           publicPrice: salePrice,
           imageUrl: item.image,
-          images: previewDetail?.images && previewDetail.images.length > 0 ? previewDetail.images : [item.image],
+          images: activeDetail?.images && activeDetail.images.length > 0 ? activeDetail.images : [item.image],
           videos: videoUrls,
           variants: mappedVariants,
           description: finalDescription,
@@ -1618,8 +1646,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
 
             {(() => {
               const safeRate = usdRate || 18;
+              const matchedDetail = previewDetail?.pid === modalItem.id ? previewDetail : null;
               const baseUsd = modalItem.maxPriceUsd && modalItem.maxPriceUsd > modalItem.priceUsd ? modalItem.maxPriceUsd : (modalItem.priceUsd || 0);
-              const freightUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
+              const freightUsd = matchedDetail?.realFreightToMx?.cheapestUsd || 0;
               const totalLandedMxn = Math.round((baseUsd + freightUsd) * safeRate);
 
               return (
@@ -1633,7 +1662,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-800 line-clamp-2">{modalItem.name}</p>
                       <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                        Costo Producto: ${baseUsd.toFixed(2)} USD {freightUsd > 0 ? `+ Flete CJ: $${freightUsd.toFixed(2)} USD` : ''}
+                        Costo Producto: ${baseUsd.toFixed(2)} USD {loadingModalDetail ? '• Cotizando flete CJ...' : (freightUsd > 0 ? `+ Flete CJ: $${freightUsd.toFixed(2)} USD` : '')}
                       </p>
                       <p className="text-[11px] text-slate-800 font-extrabold">
                         Costo Total Puesto en México: ~${totalLandedMxn} MXN
@@ -1649,12 +1678,12 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         </label>
                         <button
                           type="button"
-                          disabled={Boolean(translatingId)}
-                          onClick={() => triggerTranslation(modalItem, previewDetail?.description || '')}
+                          disabled={Boolean(translatingId) || loadingModalDetail}
+                          onClick={() => triggerTranslation(modalItem, matchedDetail?.description || '')}
                           className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
                         >
-                          <Sparkles className={`w-3 h-3 ${translatingId ? 'animate-spin' : ''}`} />
-                          <span>{translatingId ? 'Traduciendo...' : 'Re-traducir con IA'}</span>
+                          <Sparkles className={`w-3 h-3 ${translatingId || loadingModalDetail ? 'animate-spin' : ''}`} />
+                          <span>{translatingId || loadingModalDetail ? 'Traduciendo...' : 'Re-traducir con IA'}</span>
                         </button>
                       </div>
                       <input
@@ -1670,9 +1699,9 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         <label className="text-[11px] font-bold text-slate-700">
                           Descripción del producto en español:
                         </label>
-                        {translatingId && (
+                        {(translatingId || loadingModalDetail) && (
                           <span className="text-[10px] text-indigo-500 font-semibold animate-pulse">
-                            Generando descripción persuasiva...
+                            {loadingModalDetail ? 'Obteniendo fotos, variantes y flete real...' : 'Generando descripción persuasiva...'}
                           </span>
                         )}
                       </div>
@@ -1722,7 +1751,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
               </button>
               <button
                 type="button"
-                disabled={Boolean(importingId)}
+                disabled={Boolean(importingId) || loadingModalDetail}
                 onClick={handleConfirmImport}
                 className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-black transition shadow-md flex items-center gap-1.5 cursor-pointer"
               >
@@ -1730,6 +1759,11 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Guardando en catálogo...</span>
+                  </>
+                ) : loadingModalDetail ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Cargando fotos y variantes...</span>
                   </>
                 ) : (
                   <>

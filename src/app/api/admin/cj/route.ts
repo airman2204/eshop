@@ -28,17 +28,17 @@ async function translateCjItem(title: string, rawDesc?: string): Promise<{ title
   const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.5-flash"];
 
   const prompt = `Actúa como un experto en redacción de e-commerce y marketing para FoxDrop México.
-Traduce y optimiza al español de México este producto procedente de CJ Dropshipping para venderlo en nuestra tienda.
+Traduce y optimiza al español de México este producto específico procedente de CJ Dropshipping para venderlo en nuestra tienda.
 
-TÍTULO EN INGLÉS:
+TÍTULO EN INGLÉS (OBLIGATORIO TRADUCIR ESTE ARTÍCULO EXACTO):
 ${title}
 
-DESCRIPCIÓN ORIGINAL:
+ESPECIFICACIONES ADICIONALES:
 ${cleanDesc || "N/A"}
 
-REGLAS DE TRADUCCIÓN:
-1. "title": Atractivo, conciso, comercial, sin palabras en chino ni códigos raros. Máximo 60-70 caracteres.
-2. "description": Redactada de forma persuasiva, clara y profesional en español. Incluye viñetas breves con beneficios y características clave. Concluye indicando: "✈️ Envío internacional directo a domicilio (10 a 15 días hábiles)."
+REGLAS ESTRICTAS DE TRADUCCIÓN:
+1. "title": DEBE ser la traducción fiel, atractiva y comercial al español de México del "TÍTULO EN INGLÉS" (${title}). PROHIBIDO inventar otro producto distinto o usar nombres de otros artículos. Máximo 65 caracteres.
+2. "description": Redactada de forma persuasiva, clara y profesional en español específicamente sobre el producto "${title}". Incluye viñetas breves con beneficios y características clave. Concluye indicando: "✈️ Envío internacional directo a domicilio (10 a 15 días hábiles)."
 3. Responde ÚNICAMENTE un objeto JSON válido con las llaves "title" y "description".`;
 
   for (const model of models) {
