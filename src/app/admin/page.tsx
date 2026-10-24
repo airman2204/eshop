@@ -191,6 +191,9 @@ export default function AdminCRM() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [newIsActive, setNewIsActive] = useState(true);
+  const [rewritingDescriptionAi, setRewritingDescriptionAi] = useState(false);
+  const [aiRewriteHint, setAiRewriteHint] = useState('');
+  const [showAiRewriteHintInput, setShowAiRewriteHintInput] = useState(false);
 
   // Modal Descuento Promocional en Lote
   const [showBulkDiscountModal, setShowBulkDiscountModal] = useState(false);
@@ -349,7 +352,8 @@ export default function AdminCRM() {
   const [slideTitle, setSlideTitle] = useState('');
   const [slideSubtitle, setSlideSubtitle] = useState('');
   const [slideImageUrl, setSlideImageUrl] = useState('');
-  const [slideCtaText, setSlideCtaText] = useState('Ver Colección');
+  const [slideUseButton, setSlideUseButton] = useState(false);
+  const [slideCtaText, setSlideCtaText] = useState('');
   const [slideCtaCategory, setSlideCtaCategory] = useState('Todas');
   const [savingSlide, setSavingSlide] = useState(false);
 
@@ -2008,7 +2012,55 @@ export default function AdminCRM() {
     window.open(searchUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Cálculo automático según Lote seleccionado
+  // Detectar si el producto que se está creando/editando en el modal pertenece al Catálogo Internacional (CJ Dropshipping)
+  const editingProductObj = editingProductId ? products.find(p => p.id === editingProductId) : null;
+  const isEditingCjProduct = Boolean(
+    (newSku && newSku.toUpperCase().startsWith('CJ')) ||
+    (newBrand && newBrand.toLowerCase().includes('cj dropshipping')) ||
+    (editingProductObj && ((editingProductObj.sku && editingProductObj.sku.startsWith('CJ')) || (editingProductObj.brand && editingProductObj.brand.toLowerCase().includes('cj dropshipping')))) ||
+    (!editingProductId && inventoryScope === 'cj_international')
+  );
+
+  // Reescribir / Mejorar Descripción con IA (Tanto para Boutique como para Envío Internacional CJ)
+  const handleAiRewriteDescription = async (customHint?: string) => {
+    if (!newTitle.trim() && !newDescription.trim()) {
+      alert('Escribe primero el nombre del producto o una breve idea para que la IA pueda generar la descripción.');
+      return;
+    }
+    setRewritingDescriptionAi(true);
+    try {
+      const res = await fetch('/api/admin/cj', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminSession?.token ? { Authorization: `Bearer ${adminSession.token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'rewrite_description',
+          adminToken: adminSession?.token,
+          adminEmail: adminSession?.email,
+          title: newTitle.trim(),
+          currentDescription: newDescription.trim(),
+          category: newCategory,
+          brand: newBrand,
+          isCj: isEditingCjProduct,
+          customHint: (customHint ?? aiRewriteHint).trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.description) {
+        throw new Error(data.error || 'No se pudo generar la descripción con IA');
+      }
+      setNewDescription(data.description);
+      setShowAiRewriteHintInput(false);
+    } catch (err: any) {
+      alert(`Aviso IA: ${err.message || 'Intenta nuevamente'}`);
+    } finally {
+      setRewritingDescriptionAi(false);
+    }
+  };
+
+  // Cálculo automático según Lote seleccionado (en CJ Internacional no se usan lotes ni fletes prorrateados adicionales, pues baseCostMxn ya es el costo puesto en México)
   const currentBatch = batches.find(b => b.id === selectedBatchId) || batches[0] || {
     id: 'custom',
     batchName: 'Lote Genérico',
@@ -2017,7 +2069,7 @@ export default function AdminCRM() {
 
   const costMxn = costInputMode === 'mxn' ? newCostMxnDirect : (newCostUsd * usdRate);
   const calculatedCostUsd = costInputMode === 'mxn' ? (usdRate > 0 ? (newCostMxnDirect / usdRate) : 0) : newCostUsd;
-  const shippingPerUnit = currentBatch.costPerUnit || 20.0;
+  const shippingPerUnit = isEditingCjProduct ? 0 : (currentBatch.costPerUnit || 20.0);
   const totalCostUnitMxn = costMxn + shippingPerUnit;
   const profitUnit = newPublicPrice - totalCostUnitMxn;
   const marginPercent = newPublicPrice > 0 ? (profitUnit / newPublicPrice) * 100 : 0;
@@ -2026,14 +2078,20 @@ export default function AdminCRM() {
   const promoPrice = newDiscountPercent > 0 ? Math.round(newPublicPrice * (1 - newDiscountPercent / 100)) : newPublicPrice;
   const promoProfit = promoPrice - totalCostUnitMxn;
   const promoMarginPercent = promoPrice > 0 ? (promoProfit / promoPrice) * 100 : 0;
-  const isPromoMarginSafe = newDiscountPercent === 0 || promoMarginPercent >= 50;
+  const isPromoMarginSafe = newDiscountPercent === 0 || (isEditingCjProduct ? promoProfit > 0 : promoMarginPercent >= 50);
 
-  // Conteos para Filtros de Inventario
-  const countOutOfStock = products.filter(p => (p.stock || 0) <= 0).length;
-  const countLowStock = products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= 3).length;
-  const countHealthy = products.filter(p => (p.stock || 0) > 3).length;
-  const countCombos = products.filter(p => p.isCombo).length;
-  const countInactive = products.filter(p => p.isActive === false).length;
+  // Productos del ámbito actual: Stock Físico (Boutique) vs Catálogo Virtual (Importación CJ)
+  const scopedProducts = products.filter(p => {
+    const isCj = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+    return inventoryScope === 'cj_international' ? isCj : !isCj;
+  });
+
+  // Conteos para Filtros de Inventario (calculados exclusivamente sobre el ámbito activo)
+  const countOutOfStock = scopedProducts.filter(p => (p.stock || 0) <= 0).length;
+  const countLowStock = scopedProducts.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= 3).length;
+  const countHealthy = scopedProducts.filter(p => (p.stock || 0) > 3).length;
+  const countCombos = scopedProducts.filter(p => p.isCombo).length;
+  const countInactive = scopedProducts.filter(p => p.isActive === false).length;
 
   // Filtrado de productos mejorado
   const filteredProducts = products.filter(p => {
@@ -2055,8 +2113,8 @@ export default function AdminCRM() {
       return false;
     }
 
-    // 2.1 Filtro por lote de importación
-    if (inventoryBatchFilter !== 'all') {
+    // 2.1 Filtro por lote de importación (solo aplica a Inventario Físico Boutique)
+    if (inventoryScope === 'physical' && inventoryBatchFilter !== 'all') {
       const targetBatch = batches.find(b => b.id === inventoryBatchFilter);
       if (targetBatch) {
         const matchesBatchId = p.batchId === targetBatch.id;
@@ -2093,16 +2151,29 @@ export default function AdminCRM() {
     return 0; // 'default'
   });
 
-  const totalInventoryUnits = products.reduce((acc, p) => acc + (p.stock || 0), 0);
+  const totalInventoryUnits = scopedProducts.reduce((acc, p) => acc + (p.stock || 0), 0);
 
   // Excluir del cálculo de rentabilidad los productos con precio en $0 (pendientes de asignar precio)
-  const pricedProducts = products.filter(p => (Number(p.publicPrice) || 0) > 0);
-  const unpricedProducts = products.filter(p => (Number(p.publicPrice) || 0) <= 0);
+  const pricedProducts = scopedProducts.filter(p => (Number(p.publicPrice) || 0) > 0);
+  const unpricedProducts = scopedProducts.filter(p => (Number(p.publicPrice) || 0) <= 0);
 
   const totalInvestment = pricedProducts.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
   const totalExpectedRevenue = pricedProducts.reduce((acc, p) => acc + ((p.publicPrice || 0) * (p.stock || 0)), 0);
   const totalExpectedProfit = totalExpectedRevenue - totalInvestment;
   const avgMargin = totalExpectedRevenue > 0 ? (totalExpectedProfit / totalExpectedRevenue) * 100 : 0;
+
+  // Métricas específicas para Catálogo Virtual (Importación CJ Dropshipping) - por unidad de venta
+  const totalCjVariantsCount = scopedProducts.reduce((acc, p) => acc + (p.variants && p.variants.length > 0 ? p.variants.length : 1), 0);
+  const avgCjLandedCost = pricedProducts.length > 0
+    ? pricedProducts.reduce((acc, p) => acc + (p.totalCostMxn || p.baseCostMxn || 0), 0) / pricedProducts.length
+    : 0;
+  const avgCjPublicPrice = pricedProducts.length > 0
+    ? pricedProducts.reduce((acc, p) => acc + (p.publicPrice || 0), 0) / pricedProducts.length
+    : 0;
+  const avgCjProfitPerSale = pricedProducts.length > 0
+    ? pricedProducts.reduce((acc, p) => acc + ((p.publicPrice || 0) - (p.totalCostMxn || p.baseCostMxn || 0)), 0) / pricedProducts.length
+    : 0;
+  const avgCjMarginPercent = avgCjPublicPrice > 0 ? (avgCjProfitPerSale / avgCjPublicPrice) * 100 : 0;
 
   // Finanzas Reales de Pedidos Concretados/Entregados
   const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'processing' || o.status === 'shipped');
@@ -2120,11 +2191,13 @@ export default function AdminCRM() {
 
   // Abrir Modal para Editar Producto
   const handleOpenEditProduct = (prod: Product) => {
+    const isCjProd = Boolean((prod.sku && prod.sku.startsWith('CJ')) || (prod.brand && prod.brand.toLowerCase().includes('cj dropshipping')));
     setEditingProductId(prod.id);
     setNewTitle(prod.title);
     setNewDescription(prod.description || '');
     setNewSku(prod.sku || '');
     setNewCategory(prod.category || 'Electrónica');
+    setNewBrand(prod.brand || (isCjProd ? 'CJ Dropshipping' : 'Bath & Body Works'));
     setNewCostUsd(prod.baseCostUsd || 5.0);
     setNewCostMxnDirect(prod.baseCostMxn || (prod.baseCostUsd ? prod.baseCostUsd * usdRate : 100.0));
     setCostInputMode('mxn');
@@ -2136,27 +2209,33 @@ export default function AdminCRM() {
     setIsCombo(Boolean(prod.isCombo));
     setSelectedComboProductIds(prod.comboProductIds || []);
     setNewIsActive(prod.isActive !== false);
+    setAiRewriteHint('');
+    setShowAiRewriteHintInput(false);
 
-    // Emparejar lote exacto: primero por batchId, luego por coincidencia de flete unitario (+- $0.05 MXN)
+    // Emparejar lote exacto solo para productos físicos Boutique
     let assignedBatch = null;
-    if (prod.batchId) {
-      setSelectedBatchId(prod.batchId);
-      assignedBatch = batches.find(b => b.id === prod.batchId);
-    } else {
-      const matchedBatch = batches.find(b => Math.abs(b.costPerUnit - (prod.shippingCostAllocated || 0)) < 0.05);
-      if (matchedBatch) {
-        setSelectedBatchId(matchedBatch.id);
-        assignedBatch = matchedBatch;
+    if (!isCjProd) {
+      if (prod.batchId) {
+        setSelectedBatchId(prod.batchId);
+        assignedBatch = batches.find(b => b.id === prod.batchId);
+      } else {
+        const matchedBatch = batches.find(b => Math.abs(b.costPerUnit - (prod.shippingCostAllocated || 0)) < 0.05);
+        if (matchedBatch) {
+          setSelectedBatchId(matchedBatch.id);
+          assignedBatch = matchedBatch;
+        }
       }
     }
 
     // Calcular qué porcentaje de incremento tiene ya aplicado este producto existente
-    const prodTotalCost = (prod.baseCostMxn || 0) + (assignedBatch?.costPerUnit || prod.shippingCostAllocated || 0);
+    const prodTotalCost = isCjProd
+      ? (prod.baseCostMxn || prod.totalCostMxn || 0)
+      : (prod.baseCostMxn || 0) + (assignedBatch?.costPerUnit || prod.shippingCostAllocated || 0);
     if (prodTotalCost > 0 && prod.publicPrice > 0) {
       const existingMarkup = Math.round(((prod.publicPrice - prodTotalCost) / prodTotalCost) * 100);
       setPriceMarkupPercent(Math.max(10, Math.min(300, existingMarkup)));
     } else {
-      setPriceMarkupPercent(100);
+      setPriceMarkupPercent(isCjProd ? 32 : 100);
     }
 
     setShowAddModal(true);
@@ -2164,26 +2243,30 @@ export default function AdminCRM() {
 
   // Abrir Modal para Crear Producto Nuevo
   const handleOpenCreateProduct = () => {
+    const isCjScope = inventoryScope === 'cj_international';
     setEditingProductId(null);
     setNewTitle('');
     setNewDescription('');
-    setNewSku('');
-    setNewCategory('Electrónica');
+    setNewSku(isCjScope ? 'CJ-' : '');
+    setNewCategory(isCjScope ? 'Gadgets & Novedades' : 'Electrónica');
+    setNewBrand(isCjScope ? 'CJ Dropshipping' : 'Bath & Body Works');
     setNewCostUsd(5.00);
     const initialBaseMxn = 100.00;
     setNewCostMxnDirect(initialBaseMxn);
     setCostInputMode('mxn');
-    setPriceMarkupPercent(100); // 100% de incremento por defecto
-    setNewDiscountPercent(0); // Sin descuento por defecto
-    const defaultBatchFreight = (batches[0]?.costPerUnit || 20.0);
+    setPriceMarkupPercent(isCjScope ? 32 : 100);
+    setNewDiscountPercent(0);
+    const defaultBatchFreight = isCjScope ? 0 : (batches[0]?.costPerUnit || 20.0);
     const initialTotalCost = initialBaseMxn + defaultBatchFreight;
-    setNewPublicPrice(Math.round(initialTotalCost * 2)); // Costo * (1 + 100%) = Costo * 2
-    setNewStock(15);
+    setNewPublicPrice(isCjScope ? Math.max(119, Math.round(initialTotalCost * 1.32)) : Math.round(initialTotalCost * 2));
+    setNewStock(isCjScope ? 50 : 15);
     setNewImageUrl('');
     setNewImages([]);
     setIsCombo(false);
     setSelectedComboProductIds([]);
     setNewIsActive(true);
+    setAiRewriteHint('');
+    setShowAiRewriteHintInput(false);
     setShowAddModal(true);
   };
 
@@ -2220,12 +2303,21 @@ export default function AdminCRM() {
 
         setProducts(prev => prev.map(p => {
           if (p.id === editingProductId) {
+            const priceScaleRatio = (p.publicPrice > 0 && newPublicPrice > 0) ? (newPublicPrice / p.publicPrice) : 1;
+            const updatedVariants = (isEditingCjProduct && p.variants && p.variants.length > 0 && Math.abs(priceScaleRatio - 1) > 0.01)
+              ? p.variants.map(v => ({
+                  ...v,
+                  publicPrice: v.publicPrice ? Math.round(v.publicPrice * priceScaleRatio) : newPublicPrice,
+                }))
+              : p.variants;
+
             return {
               ...p,
               title: newTitle,
               description: newDescription.trim() || p.description,
               sku: newSku.trim() || p.sku,
               category: newCategory,
+              brand: newBrand,
               baseCostUsd: calculatedCostUsd,
               baseCostMxn: costMxn,
               shippingCostAllocated: shippingPerUnit,
@@ -2235,9 +2327,10 @@ export default function AdminCRM() {
               profitUnit,
               marginPercent,
               stock: newStock,
-              batchId: currentBatch.id,
-              batchName: currentBatch.batchName,
+              batchId: isEditingCjProduct ? undefined : currentBatch.id,
+              batchName: isEditingCjProduct ? 'CJ Dropshipping' : currentBatch.batchName,
               images: finalImages,
+              variants: updatedVariants,
               isCombo,
               comboProductIds: isCombo ? selectedComboProductIds : [],
               isActive: newIsActive,
@@ -2863,6 +2956,7 @@ export default function AdminCRM() {
     e.preventDefault();
     if (!slideTitle.trim() || !slideImageUrl.trim()) return;
     setSavingSlide(true);
+    const finalCtaText = slideUseButton ? (slideCtaText.trim() || 'Ver Colección') : '';
     try {
       if (editingSlideId) {
         const updated = await updateCarouselSlide({
@@ -2870,7 +2964,7 @@ export default function AdminCRM() {
           title: slideTitle,
           subtitle: slideSubtitle,
           image_url: slideImageUrl,
-          cta_text: slideCtaText,
+          cta_text: finalCtaText,
           cta_category: slideCtaCategory,
         });
         setSlides(prev => prev.map(s => s.id === editingSlideId ? { ...s, ...updated } : s));
@@ -2879,7 +2973,7 @@ export default function AdminCRM() {
           title: slideTitle,
           subtitle: slideSubtitle,
           image_url: slideImageUrl,
-          cta_text: slideCtaText,
+          cta_text: finalCtaText,
           cta_category: slideCtaCategory,
           sort_order: slides.length + 1,
         });
@@ -2888,7 +2982,7 @@ export default function AdminCRM() {
       setShowSlideModal(false);
       setEditingSlideId(null);
       setSlideTitle(''); setSlideSubtitle(''); setSlideImageUrl('');
-      setSlideCtaText('Ver Colección'); setSlideCtaCategory('Todas');
+      setSlideUseButton(false); setSlideCtaText(''); setSlideCtaCategory('Todas');
     } catch (err) {
       console.error('Error al guardar slide:', err);
     } finally {
@@ -4002,23 +4096,42 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setCrmSubTab('batches')}
-                className="px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer self-start sm:self-auto"
-              >
-                <Layers className="w-3.5 h-3.5 text-slate-400" />
-                <span>Lotes de Fletes Prorrateados</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
-                  {batches.length}
-                </span>
-              </button>
+              {inventoryScope === 'physical' ? (
+                <button
+                  type="button"
+                  onClick={() => setCrmSubTab('batches')}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer self-start sm:self-auto"
+                >
+                  <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Lotes de Fletes Prorrateados</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
+                    {batches.length}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCrmSubTab('cj_dropship')}
+                  className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 cursor-pointer self-start sm:self-auto"
+                >
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>+ Importar más desde Catálogo CJ</span>
+                </button>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Control de Inventario y Edición</h2>
-                <p className="text-xs text-slate-500">Administra, edita precios/stock o elimina artículos del catálogo.</p>
+                <h2 className="text-xl font-bold text-slate-900">
+                  {inventoryScope === 'cj_international'
+                    ? 'Catálogo Virtual de Importación (CJ Dropshipping)'
+                    : 'Control de Inventario Físico (Bodega / Boutique)'}
+                </h2>
+                <p className="text-xs text-slate-500">
+                  {inventoryScope === 'cj_international'
+                    ? 'Artículos de envío internacional directo al cliente (sin inversión previa en stock físico ni etiquetas).'
+                    : 'Administra existencias físicas en México, lotes de importación, etiquetas y precios de boutique.'}
+                </p>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -4040,7 +4153,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400"
                 >
                   <option value="all">Todas las categorías</option>
-                  {Array.from(new Set(products.map(p => p.category).filter(Boolean))).map(cat => (
+                  {Array.from(new Set(scopedProducts.map(p => p.category).filter(Boolean))).map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -4055,15 +4168,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   <span className="hidden sm:inline">Exportar CSV</span>
                 </button>
 
-                {/* Botón Imprimir Todas las Etiquetas de un jalón */}
-                <button
-                  onClick={() => handleOpenBarcodePrintModal(filteredProducts.length > 0 ? filteredProducts : products)}
-                  title="Imprimir etiquetas de todos los productos del inventario actual de un solo jalón"
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs border border-slate-700 cursor-pointer"
-                >
-                  <Printer className="w-4 h-4 text-cyan-400" />
-                  <span>Imprimir Todas ({filteredProducts.length})</span>
-                </button>
+                {/* Botón Imprimir Todas las Etiquetas (Solo para Inventario Físico Boutique) */}
+                {inventoryScope === 'physical' && (
+                  <button
+                    onClick={() => handleOpenBarcodePrintModal(filteredProducts.length > 0 ? filteredProducts : scopedProducts)}
+                    title="Imprimir etiquetas de todos los productos del inventario físico actual"
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs border border-slate-700 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-cyan-400" />
+                    <span>Imprimir Todas ({filteredProducts.length})</span>
+                  </button>
+                )}
 
                 <button
                   onClick={handleOpenCreateProduct}
@@ -4074,59 +4189,111 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
             </div>
 
-            {/* CINTA FINANCIERA DE BODEGA & KPIS DE INVENTARIO */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-700/60">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
-                  <Package className="w-3 h-3 text-[#E65F2B]" /> Total Unidades
-                </span>
-                <span className="text-lg sm:text-xl font-black font-semibold text-white">
-                  {totalInventoryUnits} <span className="text-[11px] font-normal text-slate-400">pzas</span>
-                </span>
-                <span className="text-[10px] text-slate-400 block truncate">
-                  {products.length} artículos únicos
-                </span>
-              </div>
+            {/* CINTA FINANCIERA & KPIS SEGÚN ÁMBITO (FÍSICO BOUTIQUE VS CATÁLOGO VIRTUAL CJ) */}
+            {inventoryScope === 'cj_international' ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl shadow-sm border border-indigo-800/60">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <Globe className="w-3 h-3 text-indigo-400" /> Catálogo CJ Activo
+                  </span>
+                  <span className="text-lg sm:text-xl font-black text-white">
+                    {scopedProducts.length} <span className="text-[11px] font-normal text-indigo-300">productos</span>
+                  </span>
+                  <span className="text-[10px] text-indigo-300/80 block truncate">
+                    {totalCjVariantsCount} opciones / variantes totales
+                  </span>
+                </div>
 
-              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
-                  <DollarSign className="w-3 h-3 text-blue-400" /> Capital Invertido
-                </span>
-                <span className="text-lg sm:text-xl font-black font-semibold text-blue-300">
-                  ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </span>
-                <span className="text-[10px] text-slate-400 block">
-                  {unpricedProducts.length > 0 ? `${pricedProducts.length} art. con precio` : 'Costo de adquisición'}
-                </span>
-              </div>
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-sky-400" /> Costo Prom. Puesto en MX
+                  </span>
+                  <span className="text-lg sm:text-xl font-black text-sky-300">
+                    ${avgCjLandedCost.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-sky-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-indigo-300/80 block">
+                    Producto + Envío CJ incluido
+                  </span>
+                </div>
 
-              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-emerald-400" /> Valor en Piso
-                </span>
-                <span className="text-lg sm:text-xl font-black font-semibold text-emerald-400">
-                  ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </span>
-                <span className="text-[10px] text-emerald-300/80 block">
-                  {unpricedProducts.length > 0 ? `${unpricedProducts.length} art. pendientes de precio` : 'Venta total proyectada'}
-                </span>
-              </div>
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Precio Venta Promedio
+                  </span>
+                  <span className="text-lg sm:text-xl font-black text-emerald-400">
+                    ${avgCjPublicPrice.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-emerald-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300/80 block">
+                    Precio público en tienda
+                  </span>
+                </div>
 
-              <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
-                  <Percent className="w-3 h-3 text-amber-400" /> Utilidad Estimada
-                </span>
-                <span className="text-lg sm:text-xl font-black font-semibold text-amber-300">
-                  +${totalExpectedProfit.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </span>
-                <span className="text-[10px] text-amber-400/80 font-bold block">
-                  Margen prom: {avgMargin.toFixed(0)}%
-                </span>
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <Percent className="w-3 h-3 text-amber-400" /> Ganancia Libre Prom. / Venta
+                  </span>
+                  <span className="text-lg sm:text-xl font-black text-amber-300">
+                    +${avgCjProfitPerSale.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-amber-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-amber-400/90 font-bold block">
+                    Margen prom: {avgCjMarginPercent.toFixed(0)}% (sin stock parado)
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-700/60">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <Package className="w-3 h-3 text-[#E65F2B]" /> Total Unidades
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-white">
+                    {totalInventoryUnits} <span className="text-[11px] font-normal text-slate-400">pzas</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 block truncate">
+                    {scopedProducts.length} artículos únicos en bodega
+                  </span>
+                </div>
 
-            {/* TABS DE FILTRADO POR LOTE DE IMPORTACIÓN */}
-            {batches.length > 0 && (
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-blue-400" /> Capital Invertido
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-blue-300">
+                    ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block">
+                    {unpricedProducts.length > 0 ? `${pricedProducts.length} art. con precio` : 'Costo de adquisición'}
+                  </span>
+                </div>
+
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Valor en Piso
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-emerald-400">
+                    ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[10px] text-emerald-300/80 block">
+                    {unpricedProducts.length > 0 ? `${unpricedProducts.length} art. pendientes de precio` : 'Venta total proyectada'}
+                  </span>
+                </div>
+
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <Percent className="w-3 h-3 text-amber-400" /> Utilidad Estimada
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-amber-300">
+                    +${totalExpectedProfit.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[10px] text-amber-400/80 font-bold block">
+                    Margen prom: {avgMargin.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* TABS DE FILTRADO POR LOTE DE IMPORTACIÓN (Solo para Inventario Físico Boutique) */}
+            {inventoryScope === 'physical' && batches.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
                   <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote:
@@ -4145,12 +4312,12 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
                     inventoryBatchFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
-                    {products.length}
+                    {scopedProducts.length}
                   </span>
                 </button>
 
                 {batches.map(b => {
-                  const countForBatch = products.filter(p => 
+                  const countForBatch = scopedProducts.filter(p => 
                     p.batchId === b.id || 
                     Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05 || 
                     (p.batchName && p.batchName === b.batchName)
@@ -4197,7 +4364,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 >
                   <span>Todos</span>
                   <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                    {products.length}
+                    {scopedProducts.length}
                   </span>
                 </button>
 
@@ -4340,18 +4507,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span>Ajustar Stock</span>
                   </button>
 
-                  {/* Imprimir Etiquetas Código de Barras */}
-                  <button
-                    onClick={() => {
-                      const prods = products.filter(p => selectedProductIds.includes(p.id));
-                      handleOpenBarcodePrintModal(prods);
-                    }}
-                    className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
-                    title="Imprimir etiquetas de códigos de barras / precios"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Etiquetas ({selectedProductIds.length})</span>
-                  </button>
+                  {/* Imprimir Etiquetas Código de Barras (Solo en Inventario Físico Boutique) */}
+                  {inventoryScope === 'physical' && (
+                    <button
+                      onClick={() => {
+                        const prods = products.filter(p => selectedProductIds.includes(p.id));
+                        handleOpenBarcodePrintModal(prods);
+                      }}
+                      className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                      title="Imprimir etiquetas de códigos de barras / precios"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Etiquetas ({selectedProductIds.length})</span>
+                    </button>
+                  )}
 
                   {/* Aplicar Descuento / Oferta Masivo */}
                   <button
@@ -4419,11 +4588,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </button>
                       </th>
                       <th className="py-3 px-4 min-w-[220px]">Artículo</th>
-                      <th className="py-3 px-4 min-w-[130px]">Lote / Flete</th>
-                      <th className="py-3 px-4 font-black text-slate-900 min-w-[100px]">Costo Total</th>
+                      <th className="py-3 px-4 min-w-[130px]">
+                        {inventoryScope === 'cj_international' ? 'Origen / Opciones' : 'Lote / Flete'}
+                      </th>
+                      <th className="py-3 px-4 font-black text-slate-900 min-w-[100px]">
+                        {inventoryScope === 'cj_international' ? 'Costo Puesto MX' : 'Costo Total'}
+                      </th>
                       <th className="py-3 px-4 text-emerald-600 font-black min-w-[110px]">Precio Venta</th>
                       <th className="py-3 px-4 text-emerald-700 min-w-[90px]">Utilidad</th>
-                      <th className="py-3 px-4 text-center min-w-[130px]">Stock Rápido</th>
+                      <th className="py-3 px-4 text-center min-w-[130px]">
+                        {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
+                      </th>
                       <th className="py-3 px-4 text-center min-w-[95px]">En Tienda</th>
                       <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs min-w-[190px]">Acciones</th>
                     </tr>
@@ -4498,27 +4673,40 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            {(() => {
-                              const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
-                                || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
-                              const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
-                                ? p.batchName
-                                : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
-
-                              return (
-                                <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]" title={displayName}>
-                                  {displayName}
+                            {inventoryScope === 'cj_international' ? (
+                              <>
+                                <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">
+                                  <span>✈️ CJ Dropshipping</span>
                                 </span>
-                              );
-                            })()}
-                            <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
+                                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                                  {p.variants && p.variants.length > 0 ? `${p.variants.length} opciones / modelos` : 'Envío directo MX'}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {(() => {
+                                  const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
+                                    || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
+                                  const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
+                                    ? p.batchName
+                                    : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
+
+                                  return (
+                                    <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]" title={displayName}>
+                                      {displayName}
+                                    </span>
+                                  );
+                                })()}
+                                <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
+                              </>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
                             <span className="font-black text-slate-900 block text-xs">
                               ${p.totalCostMxn.toFixed(2)}
                             </span>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
-                              Base: ${p.baseCostMxn.toFixed(2)}
+                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: $${p.baseCostMxn.toFixed(2)}`}
                             </span>
                           </td>
                           
@@ -4641,21 +4829,25 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           {/* ACCIONES */}
                           <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/80 shadow-xs">
                             <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => handleOpenSoldModal(p)}
-                                title="Marcar piezas como ya vendidas en mostrador o fuera de la web"
-                                className="px-2 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span className="hidden lg:inline">Ya Vendido</span>
-                              </button>
-                              <button
-                                onClick={() => handleOpenBarcodePrintModal([p])}
-                                title="Imprimir etiqueta con código de barras y precio"
-                                className="p-1.5 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
-                              >
-                                <Printer className="w-4 h-4" />
-                              </button>
+                              {inventoryScope === 'physical' && (
+                                <>
+                                  <button
+                                    onClick={() => handleOpenSoldModal(p)}
+                                    title="Marcar piezas como ya vendidas en mostrador o fuera de la web"
+                                    className="px-2 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span className="hidden lg:inline">Ya Vendido</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenBarcodePrintModal([p])}
+                                    title="Imprimir etiqueta con código de barras y precio"
+                                    className="p-1.5 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                                  >
+                                    <Printer className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
                               <button
                                 onClick={() => handleOpenKardex(p)}
                                 title="Ver Kardex / Historial de movimientos"
@@ -4802,22 +4994,35 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                   COMBO
                                 </span>
                               )}
-                              {(() => {
-                                const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
-                                  || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
-                                const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
-                                  ? p.batchName
-                                  : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
-
-                                return (
-                                  <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                                    {displayName}
+                              {inventoryScope === 'cj_international' ? (
+                                <>
+                                  <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                    ✈️ CJ Dropshipping
                                   </span>
-                                );
-                              })()}
-                              <span className="text-[10px] text-slate-400 font-semibold">
-                                +${p.shippingCostAllocated.toFixed(0)} flete
-                              </span>
+                                  <span className="text-[10px] text-slate-500 font-semibold">
+                                    {p.variants && p.variants.length > 0 ? `${p.variants.length} opciones` : 'Envío directo MX'}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  {(() => {
+                                    const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
+                                      || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
+                                    const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
+                                      ? p.batchName
+                                      : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
+
+                                    return (
+                                      <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                                        {displayName}
+                                      </span>
+                                    );
+                                  })()}
+                                  <span className="text-[10px] text-slate-400 font-semibold">
+                                    +${p.shippingCostAllocated.toFixed(0)} flete
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -4826,7 +5031,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200">
                           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                             <Package className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Stock disponible:</span>
+                            <span>{inventoryScope === 'cj_international' ? 'Cupo virtual:' : 'Stock disponible:'}</span>
                           </span>
 
                           <div className="flex items-center gap-2">
@@ -4857,9 +5062,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         {/* Métricas financieras del producto con Edición Rápida de Precio */}
                         <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl text-center items-center">
                           <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Costo Total</span>
+                            <span className="text-[9px] text-slate-400 font-bold block uppercase">
+                              {inventoryScope === 'cj_international' ? 'Costo Puesto MX' : 'Costo Total'}
+                            </span>
                             <span className="text-xs font-black text-slate-700">${p.totalCostMxn.toFixed(2)}</span>
-                            <span className="text-[9px] font-semibold text-slate-400 block">Base: ${p.baseCostMxn.toFixed(2)}</span>
+                            <span className="text-[9px] font-semibold text-slate-400 block">
+                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: $${p.baseCostMxn.toFixed(2)}`}
+                            </span>
                           </div>
                           <div className="border-x border-slate-200 px-1">
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Venta (toca)</span>
@@ -4898,20 +5107,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                         {/* Botones de acción móvil */}
                         <div className="flex items-center gap-1.5 pt-1 flex-wrap">
-                          <button
-                            onClick={() => handleOpenSoldModal(p)}
-                            className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Ya Vendido</span>
-                          </button>
-                          <button
-                            onClick={() => handleOpenBarcodePrintModal([p])}
-                            title="Imprimir Etiqueta"
-                            className="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold text-xs p-2 rounded-xl border border-cyan-100 transition"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
+                          {inventoryScope === 'physical' && (
+                            <>
+                              <button
+                                onClick={() => handleOpenSoldModal(p)}
+                                className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Ya Vendido</span>
+                              </button>
+                              <button
+                                onClick={() => handleOpenBarcodePrintModal([p])}
+                                title="Imprimir Etiqueta"
+                                className="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 font-bold text-xs p-2 rounded-xl border border-cyan-100 transition"
+                              >
+                                <Printer className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => handleOpenKardex(p)}
                             title="Kardex"
@@ -6732,6 +6945,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   setSlideTitle('');
                   setSlideSubtitle('');
                   setSlideImageUrl('');
+                  setSlideUseButton(false);
                   setSlideCtaText('');
                   setSlideCtaCategory('Todas');
                   setShowSlideModal(true);
@@ -6786,6 +7000,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               setSlideTitle(slide.title);
                               setSlideSubtitle(slide.subtitle || '');
                               setSlideImageUrl(slide.image_url);
+                              setSlideUseButton(Boolean(slide.cta_text && slide.cta_text.trim()));
                               setSlideCtaText(slide.cta_text || '');
                               setSlideCtaCategory(slide.cta_category || 'Todas');
                               setShowSlideModal(true);
@@ -6901,35 +7116,59 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                       <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-slate-700 font-bold">Texto del Botón</label>
-                          <span className="text-[10px] text-slate-400 font-medium">(Opcional)</span>
-                        </div>
-                        <input
-                          type="text"
-                          value={slideCtaText}
-                          onChange={e => setSlideCtaText(e.target.value)}
-                          placeholder="Vacío = Sin botón"
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-slate-700 font-bold block mb-1">Categoría a Filtrar</label>
+                        <label className="text-slate-700 font-bold block mb-1">Categoría destino al tocar el banner</label>
                         <select
                           value={slideCtaCategory}
                           onChange={e => setSlideCtaCategory(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
                         >
                           <option value="Todas">Todas</option>
+                          <option value="Navidad">🎄 Navidad</option>
+                          <option value="Gadgets & Novedades">Gadgets & Novedades</option>
                           <option value="Electrónica">Electrónica</option>
                           <option value="Moda">Moda</option>
                           <option value="Hogar">Hogar</option>
                           <option value="Juguetes">Juguetes</option>
                           <option value="Belleza">Belleza</option>
+                          {dbCategories.map(c => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
                         </select>
                       </div>
+
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
+                        <input
+                          type="checkbox"
+                          checked={slideUseButton}
+                          onChange={e => {
+                            setSlideUseButton(e.target.checked);
+                            if (e.target.checked && !slideCtaText.trim()) {
+                              setSlideCtaText('Ver Colección');
+                            } else if (!e.target.checked) {
+                              setSlideCtaText('');
+                            }
+                          }}
+                          className="w-4 h-4 rounded accent-[#E65F2B] cursor-pointer"
+                        />
+                        <span className="text-slate-800 font-bold text-xs">
+                          Mostrar botón de acción en el banner <span className="text-slate-400 font-normal">(Opcional)</span>
+                        </span>
+                      </label>
+
+                      {slideUseButton && (
+                        <div>
+                          <label className="text-slate-700 font-bold block mb-1">Texto del Botón</label>
+                          <input
+                            type="text"
+                            value={slideCtaText}
+                            onChange={e => setSlideCtaText(e.target.value)}
+                            placeholder="Ej. Ver Colección"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#E65F2B]"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-2 flex gap-2">
@@ -9209,11 +9448,20 @@ ESTÉTICA Y CONCEPTO VISUAL:
             <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto border border-slate-200">
               {/* Header compacto */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#E65F2B]"></span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`w-2.5 h-2.5 rounded-full ${isEditingCjProduct ? 'bg-indigo-600' : 'bg-[#E65F2B]'}`}></span>
                   <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                    {editingProductId ? 'Editar Artículo en Inventario' : 'Dar de Alta Artículo'}
+                    {editingProductId
+                      ? (isEditingCjProduct ? 'Editar Artículo de Importación (CJ Dropshipping)' : 'Editar Artículo de Boutique (Stock Físico)')
+                      : (isEditingCjProduct ? 'Alta de Artículo Internacional CJ' : 'Dar de Alta Artículo en Bodega')}
                   </h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    isEditingCjProduct
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      : 'bg-orange-50 text-[#E65F2B] border-orange-200'
+                  }`}>
+                    {isEditingCjProduct ? '✈️ Catálogo Internacional (Sin Lotes)' : '📦 Stock Físico Boutique'}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -9243,27 +9491,29 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   <div className="sm:col-span-5">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-slate-700 font-bold block">SKU / Código</label>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateAutoSku()}
-                          className="text-blue-600 hover:text-blue-700 font-bold text-[10px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 transition cursor-pointer"
-                          title="Generar SKU automático"
-                        >
-                          Generar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setScannerContext('sku_input');
-                            setShowCameraScanner(true);
-                          }}
-                          className="text-[#E65F2B] font-bold text-[10px] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 transition cursor-pointer"
-                          title="Escanear con cámara"
-                        >
-                          Escanear
-                        </button>
-                      </div>
+                      {!isEditingCjProduct && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateAutoSku()}
+                            className="text-blue-600 hover:text-blue-700 font-bold text-[10px] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 transition cursor-pointer"
+                            title="Generar SKU automático"
+                          >
+                            Generar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setScannerContext('sku_input');
+                              setShowCameraScanner(true);
+                            }}
+                            className="text-[#E65F2B] font-bold text-[10px] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200 transition cursor-pointer"
+                            title="Escanear con cámara"
+                          >
+                            Escanear
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <input
                       type="text"
@@ -9275,20 +9525,92 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   </div>
                 </div>
 
-                  {/* 1.1 Descripción detallada del Producto (Boutique e Inventario) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-700 font-bold block text-xs">
-                        Descripción del Producto (Visible para el cliente)
-                      </label>
-                      <span className="text-[10px] text-slate-400">Visible en la tienda</span>
+                  {/* 1.1 Descripción detallada del Producto con Reescritura IA (Para Boutique y Envío Internacional) */}
+                  <div className="bg-slate-50/70 p-2.5 rounded-2xl border border-slate-200/90 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <label className="text-slate-800 font-bold block text-xs">
+                          Descripción y Características (Visible para el cliente)
+                        </label>
+                        <span className="text-[10px] text-slate-400">
+                          {isEditingCjProduct
+                            ? 'Incluye resumen, beneficios principales y especificaciones técnicas'
+                            : 'Incluye notas, beneficios principales y detalles del producto'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowAiRewriteHintInput(prev => !prev)}
+                          className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-white hover:bg-indigo-50 text-indigo-600 border border-indigo-200 transition cursor-pointer"
+                          title="Darle una indicación o enfoque especial a la IA"
+                        >
+                          {showAiRewriteHintInput ? '✕ Cerrar sugerencia' : '💡 Dar indicación a IA'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={rewritingDescriptionAi}
+                          onClick={() => handleAiRewriteDescription()}
+                          className="px-3 py-1 rounded-xl text-[11px] font-black bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Sparkles className={`w-3.5 h-3.5 ${rewritingDescriptionAi ? 'animate-spin' : ''}`} />
+                          <span>{rewritingDescriptionAi ? 'Reescribiendo...' : '✨ Reescribir con IA'}</span>
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Panel opcional para pedirle a la IA un enfoque o sugerencia */}
+                    {showAiRewriteHintInput && (
+                      <div className="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200 space-y-2 animate-in fade-in duration-150">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold text-indigo-800">Sugerencias rápidas:</span>
+                          {[
+                            'Más persuasivo y comercial',
+                            'Enfoque de regalo / Navidad',
+                            'Resaltar medidas y ficha técnica',
+                            'Más breve y directo al grano',
+                          ].map(suggestion => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              disabled={rewritingDescriptionAi}
+                              onClick={() => {
+                                setAiRewriteHint(suggestion);
+                                handleAiRewriteDescription(suggestion);
+                              }}
+                              className="px-2 py-0.5 rounded-lg bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 text-[10px] font-bold transition cursor-pointer"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="O escribe tu instrucción (ej. 'Destaca que usa puerto USB y mide 2 metros')..."
+                            value={aiRewriteHint}
+                            onChange={e => setAiRewriteHint(e.target.value)}
+                            className="flex-1 bg-white border border-indigo-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-indigo-500"
+                          />
+                          <button
+                            type="button"
+                            disabled={rewritingDescriptionAi}
+                            onClick={() => handleAiRewriteDescription(aiRewriteHint)}
+                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs cursor-pointer shrink-0 disabled:opacity-50"
+                          >
+                            Aplicar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <textarea
-                      rows={2}
-                      placeholder="Ej. Fragancia dulce con notas de cereza y vainilla. Producto 100% original con entrega garantizada..."
+                      rows={5}
+                      placeholder="Resumen atractivo, beneficios principales (•) y especificaciones técnicas o detalles del producto..."
                       value={newDescription}
                       onChange={e => setNewDescription(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs focus:outline-none focus:border-[#E65F2B] resize-none"
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 text-xs focus:outline-none focus:border-[#E65F2B] resize-y leading-relaxed whitespace-pre-line"
                     />
                   </div>
 
@@ -9297,16 +9619,20 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   {/* Tienda / Marca Oficial */}
                   <div className="sm:col-span-6">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-700 font-bold block text-xs">🏬 Tienda / Marca Oficial</label>
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingNewBrand(!isAddingNewBrand)}
-                        className="text-[#DF7F2D] text-[10px] font-bold hover:underline cursor-pointer"
-                      >
-                        {isAddingNewBrand ? '✕ Cancelar' : '+ Nueva Tienda'}
-                      </button>
+                      <label className="text-slate-700 font-bold block text-xs">
+                        {isEditingCjProduct ? '✈️ Proveedor / Origen' : '🏬 Tienda / Marca Oficial'}
+                      </label>
+                      {!isEditingCjProduct && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingNewBrand(!isAddingNewBrand)}
+                          className="text-[#DF7F2D] text-[10px] font-bold hover:underline cursor-pointer"
+                        >
+                          {isAddingNewBrand ? '✕ Cancelar' : '+ Nueva Tienda'}
+                        </button>
+                      )}
                     </div>
-                    {isAddingNewBrand ? (
+                    {isAddingNewBrand && !isEditingCjProduct ? (
                       <div className="space-y-1 bg-amber-50/50 p-2 rounded-xl border border-amber-200">
                         <input
                           type="text"
@@ -9359,6 +9685,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                         className="w-full bg-amber-50/30 border border-amber-200 rounded-xl p-2 text-slate-900 font-bold text-xs focus:ring-2 focus:ring-[#DF7F2D] cursor-pointer"
                       >
                         {Array.from(new Set([
+                          ...(isEditingCjProduct ? ['CJ Dropshipping'] : []),
                           ...officialBrands.map(b => b.name),
                           'Bath & Body Works',
                           'FoxDrop Oficial',
@@ -9422,9 +9749,9 @@ ESTÉTICA Y CONCEPTO VISUAL:
                         {Array.from(new Set([
                           ...dbCategories.map(c => c.name),
                           ...products.map(p => p.category).filter(Boolean),
-                          'Cosmética', 'Juguetes', 'Electrónica', 'Moda', 'Hogar'
+                          'Navidad', 'Gadgets & Novedades', 'Cosmética', 'Juguetes', 'Electrónica', 'Moda', 'Hogar'
                         ])).map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat} value={cat}>{cat === 'Navidad' ? '🎄 Navidad' : cat}</option>
                         ))}
                       </select>
                     )}
@@ -9433,7 +9760,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   {/* Stock */}
                   <div className="sm:col-span-3">
                     <label className="text-slate-700 font-bold block mb-1">
-                      {isCombo ? 'Stock Combo' : 'Stock Piezas'}
+                      {isEditingCjProduct ? 'Cupo Virtual' : (isCombo ? 'Stock Combo' : 'Stock Piezas')}
                     </label>
                     <input
                       type="number"
@@ -9468,190 +9795,371 @@ ESTÉTICA Y CONCEPTO VISUAL:
                   </div>
                 </div>
 
-                {/* 3. Asignación a Lote de Importación */}
-                <div className="bg-orange-50/70 p-2.5 rounded-xl border border-orange-200 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote de Importación (Prorrateo):
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {selectedBatchId && batches.find(b => b.id === selectedBatchId) && (
+                {/* 3. Asignación a Lote de Importación (SOLO para Inventario Físico Boutique) */}
+                {!isEditingCjProduct && (
+                  <div className="bg-orange-50/70 p-2.5 rounded-xl border border-orange-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote de Importación (Prorrateo):
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {selectedBatchId && batches.find(b => b.id === selectedBatchId) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const b = batches.find(item => item.id === selectedBatchId);
+                              if (b) handleOpenEditBatch(b);
+                            }}
+                            className="text-blue-600 font-bold text-[10px] hover:underline cursor-pointer"
+                          >
+                            ✎ Editar Lote
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => {
-                            const b = batches.find(item => item.id === selectedBatchId);
-                            if (b) handleOpenEditBatch(b);
-                          }}
-                          className="text-blue-600 font-bold text-[10px] hover:underline cursor-pointer"
+                          onClick={handleOpenCreateBatch}
+                          className="text-[#E65F2B] font-bold text-[10px] hover:underline cursor-pointer"
                         >
-                          ✎ Editar Lote
+                          + Nuevo Lote
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleOpenCreateBatch}
-                        className="text-[#E65F2B] font-bold text-[10px] hover:underline cursor-pointer"
-                      >
-                        + Nuevo Lote
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
-                    <div className="sm:col-span-8">
-                      <select
-                        value={selectedBatchId}
-                        onChange={e => setSelectedBatchId(e.target.value)}
-                        className="w-full bg-white border border-orange-200 rounded-lg p-1.5 text-xs text-slate-900 font-medium"
-                      >
-                        {batches.map(b => (
-                          <option key={b.id} value={b.id}>
-                            {b.batchName} (+${b.costPerUnit.toFixed(2)} flete/ud)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="sm:col-span-4 text-right">
-                      <span className="text-[11px] font-black text-orange-950 font-semibold">
-                        +${shippingPerUnit.toFixed(2)} MXN flete
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Costo Base y Precio de Venta con Deslizante de Margen Dinámico (100% a 190%) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {/* Costo Base */}
-                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-slate-700 font-bold text-xs">
-                        {costInputMode === 'mxn' ? 'Costo Base (MXN):' : 'Costo Base (USD):'}
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setCostInputMode(costInputMode === 'mxn' ? 'usd' : 'mxn')}
-                        className="text-[10px] text-[#E65F2B] hover:underline font-bold cursor-pointer"
-                      >
-                        {costInputMode === 'mxn' ? 'Cambiar a USD' : 'Cambiar a MXN'}
-                      </button>
+                      </div>
                     </div>
 
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                      {costInputMode === 'mxn' ? (
-                        <input
-                          type="number"
-                          step="1"
-                          value={newCostMxnDirect}
-                          onChange={e => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setNewCostMxnDirect(val);
-                            // Al escribir costo base, recalcular precio de venta con el margen actual
-                            const autoTotalCost = val + shippingPerUnit;
-                            setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
-                          }}
-                          className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
-                        />
-                      ) : (
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={newCostUsd}
-                          onChange={e => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setNewCostUsd(val);
-                            const autoTotalCost = (val * usdRate) + shippingPerUnit;
-                            setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
-                          }}
-                          className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
-                        />
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400 font-semibold">
-                        {costInputMode === 'mxn'
-                          ? `Aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
-                          : `Equivale a $${costMxn.toFixed(2)} MXN`}
-                      </span>
-                      <span className="text-slate-600 font-bold font-semibold">
-                        +${shippingPerUnit.toFixed(2)} flete = <strong className="text-slate-900">${totalCostUnitMxn.toFixed(2)}</strong>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Precio Venta con Deslizante (Slider 100% a 190%) */}
-                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-slate-700 font-bold text-xs">Precio Venta Público (MXN):</label>
-                      <span className="font-bold text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
-                        +{priceMarkupPercent}% sobre costo
-                      </span>
-                    </div>
-
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                      <input
-                        type="number"
-                        value={newPublicPrice}
-                        onChange={e => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setNewPublicPrice(val);
-                          if (totalCostUnitMxn > 0) {
-                            const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
-                            setPriceMarkupPercent(Math.max(10, Math.min(300, calculatedMarkup)));
-                          }
-                        }}
-                        className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
-                      />
-                    </div>
-
-                    {/* Deslizante interactivo de 100% a 190% */}
-                    <div className="pt-1 space-y-1">
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
-                        <span>100% (Duplicar)</span>
-                        <span className="font-bold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200">
-                          {priceMarkupPercent}%
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                      <div className="sm:col-span-8">
+                        <select
+                          value={selectedBatchId}
+                          onChange={e => setSelectedBatchId(e.target.value)}
+                          className="w-full bg-white border border-orange-200 rounded-lg p-1.5 text-xs text-slate-900 font-medium"
+                        >
+                          {batches.map(b => (
+                            <option key={b.id} value={b.id}>
+                              {b.batchName} (+${b.costPerUnit.toFixed(2)} flete/ud)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-4 text-right">
+                        <span className="text-[11px] font-black text-orange-950 font-semibold">
+                          +${shippingPerUnit.toFixed(2)} MXN flete
                         </span>
-                        <span>190% (Casi el triple)</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={100}
-                        max={190}
-                        step={5}
-                        value={Math.max(100, Math.min(190, priceMarkupPercent))}
-                        onChange={e => {
-                          const newMarkup = parseInt(e.target.value);
-                          setPriceMarkupPercent(newMarkup);
-                          const calculatedPrice = Math.round(totalCostUnitMxn * (1 + newMarkup / 100));
-                          setNewPublicPrice(calculatedPrice);
-                        }}
-                        className="w-full accent-[#E65F2B] cursor-pointer h-1.5 bg-slate-200 rounded-lg"
-                      />
-                      <div className="flex items-center justify-between text-[9px] text-slate-400">
-                        <span>+$100% ($ {(totalCostUnitMxn * 2).toFixed(0)})</span>
-                        <span className="font-bold text-emerald-600">Ganancia: +${profitUnit.toFixed(2)} MXN</span>
-                        <span>+$190% ($ {(totalCostUnitMxn * 2.9).toFixed(0)})</span>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Banner de Resultado Financiero Regular */}
-                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
-                  <div>
-                    <span className="text-slate-600 block text-[11px]">
-                      Costo Total: <strong className="text-slate-900 font-semibold">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
-                    </span>
-                    <span className="text-xs font-black text-emerald-700 font-semibold">
-                      Ganancia Neta en Pesos: +${profitUnit.toFixed(2)} MXN (+{priceMarkupPercent}% de incremento)
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase">Margen Bruto</span>
-                    <span className="text-sm font-black text-slate-900 font-semibold">{marginPercent.toFixed(1)}%</span>
-                  </div>
-                </div>
+                {/* 4. Costo y Precio de Venta: Diferenciado entre Catálogo Internacional CJ (3 Niveles) vs Boutique (Slider 100%-190%) */}
+                {isEditingCjProduct ? (
+                  (() => {
+                    const cjLaunchPrice = Math.max(99, Math.round(totalCostUnitMxn * 1.22));
+                    const cjOptimalPrice = Math.max(119, Math.round(totalCostUnitMxn * 1.32));
+                    const cjMaxPrice = Math.max(149, Math.round(totalCostUnitMxn * 1.45));
+                    return (
+                      <div className="bg-indigo-50/50 p-3 rounded-2xl border border-indigo-200/80 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {/* Costo Puesto en México (Ya calculado de CJ: Producto + Envío CJ) */}
+                          <div className="bg-white p-2.5 rounded-xl border border-indigo-100">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-slate-800 font-bold text-xs">
+                                {costInputMode === 'mxn' ? 'Costo Puesto en MX (Prod + Envío CJ):' : 'Costo Total CJ (USD):'}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => setCostInputMode(costInputMode === 'mxn' ? 'usd' : 'mxn')}
+                                className="text-[10px] text-indigo-600 hover:underline font-bold cursor-pointer"
+                              >
+                                {costInputMode === 'mxn' ? 'Ver en USD' : 'Ver en MXN'}
+                              </button>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                              {costInputMode === 'mxn' ? (
+                                <input
+                                  type="number"
+                                  step="1"
+                                  value={newCostMxnDirect}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setNewCostMxnDirect(val);
+                                    setNewPublicPrice(Math.max(99, Math.round(val * (1 + priceMarkupPercent / 100))));
+                                  }}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                                />
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={newCostUsd}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setNewCostUsd(val);
+                                    const autoCost = val * usdRate;
+                                    setNewPublicPrice(Math.max(99, Math.round(autoCost * (1 + priceMarkupPercent / 100))));
+                                  }}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                                />
+                              )}
+                            </div>
+                            <span className="text-[10px] text-indigo-600/90 font-semibold block mt-1">
+                              ✓ Incluye costo de artículo CJ + envío internacional a México (sin lotes)
+                            </span>
+                          </div>
+
+                          {/* Precio Venta Público Editable */}
+                          <div className="bg-white p-2.5 rounded-xl border border-indigo-100">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-slate-800 font-bold text-xs">Precio Público en Tienda (MXN):</label>
+                              <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                +{priceMarkupPercent}% sobre costo CJ
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                              <input
+                                type="number"
+                                value={newPublicPrice}
+                                onChange={e => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  setNewPublicPrice(val);
+                                  if (totalCostUnitMxn > 0) {
+                                    const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
+                                    setPriceMarkupPercent(Math.max(5, Math.min(300, calculatedMarkup)));
+                                  }
+                                }}
+                                className="w-full bg-emerald-50/40 border border-emerald-300 rounded-lg p-2 pl-6 text-emerald-950 font-black text-sm focus:outline-none focus:border-emerald-500"
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-semibold block mt-1">
+                              Elige abajo uno de los 3 precios sugeridos de CJ o edítalo libremente
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Selector de 3 Niveles de Precio CJ (Idéntico al importador de CJ Dropshipping) */}
+                        <div>
+                          <span className="text-[11px] font-bold text-indigo-950 block mb-1.5">
+                            Estrategia de Precio CJ (Competitivo vs Temu / TikTok Shop):
+                          </span>
+                          <div className="grid grid-cols-3 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewPublicPrice(cjLaunchPrice);
+                                setPriceMarkupPercent(22);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                Math.abs(newPublicPrice - cjLaunchPrice) <= 2
+                                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm ring-2 ring-emerald-500/30'
+                                  : 'bg-white hover:bg-emerald-50/60 text-slate-800 border-slate-200'
+                              }`}
+                            >
+                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-emerald-600'}`}>
+                                🔥 Introducción (+22%)
+                              </span>
+                              <span className="text-sm font-black block mt-0.5">${cjLaunchPrice} MXN</span>
+                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-slate-500'}`}>
+                                Ganas +${Math.max(0, cjLaunchPrice - totalCostUnitMxn).toFixed(0)} MXN
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewPublicPrice(cjOptimalPrice);
+                                setPriceMarkupPercent(32);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                Math.abs(newPublicPrice - cjOptimalPrice) <= 2
+                                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-500/30'
+                                  : 'bg-white hover:bg-indigo-50/60 text-slate-800 border-slate-200'
+                              }`}
+                            >
+                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-indigo-600'}`}>
+                                ⚖️ Óptimo (+32%)
+                              </span>
+                              <span className="text-sm font-black block mt-0.5">${cjOptimalPrice} MXN</span>
+                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                Ganas +${Math.max(0, cjOptimalPrice - totalCostUnitMxn).toFixed(0)} MXN
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewPublicPrice(cjMaxPrice);
+                                setPriceMarkupPercent(45);
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                Math.abs(newPublicPrice - cjMaxPrice) <= 2
+                                  ? 'bg-amber-600 text-white border-amber-700 shadow-sm ring-2 ring-amber-500/30'
+                                  : 'bg-white hover:bg-amber-50/60 text-slate-800 border-slate-200'
+                              }`}
+                            >
+                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-amber-600'}`}>
+                                💎 Máximo (+45%)
+                              </span>
+                              <span className="text-sm font-black block mt-0.5">${cjMaxPrice} MXN</span>
+                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-slate-500'}`}>
+                                Ganas +${Math.max(0, cjMaxPrice - totalCostUnitMxn).toFixed(0)} MXN
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Resumen de Ganancia Libre CJ */}
+                        <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
+                          <div>
+                            <span className="text-slate-600 block text-[11px]">
+                              Costo Total Puesto en MX (Producto + Envío CJ): <strong className="text-slate-900 font-semibold">${totalCostUnitMxn.toFixed(2)} MXN</strong>
+                            </span>
+                            <span className="text-xs font-black text-emerald-700 font-semibold">
+                              Ganancia Libre por Venta: +${profitUnit.toFixed(2)} MXN (+{priceMarkupPercent}% sobre costo CJ)
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 block uppercase">Margen Libre</span>
+                            <span className="text-sm font-black text-slate-900 font-semibold">{marginPercent.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* Costo Base */}
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-slate-700 font-bold text-xs">
+                            {costInputMode === 'mxn' ? 'Costo Base (MXN):' : 'Costo Base (USD):'}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setCostInputMode(costInputMode === 'mxn' ? 'usd' : 'mxn')}
+                            className="text-[10px] text-[#E65F2B] hover:underline font-bold cursor-pointer"
+                          >
+                            {costInputMode === 'mxn' ? 'Cambiar a USD' : 'Cambiar a MXN'}
+                          </button>
+                        </div>
+
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                          {costInputMode === 'mxn' ? (
+                            <input
+                              type="number"
+                              step="1"
+                              value={newCostMxnDirect}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setNewCostMxnDirect(val);
+                                // Al escribir costo base, recalcular precio de venta con el margen actual
+                                const autoTotalCost = val + shippingPerUnit;
+                                setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
+                              }}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                            />
+                          ) : (
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={newCostUsd}
+                              onChange={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setNewCostUsd(val);
+                                const autoTotalCost = (val * usdRate) + shippingPerUnit;
+                                setNewPublicPrice(Math.round(autoTotalCost * (1 + priceMarkupPercent / 100)));
+                              }}
+                              className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                            />
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400 font-semibold">
+                            {costInputMode === 'mxn'
+                              ? `Aprox. $${(newCostMxnDirect / (usdRate || 20)).toFixed(2)} USD`
+                              : `Equivale a $${costMxn.toFixed(2)} MXN`}
+                          </span>
+                          <span className="text-slate-600 font-bold font-semibold">
+                            +${shippingPerUnit.toFixed(2)} flete = <strong className="text-slate-900">${totalCostUnitMxn.toFixed(2)}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Precio Venta con Deslizante (Slider 100% a 190%) */}
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-slate-700 font-bold text-xs">Precio Venta Público (MXN):</label>
+                          <span className="font-bold text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
+                            +{priceMarkupPercent}% sobre costo
+                          </span>
+                        </div>
+
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                          <input
+                            type="number"
+                            value={newPublicPrice}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setNewPublicPrice(val);
+                              if (totalCostUnitMxn > 0) {
+                                const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
+                                setPriceMarkupPercent(Math.max(10, Math.min(300, calculatedMarkup)));
+                              }
+                            }}
+                            className="w-full bg-white border border-slate-200 rounded-lg p-2 pl-6 text-slate-900 font-bold text-sm"
+                          />
+                        </div>
+
+                        {/* Deslizante interactivo de 100% a 190% */}
+                        <div className="pt-1 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
+                            <span>100% (Duplicar)</span>
+                            <span className="font-bold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200">
+                              {priceMarkupPercent}%
+                            </span>
+                            <span>190% (Casi el triple)</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={100}
+                            max={190}
+                            step={5}
+                            value={Math.max(100, Math.min(190, priceMarkupPercent))}
+                            onChange={e => {
+                              const newMarkup = parseInt(e.target.value);
+                              setPriceMarkupPercent(newMarkup);
+                              const calculatedPrice = Math.round(totalCostUnitMxn * (1 + newMarkup / 100));
+                              setNewPublicPrice(calculatedPrice);
+                            }}
+                            className="w-full accent-[#E65F2B] cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                          />
+                          <div className="flex items-center justify-between text-[9px] text-slate-400">
+                            <span>+$100% ($ {(totalCostUnitMxn * 2).toFixed(0)})</span>
+                            <span className="font-bold text-emerald-600">Ganancia: +${profitUnit.toFixed(2)} MXN</span>
+                            <span>+$190% ($ {(totalCostUnitMxn * 2.9).toFixed(0)})</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Banner de Resultado Financiero Regular */}
+                    <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <span className="text-slate-600 block text-[11px]">
+                          Costo Total: <strong className="text-slate-900 font-semibold">${totalCostUnitMxn.toFixed(2)} MXN</strong> (Base ${costMxn.toFixed(2)} + Flete ${shippingPerUnit.toFixed(2)})
+                        </span>
+                        <span className="text-xs font-black text-emerald-700 font-semibold">
+                          Ganancia Neta en Pesos: +${profitUnit.toFixed(2)} MXN (+{priceMarkupPercent}% de incremento)
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 block uppercase">Margen Bruto</span>
+                        <span className="text-sm font-black text-slate-900 font-semibold">{marginPercent.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* 5. SECCIÓN DE OFERTAS Y PROMOCIONES (Descuento con Piso de Seguridad de Utilidad >= 50%) */}
                 <div className={`p-3 rounded-2xl border transition-all ${
@@ -9751,12 +10259,12 @@ ESTÉTICA Y CONCEPTO VISUAL:
                             {promoMarginPercent.toFixed(1)}%
                           </span>
                           {isPromoMarginSafe ? (
-                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full border border-emerald-200" title="Margen protegido por encima del 50%">
-                              ✓ Seguro (&ge;50%)
+                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full border border-emerald-200">
+                              {isEditingCjProduct ? '✓ Con ganancia' : '✓ Seguro (≥50%)'}
                             </span>
                           ) : (
-                            <span className="text-[9px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded-full border border-rose-200" title="Alerta: margen menor a 50%">
-                              ⚠️ Menor a 50%
+                            <span className="text-[9px] font-bold bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded-full border border-rose-200">
+                              {isEditingCjProduct ? '⚠️ Sin ganancia' : '⚠️ Menor a 50%'}
                             </span>
                           )}
                         </div>

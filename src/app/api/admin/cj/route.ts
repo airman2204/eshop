@@ -8,15 +8,17 @@ import { searchCjProducts, getCjProductDetails } from "@/lib/cjdropshipping";
 import { verifyAdminToken, checkRateLimit } from "@/lib/security";
 import { createServerClient } from "@/lib/supabase/server";
 
-// Helper para traducir títulos y descripciones de CJ a español comercial mexicano
+// Helper para traducir títulos y descripciones de CJ a español comercial mexicano con Ficha Técnica estructurada
 async function translateCjItem(title: string, rawDesc?: string): Promise<{ title: string; description: string }> {
   const apiKey = process.env.GEMINI_API_KEY;
   const cleanDesc = (rawDesc || "")
+    .replace(/<(br|p|div|li|tr|h[1-6])[^>]*>/gi, "\n")
     .replace(/<[^>]*>?/gm, " ")
     .replace(/https?:\/\/\S+/gi, "")
-    .replace(/\s+/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n")
     .trim()
-    .slice(0, 1500);
+    .slice(0, 2200);
 
   if (!apiKey || apiKey === "TU_API_KEY_AQUI") {
     return {
@@ -27,19 +29,36 @@ async function translateCjItem(title: string, rawDesc?: string): Promise<{ title
 
   const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.5-flash"];
 
-  const prompt = `Actúa como un experto en redacción de e-commerce y marketing para FoxDrop México.
-Traduce y optimiza al español de México este producto específico procedente de CJ Dropshipping para venderlo en nuestra tienda.
+  const prompt = `Actúa como un experto en catálogo de Amazon / Mercado Libre para FoxDrop México.
+Traduce y estructura al español de México este producto específico procedente de CJ Dropshipping.
 
 TÍTULO EN INGLÉS (OBLIGATORIO TRADUCIR ESTE ARTÍCULO EXACTO):
 ${title}
 
-ESPECIFICACIONES ADICIONALES:
+FICHA TÉCNICA Y DESCRIPCIÓN DE FÁBRICA (CJ DROPSHIPPING):
 ${cleanDesc || "N/A"}
 
-REGLAS ESTRICTAS DE TRADUCCIÓN:
-1. "title": DEBE ser la traducción fiel, atractiva y comercial al español de México del "TÍTULO EN INGLÉS" (${title}). PROHIBIDO inventar otro producto distinto o usar nombres de otros artículos. Máximo 65 caracteres.
-2. "description": Redactada de forma persuasiva, clara y profesional en español específicamente sobre el producto "${title}". Incluye viñetas breves con beneficios y características clave. Concluye indicando: "✈️ Envío internacional directo a domicilio (10 a 15 días hábiles)."
-3. Responde ÚNICAMENTE un objeto JSON válido con las llaves "title" y "description".`;
+REGLAS ESTRICTAS DE FORMATO Y TRADUCCIÓN:
+1. "title": Traducción fiel, clara y comercial al español de México del "TÍTULO EN INGLÉS" (${title}). PROHIBIDO inventar otro producto distinto. Máximo 65 caracteres.
+2. "description": PROHIBIDO usar asteriscos markdown (* o **). PROHIBIDO escribir párrafos largos o amontonados. Debe usar saltos de línea reales (\\n) y seguir EXACTAMENTE esta estructura limpia y escaneable:
+
+Resumen breve de 1 o 2 renglones explicando qué es y su uso principal.
+
+✨ Beneficios principales:
+• Beneficio 1 corto y directo (máximo 12 palabras)
+• Beneficio 2 corto y directo (máximo 12 palabras)
+• Beneficio 3 corto y directo (máximo 12 palabras)
+
+📐 Especificaciones técnicas:
+• Material: (extraído de la ficha, si aplica)
+• Medidas / Longitud: (extraído de la ficha o variantes, si aplica)
+• Alimentación / Voltaje: (ej. USB, baterías, voltaje, o tipo de funcionamiento si aplica)
+• Contenido del paquete: (qué incluye la caja según Packing list)
+
+✈️ Envío internacional directo a domicilio (10 a 15 días hábiles).
+
+3. Si algún dato técnico no aparece en la ficha de fábrica, omite esa línea técnica y pon solo las especificaciones reales que sí vengan en la ficha (como peso, estilo, uso, clasificación de modelos, etc.).
+4. Responde ÚNICAMENTE un objeto JSON válido con las llaves "title" y "description".`;
 
   for (const model of models) {
     try {
@@ -50,7 +69,7 @@ REGLAS ESTRICTAS DE TRADUCCIÓN:
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            temperature: 0.3,
+            temperature: 0.25,
             responseMimeType: "application/json",
           },
         }),
@@ -62,9 +81,16 @@ REGLAS ESTRICTAS DE TRADUCCIÓN:
       if (text) {
         const parsed = JSON.parse(text);
         if (parsed.title) {
+          // Limpiar cualquier asterisco residual y garantizar saltos de línea limpios
+          const formattedDesc = String(parsed.description || "")
+            .replace(/\*\*/g, "")
+            .replace(/(?:^|\s)\*\s+/g, "\n• ")
+            .replace(/\s*•\s*/g, "\n• ")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
           return {
-            title: String(parsed.title).trim(),
-            description: String(parsed.description || "").trim(),
+            title: String(parsed.title).replace(/\*\*/g, "").trim(),
+            description: formattedDesc,
           };
         }
       }
@@ -492,6 +518,86 @@ export async function POST(req: NextRequest) {
         order: updatedOrder || order,
         message: "Orden enviada exitosamente a CJ Dropshipping. Ya puedes visualizarla y autorizar su pago en tu panel de CJ.",
       });
+    }
+
+    // 8. Reescribir / Mejorar Descripción con IA (Tanto para Boutique como Envío Internacional CJ)
+    if (action === "rewrite_description") {
+      const { title, currentDescription, category, brand, isCj, customHint } = body;
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === "TU_API_KEY_AQUI") {
+        return NextResponse.json({ error: "Clave GEMINI_API_KEY no configurada en el servidor" }, { status: 500 });
+      }
+
+      const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.5-flash"];
+      const prompt = `Actúa como un copywriter experto en e-commerce estilo Amazon y Mercado Libre para FoxDrop México.
+Tu objetivo es reescribir, mejorar y estructurar la descripción de este producto para maximizar las ventas y la claridad para el cliente.
+
+DATOS DEL PRODUCTO:
+- Nombre del producto: ${title || "Producto FoxDrop"}
+- Categoría: ${category || "General"}
+- Marca / Origen: ${brand || (isCj ? "CJ Dropshipping" : "Boutique FoxDrop")}
+- Modalidad: ${isCj ? "Catálogo Internacional (Entrega de 10 a 15 días hábiles)" : "Stock Físico en Bodega Boutique México (Envío inmediato)"}
+- Descripción o datos actuales:
+${currentDescription || "Sin descripción previa, genera una basada en el nombre, marca y categoría."}
+${customHint ? `\nINSTRUCCIÓN ESPECIAL DEL ADMINISTRADOR:\n"${customHint}"` : ""}
+
+REGLAS ESTRICTAS DE FORMATO:
+1. PROHIBIDO usar asteriscos markdown (* o **). Usa únicamente texto limpio, emojis elegantes y viñetas "• ".
+2. PROHIBIDO escribir bloques de texto amontonados. Usa saltos de línea reales (\\n) para separar cada sección.
+3. Conserva cualquier medida, longitud, voltaje, capacidad (ml/oz), material o nota olfativa real que aparezca en la descripción actual.
+4. Sigue EXACTAMENTE esta estructura:
+
+Resumen atractivo de 1 a 2 renglones que enganche al comprador explicando qué hace especial a este artículo.
+
+✨ Beneficios principales:
+• Beneficio 1 claro y persuasivo (máximo 14 palabras)
+• Beneficio 2 claro y persuasivo (máximo 14 palabras)
+• Beneficio 3 claro y persuasivo (máximo 14 palabras)
+
+📐 ${isCj ? "Especificaciones técnicas y detalles:" : "Características y detalles del producto:"}
+• Detalle 1 (Material, aroma, presentación, medidas o voltaje según corresponda)
+• Detalle 2 (Uso recomendado, compatibilidad o contenido)
+• Detalle 3 (Calidad / Garantía)
+
+${isCj ? "✈️ Envío internacional directo a domicilio (10 a 15 días hábiles)." : "🚚 Stock disponible en México para envío rápido y seguro."}
+
+Responde ÚNICAMENTE un objeto JSON válido con la llave "description" (string).`;
+
+      for (const model of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.45,
+                responseMimeType: "application/json",
+              },
+            }),
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const parsed = JSON.parse(text);
+            if (parsed.description) {
+              const cleaned = String(parsed.description)
+                .replace(/\*\*/g, "")
+                .replace(/(?:^|\s)\*\s+/g, "\n• ")
+                .replace(/\s*•\s*/g, "\n• ")
+                .replace(/\n{3,}/g, "\n\n")
+                .trim();
+              return NextResponse.json({ success: true, description: cleaned });
+            }
+          }
+        } catch (e) {
+          console.warn(`Intento rewrite_description con ${model} falló:`, e);
+        }
+      }
+
+      return NextResponse.json({ error: "No se pudo generar la descripción con IA en este momento." }, { status: 500 });
     }
 
     return NextResponse.json({ error: "Acción no reconocida" }, { status: 400 });

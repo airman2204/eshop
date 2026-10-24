@@ -361,11 +361,41 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           listedNum: Number(d.listedNum) || prev.listedNum || 0,
         } : prev);
 
+        // Extraer atributos técnicos adicionales de la ficha oficial de CJ (Material, Empaque, Peso, Opciones/Medidas)
+        const extraTechLines: string[] = [];
+        if (d.materialNameEn) {
+          extraTechLines.push(`Material: ${Array.isArray(d.materialNameEn) ? d.materialNameEn.join(', ') : d.materialNameEn}`);
+        }
+        if (d.packingNameEn) {
+          extraTechLines.push(`Packaging: ${Array.isArray(d.packingNameEn) ? d.packingNameEn.join(', ') : d.packingNameEn}`);
+        }
+        if (d.productWeight) {
+          extraTechLines.push(`Weight: ${d.productWeight} ${d.productUnit || 'g'}`);
+        }
+        if (variantsArr.length > 0) {
+          const sampleVarKeys = variantsArr
+            .slice(0, 6)
+            .map((v: any) => v.variantKey || v.variantNameEn)
+            .filter(Boolean)
+            .join(' | ');
+          if (sampleVarKeys) {
+            extraTechLines.push(`Available Models / Sizes / Specs: ${sampleVarKeys}`);
+          }
+          const firstStd = variantsArr.find((v: any) => v.variantStandard)?.variantStandard;
+          if (firstStd) {
+            extraTechLines.push(`Dimensions / Standard: ${firstStd}`);
+          }
+        }
+        const enrichedHtmlDesc = [
+          d.description || '',
+          extraTechLines.length > 0 ? `<br/><strong>Technical Specs:</strong><br/>${extraTechLines.join('<br/>')}` : '',
+        ].filter(Boolean).join('\n');
+
         setPreviewDetail({
           pid: item.id,
           images: imgSet,
           videos: videosArr,
-          description: d.description || '',
+          description: enrichedHtmlDesc,
           variants: variantsArr,
           weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
           realFreightToMx: d.realFreightToMx || undefined,
@@ -426,7 +456,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     const freightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (item.countryCode === 'MX' || selectedCountry === 'MX' ? 0 : 140);
     const totalLandedCostMxn = costMxn + freightMxn;
 
-    // Precio sugerido modo LANZAMIENTO (+20% sobre costo total) para competir contra Temu / TikTok Shop sin perder dinero
+    // Precio sugerido modo LANZAMIENTO (+22% sobre costo total) para competir contra Temu / TikTok Shop sin perder dinero
     const suggestedPrice = Math.max(99, Math.round(totalLandedCostMxn * 1.22));
     setCustomPrices(prev => ({ ...prev, [item.id]: suggestedPrice }));
     setCustomTitles(prev => ({ ...prev, [item.id]: item.name }));
@@ -442,18 +472,11 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     setNewModalCategoryName('');
 
     if (matchedDetail) {
-      // Ya tenemos la descripción real de ESTE producto: traducir de inmediato
+      // Ya tenemos la descripción real de ESTE producto: traducir y estructurar con IA de inmediato
       const rawDesc = matchedDetail.description || '';
-      if (rawDesc) {
-        const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
-        setCustomDescriptions(prev => ({
-          ...prev,
-          [item.id]: cleanDesc ? `📦 ${cleanDesc}\n\n✈️ Entrega internacional: 10 a 15 días hábiles.` : ''
-        }));
-      }
       triggerTranslation(item, rawDesc);
     } else {
-      // Abrió directo desde la tarjeta: consultar primero el detalle real de ESTE producto (fotos, variantes, flete y descripción propia)
+      // Abrió directo desde la tarjeta: consultar primero el detalle real de ESTE producto (fotos, variantes, flete y ficha técnica propia)
       setLoadingModalDetail(true);
       try {
         const res = await fetchAdminCjApi({
@@ -473,7 +496,35 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           const updatedLandedMxn = Math.round((entryVarUsd + fUsd) * safeRate);
           const updatedSuggested = Math.max(99, Math.round(updatedLandedMxn * 1.22));
           const realName = d.productNameEn || d.productName || item.name;
-          const realDesc = d.description || '';
+
+          const extraTechLines: string[] = [];
+          if (d.materialNameEn) {
+            extraTechLines.push(`Material: ${Array.isArray(d.materialNameEn) ? d.materialNameEn.join(', ') : d.materialNameEn}`);
+          }
+          if (d.packingNameEn) {
+            extraTechLines.push(`Packaging: ${Array.isArray(d.packingNameEn) ? d.packingNameEn.join(', ') : d.packingNameEn}`);
+          }
+          if (d.productWeight) {
+            extraTechLines.push(`Weight: ${d.productWeight} ${d.productUnit || 'g'}`);
+          }
+          if (variantsArr.length > 0) {
+            const sampleVarKeys = variantsArr
+              .slice(0, 6)
+              .map((v: any) => v.variantKey || v.variantNameEn)
+              .filter(Boolean)
+              .join(' | ');
+            if (sampleVarKeys) {
+              extraTechLines.push(`Available Models / Sizes / Specs: ${sampleVarKeys}`);
+            }
+            const firstStd = variantsArr.find((v: any) => v.variantStandard)?.variantStandard;
+            if (firstStd) {
+              extraTechLines.push(`Dimensions / Standard: ${firstStd}`);
+            }
+          }
+          const realDesc = [
+            d.description || '',
+            extraTechLines.length > 0 ? `<br/><strong>Technical Specs:</strong><br/>${extraTechLines.join('<br/>')}` : '',
+          ].filter(Boolean).join('\n');
 
           setCustomPrices(prev => ({ ...prev, [item.id]: updatedSuggested }));
           setModalItem(prev => prev && prev.id === item.id ? { ...prev, name: realName, priceUsd: entryVarUsd, maxPriceUsd: entryVarUsd } : prev);
@@ -1824,7 +1875,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200 cursor-default"
+            className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200 cursor-default"
           >
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -1932,20 +1983,20 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-[11px] font-bold text-slate-700">
-                          Descripción del producto en español:
+                          Descripción y Ficha Técnica en español (Beneficios + Especificaciones):
                         </label>
                         {(translatingId || loadingModalDetail) && (
                           <span className="text-[10px] text-indigo-500 font-semibold animate-pulse">
-                            {loadingModalDetail ? 'Obteniendo fotos, variantes y flete real...' : 'Generando descripción persuasiva...'}
+                            {loadingModalDetail ? 'Extrayendo ficha técnica CJ...' : 'Estructurando beneficios y ficha técnica...'}
                           </span>
                         )}
                       </div>
                       <textarea
-                        rows={3}
-                        placeholder="Descripción detallada del producto para la tienda..."
+                        rows={7}
+                        placeholder="Resumen breve, beneficios principales y especificaciones técnicas (longitud, voltaje, material, contenido)..."
                         value={customDescriptions[modalItem.id] !== undefined ? customDescriptions[modalItem.id] : ''}
                         onChange={(e) => setCustomDescriptions(prev => ({ ...prev, [modalItem.id]: e.target.value }))}
-                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none leading-relaxed"
+                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-y leading-relaxed whitespace-pre-line"
                       />
                     </div>
 
