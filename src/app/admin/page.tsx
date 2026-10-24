@@ -42,11 +42,22 @@ import { soundManager } from '@/lib/sounds';
 import { generateTicketCanvasDataUrl } from '@/lib/ticketCanvas';
 
 const getSafeAdminImageUrl = (url: string | undefined): string => {
-  if (!url || typeof url !== 'string' || !url.startsWith('http')) return '/no-image.svg';
-  if (url.includes('cjdropshipping.com') || url.includes('cf.cjdropshipping.com')) {
-    return `/api/whatsapp/image-proxy?url=${encodeURIComponent(url)}`;
+  if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
+  let clean = url.trim();
+  if (clean.startsWith('/api/whatsapp/image-proxy') || clean.startsWith('data:') || (clean.startsWith('/') && !clean.startsWith('//'))) {
+    return clean;
   }
-  return url;
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return '/no-image.svg';
+  if (
+    clean.includes('cjdropshipping.com') ||
+    clean.includes('aliyuncs.com') ||
+    clean.includes('alicdn.com') ||
+    clean.includes('1688.com')
+  ) {
+    return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
+  }
+  return clean;
 };
 
 export default function AdminCRM() {
@@ -3937,8 +3948,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {crmSubTab === 'cj_dropship' && (
           <AdminCjTab
             usdRate={usdRate}
+            existingProducts={products}
+            storeCategories={dbCategories.map(c => c.name)}
             onProductImported={(newP) => {
               setProducts(prev => [newP, ...prev]);
+              fetchAdminCategories().then(cats => {
+                if (cats && cats.length > 0) setDbCategories(cats);
+              }).catch(() => {});
               alert('¡Producto importado con éxito! Ya está disponible en tu catálogo de FoxDrop.');
             }}
           />
@@ -6478,8 +6494,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               >
                                 {item.image ? (
                                   <img
-                                    src={item.image}
+                                    src={getSafeAdminImageUrl(item.image)}
                                     alt={item.title}
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                                     className="w-9 h-9 object-cover rounded-lg shrink-0 border border-slate-200"
                                   />
                                 ) : (
@@ -9090,8 +9107,9 @@ ESTÉTICA Y CONCEPTO VISUAL:
               {/* Ficha rápida del producto */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
                 <img
-                  src={soldProduct.images[0] || '/file.svg'}
+                  src={getSafeAdminImageUrl(soldProduct.images[0])}
                   alt={soldProduct.title}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                   className="w-12 h-12 rounded-xl object-contain bg-white border border-slate-200 p-1 shrink-0"
                 />
                 <div className="min-w-0 flex-1">
@@ -9814,8 +9832,9 @@ ESTÉTICA Y CONCEPTO VISUAL:
                           idx === 0 ? 'border-[#E65F2B] ring-1 ring-orange-200' : 'border-slate-200'
                         }`}>
                           <img
-                            src={imgUrl}
+                            src={getSafeAdminImageUrl(imgUrl)}
                             alt=""
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                             className="w-full h-full object-cover rounded absolute inset-0 z-0"
                           />
                           <div className="relative z-10 flex items-center justify-between w-full">
@@ -10313,8 +10332,9 @@ ESTÉTICA Y CONCEPTO VISUAL:
                         <div className="flex items-center gap-2.5 truncate">
                           {prod.images && prod.images[0] ? (
                             <img
-                              src={prod.images[0]}
+                              src={getSafeAdminImageUrl(prod.images[0])}
                               alt=""
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                               className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0 bg-white"
                             />
                           ) : (
@@ -12094,7 +12114,12 @@ ${ticketImg}
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-500 overflow-hidden shrink-0 border border-slate-200/60">
                                   {p.images?.[0] ? (
-                                    <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                                    <img
+                                      src={getSafeAdminImageUrl(p.images[0])}
+                                      alt={p.title}
+                                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                      className="w-full h-full object-cover"
+                                    />
                                   ) : (
                                     <Package className="w-4 h-4 text-slate-400" />
                                   )}

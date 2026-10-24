@@ -81,8 +81,14 @@ function matchesProductSearch(product: Product, query: string): boolean {
 function getSafeProductImage(url: string | undefined): string {
   if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
   let clean = url.trim();
+  if (clean.startsWith('/api/whatsapp/image-proxy')) return clean;
   if (clean.startsWith('//')) clean = 'https:' + clean;
-  if (clean.includes('cjdropshipping.com') || clean.includes('aliyuncs.com')) {
+  if (
+    clean.includes('cjdropshipping.com') ||
+    clean.includes('aliyuncs.com') ||
+    clean.includes('alicdn.com') ||
+    clean.includes('1688.com')
+  ) {
     return '/api/whatsapp/image-proxy?url=' + encodeURIComponent(clean);
   }
   return clean;
@@ -1970,7 +1976,12 @@ export default function TiendaFoxDrop() {
                             className="p-2.5 flex items-center gap-2.5 hover:bg-orange-50/60 cursor-pointer transition text-left"
                           >
                             <div className="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-gray-100 shrink-0 flex items-center justify-center overflow-hidden">
-                              <img src={item.images?.[0] || '/no-image.svg'} alt={item.title} className="w-full h-full object-contain" />
+                              <img
+                                src={getSafeProductImage(item.images?.[0])}
+                                alt={item.title}
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                className="w-full h-full object-contain"
+                              />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
@@ -3138,7 +3149,7 @@ export default function TiendaFoxDrop() {
                                         <div className="flex items-center gap-3 min-w-0">
                                           <div className="w-10 h-10 rounded-lg bg-slate-50 p-1 border border-slate-200 shrink-0 flex items-center justify-center overflow-hidden">
                                             <img
-                                              src={prodImg}
+                                              src={getSafeProductImage(prodImg)}
                                               alt={item.product_title}
                                               className="w-full h-full object-contain"
                                               onError={(e: any) => { e.currentTarget.src = '/no-image.svg'; }}
@@ -3455,8 +3466,9 @@ export default function TiendaFoxDrop() {
 
                           <div className="aspect-square bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-2 overflow-hidden border border-slate-100">
                             <img
-                              src={favProduct.images[0]}
+                              src={getSafeProductImage(favProduct.images[0])}
                               alt={favProduct.title}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                               className="max-h-full w-auto object-contain group-hover:scale-105 transition duration-200"
                             />
                           </div>
@@ -5545,7 +5557,12 @@ export default function TiendaFoxDrop() {
                           .map(includedProd => (
                             <div key={includedProd.id} className="flex items-center justify-between bg-white/90 p-2 rounded-xl border border-orange-100 text-xs">
                               <div className="flex items-center gap-2">
-                                <img src={includedProd.images[0] || '/file.svg'} alt={includedProd.title} className="w-7 h-7 object-contain rounded" />
+                                <img
+                                  src={getSafeProductImage(includedProd.images[0])}
+                                  alt={includedProd.title}
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                  className="w-7 h-7 object-contain rounded"
+                                />
                                 <div>
                                   <span className="font-bold text-slate-800 block line-clamp-1">{includedProd.title}</span>
                                   <span className="text-[10px] text-slate-400 block">{includedProd.category}</span>
@@ -5757,7 +5774,12 @@ export default function TiendaFoxDrop() {
                             }}
                             className="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-2 cursor-pointer transition flex items-center gap-2"
                           >
-                            <img src={rec.images[0]} alt={rec.title} className="w-8 h-8 object-contain rounded" />
+                            <img
+                              src={getSafeProductImage(rec.images[0])}
+                              alt={rec.title}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                              className="w-8 h-8 object-contain rounded"
+                            />
                             <div className="overflow-hidden">
                               <p className="text-[10px] font-bold text-gray-800 truncate">{rec.title}</p>
                               <p className="text-[10px] font-black text-[#E65F2B]">${rec.publicPrice.toFixed(0)}</p>
@@ -6483,7 +6505,7 @@ export default function TiendaFoxDrop() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-12 h-12 rounded-xl bg-slate-50 p-1 border border-slate-200 shrink-0 flex items-center justify-center overflow-hidden">
                             <img
-                              src={productImg}
+                              src={getSafeProductImage(productImg)}
                               alt={item.product_title}
                               className="w-full h-full object-contain"
                               onError={(e: any) => { e.currentTarget.src = '/no-image.svg'; }}

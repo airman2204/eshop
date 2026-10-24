@@ -30,13 +30,19 @@ export interface WishlistItem extends CjItem {
 
 interface Props {
   usdRate: number;
+  existingProducts?: any[];
+  storeCategories?: string[];
   onProductImported: (product: any) => void;
 }
 
 const getSafeImageUrl = (url: string | undefined): string => {
-  if (!url || typeof url !== 'string' || !url.startsWith('http')) return '/no-image.svg';
+  if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
+  let clean = url.trim();
+  if (clean.startsWith('/api/whatsapp/image-proxy') || clean.startsWith('data:') || clean.startsWith('/')) return clean;
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return '/no-image.svg';
   // Servir a través de nuestro endpoint interno de proxy para que NINGÚN navegador o red bloquee el CDN de China
-  return `/api/whatsapp/image-proxy?url=${encodeURIComponent(url)}`;
+  return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
 };
 
 const CJ_POPULAR_CATEGORIES = [
@@ -66,7 +72,7 @@ const CJ_TREND_TAGS = [
   { label: '🧹 Mini Aspiradoras', query: 'mini vacuum cleaner' },
 ];
 
-export default function AdminCjTab({ usdRate, onProductImported }: Props) {
+export default function AdminCjTab({ usdRate, existingProducts = [], storeCategories = [], onProductImported }: Props) {
   // Pestaña interna: Explorador CJ vs Wishlist Preselección
   const [cjViewMode, setCjViewMode] = useState<'catalog' | 'wishlist'>('catalog');
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
@@ -93,8 +99,38 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
   const [customPrices, setCustomPrices] = useState<Record<string, number>>({});
   const [customTitles, setCustomTitles] = useState<Record<string, string>>({});
   const [customDescriptions, setCustomDescriptions] = useState<Record<string, string>>({});
+  const [customCategories, setCustomCategories] = useState<Record<string, string>>({});
+  const [isCreatingModalCategory, setIsCreatingModalCategory] = useState(false);
+  const [newModalCategoryName, setNewModalCategoryName] = useState('');
+  const [localExtraCategories, setLocalExtraCategories] = useState<string[]>([]);
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
+
+  // Categorías disponibles en tienda (combinando las de BD + sugeridas como Navidad)
+  const availableStoreCategories = Array.from(new Set([
+    'Navidad',
+    'Gadgets & Novedades',
+    'Hogar & Cocina',
+    'Mascotas',
+    'Juguetes & Niños',
+    'Belleza & Cuidado',
+    'Electrónica',
+    'Autos & Accesorios',
+    ...storeCategories,
+    ...localExtraCategories,
+  ])).filter(Boolean);
+
+  // Detecta de forma persistente si un producto de CJ ya está publicado en la tienda FoxDrop
+  const isItemAlreadyInStore = (item: CjItem): boolean => {
+    if (importedIds.includes(item.id)) return true;
+    if (!existingProducts || existingProducts.length === 0) return false;
+    const itemSku = (item.sku || '').trim().toUpperCase();
+    return existingProducts.some((p: any) => {
+      const pSku = (p.sku || '').trim().toUpperCase();
+      if (itemSku && pSku && (pSku === itemSku || pSku.startsWith(itemSku + '-'))) return true;
+      return false;
+    });
+  };
 
   // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
   const [previewItem, setPreviewItem] = useState<CjItem | null>(null);
@@ -386,11 +422,20 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const freightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (item.countryCode === 'MX' || selectedCountry === 'MX' ? 0 : 140);
     const totalLandedCostMxn = costMxn + freightMxn;
 
-    // Precio sugerido con margen saludable sobre el costo total (producto + envío real de CJ)
-    const suggestedPrice = Math.max(149, Math.round(totalLandedCostMxn * 1.45));
+    // Precio sugerido modo LANZAMIENTO (+20% sobre costo total) para competir contra Temu / TikTok Shop sin perder dinero
+    const suggestedPrice = Math.max(99, Math.round(totalLandedCostMxn * 1.22));
     setCustomPrices(prev => ({ ...prev, [item.id]: suggestedPrice }));
     setCustomTitles(prev => ({ ...prev, [item.id]: item.name }));
     setCustomDescriptions(prev => ({ ...prev, [item.id]: '' }));
+
+    // Sugerir categoría inteligente (ej. Navidad si el nombre o búsqueda contiene términos navideños)
+    const lowerCheck = `${item.name || ''} ${searchQuery || ''}`.toLowerCase();
+    const defaultCat = /christmas|xmas|santa|snowman|reindeer|elk|navidad|holiday tree/.test(lowerCheck)
+      ? 'Navidad'
+      : 'Gadgets & Novedades';
+    setCustomCategories(prev => ({ ...prev, [item.id]: prev[item.id] || defaultCat }));
+    setIsCreatingModalCategory(false);
+    setNewModalCategoryName('');
 
     if (matchedDetail) {
       // Ya tenemos la descripción real de ESTE producto: traducir de inmediato
@@ -415,19 +460,19 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
         if (data.success && data.detail?.data) {
           const d = data.detail.data;
           const variantsArr = Array.isArray(d.variants) ? d.variants : [];
-          let maxVarUsd = baseUsd;
+          let entryVarUsd = baseUsd;
           if (variantsArr.length > 0) {
             const prices = variantsArr.map((v: any) => Number(v.variantSellPrice)).filter((n: number) => !isNaN(n) && n > 0);
-            if (prices.length > 0) maxVarUsd = Math.max(...prices);
+            if (prices.length > 0) entryVarUsd = Math.min(...prices);
           }
           const fUsd = d.realFreightToMx?.cheapestUsd || 0;
-          const updatedLandedMxn = Math.round((maxVarUsd + fUsd) * safeRate);
-          const updatedSuggested = Math.max(149, Math.round(updatedLandedMxn * 1.45));
+          const updatedLandedMxn = Math.round((entryVarUsd + fUsd) * safeRate);
+          const updatedSuggested = Math.max(99, Math.round(updatedLandedMxn * 1.22));
           const realName = d.productNameEn || d.productName || item.name;
           const realDesc = d.description || '';
 
           setCustomPrices(prev => ({ ...prev, [item.id]: updatedSuggested }));
-          setModalItem(prev => prev && prev.id === item.id ? { ...prev, name: realName, maxPriceUsd: maxVarUsd } : prev);
+          setModalItem(prev => prev && prev.id === item.id ? { ...prev, name: realName, priceUsd: entryVarUsd, maxPriceUsd: entryVarUsd } : prev);
           setPreviewDetail({
             pid: item.id,
             images: Array.isArray(d.productImageSet) && d.productImageSet.length > 0 ? d.productImageSet : [item.image],
@@ -458,22 +503,22 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
     const activeDetail = previewDetail?.pid === item.id ? previewDetail : null;
 
     const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
-    const baseUsd = typeof item.maxPriceUsd === 'number' && item.maxPriceUsd > item.priceUsd ? item.maxPriceUsd : (typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0);
+    const baseUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) && item.priceUsd > 0 ? item.priceUsd : (item.maxPriceUsd || 0);
     const realFreightUsd = activeDetail?.realFreightToMx?.cheapestUsd || 0;
     const totalUsd = baseUsd + realFreightUsd;
     const costMxn = Math.round(totalUsd * safeRate);
-    const salePrice = customPrices[item.id] || Math.round(costMxn * 1.45);
+    const salePrice = customPrices[item.id] || Math.round(costMxn * 1.22);
     const finalTitle = customTitles[item.id]?.trim() || item.name;
     const finalDescription = customDescriptions[item.id]?.trim() || `Producto de importación directa a tu domicilio. Tiempo de entrega: 10 a 15 días hábiles.`;
 
-    // Preparar videos e importar variantes con sus costos y precios calculados
+    // Preparar videos e importar variantes con sus costos y precios calculados proporcionalmente al margen elegido
     const videoUrls = (activeDetail?.videos || []).map((v: any) => v.url).filter(Boolean);
-    const ratio = costMxn > 0 ? salePrice / costMxn : 1.45;
+    const ratio = costMxn > 0 ? salePrice / costMxn : 1.22;
     const mappedVariants = (activeDetail?.variants || []).map((v: any, idx: number) => {
       const varCostUsd = Number(v.variantSellPrice) || baseUsd;
       const varLandedUsd = varCostUsd + realFreightUsd;
       const varLandedMxn = Math.round(varLandedUsd * safeRate);
-      const varPublicPrice = Math.max(varLandedMxn + 45, Math.round(varLandedMxn * Math.max(1.25, ratio)));
+      const varPublicPrice = Math.max(varLandedMxn + 25, Math.round(varLandedMxn * Math.max(1.15, ratio)));
       return {
         id: String(v.vid || `var-${idx}`),
         name: String(v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`),
@@ -485,6 +530,15 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
       };
     });
 
+    const chosenCategory = (isCreatingModalCategory && newModalCategoryName.trim())
+      ? newModalCategoryName.trim()
+      : (customCategories[item.id]?.trim() || 'Gadgets & Novedades');
+
+    if (isCreatingModalCategory && newModalCategoryName.trim()) {
+      const cleanNewCat = newModalCategoryName.trim();
+      setLocalExtraCategories(prev => prev.includes(cleanNewCat) ? prev : [cleanNewCat, ...prev]);
+    }
+
     try {
       const res = await fetchAdminCjApi({
         action: 'import_cj_product',
@@ -492,7 +546,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
           pid: item.id,
           title: finalTitle,
           sku: item.sku || `CJ-${Date.now().toString().slice(-6)}`,
-          categoryName: item.categoryName || 'Novedades & Gadgets',
+          categoryName: chosenCategory,
           baseCostUsd: Number(totalUsd.toFixed(2)),
           baseCostMxn: costMxn,
           publicPrice: salePrice,
@@ -652,12 +706,11 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                 .filter(w => wishlistFilter === 'all' || w.status === wishlistFilter)
                 .map(item => {
                   const safeUsd = typeof item.priceUsd === 'number' && !isNaN(item.priceUsd) ? item.priceUsd : 0;
-                  const maxUsd = typeof item.maxPriceUsd === 'number' && item.maxPriceUsd > safeUsd ? item.maxPriceUsd : safeUsd;
-                  const costMxn = Math.round(maxUsd * (usdRate || 18));
+                  const costMxn = Math.round(safeUsd * (usdRate || 18));
                   const isMx = item.countryCode === 'MX';
-                  const baseFreightMxn = isMx ? 0 : 140;
-                  const suggestedSale = isMx ? Math.round(costMxn * 1.5) : Math.max(149, Math.round((costMxn + baseFreightMxn) * 1.45));
-                  const isImported = importedIds.includes(item.id);
+                  const baseFreightMxn = isMx ? 0 : 120;
+                  const suggestedSale = isMx ? Math.round(costMxn * 1.35) : Math.max(99, Math.round((costMxn + baseFreightMxn) * 1.22));
+                  const isImported = isItemAlreadyInStore(item);
 
                   return (
                     <div
@@ -1087,16 +1140,16 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                 return 0;
               })
               .map(prod => {
-              const isImported = importedIds.includes(prod.id);
+              const isImported = isItemAlreadyInStore(prod);
               const safePriceUsd = typeof prod.priceUsd === 'number' && !isNaN(prod.priceUsd) ? prod.priceUsd : 0;
               const maxPriceUsd = typeof prod.maxPriceUsd === 'number' && prod.maxPriceUsd > safePriceUsd ? prod.maxPriceUsd : safePriceUsd;
               const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
-              const costMxn = Math.round(maxPriceUsd * safeRate);
               const minCostMxn = Math.round(safePriceUsd * safeRate);
+              const costMxn = minCostMxn;
               const isMx = prod.countryCode === 'MX' || selectedCountry === 'MX';
-              const baseFreightMxn = isMx ? 0 : 140;
-              const suggestedSale = isMx ? Math.round(costMxn * 1.5) : Math.max(149, Math.round((costMxn + baseFreightMxn) * 1.45));
-              const estimatedProfit = Math.max(0, suggestedSale - costMxn - baseFreightMxn);
+              const baseFreightMxn = isMx ? 0 : 120;
+              const suggestedSale = isMx ? Math.round(minCostMxn * 1.35) : Math.max(99, Math.round((minCostMxn + baseFreightMxn) * 1.22));
+              const estimatedProfit = Math.max(0, suggestedSale - minCostMxn - baseFreightMxn);
 
               return (
                 <div
@@ -1427,14 +1480,14 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     // Cotización real de flete desde CJ hacia México (si está disponible)
                     const realFreight = previewDetail?.realFreightToMx;
                     const realFreightUsd = realFreight?.cheapestUsd || 0;
-                    const realFreightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (isMexicoStock ? 0 : 140);
-                    const totalLandedMxn = costMxn + realFreightMxn;
+                    const realFreightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (isMexicoStock ? 0 : 120);
+                    const totalLandedMxn = minCostMxn + realFreightMxn;
                     const isHighShipping = !isMexicoStock && realFreightMxn > 300;
 
-                    // Precio sugerido protegiendo el costo total real (producto + envío real de CJ) + margen saludable (45%)
+                    // Precio sugerido modo LANZAMIENTO (+22% sobre costo puesto en México) para competir contra Temu / TikTok Shop
                     const suggestedSale = isMexicoStock 
-                      ? Math.round(costMxn * 1.5) 
-                      : Math.max(149, Math.round(totalLandedMxn * 1.45));
+                      ? Math.round(minCostMxn * 1.35) 
+                      : Math.max(99, Math.round(totalLandedMxn * 1.22));
                     const estimatedProfit = Math.max(0, suggestedSale - totalLandedMxn);
 
                     return (
@@ -1567,7 +1620,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                           const fUsd = previewDetail?.realFreightToMx?.cheapestUsd || 0;
                           const safeR = usdRate || 18;
                           const vLandedMxn = Math.round((vUsd + fUsd) * safeR);
-                          const vSaleMxn = Math.max(vLandedMxn + 45, Math.round(vLandedMxn * 1.45));
+                          const vSaleMxn = Math.max(vLandedMxn + 25, Math.round(vLandedMxn * 1.22));
                           return (
                             <button
                               key={i}
@@ -1647,9 +1700,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
             {(() => {
               const safeRate = usdRate || 18;
               const matchedDetail = previewDetail?.pid === modalItem.id ? previewDetail : null;
-              const baseUsd = modalItem.maxPriceUsd && modalItem.maxPriceUsd > modalItem.priceUsd ? modalItem.maxPriceUsd : (modalItem.priceUsd || 0);
+              const baseUsd = modalItem.priceUsd && modalItem.priceUsd > 0 ? modalItem.priceUsd : (modalItem.maxPriceUsd || 0);
               const freightUsd = matchedDetail?.realFreightToMx?.cheapestUsd || 0;
               const totalLandedMxn = Math.round((baseUsd + freightUsd) * safeRate);
+
+              const launchPrice = Math.max(99, Math.round(totalLandedMxn * 1.22));
+              const standardPrice = Math.max(119, Math.round(totalLandedMxn * 1.32));
+              const highMarginPrice = Math.max(149, Math.round(totalLandedMxn * 1.45));
 
               return (
                 <>
@@ -1657,12 +1714,13 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                     <img
                       src={getSafeImageUrl(modalItem.image)}
                       alt={modalItem.name}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                       className="w-16 h-16 rounded-xl object-cover shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-800 line-clamp-2">{modalItem.name}</p>
                       <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                        Costo Producto: ${baseUsd.toFixed(2)} USD {loadingModalDetail ? '• Cotizando flete CJ...' : (freightUsd > 0 ? `+ Flete CJ: $${freightUsd.toFixed(2)} USD` : '')}
+                        Costo Base: ${baseUsd.toFixed(2)} USD {loadingModalDetail ? '• Cotizando flete CJ...' : (freightUsd > 0 ? `+ Flete CJ: $${freightUsd.toFixed(2)} USD` : '')}
                       </p>
                       <p className="text-[11px] text-slate-800 font-extrabold">
                         Costo Total Puesto en México: ~${totalLandedMxn} MXN
@@ -1671,6 +1729,49 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                   </div>
 
                   <div className="space-y-3">
+                    {/* SELECTOR DE CATEGORÍA EN FOXDROP + CREAR NUEVA CATEGORÍA */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-bold text-slate-700">
+                          Categoría en tu Tienda FoxDrop:
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreatingModalCategory(prev => !prev);
+                            setNewModalCategoryName('');
+                          }}
+                          className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>{isCreatingModalCategory ? 'Elegir existente' : 'Crear nueva categoría (ej. Navidad)'}</span>
+                        </button>
+                      </div>
+
+                      {isCreatingModalCategory ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Escribe el nombre de la nueva categoría (ej. Navidad, Juguetes...)"
+                          value={newModalCategoryName}
+                          onChange={(e) => setNewModalCategoryName(e.target.value)}
+                          className="w-full px-3 py-2 bg-indigo-50/50 border border-indigo-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                        />
+                      ) : (
+                        <select
+                          value={customCategories[modalItem.id] || 'Gadgets & Novedades'}
+                          onChange={(e) => setCustomCategories(prev => ({ ...prev, [modalItem.id]: e.target.value }))}
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                        >
+                          {availableStoreCategories.map(cat => (
+                            <option key={cat} value={cat}>
+                              {cat === 'Navidad' ? '🎄 Navidad' : cat}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="text-[11px] font-bold text-slate-700">
@@ -1706,7 +1807,7 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         )}
                       </div>
                       <textarea
-                        rows={4}
+                        rows={3}
                         placeholder="Descripción detallada del producto para la tienda..."
                         value={customDescriptions[modalItem.id] !== undefined ? customDescriptions[modalItem.id] : ''}
                         onChange={(e) => setCustomDescriptions(prev => ({ ...prev, [modalItem.id]: e.target.value }))}
@@ -1714,15 +1815,58 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                       />
                     </div>
 
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Precio de venta al público en FoxDrop (MXN):
-                      </label>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-slate-700">
+                          Precio de venta al público en FoxDrop (MXN):
+                        </label>
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                          🔥 Modo Lanzamiento Activo
+                        </span>
+                      </div>
+
+                      {/* BOTONES RÁPIDOS DE ESTRATEGIA DE PRECIO */}
+                      <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: launchPrice }))}
+                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                            customPrices[modalItem.id] === launchPrice
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          🔥 Lanzamiento (${launchPrice})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: standardPrice }))}
+                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                            customPrices[modalItem.id] === standardPrice
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-slate-50 hover:bg-indigo-50 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          ⚖️ Estándar (${standardPrice})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: highMarginPrice }))}
+                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                            customPrices[modalItem.id] === highMarginPrice
+                              ? 'bg-purple-600 text-white border-purple-600'
+                              : 'bg-slate-50 hover:bg-purple-50 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          💎 Alto (${highMarginPrice})
+                        </button>
+                      </div>
+
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
                         <input
                           type="number"
-                          value={customPrices[modalItem.id] || 199}
+                          value={customPrices[modalItem.id] || launchPrice}
                           onChange={(e) => setCustomPrices(prev => ({ ...prev, [modalItem.id]: Number(e.target.value) }))}
                           className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-semibold"
                         />
@@ -1731,8 +1875,8 @@ export default function AdminCjTab({ usdRate, onProductImported }: Props) {
                         <span className="text-slate-500 font-medium">
                           Costo Real (Prod + Envío CJ): ~${totalLandedMxn} MXN
                         </span>
-                        <span className={`font-bold ${(customPrices[modalItem.id] || 199) - totalLandedMxn > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          Tu Ganancia Libre: {(customPrices[modalItem.id] || 199) - totalLandedMxn >= 0 ? '+' : ''}${(customPrices[modalItem.id] || 199) - totalLandedMxn} MXN por venta
+                        <span className={`font-bold ${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          Tu Ganancia Libre: {(customPrices[modalItem.id] || launchPrice) - totalLandedMxn >= 0 ? '+' : ''}${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn} MXN por venta
                         </span>
                       </div>
                     </div>
