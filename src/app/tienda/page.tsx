@@ -94,6 +94,19 @@ function getSafeProductImage(url: string | undefined): string {
   return clean;
 }
 
+// Normalizador seguro de videos (evita 403 Forbidden por anti-hotlinking de CJ Dropshipping)
+function getSafeProductVideo(url: string | undefined): string {
+  if (!url || typeof url !== 'string' || !url.trim()) return '';
+  let clean = url.trim();
+  if (clean.startsWith('/api/admin/cj/video-proxy') || clean.startsWith('data:') || (clean.startsWith('/') && !clean.startsWith('//'))) return clean;
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return '';
+  if (clean.includes('cjdropshipping.com')) {
+    return `/api/admin/cj/video-proxy?url=${encodeURIComponent(clean)}`;
+  }
+  return clean;
+}
+
 export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -5532,7 +5545,7 @@ export default function TiendaFoxDrop() {
                   {selectedModalVideo ? (
                     <video
                       key={selectedModalVideo}
-                      src={selectedModalVideo}
+                      src={getSafeProductVideo(selectedModalVideo)}
                       controls
                       autoPlay
                       playsInline
