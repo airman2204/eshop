@@ -10,7 +10,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getCategoryIconEmoji } from "@/lib/constants";
-import { verifyAdminToken, generateAdminToken, checkRateLimit } from "@/lib/security";
+import { 
+  verifyAdminToken, generateAdminToken, checkRateLimit,
+  generateTotpSecret, verifyTotpCode, generateBackupCodes,
+  checkBruteForceLock, recordLoginFailure, clearLoginFailures,
+  createTrustedDeviceToken, verifyTrustedDeviceToken
+} from "@/lib/security";
 import crypto from "crypto";
 
 function hashPassword(pass: string): string {
@@ -105,6 +110,7 @@ export async function POST(req: NextRequest) {
     // Acciones de lectura o autenticación inicial
     const PUBLIC_ADMIN_ACTIONS = [
       "verify_password",
+      "verify_2fa_login",
       "get_products",
       "get_brands",
       "get_categories",
@@ -1785,16 +1791,23 @@ export async function POST(req: NextRequest) {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
+
+      // 1. Blindaje contra Fuerza Bruta (5 intentos fallidos = 30 min de bloqueo)
+      const bruteCheck = checkBruteForceLock(normalizedEmail, clientIp);
+      if (bruteCheck.locked) {
+        return NextResponse.json({
+          valid: false,
+          error: `🚫 Acceso bloqueado por seguridad: Múltiples intentos fallidos detectados. Por favor espera ${bruteCheck.remainingMinutes} minutos antes de intentar de nuevo.`
+        }, { status: 429 });
+      }
       
       try {
-        // Intentar leer primero del vault privado
         let fileData = null;
         try {
           const res = await supabase.storage.from("admin-vault").download("credentials.json");
           fileData = res.data;
         } catch {}
 
-        // Si no está en admin-vault, buscar en legacy product-images y migrarlo
         if (!fileData) {
           try {
             const legacyRes = await supabase.storage.from("product-images").download("_system/admin_passwords.json");
@@ -1810,32 +1823,53 @@ export async function POST(req: NextRequest) {
           if (userCred && userCred.password) {
             const inputHash = hashPassword(password);
             const matches = userCred.password === inputHash || userCred.password === password.trim();
+            
             if (matches) {
-              // Migrar a hash SHA-256 y guardar en admin-vault privado
-              userCred.password = inputHash;
-              try {
-                const { data: buckets } = await supabase.storage.listBuckets();
-                if (!buckets?.some((b: any) => b.name === "admin-vault")) {
-                  await supabase.storage.createBucket("admin-vault", { public: false, fileSizeLimit: 1048576 });
+              // Contraseña correcta: limpiar contador de fallos
+              clearLoginFailures(normalizedEmail, clientIp);
+
+              // Comprobar si tiene 2FA (TOTP) activo
+              const hasTwoFactor = Boolean(userCred.twoFactor?.enabled && userCred.twoFactor?.secret);
+
+              // Si tiene 2FA activo, revisar si el dispositivo es de confianza (por 30 días)
+              if (hasTwoFactor) {
+                const trustedToken = body.trustedDeviceToken || req.headers.get("x-trusted-device-token");
+                const isDeviceTrusted = verifyTrustedDeviceToken(normalizedEmail, trustedToken);
+
+                if (!isDeviceTrusted) {
+                  // Generar token temporal de 5 minutos solo para el paso 2FA
+                  const temp2FaToken = generateAdminToken(normalizedEmail, 300);
+                  return NextResponse.json({
+                    valid: true,
+                    requires2FA: true,
+                    tempToken: temp2FaToken,
+                    email: normalizedEmail,
+                    message: "Introduce el código de 6 dígitos de tu app autenticadora."
+                  });
                 }
-                await supabase.storage.from("admin-vault").upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
-                  contentType: "application/json",
-                  upsert: true,
-                });
-                // Eliminar copia pública vieja
-                await supabase.storage.from("product-images").remove(["_system/admin_passwords.json"]);
-              } catch (migErr) {
-                console.warn("Aviso migrando credencial a vault privado:", migErr);
               }
 
               const adminToken = generateAdminToken(normalizedEmail);
               return NextResponse.json({
                 valid: true,
+                requires2FA: false,
                 token: adminToken,
+                twoFactorEnabled: hasTwoFactor,
                 mustChangePassword: Boolean(userCred.mustChangePassword),
               });
             } else {
-              return NextResponse.json({ valid: false });
+              // Contraseña incorrecta: registrar fallo de fuerza bruta
+              const failure = recordLoginFailure(normalizedEmail, clientIp);
+              if (failure.locked) {
+                return NextResponse.json({
+                  valid: false,
+                  error: `🚫 Has superado el límite de intentos permitidos. Tu acceso ha sido bloqueado por 30 minutos.`
+                }, { status: 429 });
+              }
+              return NextResponse.json({
+                valid: false,
+                error: `Contraseña incorrecta. Te quedan ${failure.attemptsLeft} intentos antes del bloqueo de seguridad.`
+              });
             }
           }
         }
@@ -1843,7 +1877,233 @@ export async function POST(req: NextRequest) {
         console.warn("No se pudo leer almacén de credenciales:", err);
       }
 
-      return NextResponse.json({ valid: null });
+      return NextResponse.json({ valid: null, error: "Credenciales no configuradas en el servidor" });
+    }
+
+    // ─── VERIFICACIÓN 2FA DE LOGIN (PASO 2) ─────────────────────────
+    if (action === "verify_2fa_login") {
+      const { tempToken, code, trustThisDevice } = body;
+      if (!email || !code) {
+        return NextResponse.json({ error: "Email y código de verificación requeridos" }, { status: 400 });
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Blindaje fuerza bruta para códigos 2FA
+      const bruteCheck = checkBruteForceLock(normalizedEmail, clientIp);
+      if (bruteCheck.locked) {
+        return NextResponse.json({
+          success: false,
+          error: `🚫 Acceso bloqueado por intentos excesivos. Espera ${bruteCheck.remainingMinutes} minutos.`
+        }, { status: 429 });
+      }
+
+      // Validar tempToken firmado
+      const tokenVerification = verifyAdminToken(tempToken);
+      if (!tokenVerification.valid || tokenVerification.email !== normalizedEmail) {
+        return NextResponse.json({
+          success: false,
+          error: "La sesión de verificación ha expirado. Ingresa tu contraseña nuevamente."
+        }, { status: 401 });
+      }
+
+      try {
+        const { data: fileData } = await supabase.storage.from("admin-vault").download("credentials.json");
+        if (!fileData) {
+          return NextResponse.json({ success: false, error: "Credenciales no encontradas" }, { status: 404 });
+        }
+        const credsDict = JSON.parse(await fileData.text() || "{}");
+        const userCred = credsDict[normalizedEmail];
+
+        if (!userCred?.twoFactor?.enabled || !userCred?.twoFactor?.secret) {
+          return NextResponse.json({ success: false, error: "2FA no configurado para este usuario" }, { status: 400 });
+        }
+
+        const cleanCode = String(code).trim().toUpperCase();
+        let isValidCode = verifyTotpCode(userCred.twoFactor.secret, cleanCode, 1);
+        let usedBackupCode = false;
+
+        // Si no es un código TOTP de 6 dígitos, revisar si es un código de respaldo de emergencia
+        if (!isValidCode && Array.isArray(userCred.twoFactor.backupCodes)) {
+          const normCode = cleanCode.replace(/[^A-Z0-9]/g, "");
+          const matchIndex = userCred.twoFactor.backupCodes.findIndex((bc: string) => bc.replace(/[^A-Z0-9]/g, "") === normCode);
+          if (matchIndex >= 0) {
+            isValidCode = true;
+            usedBackupCode = true;
+            // Consumir el código de respaldo
+            userCred.twoFactor.backupCodes.splice(matchIndex, 1);
+            await supabase.storage.from("admin-vault").upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+              contentType: "application/json",
+              upsert: true,
+            });
+          }
+        }
+
+        if (!isValidCode) {
+          const failure = recordLoginFailure(normalizedEmail, clientIp);
+          return NextResponse.json({
+            success: false,
+            error: `Código de autenticación incorrecto. Te quedan ${failure.attemptsLeft} intentos.`
+          }, { status: 401 });
+        }
+
+        // Éxito: limpiar fallos
+        clearLoginFailures(normalizedEmail, clientIp);
+
+        // Generar token de sesión final
+        const finalToken = generateAdminToken(normalizedEmail);
+
+        // Dispositivo de confianza (30 días)
+        let trustedDeviceToken: string | null = null;
+        if (trustThisDevice) {
+          const deviceResult = createTrustedDeviceToken(normalizedEmail);
+          trustedDeviceToken = deviceResult.token;
+        }
+
+        // Alerta de seguridad por WhatsApp (si está disponible el bridge)
+        try {
+          const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
+          const adminPhone = "524423851722"; // Teléfono de administración
+          const dateStr = new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" });
+          fetch(`${bridgeUrl}/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026" },
+            body: JSON.stringify({
+              phone: adminPhone,
+              text: `🔐 *FoxDrop Alerta de Seguridad*\n\nNuevo inicio de sesión exitoso en el Panel Administrativo.\n\n👤 *Usuario:* ${normalizedEmail}\n📅 *Fecha:* ${dateStr}\n🛡️ *Método:* 2FA (${usedBackupCode ? 'Código de Respaldo' : 'Google Authenticator'})\n🌐 *IP:* ${clientIp}\n\n_Si fuiste tú, ignora este mensaje. Si no fuiste tú, cambia tu contraseña de inmediato._`
+            })
+          }).catch(() => {});
+        } catch {}
+
+        return NextResponse.json({
+          success: true,
+          token: finalToken,
+          trustedDeviceToken,
+          usedBackupCode,
+          backupCodesLeft: userCred.twoFactor.backupCodes?.length || 0,
+        });
+      } catch (err: any) {
+        return NextResponse.json({ success: false, error: err.message || "Error validando 2FA" }, { status: 500 });
+      }
+    }
+
+    // ─── CONFIGURAR 2FA: INICIAR (Generar Secreto y QR) ──────────────
+    if (action === "setup_2fa_init") {
+      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      if (!adminEmail) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+
+      const { secret, otpauthUrl } = generateTotpSecret(adminEmail);
+      const backupCodes = generateBackupCodes(6);
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(otpauthUrl)}`;
+
+      return NextResponse.json({
+        success: true,
+        secret,
+        otpauthUrl,
+        qrCodeUrl,
+        backupCodes,
+      });
+    }
+
+    // ─── CONFIGURAR 2FA: CONFIRMAR Y GUARDAR ────────────────────────
+    if (action === "setup_2fa_confirm") {
+      const { secret, code, backupCodes } = body;
+      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      if (!adminEmail || !secret || !code) {
+        return NextResponse.json({ error: "Datos incompletos para activar 2FA" }, { status: 400 });
+      }
+
+      // Validar que el código ingresado coincida con el secreto
+      const isValid = verifyTotpCode(secret, code, 1);
+      if (!isValid) {
+        return NextResponse.json({
+          error: "El código de 6 dígitos no coincide. Asegúrate de haber escaneado el código QR en Google Authenticator y que la hora de tu teléfono esté sincronizada en automático."
+        }, { status: 400 });
+      }
+
+      try {
+        const { data: fileData } = await supabase.storage.from("admin-vault").download("credentials.json");
+        const credsDict = JSON.parse(await fileData?.text() || "{}");
+        if (!credsDict[adminEmail]) {
+          credsDict[adminEmail] = { password: "", mustChangePassword: false, updatedAt: new Date().toISOString() };
+        }
+
+        credsDict[adminEmail].twoFactor = {
+          enabled: true,
+          secret: secret.trim(),
+          backupCodes: Array.isArray(backupCodes) ? backupCodes : generateBackupCodes(6),
+          enabledAt: new Date().toISOString(),
+        };
+
+        await supabase.storage.from("admin-vault").upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "¡Verificación en Dos Pasos (2FA) activada con éxito en tu cuenta!"
+        });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || "Error guardando configuración de 2FA" }, { status: 500 });
+      }
+    }
+
+    // ─── DESACTIVAR 2FA ──────────────────────────────────────────────
+    if (action === "disable_2fa") {
+      const { password, code } = body;
+      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      if (!adminEmail || !password) {
+        return NextResponse.json({ error: "Contraseña requerida para desactivar 2FA" }, { status: 400 });
+      }
+
+      try {
+        const { data: fileData } = await supabase.storage.from("admin-vault").download("credentials.json");
+        const credsDict = JSON.parse(await fileData?.text() || "{}");
+        const userCred = credsDict[adminEmail];
+
+        if (!userCred) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+
+        const inputHash = hashPassword(password);
+        if (userCred.password !== inputHash && userCred.password !== password.trim()) {
+          return NextResponse.json({ error: "Contraseña incorrecta" }, { status: 401 });
+        }
+
+        if (code && userCred.twoFactor?.secret) {
+          const isValid = verifyTotpCode(userCred.twoFactor.secret, code, 1);
+          if (!isValid) return NextResponse.json({ error: "Código 2FA incorrecto" }, { status: 401 });
+        }
+
+        delete userCred.twoFactor;
+        await supabase.storage.from("admin-vault").upload("credentials.json", Buffer.from(JSON.stringify(credsDict, null, 2)), {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+        return NextResponse.json({ success: true, message: "2FA desactivado" });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || "Error al desactivar 2FA" }, { status: 500 });
+      }
+    }
+
+    // ─── CONSULTAR ESTADO DE 2FA ────────────────────────────────────
+    if (action === "get_2fa_status") {
+      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      if (!adminEmail) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
+
+      try {
+        const { data: fileData } = await supabase.storage.from("admin-vault").download("credentials.json");
+        const credsDict = JSON.parse(await fileData?.text() || "{}");
+        const userCred = credsDict[adminEmail];
+
+        return NextResponse.json({
+          success: true,
+          enabled: Boolean(userCred?.twoFactor?.enabled),
+          backupCodesCount: Array.isArray(userCred?.twoFactor?.backupCodes) ? userCred.twoFactor.backupCodes.length : 0,
+        });
+      } catch {
+        return NextResponse.json({ success: true, enabled: false, backupCodesCount: 0 });
+      }
     }
 
     // ─── CARRUSEL HERO ───────────────────────────────────────────

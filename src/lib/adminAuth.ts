@@ -7,7 +7,29 @@ export interface AdminSession {
   email: string;
   mustChangePassword: boolean;
   twoFactorVerified: boolean;
+  twoFactorEnabled?: boolean;
   token?: string;
+}
+
+/**
+ * Obtiene el token de dispositivo de confianza (30 días) desde localStorage
+ */
+export function getStoredTrustedDeviceToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("foxdrop_admin_trusted_device") || null;
+  } catch {}
+  return null;
+}
+
+/**
+ * Guarda el token de dispositivo de confianza en localStorage
+ */
+export function setStoredTrustedDeviceToken(token: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem("foxdrop_admin_trusted_device", token);
+  } catch {}
 }
 
 /**
@@ -145,7 +167,13 @@ export async function fetchAdminCjApi(bodyOrOptions: any): Promise<Response> {
 export async function authenticateAdmin(
   email: string,
   pass: string
-): Promise<{ success: boolean; error?: string; session?: AdminSession }> {
+): Promise<{ 
+  success: boolean; 
+  error?: string; 
+  session?: AdminSession; 
+  requires2FA?: boolean; 
+  tempToken?: string;
+}> {
   const normalizedEmail = email.trim().toLowerCase();
 
   // 1. Verificación de Lista Blanca
@@ -156,40 +184,194 @@ export async function authenticateAdmin(
     };
   }
 
-  // 2. Comprobar primero en el servidor seguro (/api/admin)
+  // 2. Comprobar en el servidor seguro (/api/admin) enviando token de dispositivo si existe
   try {
+    const trustedToken = getStoredTrustedDeviceToken();
     const res = await fetch("/api/admin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "verify_password", email: normalizedEmail, password: pass }),
+      body: JSON.stringify({ 
+        action: "verify_password", 
+        email: normalizedEmail, 
+        password: pass,
+        trustedDeviceToken: trustedToken || undefined
+      }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 429) {
+      return { success: false, error: data.error || "Acceso bloqueado por intentos excesivos." };
+    }
+
     if (res.ok) {
-      const data = await res.json();
+      // Caso 1: Requiere segundo factor (TOTP / Google Authenticator)
+      if (data.requires2FA) {
+        return {
+          success: true,
+          requires2FA: true,
+          tempToken: data.tempToken,
+        };
+      }
+
+      // Caso 2: Login completado (o dispositivo de confianza verificado)
       if (data.valid === true) {
         return {
           success: true,
           session: {
             email: normalizedEmail,
             mustChangePassword: data.mustChangePassword ?? false,
-            twoFactorVerified: false,
+            twoFactorVerified: Boolean(data.twoFactorEnabled),
+            twoFactorEnabled: Boolean(data.twoFactorEnabled),
             token: data.token,
           },
         };
       } else if (data.valid === false) {
-        return { success: false, error: "Contraseña incorrecta." };
+        return { success: false, error: data.error || "Contraseña incorrecta." };
       }
+    } else {
+      return { success: false, error: data.error || "Error al verificar credenciales." };
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn("Fallo verificando contraseña en servidor:", err);
+    return { success: false, error: err.message || "Fallo de conexión con el servidor de autenticación." };
   }
 
-  // 3. Ya no se usa almacenamiento inseguro en localStorage ni contraseñas quemadas en código.
-  // Todas las autenticaciones de administrador deben resolverse a través del servidor seguro /api/admin.
   return {
     success: false,
     error: "Contraseña incorrecta o credenciales no configuradas.",
   };
+}
+
+/**
+ * Valida el código 2FA (TOTP de 6 dígitos o Backup Code) en el servidor
+ */
+export async function verify2FaLogin(
+  email: string,
+  tempToken: string,
+  code: string,
+  trustThisDevice: boolean
+): Promise<{ success: boolean; error?: string; session?: AdminSession }> {
+  try {
+    const res = await fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "verify_2fa_login",
+        email: email.trim().toLowerCase(),
+        tempToken,
+        code: code.trim(),
+        trustThisDevice,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || "Código de autenticación incorrecto." };
+    }
+
+    // Si el usuario marcó confiar en este equipo, guardar el token por 30 días
+    if (data.trustedDeviceToken) {
+      setStoredTrustedDeviceToken(data.trustedDeviceToken);
+    }
+
+    const session: AdminSession = {
+      email: email.trim().toLowerCase(),
+      mustChangePassword: false,
+      twoFactorVerified: true,
+      twoFactorEnabled: true,
+      token: data.token,
+    };
+
+    return { success: true, session };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al validar código 2FA." };
+  }
+}
+
+/**
+ * Inicia la configuración de 2FA generando el QR y los códigos de respaldo
+ */
+export async function setup2FaInit(email: string): Promise<{
+  success: boolean;
+  secret?: string;
+  otpauthUrl?: string;
+  qrCodeUrl?: string;
+  backupCodes?: string[];
+  error?: string;
+}> {
+  try {
+    const res = await fetchAdminApi({
+      action: "setup_2fa_init",
+      adminEmail: email,
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al generar configuración 2FA" };
+  }
+}
+
+/**
+ * Confirma el 2FA con el primer código escaneado de la app
+ */
+export async function setup2FaConfirm(
+  email: string,
+  secret: string,
+  code: string,
+  backupCodes: string[]
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetchAdminApi({
+      action: "setup_2fa_confirm",
+      adminEmail: email,
+      secret,
+      code,
+      backupCodes,
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al confirmar 2FA" };
+  }
+}
+
+/**
+ * Consulta si el usuario tiene el 2FA activo y cuántos códigos de respaldo le quedan
+ */
+export async function get2FaStatus(email: string): Promise<{
+  success: boolean;
+  enabled: boolean;
+  backupCodesCount: number;
+}> {
+  try {
+    const res = await fetchAdminApi({
+      action: "get_2fa_status",
+      adminEmail: email,
+    });
+    return await res.json();
+  } catch {
+    return { success: true, enabled: false, backupCodesCount: 0 };
+  }
+}
+
+/**
+ * Desactiva el 2FA
+ */
+export async function disable2Fa(
+  email: string,
+  pass: string,
+  code?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetchAdminApi({
+      action: "disable_2fa",
+      adminEmail: email,
+      password: pass,
+      code,
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al desactivar 2FA" };
+  }
 }
 
 /**
