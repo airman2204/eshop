@@ -4,7 +4,7 @@ if (!process.env.CJ_API_KEY) {
 }
 
 import { NextRequest, NextResponse } from "next/server";
-import { searchCjProducts, getCjProductDetails } from "@/lib/cjdropshipping";
+import { searchCjProducts, getCjProductDetails, getCjAccessToken } from "@/lib/cjdropshipping";
 import { verifyAdminToken, checkRateLimit } from "@/lib/security";
 import { createServerClient } from "@/lib/supabase/server";
 
@@ -157,6 +157,44 @@ export async function POST(req: NextRequest) {
       }
       const detail = await getCjProductDetails(pid);
       return NextResponse.json({ success: true, detail });
+    }
+
+    // 2.05 Cotizar flete en vivo para una variante específica
+    if (action === "calculate_variant_freight") {
+      const { vid } = body;
+      if (!vid) {
+        return NextResponse.json({ error: "vid requerido" }, { status: 400 });
+      }
+      const cjToken = await getCjAccessToken();
+      const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
+        method: "POST",
+        headers: {
+          "CJ-Access-Token": cjToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          startCountryCode: "CN",
+          endCountryCode: "MX",
+          products: [{ quantity: 1, vid: String(vid) }],
+        }),
+      });
+      const freightJson = await freightRes.json();
+      if (freightJson?.result && Array.isArray(freightJson.data)) {
+        const sortedOptions = [...freightJson.data]
+          .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
+          .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
+        return NextResponse.json({
+          success: true,
+          realFreightToMx: sortedOptions.length > 0 ? {
+            cheapestUsd: sortedOptions[0].logisticPrice,
+            logisticName: sortedOptions[0].logisticName,
+            logisticAging: sortedOptions[0].logisticAging,
+            allOptions: sortedOptions.slice(0, 8),
+            calculatedForVid: vid,
+          } : null,
+        });
+      }
+      return NextResponse.json({ success: false, error: "No freight options found" });
     }
 
     // 2.1 Traducir producto al español con IA

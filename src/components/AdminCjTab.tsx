@@ -164,8 +164,10 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
   const [selectedPreviewVideo, setSelectedPreviewVideo] = useState<string | null>(null);
   const [selectedPreviewVariantIdx, setSelectedPreviewVariantIdx] = useState<number>(0);
+  const [selectedShippingMethodName, setSelectedShippingMethodName] = useState<string>('');
   const [previewMarginMult, setPreviewMarginMult] = useState<number>(1.22);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [calculatingVariantFreight, setCalculatingVariantFreight] = useState(false);
 
   // Bloquear el scroll de la página principal cuando el modal esté abierto
   useEffect(() => {
@@ -328,6 +330,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     setSelectedPreviewImage(item.image);
     setSelectedPreviewVideo(null);
     setSelectedPreviewVariantIdx(0);
+    setSelectedShippingMethodName('');
     setPreviewMarginMult(1.22);
     setPreviewLoading(true);
     setPreviewDetail(null);
@@ -411,6 +414,9 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
           realFreightToMx: d.realFreightToMx || undefined,
         });
+        if (d.realFreightToMx?.logisticName) {
+          setSelectedShippingMethodName(d.realFreightToMx.logisticName);
+        }
         if (imgSet.length > 0) {
           setSelectedPreviewImage(imgSet[0]);
         }
@@ -419,6 +425,38 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
       // Si falla, se muestra al menos con la foto principal
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const handleSelectPreviewVariant = async (i: number, v: any) => {
+    setSelectedPreviewVariantIdx(i);
+    if (v.variantImage) {
+      setSelectedPreviewVideo(null);
+      setSelectedPreviewImage(v.variantImage);
+    }
+    // Si la variante tiene su propio vid y no está calculada aún para este vid, cotizar su flete en tiempo real
+    if (v.vid && previewDetail?.pid && (!previewDetail.realFreightToMx || (previewDetail.realFreightToMx as any).calculatedForVid !== v.vid)) {
+      setCalculatingVariantFreight(true);
+      try {
+        const res = await fetchAdminCjApi({
+          action: 'calculate_variant_freight',
+          vid: v.vid,
+        });
+        const data = await res.json();
+        if (data.success && data.realFreightToMx) {
+          setPreviewDetail(prev => prev ? {
+            ...prev,
+            realFreightToMx: data.realFreightToMx,
+          } : prev);
+          if (data.realFreightToMx.logisticName) {
+            setSelectedShippingMethodName(data.realFreightToMx.logisticName);
+          }
+        }
+      } catch {
+        // En caso de error de red, mantener el flete actual de referencia
+      } finally {
+        setCalculatingVariantFreight(false);
+      }
     }
   };
 
@@ -1596,13 +1634,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                             <button
                               key={i}
                               type="button"
-                              onClick={() => {
-                                setSelectedPreviewVariantIdx(i);
-                                if (v.variantImage) {
-                                  setSelectedPreviewVideo(null);
-                                  setSelectedPreviewImage(v.variantImage);
-                                }
-                              }}
+                              onClick={() => handleSelectPreviewVariant(i, v)}
                               className={`p-2 rounded-xl text-[11px] font-medium border flex items-center gap-2.5 transition cursor-pointer text-left ${
                                 isSelectedVar
                                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-200'
@@ -1653,7 +1685,11 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
 
                     // Cotización real de flete desde CJ hacia México
                     const realFreight = previewDetail?.realFreightToMx;
-                    const realFreightUsd = realFreight?.cheapestUsd || 0;
+                    const availableFreightOptions = realFreight?.allOptions || [];
+                    const activeFreightOption = availableFreightOptions.find((o: any) => o.logisticName === selectedShippingMethodName) || availableFreightOptions[0] || null;
+                    const realFreightUsd = activeFreightOption ? activeFreightOption.logisticPrice : (realFreight?.cheapestUsd || 0);
+                    const realFreightAging = activeFreightOption?.logisticAging || realFreight?.logisticAging || '14–16';
+                    const activeFreightName = activeFreightOption?.logisticName || realFreight?.logisticName || 'CJPacket Ordinary';
                     const realFreightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (isMexicoStock ? 0 : 120);
 
                     // Suma EXACTA de la opción seleccionada + flete
@@ -1707,25 +1743,47 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                           </span>
                         </div>
 
-                        {/* PASO B: FLETE REAL CJ */}
-                        <div className="flex items-center justify-between text-xs text-slate-700">
-                          <span>
-                            <strong>B)</strong>{' '}
-                            {isMexicoStock
-                              ? 'Paquetería Nacional:'
-                              : realFreight?.logisticName
-                              ? `Flete CJ a México (${realFreight.logisticName}):`
-                              : 'Flete Internacional a México:'}
-                          </span>
-                          <span className={`font-black ${isMexicoStock ? 'text-emerald-700' : isHighShipping ? 'text-rose-700' : 'text-slate-900'}`}>
-                            {isMexicoStock
-                              ? '✓ $0 MXN (Incluido)'
-                              : previewLoading
-                              ? 'Cotizando en CJ...'
-                              : realFreightUsd > 0
-                              ? `+$${realFreightUsd.toFixed(2)} USD × $${safeRate.toFixed(2)} = +$${realFreightMxn} MXN`
-                              : `+$${realFreightMxn} MXN`}
-                          </span>
+                        {/* PASO B: FLETE REAL CJ + SELECTOR DE MÉTODO DE ENVÍO */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs text-slate-700">
+                            <span>
+                              <strong>B)</strong>{' '}
+                              {isMexicoStock
+                                ? 'Paquetería Nacional:'
+                                : 'Flete CJ a México:'}
+                            </span>
+                            <span className={`font-black ${isMexicoStock ? 'text-emerald-700' : isHighShipping ? 'text-rose-700' : 'text-slate-900'}`}>
+                              {isMexicoStock
+                                ? '✓ $0 MXN (Incluido)'
+                                : (previewLoading || calculatingVariantFreight)
+                                ? 'Cotizando en CJ...'
+                                : realFreightUsd > 0
+                                ? `+$${realFreightUsd.toFixed(2)} USD × $${safeRate.toFixed(2)} = +$${realFreightMxn} MXN`
+                                : `+$${realFreightMxn} MXN`}
+                            </span>
+                          </div>
+
+                          {!isMexicoStock && availableFreightOptions.length > 0 && (
+                            <div className="flex items-center gap-2 bg-white/80 p-2 rounded-xl border border-slate-200">
+                              <span className="text-[10px] font-bold text-slate-500 shrink-0">
+                                Paquetería CJ:
+                              </span>
+                              <select
+                                value={activeFreightName}
+                                onChange={(e) => setSelectedShippingMethodName(e.target.value)}
+                                className="w-full text-xs font-bold text-slate-800 bg-transparent border-0 focus:ring-0 cursor-pointer p-0"
+                              >
+                                {availableFreightOptions.map((opt: any, optIdx: number) => {
+                                  const optMxn = Math.round(opt.logisticPrice * safeRate);
+                                  return (
+                                    <option key={optIdx} value={opt.logisticName}>
+                                      {opt.logisticName} • ${opt.logisticPrice.toFixed(2)} USD (~${optMxn} MXN) • {opt.logisticAging || '13-20'} días
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
+                          )}
                         </div>
 
                         {/* PASO C: SUMA COSTO TOTAL REAL (A + B) */}
@@ -1825,9 +1883,9 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                           <span className="font-bold text-slate-800">
                             {isMexicoStock
                               ? '⚡ 2 a 5 Días Hábiles (Nacional)'
-                              : realFreight?.logisticAging
-                              ? `✈️ ${realFreight.logisticAging} Días Hábiles (Internacional)`
-                              : '✈️ 10 a 15 Días Hábiles (Internacional)'}
+                              : realFreightAging
+                              ? `✈️ ${realFreightAging} Días Hábiles (${activeFreightName})`
+                              : '✈️ 13 a 20 Días Hábiles (Internacional)'}
                           </span>
                         </div>
                       </div>

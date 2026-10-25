@@ -269,39 +269,52 @@ export async function getCjProductDetails(productId: string) {
 
   const detailJson = await res.json();
 
-  // Cotizar flete internacional real hacia México (MX) con la primera variante disponible
+  // Cotizar flete internacional real hacia México (MX) con la variante representativa
   if (detailJson?.result && detailJson?.data) {
     const variants = detailJson.data.variants;
     // En paralelo: Cotizar flete internacional real hacia México (MX) y consultar videos oficiales del producto
     await Promise.all([
       (async () => {
-        if (Array.isArray(variants) && variants.length > 0 && variants[0].vid) {
+        if (Array.isArray(variants) && variants.length > 0) {
           try {
-            const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
-              method: "POST",
-              headers: {
-                "CJ-Access-Token": token,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                startCountryCode: "CN",
-                endCountryCode: "MX",
-                products: [{ quantity: 1, vid: variants[0].vid }],
-              }),
+            // Seleccionar variante de referencia con peso representativo / precio de entrada
+            // (evita usar paquetes dobles/pesados si están al inicio del arreglo de variantes)
+            const sortedByPrice = [...variants].sort((a: any, b: any) => {
+              const pa = Number(a.variantSellPrice) || 0;
+              const pb = Number(b.variantSellPrice) || 0;
+              return pa - pb;
             });
-            if (freightRes.ok) {
-              const freightJson = await freightRes.json();
-              if (freightJson?.result && Array.isArray(freightJson.data) && freightJson.data.length > 0) {
-                const sortedOptions = [...freightJson.data]
-                  .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
-                  .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
-                if (sortedOptions.length > 0) {
-                  detailJson.data.realFreightToMx = {
-                    cheapestUsd: sortedOptions[0].logisticPrice,
-                    logisticName: sortedOptions[0].logisticName,
-                    logisticAging: sortedOptions[0].logisticAging,
-                    allOptions: sortedOptions.slice(0, 5),
-                  };
+            const refVariant = sortedByPrice[0] || variants[0];
+            const targetVid = refVariant?.vid || variants[0]?.vid;
+
+            if (targetVid) {
+              const freightRes = await fetch("https://developers.cjdropshipping.com/api2.0/v1/logistic/freightCalculate", {
+                method: "POST",
+                headers: {
+                  "CJ-Access-Token": token,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  startCountryCode: "CN",
+                  endCountryCode: "MX",
+                  products: [{ quantity: 1, vid: targetVid }],
+                }),
+              });
+              if (freightRes.ok) {
+                const freightJson = await freightRes.json();
+                if (freightJson?.result && Array.isArray(freightJson.data) && freightJson.data.length > 0) {
+                  const sortedOptions = [...freightJson.data]
+                    .filter((o: any) => typeof o.logisticPrice === "number" && o.logisticPrice > 0)
+                    .sort((a: any, b: any) => a.logisticPrice - b.logisticPrice);
+                  if (sortedOptions.length > 0) {
+                    detailJson.data.realFreightToMx = {
+                      cheapestUsd: sortedOptions[0].logisticPrice,
+                      logisticName: sortedOptions[0].logisticName,
+                      logisticAging: sortedOptions[0].logisticAging,
+                      allOptions: sortedOptions.slice(0, 8),
+                      calculatedForVid: targetVid,
+                    };
+                  }
                 }
               }
             }
