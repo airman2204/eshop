@@ -17,6 +17,7 @@ import {
   createTrustedDeviceToken, verifyTrustedDeviceToken
 } from "@/lib/security";
 import crypto from "crypto";
+import QRCode from "qrcode";
 
 function hashPassword(pass: string): string {
   return crypto.createHash("sha256").update(pass.trim()).digest("hex");
@@ -2008,7 +2009,18 @@ export async function POST(req: NextRequest) {
 
       const { secret, otpauthUrl } = generateTotpSecret(adminEmail);
       const backupCodes = generateBackupCodes(6);
-      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(otpauthUrl)}`;
+      
+      // Generar QR nativo en Data URL (base64) para máxima confiabilidad sin dependencias externas
+      let qrCodeUrl = "";
+      try {
+        qrCodeUrl = await QRCode.toDataURL(otpauthUrl, {
+          width: 260,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      } catch {
+        qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(otpauthUrl)}`;
+      }
 
       return NextResponse.json({
         success: true,

@@ -89,6 +89,7 @@ export default function AdminCRM() {
   const [twoFactorSetupCode, setTwoFactorSetupCode] = useState('');
   const [twoFactorSetupError, setTwoFactorSetupError] = useState('');
   const [twoFactorSetupSuccess, setTwoFactorSetupSuccess] = useState(false);
+  const [twoFactorConfirmedCodes, setTwoFactorConfirmedCodes] = useState<string[] | null>(null);
   const [twoFactorStatus, setTwoFactorStatus] = useState<{
     enabled: boolean;
     backupCodesCount: number;
@@ -1397,6 +1398,10 @@ export default function AdminCRM() {
 
       if (result.success) {
         setTwoFactorSetupSuccess(true);
+        // Guardar los códigos de respaldo para mostrárselos ÚNICAMENTE al dueño legítimo una vez confirmado el 2FA
+        if (twoFactorData.backupCodes && twoFactorData.backupCodes.length > 0) {
+          setTwoFactorConfirmedCodes(twoFactorData.backupCodes);
+        }
         refreshTwoFactorStatus();
 
         // Si se estaba configurando desde el login inicial, logearlo automáticamente
@@ -1407,13 +1412,6 @@ export default function AdminCRM() {
             localStorage.setItem('foxdrop_admin_session', JSON.stringify(loginRes.session));
           }
         }
-
-        setTimeout(() => {
-          setShowTwoFactorModal(false);
-          setTwoFactorSetupSuccess(false);
-          setTwoFactorData(null);
-          setTwoFactorSetupCode('');
-        }, 2000);
       } else {
         setTwoFactorSetupError(result.error || 'Código incorrecto. Verifica la hora de tu teléfono.');
       }
@@ -3847,37 +3845,85 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               {twoFactorData && (
                 <div className="space-y-4 text-xs">
                   {twoFactorSetupSuccess ? (
-                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 text-center space-y-2">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-5 text-center space-y-4">
                       <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                         <Check className="w-6 h-6" />
                       </div>
-                      <h4 className="font-bold text-base">¡Blindaje 2FA Activado!</h4>
-                      <p className="text-xs text-emerald-700">
-                        Iniciando sesión en tu panel administrativo...
-                      </p>
+                      <div>
+                        <h4 className="font-bold text-base text-emerald-950">¡Blindaje 2FA Activado con Éxito!</h4>
+                        <p className="text-xs text-emerald-700 mt-1">
+                          Tu app autenticadora quedó vinculada. Aquí tienes tus códigos de respaldo de emergencia:
+                        </p>
+                      </div>
+
+                      {twoFactorConfirmedCodes && twoFactorConfirmedCodes.length > 0 && (
+                        <div className="bg-white border border-emerald-300 rounded-xl p-4 text-left space-y-2.5 shadow-xs">
+                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <span className="font-bold text-gray-900 text-xs">🔐 Códigos de Respaldo Únicos</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const text = twoFactorConfirmedCodes.join('\n');
+                                navigator.clipboard.writeText(text);
+                                alert('Códigos de respaldo copiados al portapapeles. Guárdalos en tu gestor de contraseñas.');
+                              }}
+                              className="text-[#E65F2B] hover:underline font-bold flex items-center gap-1 text-[11px] cursor-pointer"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Copiar Códigos</span>
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-gray-500">
+                            Guarda estos 6 códigos en un lugar seguro. Solo se mostrarán esta vez:
+                          </p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-xs font-bold text-slate-800 text-center">
+                            {twoFactorConfirmedCodes.map((code, idx) => (
+                              <div key={idx} className="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 select-all">
+                                {code}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowTwoFactorModal(false);
+                          setTwoFactorSetupSuccess(false);
+                          setTwoFactorData(null);
+                          setTwoFactorSetupCode('');
+                          setTwoFactorConfirmedCodes(null);
+                        }}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition cursor-pointer"
+                      >
+                        Entrar al Panel Administrativo →
+                      </button>
                     </div>
                   ) : (
                     <>
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
                         <div className="flex items-center gap-2 text-slate-800 font-bold">
                           <span className="w-5 h-5 rounded-full bg-[#E65F2B] text-white flex items-center justify-center text-[10px]">1</span>
                           <span>Escanea este código QR con tu celular</span>
                         </div>
                         <p className="text-gray-500 text-[11px]">
-                          Abre <strong>Google Authenticator</strong> o <strong>Microsoft Authenticator</strong>, toca &ldquo;+&rdquo; y escanea:
+                          Abre <strong>Google Authenticator</strong> o <strong>Microsoft Authenticator</strong>, toca &ldquo;+&rdquo; y escanea el código:
                         </p>
                         {twoFactorData.qrCodeUrl && (
-                          <div className="flex flex-col items-center justify-center py-2 bg-white rounded-lg border border-gray-200">
+                          <div className="flex flex-col items-center justify-center py-3 bg-white rounded-xl border border-gray-200 shadow-2xs">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={twoFactorData.qrCodeUrl}
                               alt="Código QR 2FA"
-                              className="w-48 h-48 rounded-lg shadow-xs"
+                              className="w-52 h-52 rounded-lg"
                             />
                           </div>
                         )}
                         <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-gray-200 text-[11px]">
-                          <span className="text-gray-500 font-mono">Clave manual: <strong>{twoFactorData.secret}</strong></span>
+                          <span className="text-gray-500 font-mono text-[10px] truncate max-w-[260px]">
+                            Clave manual: <strong>{twoFactorData.secret}</strong>
+                          </span>
                           <button
                             type="button"
                             onClick={() => {
@@ -3887,7 +3933,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 setTimeout(() => setTwoFactorCopiedNotice(false), 2000);
                               }
                             }}
-                            className="text-[#E65F2B] hover:underline font-bold flex items-center gap-1"
+                            className="text-[#E65F2B] hover:underline font-bold flex items-center gap-1 shrink-0 ml-2 cursor-pointer"
                           >
                             <Copy className="w-3 h-3" />
                             <span>{twoFactorCopiedNotice ? 'Copiado' : 'Copiar'}</span>
@@ -3895,42 +3941,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </div>
                       </div>
 
-                      {twoFactorData.backupCodes && twoFactorData.backupCodes.length > 0 && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-amber-900 font-bold">
-                              <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px]">2</span>
-                              <span>Códigos de Respaldo de Emergencia</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const text = twoFactorData.backupCodes?.join('\n') || '';
-                                navigator.clipboard.writeText(text);
-                                alert('Códigos de respaldo copiados al portapapeles. Guárdalos en un lugar seguro.');
-                              }}
-                              className="text-amber-800 hover:underline font-bold flex items-center gap-1 text-[11px]"
-                            >
-                              <Copy className="w-3 h-3" />
-                              <span>Copiar Códigos</span>
-                            </button>
-                          </div>
-                          <p className="text-[11px] text-amber-700">
-                            Si alguna vez pierdes acceso a tu celular, puedes usar uno de estos códigos únicos para iniciar sesión:
-                          </p>
-                          <div className="grid grid-cols-3 gap-1.5 font-mono text-[11px] font-bold text-amber-900 text-center">
-                            {twoFactorData.backupCodes.map((code, idx) => (
-                              <div key={idx} className="bg-white/90 border border-amber-300 rounded px-2 py-1 select-all">
-                                {code}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       <form onSubmit={handleConfirmTwoFactorSetup} className="space-y-3 pt-1">
                         <div className="flex items-center gap-2 text-slate-800 font-bold">
-                          <span className="w-5 h-5 rounded-full bg-[#E65F2B] text-white flex items-center justify-center text-[10px]">3</span>
+                          <span className="w-5 h-5 rounded-full bg-[#E65F2B] text-white flex items-center justify-center text-[10px]">2</span>
                           <span>Ingresa el código de 6 dígitos que muestra tu app</span>
                         </div>
 
@@ -3955,7 +3968,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           <button
                             type="submit"
                             disabled={twoFactorLoading || twoFactorSetupCode.length < 6}
-                            className="bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-gray-400 text-white font-bold px-5 py-2.5 rounded-lg transition shadow"
+                            className="bg-[#E65F2B] hover:bg-[#D45321] disabled:bg-gray-400 text-white font-bold px-5 py-2.5 rounded-lg transition shadow cursor-pointer"
                           >
                             {twoFactorLoading ? 'Validando...' : 'Activar Blindaje'}
                           </button>
