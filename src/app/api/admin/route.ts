@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
     const PUBLIC_ADMIN_ACTIONS = [
       "verify_password",
       "verify_2fa_login",
+      "setup_2fa_init",
+      "setup_2fa_confirm",
       "get_products",
       "get_brands",
       "get_categories",
@@ -1830,6 +1832,18 @@ export async function POST(req: NextRequest) {
 
               // Comprobar si tiene 2FA (TOTP) activo
               const hasTwoFactor = Boolean(userCred.twoFactor?.enabled && userCred.twoFactor?.secret);
+
+              // Si no tiene 2FA configurado, obligar a que lo configure antes de entrar
+              if (!hasTwoFactor) {
+                const temp2FaToken = generateAdminToken(normalizedEmail, 600);
+                return NextResponse.json({
+                  valid: true,
+                  mustSetup2FA: true,
+                  tempToken: temp2FaToken,
+                  email: normalizedEmail,
+                  message: "Por seguridad institucional, debes activar la verificación en dos pasos (2FA) para continuar."
+                });
+              }
 
               // Si tiene 2FA activo, revisar si el dispositivo es de confianza (por 30 días)
               if (hasTwoFactor) {

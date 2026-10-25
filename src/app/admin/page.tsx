@@ -1266,6 +1266,24 @@ export default function AdminCRM() {
     try {
       const result = await authenticateAdmin(loginEmail, loginPass);
 
+      // Si es primera vez y debe activar 2FA antes de continuar
+      if (result.mustSetup2FA && result.tempToken) {
+        setTwoFactorTempToken(result.tempToken);
+        setTwoFactorLoading(true);
+        setTwoFactorSetupError('');
+        setTwoFactorSetupSuccess(false);
+        setTwoFactorSetupCode('');
+        const initData = await setup2FaInit(loginEmail);
+        setTwoFactorLoading(false);
+        if (initData.success && initData.secret) {
+          setTwoFactorData(initData);
+          setShowTwoFactorModal(true);
+        } else {
+          setLoginError(initData.error || 'Error al generar la llave 2FA.');
+        }
+        return;
+      }
+
       // Si requiere segundo factor (Google Authenticator / 2FA)
       if (result.requires2FA && result.tempToken) {
         setTwoFactorTempToken(result.tempToken);
@@ -1363,14 +1381,15 @@ export default function AdminCRM() {
   // Confirmar activación de 2FA con el primer código de la app
   const handleConfirmTwoFactorSetup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adminSession?.email || !twoFactorData?.secret || !twoFactorSetupCode.trim()) return;
+    const targetEmail = adminSession?.email || loginEmail;
+    if (!targetEmail || !twoFactorData?.secret || !twoFactorSetupCode.trim()) return;
 
     setTwoFactorLoading(true);
     setTwoFactorSetupError('');
 
     try {
       const result = await setup2FaConfirm(
-        adminSession.email,
+        targetEmail,
         twoFactorData.secret,
         twoFactorSetupCode.trim(),
         twoFactorData.backupCodes || []
@@ -1379,12 +1398,22 @@ export default function AdminCRM() {
       if (result.success) {
         setTwoFactorSetupSuccess(true);
         refreshTwoFactorStatus();
+
+        // Si se estaba configurando desde el login inicial, logearlo automáticamente
+        if (!adminSession && twoFactorTempToken) {
+          const loginRes = await verify2FaLogin(targetEmail, twoFactorTempToken, twoFactorSetupCode.trim(), trustThisDevice);
+          if (loginRes.success && loginRes.session) {
+            setAdminSession(loginRes.session);
+            localStorage.setItem('foxdrop_admin_session', JSON.stringify(loginRes.session));
+          }
+        }
+
         setTimeout(() => {
           setShowTwoFactorModal(false);
           setTwoFactorSetupSuccess(false);
           setTwoFactorData(null);
           setTwoFactorSetupCode('');
-        }, 2500);
+        }, 2000);
       } else {
         setTwoFactorSetupError(result.error || 'Código incorrecto. Verifica la hora de tu teléfono.');
       }
@@ -4404,29 +4433,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <span className="hidden sm:inline">Silenciado</span>
                   </>
                 )}
-              </button>
-
-              {/* Botón de Blindaje 2FA */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (twoFactorStatus.enabled) {
-                    setShowTwoFactorModal(true);
-                  } else {
-                    handleInitTwoFactorSetup();
-                  }
-                }}
-                title={twoFactorStatus.enabled ? "Blindaje 2FA Activo - Haz clic para gestionar" : "Configurar Blindaje 2FA con Google Authenticator"}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition border cursor-pointer ${
-                  twoFactorStatus.enabled
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                }`}
-              >
-                <ShieldCheck className={`w-3.5 h-3.5 ${twoFactorStatus.enabled ? 'text-emerald-600' : 'text-amber-600'}`} />
-                <span className="hidden sm:inline">
-                  {twoFactorStatus.enabled ? '2FA Blindado' : 'Activar 2FA'}
-                </span>
               </button>
 
               <button

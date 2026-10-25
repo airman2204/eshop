@@ -172,6 +172,7 @@ export async function authenticateAdmin(
   error?: string; 
   session?: AdminSession; 
   requires2FA?: boolean; 
+  mustSetup2FA?: boolean;
   tempToken?: string;
 }> {
   const normalizedEmail = email.trim().toLowerCase();
@@ -205,6 +206,15 @@ export async function authenticateAdmin(
     }
 
     if (res.ok) {
+      // Caso 0: Primera vez, debe activar 2FA antes de acceder
+      if (data.mustSetup2FA) {
+        return {
+          success: true,
+          mustSetup2FA: true,
+          tempToken: data.tempToken,
+        };
+      }
+
       // Caso 1: Requiere segundo factor (TOTP / Google Authenticator)
       if (data.requires2FA) {
         return {
