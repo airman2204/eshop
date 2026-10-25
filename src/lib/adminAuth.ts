@@ -87,7 +87,7 @@ export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
 
   const payload =
     bodyOrOptions && typeof bodyOrOptions === "object"
-      ? { ...bodyOrOptions, adminToken: token, adminEmail: email }
+      ? { ...bodyOrOptions, adminToken: bodyOrOptions.adminToken || token, adminEmail: bodyOrOptions.adminEmail || email }
       : bodyOrOptions;
 
   return fetch("/api/admin", {
@@ -121,7 +121,7 @@ export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
 
   const payload =
     bodyOrOptions && typeof bodyOrOptions === "object"
-      ? { ...bodyOrOptions, adminToken: token, adminEmail: email }
+      ? { ...bodyOrOptions, adminToken: bodyOrOptions.adminToken || token, adminEmail: bodyOrOptions.adminEmail || email }
       : bodyOrOptions;
 
   return fetch("/api/admin/agent", {

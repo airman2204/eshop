@@ -2003,7 +2003,7 @@ export async function POST(req: NextRequest) {
 
     // ─── CONFIGURAR 2FA: INICIAR (Generar Secreto y QR) ──────────────
     if (action === "setup_2fa_init") {
-      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      const adminEmail = (body.adminEmail || body.email || req.headers.get("x-admin-email") || "").trim().toLowerCase();
       if (!adminEmail) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
 
       const { secret, otpauthUrl } = generateTotpSecret(adminEmail);
@@ -2022,7 +2022,7 @@ export async function POST(req: NextRequest) {
     // ─── CONFIGURAR 2FA: CONFIRMAR Y GUARDAR ────────────────────────
     if (action === "setup_2fa_confirm") {
       const { secret, code, backupCodes } = body;
-      const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+      const adminEmail = (body.adminEmail || body.email || req.headers.get("x-admin-email") || "").trim().toLowerCase();
       if (!adminEmail || !secret || !code) {
         return NextResponse.json({ error: "Datos incompletos para activar 2FA" }, { status: 400 });
       }
