@@ -4394,56 +4394,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Botón Buscador Global (Cmd/Ctrl + K) */}
-              <button
-                type="button"
-                onClick={() => setShowCommandPalette(true)}
-                title="Buscador global rápido (Ctrl + K)"
-                className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer"
-              >
-                <Search className="w-3.5 h-3.5 text-slate-400" />
-                <span className="hidden sm:inline text-slate-500">Buscar...</span>
-                <kbd className="hidden sm:inline-block bg-white border border-slate-200 text-slate-400 text-[10px] font-semibold px-1.5 py-0.2 rounded-md shadow-2xs">
-                  ⌘K
-                </kbd>
-              </button>
-
-              {/* Indicador Realtime y Sonido de Alertas */}
-              <button
-                onClick={() => setAudioEnabled(!audioEnabled)}
-                title={audioEnabled ? "Alertas de audio activadas" : "Alertas de audio silenciadas"}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition border ${
-                  audioEnabled 
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/80' 
-                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <div className="relative">
-                  <span className={`w-2 h-2 rounded-full block ${audioEnabled ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
-                  <span className={`w-2 h-2 rounded-full block absolute inset-0 ${audioEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                </div>
-                {audioEnabled ? (
-                  <>
-                    <Volume2 className="w-3.5 h-3.5 text-emerald-600 hidden sm:inline" />
-                    <span className="hidden sm:inline">En Vivo</span>
-                  </>
-                ) : (
-                  <>
-                    <VolumeX className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
-                    <span className="hidden sm:inline">Silenciado</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                onClick={handleInstallApp}
-                title="Instalar FoxDrop en Celular o Escritorio"
-                className="hidden lg:flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Instalar</span>
-              </button>
-
               <a
                 href="/tienda"
                 target="_blank"
