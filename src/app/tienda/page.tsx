@@ -2813,8 +2813,8 @@ export default function TiendaFoxDrop() {
                     </button>
                   </div>
 
-                  {/* IMAGEN DE PRODUCTO SOBRE FONDO BLANCO / GRIS ULTRA LIMPIO ESTILO AMAZON */}
-                  <div className="aspect-square bg-[#EAF1EF] rounded-2xl flex items-center justify-center p-3 overflow-hidden group-hover:bg-[#E2ECE9] transition relative">
+                  {/* IMAGEN DE PRODUCTO SOBRE FONDO BLANCO PURO ESTILO AMAZON */}
+                  <div className="aspect-square bg-white rounded-2xl flex items-center justify-center p-3 overflow-hidden transition relative">
                     <img
                       src={getSafeProductImage(product.images?.[0])}
                       alt={product.title}
@@ -5540,7 +5540,7 @@ export default function TiendaFoxDrop() {
                     const y = ((e.clientY - rect.top) / rect.height) * 100;
                     setZoomCoords({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
                   }}
-                  className="aspect-square bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-gray-200/80 relative overflow-hidden cursor-crosshair group shadow-2xs"
+                  className="aspect-square bg-white rounded-2xl p-4 flex items-center justify-center border border-gray-200/80 relative overflow-hidden cursor-crosshair group shadow-2xs"
                 >
                   {selectedModalVideo ? (
                     <video
