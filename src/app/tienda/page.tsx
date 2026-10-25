@@ -5583,24 +5583,13 @@ export default function TiendaFoxDrop() {
                   )}
                 </div>
 
-                {/* Miniaturas de videos y galería de fotos */}
+                {/* Miniaturas: Galería de fotos primero y videos al final */}
                 {((selectedProduct.videos && selectedProduct.videos.length > 0) || (selectedProduct.images && selectedProduct.images.length > 1)) && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {selectedProduct.videos?.map((vidUrl, vIdx) => (
-                      <button
-                        key={`vid-${vIdx}`}
-                        type="button"
-                        onClick={() => setSelectedModalVideo(vidUrl)}
-                        className={`px-3 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center bg-slate-900 text-white ${
-                          selectedModalVideo === vidUrl ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-slate-700 hover:border-slate-500'
-                        }`}
-                      >
-                        <span className="text-[11px] font-black">🎬 Video {vIdx + 1}</span>
-                      </button>
-                    ))}
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center">
+                    {/* Fotos del producto */}
                     {selectedProduct.images?.map((imgUrl, i) => (
                       <button
-                        key={i}
+                        key={`img-${i}`}
                         type="button"
                         onClick={() => {
                           setSelectedModalVideo(null);
@@ -5611,6 +5600,21 @@ export default function TiendaFoxDrop() {
                         }`}
                       >
                         <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
+                      </button>
+                    ))}
+
+                    {/* Videos del producto (al final) */}
+                    {selectedProduct.videos?.map((vidUrl, vIdx) => (
+                      <button
+                        key={`vid-${vIdx}`}
+                        type="button"
+                        onClick={() => setSelectedModalVideo(vidUrl)}
+                        className={`px-3 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center bg-slate-900 text-white gap-0.5 ${
+                          selectedModalVideo === vidUrl ? 'border-[#E65F2B] ring-2 ring-orange-200 shadow-sm' : 'border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        <span className="text-sm">🎬</span>
+                        <span className="text-[10px] font-black uppercase tracking-tight">Video {selectedProduct.videos && selectedProduct.videos.length > 1 ? vIdx + 1 : ''}</span>
                       </button>
                     ))}
                   </div>
