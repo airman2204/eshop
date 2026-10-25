@@ -45,6 +45,16 @@ const getSafeImageUrl = (url: string | undefined): string => {
   return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
 };
 
+const getSafeVideoUrl = (url: string | undefined): string => {
+  if (!url || typeof url !== 'string' || !url.trim()) return '';
+  let clean = url.trim();
+  if (clean.startsWith('/api/admin/cj/video-proxy') || clean.startsWith('data:') || (clean.startsWith('/') && !clean.startsWith('//'))) return clean;
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return '';
+  // Pasar por el video proxy para inyectar el header Referer de CJ y evitar 403 Forbidden
+  return `/api/admin/cj/video-proxy?url=${encodeURIComponent(clean)}`;
+};
+
 const CJ_POPULAR_CATEGORIES = [
   { id: '', name: '🔥 Todo en Tendencia' },
   { id: '52FC6CA5-669B-4D0B-B1AC-415675931399', name: '🏠 Hogar & Cocina' },
@@ -1455,7 +1465,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                   ) : selectedPreviewVideo ? (
                     <video
                       key={selectedPreviewVideo}
-                      src={selectedPreviewVideo}
+                      src={getSafeVideoUrl(selectedPreviewVideo)}
                       controls
                       autoPlay
                       playsInline
