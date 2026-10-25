@@ -5512,7 +5512,7 @@ export default function TiendaFoxDrop() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto p-5 sm:p-7 space-y-6 relative shadow-2xl animate-in slide-in-from-bottom duration-200 cursor-default"
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-6 relative shadow-2xl animate-in slide-in-from-bottom duration-200 cursor-default"
           >
             
             {/* TIRADOR VISUAL PARA MÓVIL (BOTTOM SHEET HANDLE) */}
@@ -5706,7 +5706,7 @@ export default function TiendaFoxDrop() {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-1 bg-slate-50/70 rounded-2xl border border-slate-200/70">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1.5 bg-slate-50/70 rounded-2xl border border-slate-200/70">
                       {selectedProduct.variants!.map((v, vIdx) => {
                         const isSelectedVar = selectedVariantIndex === vIdx;
                         return (
