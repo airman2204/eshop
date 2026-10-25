@@ -115,6 +115,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
   const [localExtraCategories, setLocalExtraCategories] = useState<string[]>([]);
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
+  const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, boolean>>({});
 
   // Categorías disponibles en tienda (combinando las de BD + sugeridas como Navidad)
   const availableStoreCategories = Array.from(new Set([
@@ -481,6 +482,15 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     setIsCreatingModalCategory(false);
     setNewModalCategoryName('');
 
+    // Pre-seleccionar todas las variantes por defecto
+    const initialVarMap: Record<string, boolean> = {};
+    const matchedVars = matchedDetail?.variants || [];
+    matchedVars.forEach((v: any, idx: number) => {
+      const vKey = String(v.vid || `var-${idx}`);
+      initialVarMap[vKey] = true;
+    });
+    setSelectedVariantIds(initialVarMap);
+
     if (matchedDetail) {
       // Ya tenemos la descripción real de ESTE producto: traducir y estructurar con IA de inmediato
       const rawDesc = matchedDetail.description || '';
@@ -547,6 +557,15 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
             weight: d.productWeight ? `${d.productWeight} ${d.productUnit || 'g'}` : undefined,
             realFreightToMx: d.realFreightToMx || undefined,
           });
+
+          // Pre-seleccionar todas las variantes recién cargadas por la API
+          const newVarMap: Record<string, boolean> = {};
+          variantsArr.forEach((v: any, idx: number) => {
+            const vKey = String(v.vid || `var-${idx}`);
+            newVarMap[vKey] = true;
+          });
+          setSelectedVariantIds(newVarMap);
+
           triggerTranslation({ ...item, name: realName }, realDesc);
         } else {
           triggerTranslation(item, '');
@@ -579,7 +598,16 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     // Preparar videos e importar variantes con sus costos y precios calculados proporcionalmente al margen elegido
     const videoUrls = (activeDetail?.videos || []).map((v: any) => v.url).filter(Boolean);
     const ratio = costMxn > 0 ? salePrice / costMxn : 1.22;
-    const mappedVariants = (activeDetail?.variants || []).map((v: any, idx: number) => {
+    const allVariants = activeDetail?.variants || [];
+    
+    // Filtrar solo las variantes habilitadas por el usuario
+    const filteredVariants = allVariants.filter((v: any, idx: number) => {
+      const vKey = String(v.vid || `var-${idx}`);
+      return selectedVariantIds[vKey] !== false;
+    });
+    const finalVariantsToUse = filteredVariants.length > 0 ? filteredVariants : allVariants;
+
+    const mappedVariants = finalVariantsToUse.map((v: any, idx: number) => {
       const varCostUsd = Number(v.variantSellPrice) || baseUsd;
       const varLandedUsd = varCostUsd + realFreightUsd;
       const varLandedMxn = Math.round(varLandedUsd * safeRate);
@@ -2009,6 +2037,105 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                         className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-y leading-relaxed whitespace-pre-line"
                       />
                     </div>
+
+                    {/* SELECCIÓN DE VARIANTES / PAQUETES A IMPORTAR */}
+                    {matchedDetail?.variants && matchedDetail.variants.length > 0 && (
+                      <div className="space-y-2 bg-slate-50/90 p-3 rounded-2xl border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-black text-slate-800">
+                              Variantes y Paquetes ({matchedDetail.variants.length} disponibles):
+                            </span>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              Desmarca los paquetes que no desees vender o que estén descontinuados en CJ.
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const allMap: Record<string, boolean> = {};
+                                matchedDetail.variants.forEach((v: any, idx: number) => {
+                                  allMap[String(v.vid || `var-${idx}`)] = true;
+                                });
+                                setSelectedVariantIds(allMap);
+                              }}
+                              className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                            >
+                              Marcar todas
+                            </button>
+                            <span className="text-slate-300">•</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const noneMap: Record<string, boolean> = {};
+                                matchedDetail.variants.forEach((v: any, idx: number) => {
+                                  noneMap[String(v.vid || `var-${idx}`)] = false;
+                                });
+                                const firstKey = String(matchedDetail.variants[0]?.vid || 'var-0');
+                                noneMap[firstKey] = true;
+                                setSelectedVariantIds(noneMap);
+                              }}
+                              className="text-[10px] font-bold text-slate-500 hover:underline cursor-pointer"
+                            >
+                              Solo 1ª
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                          {matchedDetail.variants.map((v: any, idx: number) => {
+                            const vKey = String(v.vid || `var-${idx}`);
+                            const isChecked = selectedVariantIds[vKey] !== false;
+                            const vName = v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`;
+                            const vUsd = Number(v.variantSellPrice) || baseUsd;
+                            const vLandedUsd = vUsd + freightUsd;
+                            const vCostMxn = Math.round(vLandedUsd * safeRate);
+                            const vImg = v.variantImage || modalItem.image;
+
+                            return (
+                              <label
+                                key={vKey}
+                                className={`flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer text-left select-none ${
+                                  isChecked
+                                    ? 'bg-white border-indigo-500/50 shadow-2xs ring-1 ring-indigo-500/20'
+                                    : 'bg-slate-100/70 border-slate-200/80 opacity-50 hover:opacity-75'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    const nextChecked = e.target.checked;
+                                    setSelectedVariantIds(prev => ({
+                                      ...prev,
+                                      [vKey]: nextChecked,
+                                    }));
+                                  }}
+                                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                                />
+                                {vImg && (
+                                  <img
+                                    src={getSafeImageUrl(vImg)}
+                                    alt={vName}
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                    className="w-8 h-8 rounded-lg object-cover shrink-0 border border-slate-200 bg-white"
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] font-bold text-slate-800 truncate" title={vName}>
+                                    {vName}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 font-semibold">
+                                    ${vCostMxn} MXN costo
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
