@@ -453,7 +453,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
 
     // Si tenemos la cotización real de flete a México desde CJ para ESTE producto, incluirla en el costo total real
     const realFreightUsd = matchedDetail?.realFreightToMx?.cheapestUsd || 0;
-    const freightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (item.countryCode === 'MX' || selectedCountry === 'MX' ? 0 : 140);
+    const freightMxn = realFreightUsd > 0 ? Math.round(realFreightUsd * safeRate) : (item.countryCode === 'MX' ? 0 : 140);
     const totalLandedCostMxn = costMxn + freightMxn;
 
     // Precio sugerido modo LANZAMIENTO (+22% sobre costo total) para competir contra Temu / TikTok Shop sin perder dinero
@@ -1201,7 +1201,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
               const safeRate = typeof usdRate === 'number' && !isNaN(usdRate) && usdRate > 0 ? usdRate : 18;
               const minCostMxn = Math.round(safePriceUsd * safeRate);
               const costMxn = minCostMxn;
-              const isMx = prod.countryCode === 'MX' || selectedCountry === 'MX';
+              const isMx = prod.countryCode === 'MX';
               const baseFreightMxn = isMx ? 0 : 120;
               const suggestedSale = isMx ? Math.round(minCostMxn * 1.35) : Math.max(99, Math.round((minCostMxn + baseFreightMxn) * 1.22));
               const estimatedProfit = Math.max(0, suggestedSale - minCostMxn - baseFreightMxn);
@@ -1227,11 +1227,11 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                         className="w-full h-full object-cover transition duration-300 group-hover:scale-110"
                       />
                       <span className={`absolute top-1.5 left-1.5 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10 ${
-                        prod.countryCode === 'MX' || selectedCountry === 'MX'
+                        prod.countryCode === 'MX'
                           ? 'bg-emerald-700/90'
                           : 'bg-black/75'
                       }`}>
-                        {prod.countryCode === 'MX' || selectedCountry === 'MX' ? '🇲🇽 Stock MX (2-5d)' : '✈️ Dropship'}
+                        {prod.countryCode === 'MX' ? '🇲🇽 Stock MX (2-5d)' : '✈️ Dropship'}
                       </span>
 
                       {/* BADGES DE CALIDAD */}
@@ -1595,7 +1595,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
 
                   {/* DESGLOSE MATEMÁTICO PASO A PASO DE LA OPCIÓN SELECCIONADA */}
                   {(() => {
-                    const isMexicoStock = previewItem.countryCode === 'MX' || selectedCountry === 'MX';
+                    const isMexicoStock = previewItem.countryCode === 'MX';
                     const safeRate = usdRate || 18;
                     const variantsList = previewDetail?.variants || [];
                     const activeVariant = variantsList[selectedPreviewVariantIdx] || variantsList[0] || null;

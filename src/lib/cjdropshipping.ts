@@ -322,7 +322,7 @@ export async function getCjProductDetails(productId: string) {
           });
           if (videoRes.ok) {
             const videoJson = await videoRes.json();
-            if (videoJson?.success && Array.isArray(videoJson.data) && videoJson.data.length > 0) {
+            if ((videoJson?.success || videoJson?.result) && Array.isArray(videoJson.data) && videoJson.data.length > 0) {
               detailJson.data.videos = videoJson.data
                 .filter((v: any) => v.videoUrl && typeof v.videoUrl === "string")
                 .map((v: any) => ({
