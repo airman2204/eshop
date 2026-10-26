@@ -3529,30 +3529,44 @@ export default function TiendaFoxDrop() {
                                     </div>
 
                                     {/* Guía de Rastreo si existe */}
-                                    {(order.tracking_number || order.trackingNumber) && (
-                                      <div className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2 font-bold text-sky-950">
-                                          <Truck className="w-4 h-4 text-sky-600" />
-                                          <span>Guía de rastreo:</span>
-                                          <span className="font-bold text-sky-800 bg-white px-2 py-0.5 rounded border border-sky-200">
-                                            {order.tracking_number || order.trackingNumber}
-                                          </span>
+                                    {(order.tracking_number || order.trackingNumber) && (() => {
+                                      const trNumber = String(order.tracking_number || order.trackingNumber).trim();
+                                      const trackUrl = `https://t.17track.net/es#nums=${encodeURIComponent(trNumber)}`;
+                                      return (
+                                        <div className="bg-gradient-to-r from-sky-50 to-indigo-50/60 border border-sky-200 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                                          <div className="flex items-center gap-2 font-bold text-sky-950 flex-wrap">
+                                            <Truck className="w-4 h-4 text-sky-600 shrink-0" />
+                                            <span>Guía de rastreo:</span>
+                                            <span className="font-mono font-bold text-sky-900 bg-white px-2 py-0.5 rounded-lg border border-sky-200 shadow-2xs">
+                                              {trNumber}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (navigator?.clipboard) {
+                                                  navigator.clipboard.writeText(trNumber);
+                                                  alert("Guía copiada: " + trNumber);
+                                                }
+                                              }}
+                                              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-[11px] border border-slate-200 transition cursor-pointer"
+                                            >
+                                              Copiar
+                                            </button>
+                                            <a
+                                              href={trackUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-[11px] transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                                            >
+                                              <span>Rastrear Envío</span>
+                                              <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                          </div>
                                         </div>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const tr = order.tracking_number || order.trackingNumber;
-                                            if (navigator?.clipboard && tr) {
-                                              navigator.clipboard.writeText(tr);
-                                              alert("Guía copiada: " + tr);
-                                            }
-                                          }}
-                                          className="px-2.5 py-1 bg-sky-600 text-white font-bold rounded-lg text-[11px]"
-                                        >
-                                          Copiar
-                                        </button>
-                                      </div>
-                                    )}
+                                      );
+                                    })()}
 
                                     {/* Desglose de Pago Limpio */}
                                     <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
@@ -6761,31 +6775,56 @@ export default function TiendaFoxDrop() {
               </div>
 
               {/* Guía de Rastreo si ya cuenta con tracking */}
-              {(order.tracking_number || order.trackingNumber) && (
-                <div className="bg-sky-50/70 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-xs">
-                  <span className="font-bold text-sky-950 flex items-center gap-1.5">
-                    <Truck className="w-3.5 h-3.5 text-sky-600" /> Número de Guía de Rastreo
-                  </span>
-                  <div className="bg-white p-2.5 rounded-xl border border-sky-200 flex items-center justify-between">
-                    <span className="font-mono font-black text-xs text-sky-900 tracking-wider">
-                      {order.tracking_number || order.trackingNumber}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tr = order.tracking_number || order.trackingNumber;
-                        if (navigator?.clipboard && tr) {
-                          navigator.clipboard.writeText(tr);
-                          alert("Número de guía copiado");
-                        }
-                      }}
-                      className="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-[10px] rounded-lg transition"
-                    >
-                      Copiar
-                    </button>
+              {(order.tracking_number || order.trackingNumber) && (() => {
+                const trNumber = String(order.tracking_number || order.trackingNumber).trim();
+                const trackUrl = `https://t.17track.net/es#nums=${encodeURIComponent(trNumber)}`;
+                return (
+                  <div className="bg-gradient-to-r from-sky-50 to-indigo-50/70 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sky-950 flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-sky-600" /> Número de Guía de Rastreo
+                      </span>
+                      <a
+                        href={trackUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition"
+                      >
+                        <span>Ver mapa de ruta</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="bg-white p-2.5 rounded-xl border border-sky-200 flex items-center justify-between">
+                      <span className="font-mono font-black text-xs text-sky-900 tracking-wider">
+                        {trNumber}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (navigator?.clipboard) {
+                              navigator.clipboard.writeText(trNumber);
+                              alert("Número de guía copiado");
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded-lg transition cursor-pointer"
+                        >
+                          Copiar
+                        </button>
+                        <a
+                          href={trackUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-lg transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>Rastrear</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Lista limpia de Productos Comprados */}
               <div className="space-y-2">
