@@ -123,6 +123,15 @@ export default function AdminCRM() {
     if (targetTab) {
       setCrmSubTab(targetTab);
     }
+
+    const scopeFromUrl = urlParams.get('scope') as any;
+    const scopeFromStorage = localStorage.getItem('foxdrop_admin_inventory_scope') as any;
+    const targetScope = (scopeFromUrl === 'cj_international' || scopeFromUrl === 'physical')
+      ? scopeFromUrl
+      : ((scopeFromStorage === 'cj_international' || scopeFromStorage === 'physical') ? scopeFromStorage : null);
+    if (targetScope) {
+      setInventoryScope(targetScope);
+    }
   }, []);
 
   // Sincronizar automáticamente en localStorage y URL cada vez que cambia crmSubTab
@@ -146,6 +155,10 @@ export default function AdminCRM() {
       const urlParams = new URLSearchParams(window.location.search);
       const urlTab = (stateTab || urlParams.get('tab') || 'inventory') as any;
       setCrmSubTab(urlTab);
+      const urlScope = urlParams.get('scope');
+      if (urlScope === 'cj_international' || urlScope === 'physical') {
+        setInventoryScope(urlScope);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -358,7 +371,33 @@ export default function AdminCRM() {
   const [savingSold, setSavingSold] = useState(false);
 
   // Estados de Mejora de Inventario (Filtro por stock, categoría, estado y carga masiva)
-  const [inventoryScope, setInventoryScope] = useState<'physical' | 'cj_international'>('physical');
+  const [inventoryScope, setInventoryScope] = useState<'physical' | 'cj_international'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlScope = new URLSearchParams(window.location.search).get('scope');
+      if (urlScope === 'cj_international' || urlScope === 'physical') return urlScope;
+      const stored = localStorage.getItem('foxdrop_admin_inventory_scope');
+      if (stored === 'cj_international' || stored === 'physical') return stored;
+    }
+    return 'physical';
+  });
+
+// Sincronizar automáticamente en localStorage y URL cada vez que cambia inventoryScope
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('foxdrop_admin_inventory_scope', inventoryScope);
+      const url = new URL(window.location.href);
+      if (crmSubTab === 'inventory') {
+        if (url.searchParams.get('scope') !== inventoryScope) {
+          url.searchParams.set('scope', inventoryScope);
+          window.history.replaceState({ tab: crmSubTab, scope: inventoryScope }, '', url.toString());
+        }
+      } else {
+        url.searchParams.delete('scope');
+        window.history.replaceState({ tab: crmSubTab }, '', url.toString());
+      }
+    } catch {}
+  }, [inventoryScope, crmSubTab]);
   const [stockFilter, setStockFilter] = useState<'all' | 'low_stock' | 'out_of_stock' | 'healthy' | 'combos' | 'inactive'>('all');
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('all');
   const [inventoryBatchFilter, setInventoryBatchFilter] = useState<string>('all');
@@ -2521,7 +2560,7 @@ export default function AdminCRM() {
     setNewDiscountPercent(prod.discountPercent || 0);
     setNewStock(prod.stock);
     setNewImageUrl(prod.images[0] || '');
-    setNewImages(prod.images && prod.images.length > 0 ? prod.images : []);
+    setNewImages(prod.images && prod.images.length > 0 ? Array.from(new Set(prod.images.map(s => String(s || '').trim()).filter(Boolean))) : []);
     setEditingVariants(Array.isArray(prod.variants) ? JSON.parse(JSON.stringify(prod.variants)) : []);
     setIsCombo(Boolean(prod.isCombo));
     setSelectedComboProductIds(prod.comboProductIds || []);
@@ -2594,9 +2633,10 @@ export default function AdminCRM() {
     setIsSaving(true);
 
     try {
-      const finalImages = newImages.length > 0
+      const rawFinalImages = newImages.length > 0
         ? newImages
         : (newImageUrl ? [newImageUrl] : ['/no-image.svg']);
+      const finalImages = Array.from(new Set(rawFinalImages.map(s => String(s || '').trim()).filter(Boolean)));
 
       if (editingProductId) {
         // EDICIÓN

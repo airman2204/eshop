@@ -237,9 +237,19 @@ export async function POST(req: NextRequest) {
       categoryId = catData?.id || null;
 
       const sku = importProduct.sku || `CJ-${Math.floor(10000 + Math.random() * 90000)}`;
-      const images = Array.isArray(importProduct.images) && importProduct.images.length > 0
+      const rawImages = Array.isArray(importProduct.images) && importProduct.images.length > 0
         ? importProduct.images
         : (importProduct.imageUrl ? [importProduct.imageUrl] : ["/no-image.svg"]);
+      // Deduplicar URLs de fotos de forma estricta (ignorando mayúsculas y espacios)
+      const seenImgs = new Set<string>();
+      const images = rawImages.filter((img: string) => {
+        if (!img || typeof img !== 'string') return false;
+        const normalized = img.trim().toLowerCase();
+        if (seenImgs.has(normalized)) return false;
+        seenImgs.add(normalized);
+        return true;
+      });
+      if (images.length === 0) images.push("/no-image.svg");
 
       // Si el título parece estar en inglés o el usuario no editó la descripción, auto-traducir con Gemini
       let finalTitle = importProduct.title.trim();

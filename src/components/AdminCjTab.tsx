@@ -84,7 +84,27 @@ const CJ_TREND_TAGS = [
 
 export default function AdminCjTab({ usdRate, existingProducts = [], storeCategories = [], onProductImported }: Props) {
   // Pestaña interna: Explorador CJ vs Wishlist Preselección
-  const [cjViewMode, setCjViewMode] = useState<'catalog' | 'wishlist'>('catalog');
+  const [cjViewMode, setCjViewMode] = useState<'catalog' | 'wishlist'>(() => {
+    if (typeof window !== 'undefined') {
+      const urlMode = new URLSearchParams(window.location.search).get('cjMode');
+      if (urlMode === 'catalog' || urlMode === 'wishlist') return urlMode;
+      const stored = localStorage.getItem('foxdrop_admin_cj_view_mode');
+      if (stored === 'catalog' || stored === 'wishlist') return stored;
+    }
+    return 'catalog';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('foxdrop_admin_cj_view_mode', cjViewMode);
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('cjMode') !== cjViewMode) {
+        url.searchParams.set('cjMode', cjViewMode);
+        window.history.replaceState({ ...window.history.state, cjMode: cjViewMode }, '', url.toString());
+      }
+    } catch {}
+  }, [cjViewMode]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [loadingWishlist, setLoadingWishlist] = useState(false);
   const [savingWishlist, setSavingWishlist] = useState(false);
@@ -345,9 +365,10 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
       const data = await res.json();
       if (data.success && data.detail?.data) {
         const d = data.detail.data;
-        const imgSet: string[] = Array.isArray(d.productImageSet) && d.productImageSet.length > 0
+        const rawImgSet: string[] = Array.isArray(d.productImageSet) && d.productImageSet.length > 0
           ? d.productImageSet
           : (d.bigImage ? [d.bigImage] : [item.image]);
+        const imgSet = Array.from(new Set(rawImgSet.map((s: any) => String(s || '').trim()).filter(Boolean)));
         
         const variantsArr = Array.isArray(d.variants) ? d.variants : [];
         const videosArr = Array.isArray(d.videos) ? d.videos : [];
@@ -594,7 +615,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           setModalItem(prev => prev && prev.id === item.id ? { ...prev, name: realName, priceUsd: entryVarUsd, maxPriceUsd: entryVarUsd } : prev);
           setPreviewDetail({
             pid: item.id,
-            images: Array.isArray(d.productImageSet) && d.productImageSet.length > 0 ? d.productImageSet : [item.image],
+            images: Array.from(new Set((Array.isArray(d.productImageSet) && d.productImageSet.length > 0 ? d.productImageSet : [item.image]).map((s: any) => String(s || '').trim()).filter(Boolean))),
             videos: Array.isArray(d.videos) ? d.videos : [],
             description: realDesc,
             variants: variantsArr,
@@ -702,7 +723,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           baseCostMxn: costMxn,
           publicPrice: minVariantPrice || salePrice,
           imageUrl: item.image,
-          images: activeDetail?.images && activeDetail.images.length > 0 ? activeDetail.images : [item.image],
+          images: Array.from(new Set((activeDetail?.images && activeDetail.images.length > 0 ? activeDetail.images : [item.image]).map((s: any) => String(s || '').trim()).filter(Boolean))),
           videos: videoUrls,
           variants: mappedVariants,
           description: finalDescription,
