@@ -17,7 +17,7 @@ import {
   Bell, BellRing, Volume2, VolumeX, Copy, FileSpreadsheet, Power, Tag, CheckSquare, Square,
   Bot, Share2, Flame, Lightbulb, MessageCircle, Calendar, CalendarDays, CheckCircle,
   Mic, MicOff, Radio, Play, Pause, Zap, ArrowUpDown, SlidersHorizontal, ArrowLeft, ArrowRight,
-  Palette, LayoutTemplate
+  Palette, LayoutTemplate, Moon, Sun
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
 import { getActiveProducts } from '@/lib/products';
@@ -184,6 +184,35 @@ export default function AdminCRM() {
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [savingStoreSettings, setSavingStoreSettings] = useState(false);
   const [storeSettingsSavedNotice, setStoreSettingsSavedNotice] = useState(false);
+
+  // Modo Oscuro del Panel de Administración (Persistente en Storage y Servidor)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('foxdrop_admin_dark_mode');
+      if (cached !== null) {
+        setStoreSettings(prev => ({ ...prev, adminDarkMode: cached === 'true' }));
+      }
+    }
+  }, []);
+
+  const toggleAdminDarkMode = async () => {
+    const newVal = !storeSettings.adminDarkMode;
+    const updated = { ...storeSettings, adminDarkMode: newVal };
+    setStoreSettings(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('foxdrop_admin_dark_mode', String(newVal));
+    }
+    setSavingStoreSettings(true);
+    try {
+      await saveStoreSettings(updated);
+      setStoreSettingsSavedNotice(true);
+      setTimeout(() => setStoreSettingsSavedNotice(false), 3000);
+    } catch {
+      // Se mantiene en localStorage aunque falle red
+    } finally {
+      setSavingStoreSettings(false);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [usdRate, setUsdRate] = useState(20.00);
@@ -1006,7 +1035,13 @@ export default function AdminCRM() {
 
       // Configuración de banners y liquidación
       const dbStoreSettings = await getStoreSettings();
-      if (dbStoreSettings) setStoreSettings(dbStoreSettings);
+      if (dbStoreSettings) {
+        const localDark = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_dark_mode') : null;
+        setStoreSettings({
+          ...dbStoreSettings,
+          adminDarkMode: localDark !== null ? localDark === 'true' : (dbStoreSettings.adminDarkMode ?? false),
+        });
+      }
     }
     loadData();
 
@@ -3990,7 +4025,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
   // DASHBOARD PRINCIPAL DEL CRM ADMIN
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#F4F6F8] text-[#222E3C] flex font-sans selection:bg-[#E65F2B] selection:text-white relative">
+    <div className={`min-h-screen ${storeSettings.adminDarkMode ? 'admin-dark-mode bg-[#0B131A] text-slate-100' : 'bg-[#F4F6F8] text-[#222E3C]'} flex font-sans selection:bg-[#E65F2B] selection:text-white relative`}>
       
       {/* ======================================================== */}
       {/* MODAL DE BLINDAJE Y GESTIÓN DE 2FA (GOOGLE AUTHENTICATOR) */}
@@ -4439,6 +4474,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Selector Rápido Modo Oscuro */}
+              <button
+                type="button"
+                onClick={toggleAdminDarkMode}
+                className={`p-1.5 sm:px-3 sm:py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border ${
+                  storeSettings.adminDarkMode
+                    ? 'bg-slate-800 text-amber-300 border-slate-700 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                }`}
+                title={storeSettings.adminDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+              >
+                {storeSettings.adminDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                <span className="hidden sm:inline">{storeSettings.adminDarkMode ? 'Modo Claro' : 'Modo Oscuro'}</span>
+              </button>
+
               <a
                 href="/tienda"
                 target="_blank"
@@ -7219,6 +7269,56 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <Truck className="w-3.5 h-3.5 text-slate-400" />
                 <span>Envíos & Cuentas SPEI</span>
               </button>
+            </div>
+
+            {/* PANEL DE CONTROL DE MODO OSCURO (VISTA NOCTURNA DEL CRM ADMIN) */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black ${
+                    storeSettings.adminDarkMode ? 'bg-indigo-900/60 text-indigo-300' : 'bg-slate-900 text-white'
+                  }`}>
+                    {storeSettings.adminDarkMode ? '🌙' : '☀️'}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Modo Oscuro del Panel de Administración</h3>
+                    <p className="text-xs text-slate-500">
+                      Activa la vista nocturna para descansar la vista al gestionar pedidos, inventario y cotizaciones de noche.
+                    </p>
+                  </div>
+                </div>
+
+                {/* TOGGLE ON / OFF */}
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    storeSettings.adminDarkMode ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-500/30' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {storeSettings.adminDarkMode ? '● Modo Oscuro Activo' : '○ Modo Claro Estándar'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleAdminDarkMode}
+                    disabled={savingStoreSettings}
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+                      storeSettings.adminDarkMode 
+                        ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black' 
+                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                    }`}
+                  >
+                    {storeSettings.adminDarkMode ? (
+                      <>
+                        <Sun className="w-4 h-4 text-slate-950" />
+                        <span>Pasar a Modo Claro</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-4 h-4 text-white" />
+                        <span>Activar Modo Oscuro</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* PANEL DE CONTROL DE BARRA DE LIQUIDACIÓN */}

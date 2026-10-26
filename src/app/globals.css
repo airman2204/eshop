@@ -174,3 +174,95 @@ html, body {
 .animate-cloud-float {
   animation: cloudFloatSubtle 5s ease-in-out infinite;
 }
+
+
+/* ======================================================== */
+/* MODO OSCURO GLOBAL PARA EL PANEL ADMINISTRATIVO (/admin) */
+/* ======================================================== */
+.admin-dark-mode {
+  background-color: #0b131a !important;
+  color: #f1f5f9 !important;
+}
+
+.admin-dark-mode header {
+  background-color: rgba(15, 23, 42, 0.96) !important;
+  border-color: #1e293b !important;
+}
+
+.admin-dark-mode header h1,
+.admin-dark-mode h1,
+.admin-dark-mode h2,
+.admin-dark-mode h3,
+.admin-dark-mode h4 {
+  color: #f8fafc !important;
+}
+
+.admin-dark-mode .bg-white {
+  background-color: #131f2d !important;
+  color: #f1f5f9 !important;
+}
+
+.admin-dark-mode .bg-slate-50 {
+  background-color: #0b131a !important;
+}
+
+.admin-dark-mode .bg-slate-100 {
+  background-color: #1a2736 !important;
+  color: #e2e8f0 !important;
+}
+
+.admin-dark-mode .border-slate-100,
+.admin-dark-mode .border-slate-200,
+.admin-dark-mode .border-gray-100,
+.admin-dark-mode .border-gray-200 {
+  border-color: #1e293b !important;
+}
+
+.admin-dark-mode .text-slate-900,
+.admin-dark-mode .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+.admin-dark-mode .text-slate-800,
+.admin-dark-mode .text-slate-700,
+.admin-dark-mode .text-gray-800,
+.admin-dark-mode .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+.admin-dark-mode .text-slate-600,
+.admin-dark-mode .text-slate-500,
+.admin-dark-mode .text-gray-600,
+.admin-dark-mode .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.admin-dark-mode input:not([type="checkbox"]):not([type="radio"]),
+.admin-dark-mode select,
+.admin-dark-mode textarea {
+  background-color: #0d1622 !important;
+  border-color: #243547 !important;
+  color: #f8fafc !important;
+}
+
+.admin-dark-mode input::placeholder,
+.admin-dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+.admin-dark-mode table thead tr {
+  background-color: #162436 !important;
+}
+
+.admin-dark-mode table tbody tr {
+  border-color: #1e293b !important;
+}
+
+.admin-dark-mode table tbody tr:hover {
+  background-color: #1a2b3c !important;
+}
+
+.admin-dark-mode .divide-slate-100 > * + *,
+.admin-dark-mode .divide-slate-200 > * + * {
+  border-color: #1e293b !important;
+}

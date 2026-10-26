@@ -79,6 +79,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
 
   // Filtros rápidos
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'with_orders'>('all');
+  // Panel lateral deslizable / colapsable de pedidos del cliente
+  const [showOrdersDrawer, setShowOrdersDrawer] = useState<boolean>(true);
+  const [showNewContactModal, setShowNewContactModal] = useState(false);
+  const [newContactPhone, setNewContactPhone] = useState('');
+  const [newContactName, setNewContactName] = useState('');
 
   // Selector de Emojis, Stickers de Marca FoxDrop y Plantillas Rápidas
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -911,224 +916,91 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     }`}>
       
       {/* ======================================================== */}
-      {/* 0. BARRA VERTICAL ULTRA-ESTRECHA (ESTILO WHATSAPP DESKTOP) */}
+      {/* 1. PANEL IZQUIERDO: BANDEJA DIRECTA DE CHATS ESTILO WEB   */}
       {/* ======================================================== */}
-      <div className={`hidden sm:flex flex-col items-center justify-between w-14 py-3.5 bg-[#202C33] border-r border-[#222E35] shrink-0 z-30 ${
-        isSidebarCollapsed && activeChat ? 'hidden' : ''
-      }`}>
-        {/* Iconos Superiores de Navegación */}
-        <div className="flex flex-col items-center gap-4 w-full">
-          {/* Logo FoxDrop Superior */}
-          <div 
-            onClick={() => {
-              setShowProfileModal(true);
-              fetchMyProfile();
-            }}
-            className="w-10 h-10 rounded-full bg-[#111B21] flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-[#00A884] transition relative overflow-hidden group shadow-md"
-            title="Mi Perfil de WhatsApp (Foxdrop)"
-          >
-            {myProfile?.avatarUrl ? (
-              <img
-                src={getSafeAvatarUrl(myProfile.avatarUrl)}
-                alt="Foxdrop"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = FOX_LOGO_BASE64 || "/fox-logo-head-3d.png";
-                }}
-              />
-            ) : (
-              <img
-                src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
-                alt="Foxdrop"
-                className="w-6 h-6 object-contain drop-shadow"
-              />
-            )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-              <Camera className="w-3.5 h-3.5 text-white" />
-            </div>
-          </div>
-
-          {/* Separador sutil */}
-          <div className="w-8 h-[1px] bg-[#374248]"></div>
-
-          {/* Botón CHATS */}
-          <button
-            type="button"
-            onClick={() => setNavSection('chats')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition relative ${
-              navSection === 'chats'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Chats"
-          >
-            <MessageSquare className="w-5 h-5" />
-            {chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0) > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#00A884] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-                {chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0)}
-              </span>
-            )}
-          </button>
-
-          {/* Botón LLAMADAS */}
-          <button
-            type="button"
-            onClick={() => setNavSection('calls')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition relative ${
-              navSection === 'calls'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Llamadas a Clientes"
-          >
-            <Phone className="w-5 h-5" />
-          </button>
-
-          {/* Botón ESTADOS / HISTORIAS (STORIES) */}
-          <button
-            type="button"
-            onClick={() => setNavSection('status')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition relative ${
-              navSection === 'status'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Estados e Historias"
-          >
-            <CircleDot className="w-5 h-5" />
-            {stories.some(s => !s.viewed) && (
-              <span className="absolute 1.5 top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#00A884]"></span>
-            )}
-          </button>
-
-          {/* Botón CANALES */}
-          <button
-            type="button"
-            onClick={() => setNavSection('channels')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
-              navSection === 'channels'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Canales de Difusión"
-          >
-            <Radio className="w-5 h-5" />
-          </button>
-
-          {/* Botón COMUNIDADES */}
-          <button
-            type="button"
-            onClick={() => setNavSection('communities')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
-              navSection === 'communities'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Comunidades y Grupos FoxDrop"
-          >
-            <Users className="w-5 h-5" />
-          </button>
-
-          {/* Botón ARCHIVADOS */}
-          <button
-            type="button"
-            onClick={() => setNavSection('archived')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
-              navSection === 'archived'
-                ? 'bg-[#374248] text-[#00A884]'
-                : 'text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942]'
-            }`}
-            title="Archivados"
-          >
-            <Archive className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Iconos Inferiores */}
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Botón Configuración de WhatsApp */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowProfileModal(true);
-              fetchMyProfile();
-            }}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942] transition"
-            title="Ajustes de Perfil"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-
-          {/* Botón Pantalla Completa */}
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#2A3942] transition"
-            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-          >
-            {isFullscreen ? <Minimize2 className="w-5 h-5 text-[#00A884]" /> : <Maximize2 className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ======================================================== */}
-      {/* 1. PANEL IZQUIERDO: BANDEJA DE CHATS / ESTADOS / LLAMADAS */}
-      {/* ======================================================== */}
-      <div className={`w-full md:w-72 lg:w-80 border-r border-[#222E35] flex flex-col bg-[#111B21] shrink-0 transition-all duration-200 ${
+      <div className={`w-full md:w-80 lg:w-[360px] border-r border-[#222E35] flex flex-col bg-[#111B21] shrink-0 transition-all duration-200 ${
         activeChat 
           ? (isSidebarCollapsed ? 'hidden' : 'hidden md:flex')
           : 'flex h-full'
       }`}>
         
-        {/* Cabecera del Panel Izquierdo según sección */}
+        {/* Cabecera Principal Limpia Estilo WhatsApp Web */}
         <div className="p-3.5 border-b border-[#222E35] bg-[#111B21] space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#E9EDEF] tracking-tight flex items-center gap-2">
-              {navSection === 'chats' && <span>Chats</span>}
-              {navSection === 'calls' && <span>Llamadas</span>}
-              {navSection === 'status' && <span>Estados</span>}
-              {navSection === 'channels' && <span>Canales</span>}
-              {navSection === 'communities' && <span>Comunidades</span>}
-              {navSection === 'archived' && <span>Archivados</span>}
-            </h2>
+            <div className="flex items-center gap-2.5">
+              {/* Avatar de la cuenta Foxdrop */}
+              <div 
+                onClick={() => {
+                  setShowProfileModal(true);
+                  fetchMyProfile();
+                }}
+                className="w-9 h-9 rounded-full bg-[#202C33] flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-[#00A884] transition relative overflow-hidden group shadow-xs shrink-0"
+                title="Mi Perfil FoxDrop WhatsApp"
+              >
+                {myProfile?.avatarUrl ? (
+                  <img
+                    src={getSafeAvatarUrl(myProfile.avatarUrl)}
+                    alt="Foxdrop"
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = FOX_LOGO_BASE64 || "/fox-logo-head-3d.png";
+                    }}
+                  />
+                ) : (
+                  <img
+                    src={FOX_LOGO_BASE64 || "/fox-logo-head-3d.png"}
+                    alt="Foxdrop"
+                    className="w-5 h-5 object-contain drop-shadow"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                  <Camera className="w-3.5 h-3.5 text-white" />
+                </div>
+              </div>
 
-            <div className="flex items-center gap-1.5">
-              {navSection === 'status' && (
-                <button
-                  type="button"
-                  onClick={() => setShowAddStoryModal(true)}
-                  className="p-2 text-[#00A884] hover:bg-[#202C33] rounded-full transition cursor-pointer"
-                  title="Subir nuevo estado a WhatsApp"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              )}
+              <div>
+                <h2 className="text-base font-bold text-[#E9EDEF] tracking-tight leading-none">
+                  Chats
+                </h2>
+                <span className="text-[10px] text-[#00A884] font-medium flex items-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00A884] animate-pulse"></span>
+                  En línea • FoxDrop
+                </span>
+              </div>
+            </div>
 
-              {navSection === 'calls' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const firstClient = clients[0] || { name: 'Cliente Puebla', phone: '2221234567' };
-                    handleInitiateCall(firstClient, 'voice');
-                  }}
-                  className="p-2 text-[#00A884] hover:bg-[#202C33] rounded-full transition cursor-pointer"
-                  title="Nueva llamada"
-                >
-                  <PhoneCall className="w-5 h-5" />
-                </button>
-              )}
+            <div className="flex items-center gap-1">
+              {/* Botón Nuevo Contacto */}
+              <button
+                type="button"
+                onClick={() => setShowNewContactModal(true)}
+                className="p-2 text-[#AEBAC1] hover:text-[#00A884] hover:bg-[#202C33] rounded-full transition cursor-pointer"
+                title="Iniciar nuevo chat con un número"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
 
               {/* Botón Recargar */}
               <button
                 type="button"
                 onClick={() => loadChats(true)}
                 disabled={loadingChats}
-                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#202C33] rounded-full transition"
-                title="Recargar"
+                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#202C33] rounded-full transition cursor-pointer"
+                title="Recargar bandeja de chats"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingChats ? 'animate-spin text-[#00A884]' : ''}`} />
+              </button>
+
+              {/* Botón Pantalla Completa */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#202C33] rounded-full transition cursor-pointer hidden sm:inline-flex"
+                title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4 text-[#00A884]" /> : <Maximize2 className="w-4 h-4" />}
               </button>
 
               {onClose && (
@@ -1136,7 +1008,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   type="button"
                   onClick={onClose}
                   className="p-2 text-[#AEBAC1] hover:text-rose-400 hover:bg-[#202C33] rounded-full transition cursor-pointer"
-                  title="Cerrar"
+                  title="Cerrar ventana"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1144,7 +1016,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
             </div>
           </div>
 
-          {/* Buscador Estilo WhatsApp Web */}
+          {/* Buscador de Chats */}
           <div className="relative">
             <Search className="w-4 h-4 text-[#8696A0] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -1152,343 +1024,141 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
               placeholder="Buscar un chat o iniciar uno nuevo"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#202C33] rounded-lg text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884] border-none"
+              className="w-full pl-10 pr-4 py-2 bg-[#202C33] rounded-xl text-xs text-[#E9EDEF] placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884] border-none"
             />
           </div>
 
-          {/* Filtros Píldora oficiales: Todos, No leídos, Favoritos, Con Pedidos */}
-          {navSection === 'chats' && (
-            <div className="flex gap-1.5 text-xs font-semibold overflow-x-auto no-scrollbar pt-1">
-              <button
-                onClick={() => setChatFilter('all')}
-                className={`px-3 py-1 rounded-full transition text-[11px] ${
-                  chatFilter === 'all'
-                    ? 'bg-[#00A884] text-[#111B21] font-bold'
-                    : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                onClick={() => setChatFilter('unread')}
-                className={`px-3 py-1 rounded-full transition text-[11px] ${
-                  chatFilter === 'unread'
-                    ? 'bg-[#00A884] text-[#111B21] font-bold'
-                    : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
-                }`}
-              >
-                No leídos
-              </button>
-              <button
-                onClick={() => setChatFilter('with_orders')}
-                className={`px-3 py-1 rounded-full transition text-[11px] ${
-                  chatFilter === 'with_orders'
-                    ? 'bg-[#00A884] text-[#111B21] font-bold'
-                    : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
-                }`}
-              >
-                Con Pedidos
-              </button>
-            </div>
-          )}
+          {/* Filtros Píldora: Todos, No leídos, Con Pedidos */}
+          <div className="flex gap-1.5 text-xs font-semibold overflow-x-auto no-scrollbar pt-0.5">
+            <button
+              type="button"
+              onClick={() => setChatFilter('all')}
+              className={`px-3 py-1 rounded-full transition text-[11px] cursor-pointer ${
+                chatFilter === 'all'
+                  ? 'bg-[#00A884] text-[#111B21] font-bold'
+                  : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setChatFilter('unread')}
+              className={`px-3 py-1 rounded-full transition text-[11px] flex items-center gap-1.5 cursor-pointer ${
+                chatFilter === 'unread'
+                  ? 'bg-[#00A884] text-[#111B21] font-bold'
+                  : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
+              }`}
+            >
+              <span>No leídos</span>
+              {chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0) > 0 && (
+                <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${
+                  chatFilter === 'unread' ? 'bg-[#111B21] text-[#00A884]' : 'bg-[#00A884] text-white'
+                }`}>
+                  {chats.reduce((acc, c) => acc + (c.unreadCount || 0), 0)}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setChatFilter('with_orders')}
+              className={`px-3 py-1 rounded-full transition text-[11px] flex items-center gap-1.5 cursor-pointer ${
+                chatFilter === 'with_orders'
+                  ? 'bg-[#00A884] text-[#111B21] font-bold'
+                  : 'bg-[#202C33] text-[#8696A0] hover:bg-[#2A3942] hover:text-[#E9EDEF]'
+              }`}
+            >
+              <span>Con Pedidos</span>
+              <span className="text-[10px]">🛍️</span>
+            </button>
+          </div>
         </div>
 
-        {/* ─── VISTA 1: LISTA DE CHATS ─── */}
-        {navSection === 'chats' && (
-          <div className="flex-1 overflow-y-auto divide-y divide-[#202C33]">
-            {loadingChats ? (
-              <div className="p-8 text-center text-[#8696A0] space-y-2">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#00A884]" />
-                <p className="text-xs font-bold">Cargando chats de WhatsApp...</p>
-              </div>
-            ) : filteredChats.length === 0 ? (
-              <div className="p-8 text-center text-[#8696A0] space-y-2">
-                <MessageSquare className="w-8 h-8 mx-auto text-[#374248]" />
-                <p className="text-xs font-bold">No hay chats que coincidan</p>
-                <p className="text-[11px]">Los mensajes entrantes de clientes se sincronizarán aquí automáticamente.</p>
-              </div>
-            ) : (
-              filteredChats.map((chat) => {
-                const isSelected = activeChat?.id === chat.id;
-                const hasOrder = orders.some(o => o.clientPhone.replace(/\D/g, '').endsWith(chat.phone.replace(/\D/g, '').slice(-10)));
+        {/* LISTA DIRECTA DE CHATS */}
+        <div className="flex-1 overflow-y-auto divide-y divide-[#202C33]/60">
+          {loadingChats ? (
+            <div className="p-8 text-center text-[#8696A0] space-y-2">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#00A884]" />
+              <p className="text-xs font-bold">Cargando chats de WhatsApp...</p>
+            </div>
+          ) : filteredChats.length === 0 ? (
+            <div className="p-8 text-center text-[#8696A0] space-y-2">
+              <MessageSquare className="w-8 h-8 mx-auto text-[#374248]" />
+              <p className="text-xs font-bold">No hay chats que coincidan</p>
+              <p className="text-[11px]">Los mensajes entrantes de clientes se sincronizarán aquí automáticamente.</p>
+            </div>
+          ) : (
+            filteredChats.map((chat) => {
+              const isSelected = activeChat?.id === chat.id;
+              const hasOrder = orders.some(o => o.clientPhone.replace(/\D/g, '').endsWith(chat.phone.replace(/\D/g, '').slice(-10)));
 
-                return (
-                  <div
-                    key={chat.id}
-                    onClick={() => handleSelectChat(chat)}
-                    className={`p-3 flex items-center gap-3 cursor-pointer transition ${
-                      isSelected 
-                        ? 'bg-[#2A3942]' 
-                        : 'hover:bg-[#202C33] bg-transparent'
-                    }`}
-                  >
-                    {/* Avatar con foto o inicial */}
-                    <div className="w-12 h-12 rounded-full bg-[#6B7C85] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
-                      {chat.avatarUrl ? (
-                        <img 
-                          src={getSafeAvatarUrl(chat.avatarUrl)} 
-                          alt={chat.clientName} 
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span>{chat.clientName.charAt(0).toUpperCase()}</span>
-                      )}
-                      {hasOrder && (
-                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#E65F2B] text-white rounded-full flex items-center justify-center text-[8px] z-10" title="Cliente con pedidos">
-                          🛍️
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Info del Chat */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <h4 className="font-semibold text-[#E9EDEF] text-sm truncate">
-                          {chat.clientName}
-                        </h4>
-                        <span className={`text-[11px] shrink-0 ${chat.unreadCount > 0 ? 'text-[#00A884] font-bold' : 'text-[#8696A0]'}`}>
-                          {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-[#8696A0] truncate">
-                          {chat.lastMessage || 'Conversación abierta'}
-                        </p>
-                        {chat.unreadCount > 0 && (
-                          <span className="bg-[#00A884] text-[#111B21] text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shrink-0">
-                            {chat.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        {/* ─── VISTA 2: SECCIÓN DE ESTADOS / HISTORIAS (STORIES) ─── */}
-        {navSection === 'status' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Mi Estado */}
-            <div 
-              onClick={() => {
-                const myStory = stories.find(s => s.isMyStatus);
-                if (myStory) setActiveStoryViewing(myStory);
-                else setShowAddStoryModal(true);
-              }}
-              className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#202C33] cursor-pointer transition"
-            >
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full p-0.5 border-2 border-[#00A884] overflow-hidden">
-                  <img
-                    src={myProfile?.avatarUrl ? getSafeAvatarUrl(myProfile.avatarUrl) : (FOX_LOGO_BASE64 || "/fox-logo-head-3d.png")}
-                    alt="Mi estado"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddStoryModal(true);
-                  }}
-                  className="absolute bottom-0 right-0 w-4 h-4 bg-[#00A884] text-[#111B21] rounded-full flex items-center justify-center font-bold text-xs"
+              return (
+                <div
+                  key={chat.id}
+                  onClick={() => handleSelectChat(chat)}
+                  className={`p-3 flex items-center gap-3 cursor-pointer transition ${
+                    isSelected 
+                      ? 'bg-[#2A3942]' 
+                      : 'hover:bg-[#202C33] bg-transparent'
+                  }`}
                 >
-                  +
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-[#E9EDEF]">Mi estado</h4>
-                <p className="text-xs text-[#8696A0]">Toca para ver o añadir una actualización</p>
-              </div>
-            </div>
+                  {/* Avatar con foto o inicial */}
+                  <div className="w-12 h-12 rounded-full bg-[#6B7C85] text-white flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden relative">
+                    {chat.avatarUrl ? (
+                      <img 
+                        src={getSafeAvatarUrl(chat.avatarUrl)} 
+                        alt={chat.clientName} 
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span>{chat.clientName.charAt(0).toUpperCase()}</span>
+                    )}
+                    {hasOrder && (
+                      <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#E65F2B] text-white rounded-full flex items-center justify-center text-[8px] z-10" title="Cliente con pedidos registrados">
+                        🛍️
+                      </span>
+                    )}
+                  </div>
 
-            <div className="border-t border-[#222E35] pt-3">
-              <span className="text-xs font-bold text-[#8696A0] uppercase tracking-wider block mb-2">
-                Recientes de clientes ({stories.filter(s => !s.isMyStatus).length})
-              </span>
-
-              {loadingStories ? (
-                <div className="py-6 text-center text-[#8696A0] text-xs">
-                  <RefreshCw className="w-4 h-4 animate-spin mx-auto text-[#00A884] mb-2" />
-                  <span>Sincronizando estados...</span>
-                </div>
-              ) : stories.filter(s => !s.isMyStatus).length === 0 ? (
-                <div className="py-8 px-4 text-center rounded-2xl bg-[#202C33]/50 border border-[#222E35]/60 space-y-1.5">
-                  <CircleDot className="w-6 h-6 text-[#8696A0] mx-auto" />
-                  <p className="text-xs font-bold text-[#E9EDEF]">No hay actualizaciones recientes</p>
-                  <p className="text-[11px] text-[#8696A0]">
-                    Cuando tus clientes publiquen estados aparecerán aquí en tiempo real.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {stories.filter(s => !s.isMyStatus).map(st => (
-                    <div
-                      key={st.id}
-                      onClick={() => setActiveStoryViewing(st)}
-                      className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#202C33] cursor-pointer transition"
-                    >
-                      <div className={`w-12 h-12 rounded-full p-0.5 border-2 ${st.viewed ? 'border-[#8696A0]' : 'border-[#00A884]'} overflow-hidden`}>
-                        <img
-                          src={st.mediaUrl}
-                          alt={st.authorName}
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-[#E9EDEF] truncate">{st.authorName}</h4>
-                        <p className="text-xs text-[#8696A0]">{st.createdAt}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Botón Flotante Subir Estado */}
-            <button
-              onClick={() => setShowAddStoryModal(true)}
-              className="w-full py-2.5 bg-[#00A884] hover:bg-[#008f6f] text-[#111B21] font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition mt-4"
-            >
-              <Camera className="w-4 h-4" />
-              <span>Subir nuevo Estado a WhatsApp</span>
-            </button>
-          </div>
-        )}
-
-        {/* ─── VISTA 3: SECCIÓN DE LLAMADAS A CLIENTES ─── */}
-        {navSection === 'calls' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="bg-[#202C33] p-3 rounded-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#00A884]/20 text-[#00A884] flex items-center justify-center font-bold">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#E9EDEF]">Llamadas con 1 Clic</h4>
-                  <p className="text-[11px] text-[#8696A0]">Llama directo al celular de tus clientes</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-[#8696A0] uppercase tracking-wider block mb-2">
-                Historial de Llamadas ({callLogs.length})
-              </span>
-
-              {callLogs.length === 0 ? (
-                <div className="py-10 px-4 text-center rounded-2xl bg-[#202C33]/50 border border-[#222E35]/60 space-y-2">
-                  <PhoneCall className="w-7 h-7 text-[#8696A0] mx-auto" />
-                  <p className="text-xs font-bold text-[#E9EDEF]">Sin llamadas registradas</p>
-                  <p className="text-[11px] text-[#8696A0]">
-                    Presiona el botón de llamada dentro de cualquier chat activo para comunicarte con el cliente.
-                  </p>
-                </div>
-              ) : (
-                callLogs.map(log => (
-                  <div
-                    key={log.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#202C33] transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#374248] text-white flex items-center justify-center font-bold text-xs">
-                        {log.clientName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-[#E9EDEF]">{log.clientName}</h4>
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#8696A0]">
-                          {log.type === 'outgoing' && <PhoneOutgoing className="w-3 h-3 text-[#00A884]" />}
-                          {log.type === 'incoming' && <PhoneIncoming className="w-3 h-3 text-sky-400" />}
-                          {log.type === 'missed' && <PhoneMissed className="w-3 h-3 text-rose-500" />}
-                          <span>{log.timestamp}</span>
-                        </div>
-                      </div>
+                  {/* Info del Chat */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <h4 className="font-semibold text-[#E9EDEF] text-sm truncate">
+                        {chat.clientName}
+                      </h4>
+                      <span className={`text-[11px] shrink-0 ${chat.unreadCount > 0 ? 'text-[#00A884] font-bold' : 'text-[#8696A0]'}`}>
+                        {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'voice')}
-                        className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
-                        title="Llamar"
-                      >
-                        <Phone className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleInitiateCall({ name: log.clientName, phone: log.phone }, 'video')}
-                        className="p-2 text-[#00A884] hover:bg-[#374248] rounded-full transition"
-                        title="Videollamada"
-                      >
-                        <Video className="w-4 h-4" />
-                      </button>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-[#8696A0] truncate">
+                        {chat.lastMessage || 'Conversación abierta'}
+                      </p>
+                      {chat.unreadCount > 0 && (
+                        <span className="bg-[#00A884] text-[#111B21] text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+                          {chat.unreadCount}
+                        </span>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ─── VISTA 4: CANALES / DIFUSIÓN ─── */}
-        {navSection === 'channels' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#202C33] text-[#00A884] flex items-center justify-center mx-auto mt-6">
-              <Radio className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-sm text-[#E9EDEF]">Canal Oficial FoxDrop Puebla</h3>
-            <p className="text-xs text-[#8696A0] max-w-xs mx-auto">
-              Envía avisos de ofertas flash, nuevos lotes importados y dinámicas del Club FoxDrop a todos tus clientes suscritos de forma masiva.
-            </p>
-            <button
-              onClick={() => {
-                setNavSection('chats');
-                setInputText('📢 *AVISO FOXDROP:* ¡Llegó nuevo cargamento a bodega Puebla! Aparta el tuyo antes de que se agoten.');
-              }}
-              className="px-4 py-2 bg-[#00A884] text-[#111B21] font-bold rounded-xl text-xs"
-            >
-              Crear Mensaje de Difusión
-            </button>
-          </div>
-        )}
-
-        {/* ─── VISTA 5: COMUNIDADES ─── */}
-        {navSection === 'communities' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#202C33] text-[#00A884] flex items-center justify-center mx-auto mt-6">
-              <Users className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-sm text-[#E9EDEF]">Comunidad VIP Club FoxDrop</h3>
-            <p className="text-xs text-[#8696A0] max-w-xs mx-auto">
-              Grupos segmentados de compradores frecuentes en Angelópolis, Dorada y Centro para entregas exprés.
-            </p>
-          </div>
-        )}
-
-        {/* ─── VISTA 6: ARCHIVADOS ─── */}
-        {navSection === 'archived' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#202C33] text-[#8696A0] flex items-center justify-center mx-auto mt-6">
-              <Archive className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-sm text-[#E9EDEF]">Sin chats archivados</h3>
-            <p className="text-xs text-[#8696A0]">Tus conversaciones cerradas o completadas se guardarán aquí.</p>
-          </div>
-        )}
-
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
-
+      
       {/* ======================================================== */}
       {/* 2. PANEL CENTRAL: CONVERSACIÓN DARK MODE EXACTA          */}
       {/* ======================================================== */}
       {activeChat ? (
-        <div className="flex-1 flex flex-col bg-[#0B141A] relative overflow-hidden">
+        <div className="flex-1 flex h-full min-w-0 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[#0B141A] relative overflow-hidden min-w-0">
           
           {/* Cabecera del Chat Activo Dark Mode con Safe Area para Notch/Dynamic Island */}
           <div className="p-3 pt-3 md:pt-3 bg-[#202C33] border-b border-[#222E35] flex items-center justify-between shadow-md z-10 safe-area-top">
@@ -1626,6 +1296,26 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 title={chatAgentMode === 'agent' ? 'FoxBot IA activo respondiendo dudas' : 'Modo Manual activo'}
               >
                 {chatAgentMode === 'agent' ? '🤖 Agente' : '👤 Manual'}
+              </button>
+
+              {/* Botón Panel Deslizable: Pedidos & Perfil del Cliente */}
+              <button
+                type="button"
+                onClick={() => setShowOrdersDrawer(!showOrdersDrawer)}
+                className={`px-2.5 py-1.5 rounded-xl transition flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+                  showOrdersDrawer 
+                    ? 'bg-[#00A884]/25 text-[#00A884] border border-[#00A884]/50 shadow-xs' 
+                    : 'bg-[#202C33] text-[#AEBAC1] hover:text-[#E9EDEF] hover:bg-[#374248]'
+                }`}
+                title="Mostrar u ocultar pedidos y perfil del cliente"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-[#00A884]" />
+                <span className="hidden sm:inline">Pedidos</span>
+                {activeChatOrders.length > 0 && (
+                  <span className="bg-[#00A884] text-[#111B21] text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                    {activeChatOrders.length}
+                  </span>
+                )}
               </button>
 
               {/* Botón Radar USA: Buscar Artículos pedidos en tiendas de EUA */}
@@ -1917,6 +1607,132 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
           </form>
 
         </div>
+
+        {/* 3. PANEL LATERAL DESLIZABLE: INFO & PEDIDOS DEL CLIENTE */}
+        {showOrdersDrawer && activeChat && (
+          <div className="w-80 lg:w-84 border-l border-[#222E35] bg-[#111B21] flex flex-col shrink-0 h-full overflow-hidden animate-in slide-in-from-right duration-200">
+            {/* Cabecera del Panel */}
+            <div className="p-3.5 border-b border-[#222E35] flex items-center justify-between bg-[#111B21]">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-[#00A884]" />
+                <h3 className="font-bold text-sm text-[#E9EDEF]">Info y Pedidos</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOrdersDrawer(false)}
+                className="p-1.5 text-[#8696A0] hover:text-[#E9EDEF] hover:bg-[#202C33] rounded-lg transition cursor-pointer"
+                title="Cerrar panel lateral"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Perfil del Cliente */}
+            <div className="p-4 border-b border-[#222E35] text-center space-y-2 bg-[#172228]/40">
+              <div className="w-14 h-14 rounded-full bg-[#00A884] text-[#111B21] font-black text-xl flex items-center justify-center mx-auto shadow-md">
+                {activeChat.clientName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h4 className="font-bold text-[#E9EDEF] text-sm leading-tight">{activeChat.clientName}</h4>
+                <p className="text-xs text-[#8696A0] mt-0.5">+{activeChat.phone}</p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleInitiateCall({ name: activeChat.clientName, phone: activeChat.phone }, 'voice')}
+                  className="px-3 py-1 bg-[#202C33] hover:bg-[#2A3942] text-[#00A884] text-xs font-semibold rounded-lg flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Llamar</span>
+                </button>
+                <a
+                  href={`https://wa.me/${activeChat.phone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 bg-[#202C33] hover:bg-[#2A3942] text-[#E9EDEF] text-xs font-semibold rounded-lg flex items-center gap-1.5 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Listado de Pedidos del Cliente */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-[#8696A0] px-1">
+                <span>HISTORIAL DE PEDIDOS</span>
+                <span className="bg-[#202C33] text-[#00A884] px-2 py-0.5 rounded-full text-[11px] font-black">
+                  {activeChatOrders.length}
+                </span>
+              </div>
+
+              {activeChatOrders.length === 0 ? (
+                <div className="text-center py-10 px-4 space-y-2 bg-[#172228]/20 rounded-2xl border border-[#222E35]">
+                  <div className="w-10 h-10 rounded-full bg-[#202C33] text-[#8696A0] flex items-center justify-center mx-auto">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-[#E9EDEF]">Sin pedidos registrados</p>
+                  <p className="text-[11px] text-[#8696A0]">
+                    Cuando este cliente compre en FoxDrop sus pedidos aparecerán aquí automáticamente.
+                  </p>
+                </div>
+              ) : (
+                activeChatOrders.map((order: any) => {
+                  const itemsList = order.order_items || [];
+                  return (
+                    <div key={order.id} className="bg-[#202C33] rounded-xl p-3 border border-[#2A3942] space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#00A884]">#{order.id.slice(-6).toUpperCase()}</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          order.status === 'delivered' ? 'bg-emerald-900/60 text-emerald-300' :
+                          order.status === 'shipped' ? 'bg-sky-900/60 text-sky-300' :
+                          order.status === 'processing' ? 'bg-amber-900/60 text-amber-300' :
+                          order.status === 'pending' ? 'bg-indigo-900/60 text-indigo-300' :
+                          'bg-rose-900/60 text-rose-300'
+                        }`}>
+                          {order.status === 'delivered' ? 'Entregado' :
+                           order.status === 'shipped' ? 'En Camino' :
+                           order.status === 'processing' ? 'En Proceso' :
+                           order.status === 'pending' ? 'Pendiente' : 'Cancelado'}
+                        </span>
+                      </div>
+
+                      <div className="text-[#E9EDEF] font-bold text-sm">
+                        ${(order.total || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+                      </div>
+
+                      {itemsList.length > 0 && (
+                        <div className="text-[#8696A0] text-[11px] space-y-0.5 border-t border-[#2A3942] pt-1.5">
+                          {itemsList.slice(0, 3).map((it: any, idx: number) => (
+                            <div key={idx} className="truncate">
+                              • {it.quantity}x {it.product_title || it.title}
+                            </div>
+                          ))}
+                          {itemsList.length > 3 && (
+                            <span className="text-[10px] text-[#00A884]">+{itemsList.length - 3} artículos más</span>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const text = `📦 *Resumen de tu pedido #${order.id.slice(-6).toUpperCase()}*\n💰 Total: $${(order.total || 0).toLocaleString('es-MX')} MXN\n📌 Estado: ${order.status === 'delivered' ? 'Entregado' : order.status === 'shipped' ? 'En camino' : 'Confirmado'}\n🦊 FoxDrop Puebla`;
+                          setInputText(text);
+                        }}
+                        className="w-full mt-1 py-1.5 rounded-lg bg-[#2A3942] hover:bg-[#374248] text-[#00A884] font-semibold text-[11px] transition text-center cursor-pointer"
+                      >
+                        Pegar seguimiento en chat
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
       ) : (
         /* Pantalla Vacía Dark Mode */
         <div className="flex-1 hidden md:flex flex-col items-center justify-center p-8 text-center bg-[#222E35] space-y-4">
@@ -2522,6 +2338,99 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingImportRadar ? 'animate-spin' : ''}`} />
                 <span>Re-escanear fotos</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INICIAR NUEVO CHAT DIRECTO */}
+      {showNewContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#111B21] border border-[#222E35] rounded-3xl max-w-sm w-full p-6 text-[#E9EDEF] space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#222E35] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-[#00A884]/20 text-[#00A884] flex items-center justify-center font-black">
+                  💬
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm">Nuevo Chat</h3>
+                  <p className="text-[11px] text-[#8696A0]">Escribe a un número de cliente</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewContactModal(false)}
+                className="p-1.5 text-[#8696A0] hover:text-[#E9EDEF] rounded-xl hover:bg-[#202C33] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[#8696A0] font-bold block mb-1">Nombre del cliente (Opcional):</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Laura Gómez"
+                  value={newContactName}
+                  onChange={e => setNewContactName(e.target.value)}
+                  className="w-full bg-[#202C33] border border-[#222E35] rounded-xl px-3 py-2 text-xs text-[#E9EDEF] focus:outline-none focus:border-[#00A884]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[#8696A0] font-bold block mb-1">Teléfono (10 dígitos):</label>
+                <input
+                  type="tel"
+                  placeholder="Ej: 2221234567"
+                  value={newContactPhone}
+                  onChange={e => setNewContactPhone(e.target.value)}
+                  className="w-full bg-[#202C33] border border-[#222E35] rounded-xl px-3 py-2 text-xs text-[#E9EDEF] focus:outline-none focus:border-[#00A884]"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewContactModal(false)}
+                  className="flex-1 py-2.5 bg-[#202C33] text-[#8696A0] hover:text-[#E9EDEF] rounded-xl font-bold cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cleanPhone = newContactPhone.replace(/\D/g, '');
+                    if (!cleanPhone || cleanPhone.length < 10) {
+                      alert('Ingresa un teléfono válido de al menos 10 dígitos');
+                      return;
+                    }
+                    const fullPhone = cleanPhone.startsWith('52') ? cleanPhone : `52${cleanPhone}`;
+                    const name = newContactName.trim() || `Cliente ${cleanPhone.slice(-4)}`;
+                    const existing = chats.find(c => c.phone.replace(/\D/g, '').endsWith(cleanPhone.slice(-10)));
+                    if (existing) {
+                      handleSelectChat(existing);
+                    } else {
+                      const newChatObj = {
+                        id: `chat_${fullPhone}`,
+                        phone: fullPhone,
+                        clientName: name,
+                        lastMessage: '',
+                        lastMessageTime: new Date().toISOString(),
+                        unreadCount: 0,
+                      };
+                      setChats((prev: any) => [newChatObj, ...prev]);
+                      handleSelectChat(newChatObj as any);
+                    }
+                    setShowNewContactModal(false);
+                    setNewContactPhone('');
+                    setNewContactName('');
+                  }}
+                  className="flex-1 py-2.5 bg-[#00A884] hover:bg-[#008f6f] text-[#111B21] font-bold rounded-xl cursor-pointer"
+                >
+                  Abrir Chat
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -518,6 +518,7 @@ export interface StoreSettings {
   clearanceDiscountText: string;
   clearanceSubtitle: string;
   carouselIntervalSeconds?: number;
+  adminDarkMode?: boolean;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -526,6 +527,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   clearanceDiscountText: "Hasta 70% Menos",
   clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
   carouselIntervalSeconds: 8,
+  adminDarkMode: false,
 };
 
 export async function getStoreSettings(): Promise<StoreSettings> {
