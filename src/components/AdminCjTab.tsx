@@ -2289,71 +2289,103 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                       </div>
                     )}
 
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[11px] font-bold text-slate-700">
-                          Precio de venta al público en FoxDrop (MXN):
-                        </label>
-                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                          🔥 Modo Lanzamiento Activo
-                        </span>
-                      </div>
+                    {/* Si tiene múltiples modelos, los precios se definen exclusivamente por modelo arriba */}
+                    {matchedDetail?.variants && matchedDetail.variants.length > 1 ? (
+                      (() => {
+                        const activePrices = matchedDetail.variants
+                          .filter((v: any, idx: number) => selectedVariantIds[String(v.vid || `var-${idx}`)] !== false)
+                          .map((v: any, idx: number) => {
+                            const vKey = String(v.vid || `var-${idx}`);
+                            const vUsd = Number(v.variantSellPrice) || baseUsd;
+                            const vCost = Math.round((vUsd + freightUsd) * safeRate);
+                            return variantCustomPrices[vKey] ?? Math.max(99, Math.round(vCost * 1.25));
+                          });
+                        const minP = activePrices.length > 0 ? Math.min(...activePrices) : 0;
+                        const maxP = activePrices.length > 0 ? Math.max(...activePrices) : 0;
 
-                      {/* BOTONES RÁPIDOS DE ESTRATEGIA DE PRECIO */}
-                      <div className="grid grid-cols-3 gap-1.5 text-[10px]">
-                        <button
-                          type="button"
-                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: launchPrice }))}
-                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                            customPrices[modalItem.id] === launchPrice
-                              ? 'bg-emerald-600 text-white border-emerald-600'
-                              : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          🔥 Lanzamiento (${launchPrice})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: standardPrice }))}
-                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                            customPrices[modalItem.id] === standardPrice
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-slate-50 hover:bg-indigo-50 text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          ⚖️ Estándar (${standardPrice})
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: highMarginPrice }))}
-                          className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                            customPrices[modalItem.id] === highMarginPrice
-                              ? 'bg-purple-600 text-white border-purple-600'
-                              : 'bg-slate-50 hover:bg-purple-50 text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          💎 Alto (${highMarginPrice})
-                        </button>
-                      </div>
+                        return (
+                          <div className="p-3 bg-gradient-to-r from-indigo-50 to-emerald-50 rounded-2xl border border-indigo-200/80 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                                Rango de Precios en Tienda (Configurado por modelo):
+                              </span>
+                              <span className="text-sm font-black text-slate-900">
+                                {minP === maxP ? `${minP} MXN` : `Desde ${minP} hasta ${maxP} MXN`}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-300 px-2 py-1 rounded-lg">
+                              ✓ {activePrices.length} modelos con precio propio
+                            </span>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-700">
+                            Precio de venta al público en FoxDrop (MXN):
+                          </label>
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            🔥 Modo Lanzamiento Activo
+                          </span>
+                        </div>
 
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
-                        <input
-                          type="number"
-                          value={customPrices[modalItem.id] || launchPrice}
-                          onChange={(e) => setCustomPrices(prev => ({ ...prev, [modalItem.id]: Number(e.target.value) }))}
-                          className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-semibold"
-                        />
+                        {/* BOTONES RÁPIDOS DE ESTRATEGIA DE PRECIO */}
+                        <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                          <button
+                            type="button"
+                            onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: launchPrice }))}
+                            className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                              customPrices[modalItem.id] === launchPrice
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : 'bg-slate-50 hover:bg-emerald-50 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            🔥 Lanzamiento (${launchPrice})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: standardPrice }))}
+                            className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                              customPrices[modalItem.id] === standardPrice
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-slate-50 hover:bg-indigo-50 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            ⚖️ Estándar (${standardPrice})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCustomPrices(prev => ({ ...prev, [modalItem.id]: highMarginPrice }))}
+                            className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                              customPrices[modalItem.id] === highMarginPrice
+                                ? 'bg-purple-600 text-white border-purple-600'
+                                : 'bg-slate-50 hover:bg-purple-50 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            💎 Alto (${highMarginPrice})
+                          </button>
+                        </div>
+
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                          <input
+                            type="number"
+                            value={customPrices[modalItem.id] || launchPrice}
+                            onChange={(e) => setCustomPrices(prev => ({ ...prev, [modalItem.id]: Number(e.target.value) }))}
+                            className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 font-semibold"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-1 px-1">
+                          <span className="text-slate-500 font-medium">
+                            Costo Real (Prod + Envío CJ): ~${totalLandedMxn} MXN
+                          </span>
+                          <span className={`font-bold ${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            Tu Ganancia Libre: {(customPrices[modalItem.id] || launchPrice) - totalLandedMxn >= 0 ? '+' : ''}${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn} MXN por venta
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] pt-1 px-1">
-                        <span className="text-slate-500 font-medium">
-                          Costo Real (Prod + Envío CJ): ~${totalLandedMxn} MXN
-                        </span>
-                        <span className={`font-bold ${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          Tu Ganancia Libre: {(customPrices[modalItem.id] || launchPrice) - totalLandedMxn >= 0 ? '+' : ''}${(customPrices[modalItem.id] || launchPrice) - totalLandedMxn} MXN por venta
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </>
               );

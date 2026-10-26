@@ -10758,106 +10758,110 @@ ESTÉTICA Y CONCEPTO VISUAL:
                             </span>
                           </div>
 
-                          {/* Precio Venta Público Editable */}
-                          <div className="bg-white p-2.5 rounded-xl border border-indigo-100">
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="text-slate-800 font-bold text-xs">Precio Público en Tienda (MXN):</label>
-                              <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                +{priceMarkupPercent}% sobre costo CJ
+                          {/* Precio Venta Público Editable: Solo si NO tiene múltiples variantes */}
+                          {editingVariants.length <= 1 && (
+                            <div className="bg-white p-2.5 rounded-xl border border-indigo-100">
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-slate-800 font-bold text-xs">Precio Público en Tienda (MXN):</label>
+                                <span className="font-bold text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  +{priceMarkupPercent}% sobre costo CJ
+                                </span>
+                              </div>
+                              <div className="relative">
+                                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                                <input
+                                  type="number"
+                                  value={newPublicPrice}
+                                  onChange={e => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setNewPublicPrice(val);
+                                    if (totalCostUnitMxn > 0) {
+                                      const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
+                                      setPriceMarkupPercent(Math.max(5, Math.min(300, calculatedMarkup)));
+                                    }
+                                  }}
+                                  className="w-full bg-emerald-50/40 border border-emerald-300 rounded-lg p-2 pl-6 text-emerald-950 font-black text-sm focus:outline-none focus:border-emerald-500"
+                                />
+                              </div>
+                              <span className="text-[10px] text-slate-500 font-semibold block mt-1">
+                                Elige abajo uno de los 3 precios sugeridos de CJ o edítalo libremente
                               </span>
                             </div>
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
-                              <input
-                                type="number"
-                                value={newPublicPrice}
-                                onChange={e => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  setNewPublicPrice(val);
-                                  if (totalCostUnitMxn > 0) {
-                                    const calculatedMarkup = Math.round(((val - totalCostUnitMxn) / totalCostUnitMxn) * 100);
-                                    setPriceMarkupPercent(Math.max(5, Math.min(300, calculatedMarkup)));
-                                  }
-                                }}
-                                className="w-full bg-emerald-50/40 border border-emerald-300 rounded-lg p-2 pl-6 text-emerald-950 font-black text-sm focus:outline-none focus:border-emerald-500"
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-500 font-semibold block mt-1">
-                              Elige abajo uno de los 3 precios sugeridos de CJ o edítalo libremente
+                          )}
+                        </div>
+
+                        {/* Selector de 3 Niveles de Precio CJ: Solo cuando es producto único sin variantes */}
+                        {editingVariants.length <= 1 && (
+                          <div>
+                            <span className="text-[11px] font-bold text-indigo-950 block mb-1.5">
+                              Estrategia de Precio CJ (Competitivo vs Temu / TikTok Shop):
                             </span>
+                            <div className="grid grid-cols-3 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewPublicPrice(cjLaunchPrice);
+                                  setPriceMarkupPercent(22);
+                                }}
+                                className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                  Math.abs(newPublicPrice - cjLaunchPrice) <= 2
+                                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm ring-2 ring-emerald-500/30'
+                                    : 'bg-white hover:bg-emerald-50/60 text-slate-800 border-slate-200'
+                                }`}
+                              >
+                                <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-emerald-600'}`}>
+                                  🔥 Introducción (+22%)
+                                </span>
+                                <span className="text-sm font-black block mt-0.5">${cjLaunchPrice} MXN</span>
+                                <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-slate-500'}`}>
+                                  Ganas +${Math.max(0, cjLaunchPrice - totalCostUnitMxn).toFixed(0)} MXN
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewPublicPrice(cjOptimalPrice);
+                                  setPriceMarkupPercent(32);
+                                }}
+                                className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                  Math.abs(newPublicPrice - cjOptimalPrice) <= 2
+                                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-500/30'
+                                    : 'bg-white hover:bg-indigo-50/60 text-slate-800 border-slate-200'
+                                }`}
+                              >
+                                <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-indigo-600'}`}>
+                                  ⚖️ Óptimo (+32%)
+                                </span>
+                                <span className="text-sm font-black block mt-0.5">${cjOptimalPrice} MXN</span>
+                                <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                  Ganas +${Math.max(0, cjOptimalPrice - totalCostUnitMxn).toFixed(0)} MXN
+                                </span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewPublicPrice(cjMaxPrice);
+                                  setPriceMarkupPercent(45);
+                                }}
+                                className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                                  Math.abs(newPublicPrice - cjMaxPrice) <= 2
+                                    ? 'bg-amber-600 text-white border-amber-700 shadow-sm ring-2 ring-amber-500/30'
+                                    : 'bg-white hover:bg-amber-50/60 text-slate-800 border-slate-200'
+                                }`}
+                              >
+                                <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-amber-600'}`}>
+                                  💎 Máximo (+45%)
+                                </span>
+                                <span className="text-sm font-black block mt-0.5">${cjMaxPrice} MXN</span>
+                                <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-slate-500'}`}>
+                                  Ganas +${Math.max(0, cjMaxPrice - totalCostUnitMxn).toFixed(0)} MXN
+                                </span>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Selector de 3 Niveles de Precio CJ (Idéntico al importador de CJ Dropshipping) */}
-                        <div>
-                          <span className="text-[11px] font-bold text-indigo-950 block mb-1.5">
-                            Estrategia de Precio CJ (Competitivo vs Temu / TikTok Shop):
-                          </span>
-                          <div className="grid grid-cols-3 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewPublicPrice(cjLaunchPrice);
-                                setPriceMarkupPercent(22);
-                              }}
-                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
-                                Math.abs(newPublicPrice - cjLaunchPrice) <= 2
-                                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm ring-2 ring-emerald-500/30'
-                                  : 'bg-white hover:bg-emerald-50/60 text-slate-800 border-slate-200'
-                              }`}
-                            >
-                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-emerald-600'}`}>
-                                🔥 Introducción (+22%)
-                              </span>
-                              <span className="text-sm font-black block mt-0.5">${cjLaunchPrice} MXN</span>
-                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjLaunchPrice) <= 2 ? 'text-emerald-100' : 'text-slate-500'}`}>
-                                Ganas +${Math.max(0, cjLaunchPrice - totalCostUnitMxn).toFixed(0)} MXN
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewPublicPrice(cjOptimalPrice);
-                                setPriceMarkupPercent(32);
-                              }}
-                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
-                                Math.abs(newPublicPrice - cjOptimalPrice) <= 2
-                                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-500/30'
-                                  : 'bg-white hover:bg-indigo-50/60 text-slate-800 border-slate-200'
-                              }`}
-                            >
-                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-indigo-600'}`}>
-                                ⚖️ Óptimo (+32%)
-                              </span>
-                              <span className="text-sm font-black block mt-0.5">${cjOptimalPrice} MXN</span>
-                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjOptimalPrice) <= 2 ? 'text-indigo-100' : 'text-slate-500'}`}>
-                                Ganas +${Math.max(0, cjOptimalPrice - totalCostUnitMxn).toFixed(0)} MXN
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNewPublicPrice(cjMaxPrice);
-                                setPriceMarkupPercent(45);
-                              }}
-                              className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
-                                Math.abs(newPublicPrice - cjMaxPrice) <= 2
-                                  ? 'bg-amber-600 text-white border-amber-700 shadow-sm ring-2 ring-amber-500/30'
-                                  : 'bg-white hover:bg-amber-50/60 text-slate-800 border-slate-200'
-                              }`}
-                            >
-                              <span className={`text-[10px] font-black uppercase block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-amber-600'}`}>
-                                💎 Máximo (+45%)
-                              </span>
-                              <span className="text-sm font-black block mt-0.5">${cjMaxPrice} MXN</span>
-                              <span className={`text-[10px] font-semibold block ${Math.abs(newPublicPrice - cjMaxPrice) <= 2 ? 'text-amber-100' : 'text-slate-500'}`}>
-                                Ganas +${Math.max(0, cjMaxPrice - totalCostUnitMxn).toFixed(0)} MXN
-                              </span>
-                            </button>
-                          </div>
-                        </div>
+                        )}
 
                         {/* Resumen de Ganancia Libre CJ */}
                         <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl flex justify-between items-center text-xs">
