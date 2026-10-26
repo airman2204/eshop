@@ -20,7 +20,7 @@ import {
   Palette, LayoutTemplate, Moon, Sun
 } from 'lucide-react';
 import { Product, Order, AbandonedCart, SpecialOrder, ImportBatch, ClientProfile, ClubFoxDropSettings, ClubFoxDropTier, LoyaltyMetrics, CheckoutSettings, ShippingMethodConfig, AgentChatMessage, AgentSocialPost, AgentWeeklyCalendarDay, AgentWeeklyPlan } from '@/types';
-import { getActiveProducts } from '@/lib/products';
+import { getActiveProducts, mapDbProductToApp } from '@/lib/products';
 import { 
   getLiveExchangeRate, createProductInDb, updateProductInDb, deleteProductInDb, 
   getImportBatches, createImportBatch, updateImportBatch, deleteImportBatch, getClientsWithMetrics,
@@ -2309,34 +2309,35 @@ export default function AdminCRM() {
 
   // Productos del ámbito actual: Stock Físico (Boutique) vs Catálogo Virtual (Importación CJ)
   const scopedProducts = products.filter(p => {
-    const isCj = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+    const isCj = Boolean((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')));
     return inventoryScope === 'cj_international' ? isCj : !isCj;
   });
 
   // Conteos para Filtros de Inventario (calculados exclusivamente sobre el ámbito activo)
-  const countOutOfStock = scopedProducts.filter(p => (p.stock || 0) <= 0).length;
-  const countLowStock = scopedProducts.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= 3).length;
-  const countHealthy = scopedProducts.filter(p => (p.stock || 0) > 3).length;
-  const countCombos = scopedProducts.filter(p => p.isCombo).length;
+  const countOutOfStock = scopedProducts.filter(p => (Number(p.stock) || 0) <= 0).length;
+  const countLowStock = scopedProducts.filter(p => (Number(p.stock) || 0) > 0 && (Number(p.stock) || 0) <= 3).length;
+  const countHealthy = scopedProducts.filter(p => (Number(p.stock) || 0) > 3).length;
+  const countCombos = scopedProducts.filter(p => Boolean(p.isCombo)).length;
   const countInactive = scopedProducts.filter(p => p.isActive === false).length;
 
   // Filtrado de productos mejorado
   const filteredProducts = products.filter(p => {
     // 0. Separación de Doble Inventario: Stock Físico (Boutique) vs Catálogo Virtual (CJ Dropshipping)
-    const isCj = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+    const isCj = Boolean((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')));
     if (inventoryScope === 'physical' && isCj) return false;
     if (inventoryScope === 'cj_international' && !isCj) return false;
 
     // 1. Filtro por término de búsqueda
-    const matchesSearch = !searchTerm.trim() || 
-      p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = (searchTerm || '').trim().toLowerCase();
+    const pTitle = (p.title || '').toLowerCase();
+    const pSku = (p.sku || '').toLowerCase();
+    const pCategory = (p.category || '').toLowerCase();
+    const matchesSearch = !q || pTitle.includes(q) || pSku.includes(q) || pCategory.includes(q);
 
     if (!matchesSearch) return false;
 
     // 2. Filtro por categoría seleccionada
-    if (inventoryCategoryFilter !== 'all' && p.category.toLowerCase() !== inventoryCategoryFilter.toLowerCase()) {
+    if (inventoryCategoryFilter !== 'all' && pCategory !== inventoryCategoryFilter.toLowerCase()) {
       return false;
     }
 
@@ -2345,21 +2346,22 @@ export default function AdminCRM() {
       const targetBatch = batches.find(b => b.id === inventoryBatchFilter);
       if (targetBatch) {
         const matchesBatchId = p.batchId === targetBatch.id;
-        const matchesCost = Math.abs(targetBatch.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05;
+        const matchesCost = Math.abs(targetBatch.costPerUnit - (Number(p.shippingCostAllocated) || 0)) < 0.05;
         const matchesName = p.batchName && p.batchName === targetBatch.batchName;
         if (!matchesBatchId && !matchesCost && !matchesName) return false;
       }
     }
 
     // 3. Filtro por estado de stock / tipo
+    const currentStock = Number(p.stock) || 0;
     if (stockFilter === 'low_stock') {
-      return (p.stock || 0) > 0 && (p.stock || 0) <= 3;
+      return currentStock > 0 && currentStock <= 3;
     }
     if (stockFilter === 'out_of_stock') {
-      return (p.stock || 0) <= 0;
+      return currentStock <= 0;
     }
     if (stockFilter === 'healthy') {
-      return (p.stock || 0) > 3;
+      return currentStock > 3;
     }
     if (stockFilter === 'combos') {
       return Boolean(p.isCombo);
@@ -2370,35 +2372,56 @@ export default function AdminCRM() {
 
     return true;
   }).sort((a, b) => {
-    if (inventorySortBy === 'price_asc') return (a.publicPrice || 0) - (b.publicPrice || 0);
-    if (inventorySortBy === 'price_desc') return (b.publicPrice || 0) - (a.publicPrice || 0);
-    if (inventorySortBy === 'stock_asc') return (a.stock || 0) - (b.stock || 0);
-    if (inventorySortBy === 'stock_desc') return (b.stock || 0) - (a.stock || 0);
-    if (inventorySortBy === 'margin_desc') return (b.marginPercent || 0) - (a.marginPercent || 0);
+    const aPrice = Number(a.publicPrice || (a as any).public_price) || 0;
+    const bPrice = Number(b.publicPrice || (b as any).public_price) || 0;
+    const aStock = Number(a.stock) || 0;
+    const bStock = Number(b.stock) || 0;
+    const aMargin = Number(a.marginPercent) || 0;
+    const bMargin = Number(b.marginPercent) || 0;
+
+    if (inventorySortBy === 'price_asc') return aPrice - bPrice;
+    if (inventorySortBy === 'price_desc') return bPrice - aPrice;
+    if (inventorySortBy === 'stock_asc') return aStock - bStock;
+    if (inventorySortBy === 'stock_desc') return bStock - aStock;
+    if (inventorySortBy === 'margin_desc') return bMargin - aMargin;
     return 0; // 'default'
   });
 
-  const totalInventoryUnits = scopedProducts.reduce((acc, p) => acc + (p.stock || 0), 0);
+  const totalInventoryUnits = scopedProducts.reduce((acc, p) => acc + (Number(p.stock) || 0), 0);
 
   // Excluir del cálculo de rentabilidad los productos con precio en $0 (pendientes de asignar precio)
-  const pricedProducts = scopedProducts.filter(p => (Number(p.publicPrice) || 0) > 0);
-  const unpricedProducts = scopedProducts.filter(p => (Number(p.publicPrice) || 0) <= 0);
+  const pricedProducts = scopedProducts.filter(p => (Number(p.publicPrice || (p as any).public_price) || 0) > 0);
+  const unpricedProducts = scopedProducts.filter(p => (Number(p.publicPrice || (p as any).public_price) || 0) <= 0);
 
-  const totalInvestment = pricedProducts.reduce((acc, p) => acc + ((p.totalCostMxn || 0) * (p.stock || 0)), 0);
-  const totalExpectedRevenue = pricedProducts.reduce((acc, p) => acc + ((p.publicPrice || 0) * (p.stock || 0)), 0);
+  const totalInvestment = pricedProducts.reduce((acc, p) => {
+    const cost = Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0;
+    const qty = Number(p.stock) || 0;
+    return acc + (cost * qty);
+  }, 0);
+
+  const totalExpectedRevenue = pricedProducts.reduce((acc, p) => {
+    const price = Number(p.publicPrice || (p as any).public_price) || 0;
+    const qty = Number(p.stock) || 0;
+    return acc + (price * qty);
+  }, 0);
+
   const totalExpectedProfit = totalExpectedRevenue - totalInvestment;
   const avgMargin = totalExpectedRevenue > 0 ? (totalExpectedProfit / totalExpectedRevenue) * 100 : 0;
 
   // Métricas específicas para Catálogo Virtual (Importación CJ Dropshipping) - por unidad de venta
-  const totalCjVariantsCount = scopedProducts.reduce((acc, p) => acc + (p.variants && p.variants.length > 0 ? p.variants.length : 1), 0);
+  const totalCjVariantsCount = scopedProducts.reduce((acc, p) => acc + (Array.isArray(p.variants) && p.variants.length > 0 ? p.variants.length : 1), 0);
   const avgCjLandedCost = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => acc + (p.totalCostMxn || p.baseCostMxn || 0), 0) / pricedProducts.length
+    ? pricedProducts.reduce((acc, p) => acc + (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0), 0) / pricedProducts.length
     : 0;
   const avgCjPublicPrice = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => acc + (p.publicPrice || 0), 0) / pricedProducts.length
+    ? pricedProducts.reduce((acc, p) => acc + (Number(p.publicPrice || (p as any).public_price) || 0), 0) / pricedProducts.length
     : 0;
   const avgCjProfitPerSale = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => acc + ((p.publicPrice || 0) - (p.totalCostMxn || p.baseCostMxn || 0)), 0) / pricedProducts.length
+    ? pricedProducts.reduce((acc, p) => {
+        const price = Number(p.publicPrice || (p as any).public_price) || 0;
+        const cost = Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0;
+        return acc + (price - cost);
+      }, 0) / pricedProducts.length
     : 0;
   const avgCjMarginPercent = avgCjPublicPrice > 0 ? (avgCjProfitPerSale / avgCjPublicPrice) * 100 : 0;
 
@@ -4552,8 +4575,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             usdRate={usdRate}
             existingProducts={products}
             storeCategories={dbCategories.map(c => c.name)}
-            onProductImported={(newP) => {
-              setProducts(prev => [newP, ...prev]);
+            onProductImported={(newP: any) => {
+              const cleanProd = mapDbProductToApp(newP);
+              setProducts(prev => [cleanProd, ...prev.filter(p => p.id !== cleanProd.id)]);
               fetchAdminCategories().then(cats => {
                 if (cats && cats.length > 0) setDbCategories(cats);
               }).catch(() => {});
@@ -5205,16 +5229,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                     </span>
                                   );
                                 })()}
-                                <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${p.shippingCostAllocated.toFixed(2)} flete</span>
+                                <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${(Number(p.shippingCostAllocated) || 0).toFixed(2)} flete</span>
                               </>
                             )}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
                             <span className="font-black text-slate-900 block text-xs">
-                              ${p.totalCostMxn.toFixed(2)}
+                              ${(Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}
                             </span>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
-                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: $${p.baseCostMxn.toFixed(2)}`}
+                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: ${(Number(p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}`}
                             </span>
                           </td>
                           
@@ -5253,13 +5277,13 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 >
                                   {p.discountPercent && p.discountPercent > 0 ? (
                                     <div className="flex items-baseline gap-1">
-                                      <span className="text-[10px] text-slate-400 line-through">${p.publicPrice.toFixed(0)}</span>
+                                      <span className="text-[10px] text-slate-400 line-through">${(Number(p.publicPrice || (p as any).public_price) || 0).toFixed(0)}</span>
                                       <span className="text-xs font-black text-[#E65F2B]">
-                                        ${Math.round(p.publicPrice * (1 - p.discountPercent / 100))}
+                                        ${Math.round((Number(p.publicPrice || (p as any).public_price) || 0) * (1 - (Number(p.discountPercent) || 0) / 100))}
                                       </span>
                                     </div>
                                   ) : (
-                                    <span>${p.publicPrice.toFixed(2)}</span>
+                                    <span>${(Number(p.publicPrice || (p as any).public_price) || 0).toFixed(2)}</span>
                                   )}
                                   <Edit3 className="w-3 h-3 text-emerald-500 opacity-0 group-hover/price:opacity-100 transition shrink-0" />
                                   {savingPriceId === p.id && (
@@ -5276,7 +5300,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
 
                           <td className="py-3.5 px-4 font-bold text-emerald-600">
-                            +${p.profitUnit.toFixed(2)} <span className="text-[10px] text-slate-400">({p.marginPercent.toFixed(0)}%)</span>
+                            +${(Number(p.profitUnit ?? ((Number(p.publicPrice || (p as any).public_price) || 0) - (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0))) || 0).toFixed(2)} <span className="text-[10px] text-slate-400">({(Number(p.marginPercent) || 0).toFixed(0)}%)</span>
                           </td>
                           
                           {/* CONTROL RÁPIDO DE STOCK (+ / -) */}
@@ -5527,7 +5551,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                     );
                                   })()}
                                   <span className="text-[10px] text-slate-400 font-semibold">
-                                    +${p.shippingCostAllocated.toFixed(0)} flete
+                                    +${(Number(p.shippingCostAllocated) || 0).toFixed(0)} flete
                                   </span>
                                 </>
                               )}
@@ -5573,9 +5597,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             <span className="text-[9px] text-slate-400 font-bold block uppercase">
                               {inventoryScope === 'cj_international' ? 'Costo Puesto MX' : 'Costo Total'}
                             </span>
-                            <span className="text-xs font-black text-slate-700">${p.totalCostMxn.toFixed(2)}</span>
+                            <span className="text-xs font-black text-slate-700">${(Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}</span>
                             <span className="text-[9px] font-semibold text-slate-400 block">
-                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: $${p.baseCostMxn.toFixed(2)}`}
+                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: ${(Number(p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}`}
                             </span>
                           </div>
                           <div className="border-x border-slate-200 px-1">
@@ -5602,14 +5626,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 }}
                                 className="text-xs font-black text-emerald-700 hover:bg-emerald-100/60 px-1.5 py-0.5 rounded transition inline-flex items-center gap-0.5"
                               >
-                                <span>${p.publicPrice.toFixed(0)}</span>
+                                <span>${(Number(p.publicPrice || (p as any).public_price) || 0).toFixed(0)}</span>
                                 <Edit3 className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
                               </button>
                             )}
                           </div>
                           <div>
                             <span className="text-[9px] text-emerald-600 font-bold block uppercase">Ganancia</span>
-                            <span className="text-xs font-black text-emerald-600">+${p.profitUnit.toFixed(0)}</span>
+                            <span className="text-xs font-black text-emerald-600">+${(Number(p.profitUnit ?? ((Number(p.publicPrice || (p as any).public_price) || 0) - (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0))) || 0).toFixed(0)}</span>
                           </div>
                         </div>
 

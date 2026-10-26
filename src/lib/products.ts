@@ -70,36 +70,39 @@ export function detectProductBrand(title: string, currentBrand?: string | null):
   return 'FoxDrop Oficial';
 }
 
-export function mapDbProductToApp(dbProd: DatabaseProduct): Product {
-  const publicPrice = Number(dbProd.public_price) || 0;
-  const totalCost = Number(dbProd.total_cost_mxn) || 0;
+export function mapDbProductToApp(dbProd: any): Product {
+  const publicPrice = Number(dbProd.public_price ?? dbProd.publicPrice) || 0;
+  const baseCostMxn = Number(dbProd.base_cost_mxn ?? dbProd.baseCostMxn) || 0;
+  const shippingCostAllocated = Number(dbProd.shipping_cost_allocated ?? dbProd.shippingCostAllocated) || 0;
+  const totalCost = Number(dbProd.total_cost_mxn ?? dbProd.totalCostMxn) || (baseCostMxn + shippingCostAllocated);
+  const profitUnit = Number(dbProd.profit_unit ?? dbProd.profitUnit) || Math.max(0, publicPrice - totalCost);
   const marginPercent = publicPrice > 0 ? ((publicPrice - totalCost) / publicPrice) * 100 : 0;
 
   return {
-    id: dbProd.id,
+    id: String(dbProd.id || ('prod_' + Date.now())),
     sku: dbProd.sku || "",
-    title: dbProd.title,
+    title: dbProd.title || "Sin título",
     description: dbProd.description || "",
-    category: dbProd.categories?.name || "General",
-    baseCostUsd: Number(dbProd.base_cost_usd) || 0,
-    baseCostMxn: Number(dbProd.base_cost_mxn) || 0,
-    shippingCostAllocated: Number(dbProd.shipping_cost_allocated) || 0,
+    category: dbProd.categories?.name || dbProd.category || "General",
+    baseCostUsd: Number(dbProd.base_cost_usd ?? dbProd.baseCostUsd) || 0,
+    baseCostMxn,
+    shippingCostAllocated,
     totalCostMxn: totalCost,
     publicPrice,
-    profitUnit: Number(dbProd.profit_unit) || 0,
+    profitUnit,
     marginPercent: Number(marginPercent.toFixed(2)),
-    stock: dbProd.stock,
-    isSpecialOrder: dbProd.is_special_order,
-    images: dbProd.images && dbProd.images.length > 0 && !dbProd.images[0].includes('photo-1523275335684') && !dbProd.images[0].includes('photo-1546868871')
+    stock: Number(dbProd.stock) || 0,
+    isSpecialOrder: Boolean(dbProd.is_special_order ?? dbProd.isSpecialOrder),
+    images: Array.isArray(dbProd.images) && dbProd.images.length > 0 && !dbProd.images[0].includes('photo-1523275335684') && !dbProd.images[0].includes('photo-1546868871')
       ? dbProd.images 
-      : ["/no-image.svg"],
-    daysInStock: dbProd.days_in_stock || 0,
-    expirationDate: dbProd.expiration_date || undefined,
-    isCombo: dbProd.is_combo || false,
-    comboProductIds: dbProd.combo_product_ids || [],
-    discountPercent: Number(dbProd.discount_percent) || 0,
-    isActive: dbProd.is_active ?? true,
-    brand: detectProductBrand(dbProd.title, dbProd.brand),
+      : (dbProd.imageUrl ? [dbProd.imageUrl] : ["/no-image.svg"]),
+    daysInStock: Number(dbProd.days_in_stock ?? dbProd.daysInStock) || 0,
+    expirationDate: dbProd.expiration_date || dbProd.expirationDate || undefined,
+    isCombo: Boolean(dbProd.is_combo ?? dbProd.isCombo),
+    comboProductIds: Array.isArray(dbProd.combo_product_ids) ? dbProd.combo_product_ids : (Array.isArray(dbProd.comboProductIds) ? dbProd.comboProductIds : []),
+    discountPercent: Number(dbProd.discount_percent ?? dbProd.discountPercent) || 0,
+    isActive: dbProd.is_active ?? dbProd.isActive ?? true,
+    brand: detectProductBrand(dbProd.title || '', dbProd.brand),
     videos: Array.isArray(dbProd.videos) ? dbProd.videos : [],
     variants: Array.isArray(dbProd.variants) ? dbProd.variants : [],
   };

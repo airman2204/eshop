@@ -344,6 +344,28 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      if (data) {
+        const costMxnNum = Number(importProduct.baseCostMxn) || 0;
+        const salePriceNum = Number(importProduct.publicPrice) || Math.round(costMxnNum * 1.8);
+        data.baseCostMxn = costMxnNum;
+        data.base_cost_mxn = costMxnNum;
+        data.baseCostUsd = Number(importProduct.baseCostUsd) || 0;
+        data.base_cost_usd = Number(importProduct.baseCostUsd) || 0;
+        data.publicPrice = salePriceNum;
+        data.public_price = salePriceNum;
+        data.shippingCostAllocated = 0;
+        data.shipping_cost_allocated = 0;
+        data.totalCostMxn = costMxnNum;
+        data.total_cost_mxn = costMxnNum;
+        data.profitUnit = Math.max(0, salePriceNum - costMxnNum);
+        data.profit_unit = Math.max(0, salePriceNum - costMxnNum);
+        data.marginPercent = salePriceNum > 0 ? Number((((salePriceNum - costMxnNum) / salePriceNum) * 100).toFixed(2)) : 0;
+        data.category = catTrimmed;
+        data.brand = "CJ Dropshipping";
+        data.stock = 20;
+        data.images = images;
+      }
+
       return NextResponse.json({ success: true, product: data });
     }
 
