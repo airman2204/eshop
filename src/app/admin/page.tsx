@@ -385,6 +385,7 @@ export default function AdminCRM() {
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [previewingVariantsProduct, setPreviewingVariantsProduct] = useState<any | null>(null);
   const [deletingVariantKey, setDeletingVariantKey] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<{ url: string; title?: string } | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
 
@@ -4652,6 +4653,52 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {crmSubTab === 'inventory' && (
           <div className="space-y-5">
+            
+        {/* LIGHTBOX / ZOOM DE FOTO EN TAMAÑO GIGANTE */}
+        {zoomedImage && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setZoomedImage(null)}
+          >
+            <div
+              className="bg-white rounded-3xl max-w-md sm:max-w-lg w-full overflow-hidden shadow-2xl border border-white/20 p-4 space-y-3 animate-in zoom-in-95 duration-150"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 truncate flex-1">
+                  {zoomedImage.title || 'Detalle del Modelo / Variante'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomedImage(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-sm transition cursor-pointer shrink-0 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="bg-slate-100 rounded-2xl overflow-hidden aspect-square flex items-center justify-center border border-slate-200">
+                <img
+                  src={zoomedImage.url}
+                  alt={zoomedImage.title || 'Foto ampliada'}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-[11px] text-slate-400">Clic fuera o en ✕ para cerrar</span>
+                <button
+                  type="button"
+                  onClick={() => setZoomedImage(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
             {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO: SEPARACIÓN DE DOBLE INVENTARIO */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
               <div className="flex items-center gap-2">
@@ -10103,7 +10150,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
         {/* MODAL DETALLE DE MODELOS / VARIANTES DEL PRODUCTO DE CJ */}
         {previewingVariantsProduct && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-            <div className="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
@@ -10142,11 +10189,16 @@ ESTÉTICA Y CONCEPTO VISUAL:
                         className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <img
-                            src={v.image || previewingVariantsProduct.images?.[0] || '/no-image.svg'}
-                            alt={v.name}
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-white shrink-0"
-                          />
+                          <div className="relative group/thumb shrink-0 cursor-zoom-in" onClick={() => setZoomedImage({ url: v.image || previewingVariantsProduct.images?.[0] || '/no-image.svg', title: v.name })}>
+                            <img
+                              src={v.image || previewingVariantsProduct.images?.[0] || '/no-image.svg'}
+                              alt={v.name}
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-slate-200 bg-white shadow-2xs group-hover/thumb:border-indigo-500 group-hover/thumb:scale-105 transition duration-150"
+                            />
+                            <span className="absolute bottom-1 right-1 bg-black/60 text-white p-0.5 rounded-md opacity-0 group-hover/thumb:opacity-100 transition text-[9px] font-bold">
+                              🔍
+                            </span>
+                          </div>
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-slate-900 truncate">
                               {v.name || ('Opción ' + (vIdx + 1))}
@@ -10854,12 +10906,17 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                     className="flex items-center justify-between gap-2.5 p-2 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-indigo-300 transition"
                                   >
                                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                                      <img
-                                        src={getSafeAdminImageUrl(vImg)}
-                                        alt={v.name}
-                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-50"
-                                      />
+                                      <div className="relative group/thumb shrink-0 cursor-zoom-in" onClick={() => setZoomedImage({ url: getSafeAdminImageUrl(vImg), title: v.name })}>
+                                        <img
+                                          src={getSafeAdminImageUrl(vImg)}
+                                          alt={v.name}
+                                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-slate-200 shrink-0 bg-slate-50 shadow-2xs group-hover/thumb:border-indigo-500 group-hover/thumb:scale-105 transition duration-150"
+                                        />
+                                        <span className="absolute bottom-1 right-1 bg-black/60 text-white p-0.5 rounded-md opacity-0 group-hover/thumb:opacity-100 transition text-[9px] font-bold">
+                                          🔍
+                                        </span>
+                                      </div>
                                       <div className="min-w-0 flex-1">
                                         <p className="text-[11px] font-bold text-slate-800 truncate" title={v.name}>
                                           {v.name || ('Opción ' + (vIdx + 1))}

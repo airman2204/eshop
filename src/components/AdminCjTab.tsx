@@ -2221,7 +2221,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                                       src={getSafeImageUrl(vImg)}
                                       alt={vName}
                                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                                      className="w-9 h-9 rounded-lg object-cover shrink-0 border border-slate-200 bg-white"
+                                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shrink-0 border-2 border-slate-200 bg-white shadow-2xs hover:scale-105 transition duration-150"
                                     />
                                   )}
                                   <div className="min-w-0 flex-1">
