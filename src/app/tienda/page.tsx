@@ -5628,18 +5628,27 @@ export default function TiendaFoxDrop() {
                       </button>
                     ))}
 
-                    {/* Videos del producto (al final) */}
+                    {/* Videos del producto (destacados al inicio o final de las miniaturas) */}
                     {selectedProduct.videos?.map((vidUrl, vIdx) => (
                       <button
                         key={`vid-${vIdx}`}
                         type="button"
                         onClick={() => setSelectedModalVideo(vidUrl)}
-                        className={`px-3 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center bg-slate-900 text-white gap-0.5 ${
-                          selectedModalVideo === vidUrl ? 'border-[#E65F2B] ring-2 ring-orange-200 shadow-sm' : 'border-slate-700 hover:border-slate-500'
+                        className={`w-16 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden shadow-xs group ${
+                          selectedModalVideo === vidUrl
+                            ? 'border-[#E65F2B] ring-2 ring-orange-300 bg-gradient-to-br from-slate-900 to-indigo-950 text-white'
+                            : 'border-indigo-400/80 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white hover:border-[#E65F2B]'
                         }`}
+                        title="Ver Video Demostrativo"
                       >
-                        <span className="text-sm">🎬</span>
-                        <span className="text-[10px] font-black uppercase tracking-tight">Video {selectedProduct.videos && selectedProduct.videos.length > 1 ? vIdx + 1 : ''}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs group-hover:scale-125 transition">▶️</span>
+                          <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase">VIDEO</span>
+                        </div>
+                        <span className="text-[8px] font-bold text-white/80 mt-0.5">
+                          {selectedProduct.videos && selectedProduct.videos.length > 1 ? `#${vIdx + 1}` : 'En vivo'}
+                        </span>
+                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       </button>
                     ))}
                   </div>
