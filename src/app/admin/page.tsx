@@ -384,6 +384,7 @@ export default function AdminCRM() {
   // Edición Rápida de Precio en Línea (Inline Price Edit)
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [previewingVariantsProduct, setPreviewingVariantsProduct] = useState<any | null>(null);
+  const [deletingVariantKey, setDeletingVariantKey] = useState<string | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
 
@@ -2447,6 +2448,63 @@ export default function AdminCRM() {
   const realizedMargin = realizedRevenue > 0 ? (realizedProfit / realizedRevenue) * 100 : 0;
 
   // Abrir Modal para Editar Producto
+  // Eliminar una variante específica de un producto y persistirlo en la base de datos
+  const handleDeleteVariant = async (product: any, variantIdx: number, variantItem: any) => {
+    const varName = variantItem?.name || ('Opción ' + (variantIdx + 1));
+    const confirmDelete = window.confirm(`¿Seguro que deseas eliminar la variante "${varName}"? Esta opción ya no aparecerá en la tienda.`);
+    if (!confirmDelete) return;
+
+    const remainingVariants = (product.variants || []).filter((_: any, idx: number) => idx !== variantIdx);
+    const vKey = String(variantItem?.id || variantIdx);
+    setDeletingVariantKey(vKey);
+
+    try {
+      await updateProductInDb(product.id, {
+        title: product.title,
+        categoryName: product.category || 'General',
+        baseCostUsd: product.baseCostUsd || 0,
+        baseCostMxn: product.baseCostMxn || 0,
+        shippingCostAllocated: product.shippingCostAllocated || 0,
+        publicPrice: remainingVariants.length > 0
+          ? Math.min(...remainingVariants.map((v: any) => Number(v.publicPrice || v.public_price) || product.publicPrice))
+          : product.publicPrice,
+        stock: product.stock,
+        variants: remainingVariants,
+      });
+
+      // Actualizar estado local del producto
+      setProducts(prev => prev.map(p => {
+        if (p.id === product.id) {
+          return {
+            ...p,
+            variants: remainingVariants,
+            publicPrice: remainingVariants.length > 0
+              ? Math.min(...remainingVariants.map((v: any) => Number(v.publicPrice || v.public_price) || p.publicPrice))
+              : p.publicPrice,
+          };
+        }
+        return p;
+      }));
+
+      // Si está abierto el modal de visualización rápida, actualizarlo
+      if (previewingVariantsProduct && previewingVariantsProduct.id === product.id) {
+        setPreviewingVariantsProduct((prev: any) => prev ? {
+          ...prev,
+          variants: remainingVariants,
+        } : null);
+      }
+
+      // Si está abierto el modal de edición, actualizarlo
+      if (editingProductId === product.id) {
+        setEditingVariants(remainingVariants);
+      }
+    } catch (err: any) {
+      alert(`Error al eliminar la variante: ${err.message || 'Intenta de nuevo'}`);
+    } finally {
+      setDeletingVariantKey(null);
+    }
+  };
+
   const handleOpenEditProduct = (prod: Product) => {
     const isCjProd = Boolean((prod.sku && prod.sku.startsWith('CJ')) || (prod.brand && prod.brand.toLowerCase().includes('cj dropshipping')));
     setEditingProductId(prod.id);
@@ -10099,16 +10157,28 @@ ESTÉTICA Y CONCEPTO VISUAL:
                           </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                          <div className="text-xs font-black text-slate-900">
-                            ${vPrice.toFixed(2)} MXN
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <div className="text-right">
+                            <div className="text-xs font-black text-slate-900">
+                              ${vPrice.toFixed(2)} MXN
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-semibold">
+                              Costo: ${vCost.toFixed(2)}
+                            </div>
+                            <div className={'text-[9px] font-bold ' + (vProfit >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+                              {vProfit >= 0 ? '+' : ''}${vProfit.toFixed(2)} ({vMargin}%)
+                            </div>
                           </div>
-                          <div className="text-[10px] text-slate-500 font-semibold">
-                            Costo: ${vCost.toFixed(2)}
-                          </div>
-                          <div className={'text-[9px] font-bold ' + (vProfit >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
-                            {vProfit >= 0 ? '+' : ''}${vProfit.toFixed(2)} ({vMargin}%)
-                          </div>
+
+                          <button
+                            type="button"
+                            disabled={deletingVariantKey === String(v.id || vIdx)}
+                            onClick={() => handleDeleteVariant(previewingVariantsProduct, vIdx, v)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer disabled:opacity-40"
+                            title="Eliminar este modelo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -10822,6 +10892,20 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                           {vProfit >= 0 ? '+' : ''}${vProfit.toFixed(0)} ({vProfitPct}%)
                                         </span>
                                       </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const vName = v.name || ('Opción ' + (vIdx + 1));
+                                          if (window.confirm(`¿Deseas quitar la variante "${vName}" de la lista?`)) {
+                                            setEditingVariants(prev => prev.filter((_, idx) => idx !== vIdx));
+                                          }
+                                        }}
+                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer ml-0.5"
+                                        title="Eliminar esta variante"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
                                     </div>
                                   </div>
                                 );
