@@ -40,6 +40,7 @@ import { getClubFoxDropTier, DEFAULT_CLUB_SETTINGS } from '@/lib/clubFoxdrop';
 import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
 import { generateTicketCanvasDataUrl } from '@/lib/ticketCanvas';
+import { translateVariantName } from '@/lib/translateVariant';
 
 const getSafeAdminImageUrl = (url: string | undefined): string => {
   if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
@@ -10315,7 +10316,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-slate-900 truncate">
-                              {v.name || ('Opción ' + (vIdx + 1))}
+                              {translateVariantName(v.name) || ('Opción ' + (vIdx + 1))}
                             </p>
                             <p className="text-[10px] text-slate-400 font-mono">
                               SKU: {v.sku || ('CJ-VAR-' + (vIdx + 1))}
@@ -11037,7 +11038,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                                       </div>
                                       <div className="min-w-0 flex-1">
                                         <p className="text-[11px] font-bold text-slate-800 truncate" title={v.name}>
-                                          {v.name || ('Opción ' + (vIdx + 1))}
+                                          {translateVariantName(v.name) || ('Opción ' + (vIdx + 1))}
                                         </p>
                                         <p className="text-[10px] text-slate-500 font-medium">
                                           Costo: <strong className="text-slate-700">${vCost.toFixed(0)} MXN</strong>
@@ -11399,52 +11400,74 @@ ESTÉTICA Y CONCEPTO VISUAL:
                     </button>
                   </div>
 
-                  {/* Miniaturas de fotos */}
+                  {/* Miniaturas de fotos ampliadas y con zoom */}
                   {newImages.length > 0 && (
-                    <div className="flex gap-2 overflow-x-auto py-1">
-                      {newImages.map((imgUrl, idx) => (
-                        <div key={idx} className={`relative group rounded-lg overflow-hidden border-2 bg-white w-14 h-14 shrink-0 shadow-2xs flex flex-col justify-between p-0.5 ${
-                          idx === 0 ? 'border-[#E65F2B] ring-1 ring-orange-200' : 'border-slate-200'
-                        }`}>
-                          <img
-                            src={getSafeAdminImageUrl(imgUrl)}
-                            alt=""
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                            className="w-full h-full object-cover rounded absolute inset-0 z-0"
-                          />
-                          <div className="relative z-10 flex items-center justify-between w-full">
-                            {idx === 0 ? (
-                              <span className="bg-[#E65F2B] text-white text-[7px] font-black px-1 rounded">
-                                Portada
-                              </span>
-                            ) : (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-600">
+                          Fotos cargadas ({newImages.length}) — <span className="text-slate-400 font-normal">Haz clic sobre cualquier foto para verla en grande</span>
+                        </span>
+                      </div>
+                      <div className="flex gap-3 overflow-x-auto py-2 px-1">
+                        {newImages.map((imgUrl, idx) => (
+                          <div
+                            key={idx}
+                            className={`relative group rounded-2xl overflow-hidden border-2 bg-white w-24 h-24 sm:w-28 sm:h-28 shrink-0 shadow-xs flex flex-col justify-between p-1.5 transition-all duration-150 hover:shadow-md ${
+                              idx === 0 ? 'border-[#E65F2B] ring-2 ring-orange-200' : 'border-slate-200 hover:border-indigo-400'
+                            }`}
+                          >
+                            <img
+                              src={getSafeAdminImageUrl(imgUrl)}
+                              alt=""
+                              onClick={() => setZoomedImage({ url: getSafeAdminImageUrl(imgUrl), title: `Foto ${idx + 1} de ${newImages.length}` })}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                              className="w-full h-full object-cover rounded-xl absolute inset-0 z-0 cursor-zoom-in group-hover:scale-105 transition duration-200"
+                            />
+                            <div className="relative z-10 flex items-center justify-between w-full pointer-events-none">
+                              <div className="pointer-events-auto">
+                                {idx === 0 ? (
+                                  <span className="bg-[#E65F2B] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                                    ⭐ Portada
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const updated = [imgUrl, ...newImages.filter((_, i) => i !== idx)];
+                                      setNewImages(updated);
+                                      setNewImageUrl(imgUrl);
+                                    }}
+                                    className="bg-slate-900/80 hover:bg-slate-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md cursor-pointer transition shadow-xs"
+                                    title="Poner esta foto como portada principal"
+                                  >
+                                    Portada
+                                  </button>
+                                )}
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const updated = [imgUrl, ...newImages.filter((_, i) => i !== idx)];
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const updated = newImages.filter((_, i) => i !== idx);
                                   setNewImages(updated);
-                                  setNewImageUrl(imgUrl);
+                                  if (updated.length > 0) setNewImageUrl(updated[0]);
+                                  else setNewImageUrl('');
                                 }}
-                                className="bg-slate-900/80 hover:bg-slate-900 text-white text-[7px] font-bold px-1 rounded cursor-pointer"
+                                className="pointer-events-auto bg-red-600 hover:bg-red-700 text-white rounded-full p-1 cursor-pointer ml-auto shadow-md hover:scale-110 transition"
+                                title="Eliminar esta foto"
                               >
-                                Top
+                                <X className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = newImages.filter((_, i) => i !== idx);
-                                setNewImages(updated);
-                                if (updated.length > 0) setNewImageUrl(updated[0]);
-                                else setNewImageUrl('');
-                              }}
-                              className="bg-red-600 text-white rounded-full p-0.5 cursor-pointer ml-auto"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
+                            </div>
+                            <div className="relative z-10 self-center opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                              <span className="bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
+                                🔍 Ver grande
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
 

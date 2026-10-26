@@ -8,6 +8,7 @@
 
 import { getSupabaseBrowserClient } from "./supabase/client";
 import { Product } from "@/types";
+import { translateVariantName } from "./translateVariant";
 
 /**
  * Esquema crudo devuelto por la tabla `public.products` de Supabase.
@@ -104,7 +105,7 @@ export function mapDbProductToApp(dbProd: any): Product {
     isActive: dbProd.is_active ?? dbProd.isActive ?? true,
     brand: detectProductBrand(dbProd.title || '', dbProd.brand),
     videos: Array.isArray(dbProd.videos) ? dbProd.videos : [],
-    variants: Array.isArray(dbProd.variants) ? dbProd.variants : [],
+    variants: Array.isArray(dbProd.variants) ? dbProd.variants.map((v: any) => ({ ...v, name: translateVariantName(v.name || v.variantName || v.variantKey || v.variantNameEn || "") })) : [],
   };
 }
 

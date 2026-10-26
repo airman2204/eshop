@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Globe, Plus, Check, Loader2, DollarSign, Package, ExternalLink, Sparkles, AlertCircle, Flame, Layers, Maximize2, X, ChevronLeft, ChevronRight, Info, Share2, Copy, Bookmark, Heart, ThumbsUp, ThumbsDown, Trash2, Truck, ShieldCheck, Zap, Video, CheckCircle2 } from 'lucide-react';
 import { getStoredAdminToken, getStoredAdminEmail, fetchAdminCjApi } from '@/lib/adminAuth';
+import { translateVariantName } from '@/lib/translateVariant';
 
 interface CjItem {
   id: string;
@@ -688,7 +689,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
         : Math.max(varLandedMxn + 25, Math.round(varLandedMxn * Math.max(1.15, ratio)));
       return {
         id: vKey,
-        name: String(v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`),
+        name: translateVariantName(String(v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`)),
         sku: String(v.variantSku || `${item.sku}-${idx + 1}`),
         image: v.variantImage || item.image,
         costUsd: Number(varLandedUsd.toFixed(2)),
@@ -2206,7 +2207,8 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                           {matchedDetail.variants.map((v: any, idx: number) => {
                             const vKey = String(v.vid || `var-${idx}`);
                             const isChecked = selectedVariantIds[vKey] !== false;
-                            const vName = v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`;
+                            const rawVName = v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`;
+                            const vName = translateVariantName(rawVName);
                             const vUsd = Number(v.variantSellPrice) || baseUsd;
                             const vLandedUsd = vUsd + freightUsd;
                             const vCostMxn = Math.round(vLandedUsd * safeRate);
