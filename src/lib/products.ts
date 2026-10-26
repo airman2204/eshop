@@ -224,3 +224,34 @@ export async function getCategories() {
     return [];
   }
 }
+
+/**
+ * Suscripción en Tiempo Real para cambios en productos (INSERT, UPDATE, DELETE).
+ * Permite que la tienda /tienda y el admin se actualicen al instante sin refrescar la página.
+ */
+export function subscribeToProductsChange(onChange: () => void) {
+  try {
+    const supabase = getSupabaseBrowserClient() as any;
+    const channelName = `products-realtime-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          onChange();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {}
+    };
+  } catch (err) {
+    console.warn('No se pudo inicializar la suscripción de realtime a productos:', err);
+    return () => {};
+  }
+}

@@ -15,7 +15,7 @@ import {
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
 import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
-import { getActiveProducts, getClientBootstrap } from '@/lib/products';
+import { getActiveProducts, getClientBootstrap, subscribeToProductsChange } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
   lookupUserByEmail, FullUserProfile, getUserFullProfile, saveUserAddress, deleteUserAddress, 
@@ -231,6 +231,19 @@ export default function TiendaFoxDrop() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function refreshProductsSilently() {
+      try {
+        const bootstrap = await getClientBootstrap();
+        if (isMounted && bootstrap?.products && Array.isArray(bootstrap.products)) {
+          setProducts(bootstrap.products);
+          if (bootstrap.brands && Array.isArray(bootstrap.brands)) setStoreBrands(bootstrap.brands);
+          if (bootstrap.storeSettings) setStoreSettings(bootstrap.storeSettings);
+        }
+      } catch {}
+    }
+
     async function loadData() {
       try {
         // Carga bootstrap consolidada en 1 sola petición paralela
@@ -432,6 +445,29 @@ export default function TiendaFoxDrop() {
       }
     }
     checkAuthSession();
+
+    // 1. Suscripción en Tiempo Real a Supabase (refresco automático al crear, editar o eliminar productos)
+    const unsubscribeProducts = subscribeToProductsChange(() => {
+      refreshProductsSilently();
+    });
+
+    // 2. Refresco al enfocar la ventana o cambiar de pestaña (sin necesidad de presionar F5)
+    const handleFocus = () => {
+      refreshProductsSilently();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // 3. Sincronización silenciosa periódica cada 10 segundos
+    const syncInterval = setInterval(() => {
+      refreshProductsSilently();
+    }, 10000);
+
+    return () => {
+      isMounted = false;
+      unsubscribeProducts();
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(syncInterval);
+    };
   }, []);
 
   // Autenticación OTP inteligente al hacer checkout o Mi Cuenta
@@ -5646,7 +5682,24 @@ export default function TiendaFoxDrop() {
                       }}
                       className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center scroll-smooth px-1"
                     >
-                      {/* 1. VIDEOS DEL PRODUCTO (AL FRENTE PARA QUE NUNCA SE PIERDAN) */}
+                      {/* 1. FOTOS DEL PRODUCTO */}
+                      {selectedProduct.images?.map((imgUrl, i) => (
+                        <button
+                          key={`img-${i}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedModalVideo(null);
+                            setActiveModalImageIndex(i);
+                          }}
+                          className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
+                            !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200 bg-orange-50/20' : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
+                        </button>
+                      ))}
+
+                      {/* 2. VIDEOS DEL PRODUCTO (AL FINAL DE LAS FOTOS, ACCESIBLES DIRECTAMENTE CON LAS FLECHAS) */}
                       {selectedProduct.videos?.map((vidUrl, vIdx) => (
                         <button
                           key={`vid-${vIdx}`}
@@ -5667,23 +5720,6 @@ export default function TiendaFoxDrop() {
                             {selectedProduct.videos && selectedProduct.videos.length > 1 ? `#${vIdx + 1}` : 'En vivo'}
                           </span>
                           <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        </button>
-                      ))}
-
-                      {/* 2. FOTOS DEL PRODUCTO */}
-                      {selectedProduct.images?.map((imgUrl, i) => (
-                        <button
-                          key={`img-${i}`}
-                          type="button"
-                          onClick={() => {
-                            setSelectedModalVideo(null);
-                            setActiveModalImageIndex(i);
-                          }}
-                          className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
-                            !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200 bg-orange-50/20' : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
                         </button>
                       ))}
                     </div>
