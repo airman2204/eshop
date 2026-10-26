@@ -116,6 +116,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [modalItem, setModalItem] = useState<CjItem | null>(null);
   const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, boolean>>({});
+  const [variantCustomPrices, setVariantCustomPrices] = useState<Record<string, number>>({});
 
   // Categorías disponibles en tienda (combinando las de BD + sugeridas como Navidad)
   const availableStoreCategories = Array.from(new Set([
@@ -520,14 +521,19 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     setIsCreatingModalCategory(false);
     setNewModalCategoryName('');
 
-    // Pre-seleccionar todas las variantes por defecto
+    // Pre-seleccionar todas las variantes por defecto y calcular precio sugerido
     const initialVarMap: Record<string, boolean> = {};
+    const initialPriceMap: Record<string, number> = {};
     const matchedVars = matchedDetail?.variants || [];
     matchedVars.forEach((v: any, idx: number) => {
       const vKey = String(v.vid || `var-${idx}`);
       initialVarMap[vKey] = true;
+      const vCostUsd = Number(v.variantSellPrice) || baseUsd;
+      const vLandedMxn = Math.round((vCostUsd + realFreightUsd) * safeRate);
+      initialPriceMap[vKey] = Math.max(99, Math.round(vLandedMxn * 1.25));
     });
     setSelectedVariantIds(initialVarMap);
+    setVariantCustomPrices(initialPriceMap);
 
     if (matchedDetail) {
       // Ya tenemos la descripción real de ESTE producto: traducir y estructurar con IA de inmediato
@@ -596,13 +602,18 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
             realFreightToMx: d.realFreightToMx || undefined,
           });
 
-          // Pre-seleccionar todas las variantes recién cargadas por la API
+          // Pre-seleccionar todas las variantes recién cargadas por la API y calcular precios
           const newVarMap: Record<string, boolean> = {};
+          const newPriceMap: Record<string, number> = {};
           variantsArr.forEach((v: any, idx: number) => {
             const vKey = String(v.vid || `var-${idx}`);
             newVarMap[vKey] = true;
+            const vCostUsd = Number(v.variantSellPrice) || entryVarUsd;
+            const vLandedMxn = Math.round((vCostUsd + fUsd) * safeRate);
+            newPriceMap[vKey] = Math.max(99, Math.round(vLandedMxn * 1.25));
           });
           setSelectedVariantIds(newVarMap);
+          setVariantCustomPrices(newPriceMap);
 
           triggerTranslation({ ...item, name: realName }, realDesc);
         } else {
@@ -646,12 +657,16 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
     const finalVariantsToUse = filteredVariants.length > 0 ? filteredVariants : allVariants;
 
     const mappedVariants = finalVariantsToUse.map((v: any, idx: number) => {
+      const vKey = String(v.vid || `var-${idx}`);
       const varCostUsd = Number(v.variantSellPrice) || baseUsd;
       const varLandedUsd = varCostUsd + realFreightUsd;
       const varLandedMxn = Math.round(varLandedUsd * safeRate);
-      const varPublicPrice = Math.max(varLandedMxn + 25, Math.round(varLandedMxn * Math.max(1.15, ratio)));
+      const customVarPrice = variantCustomPrices[vKey];
+      const varPublicPrice = (customVarPrice && customVarPrice > 0)
+        ? customVarPrice
+        : Math.max(varLandedMxn + 25, Math.round(varLandedMxn * Math.max(1.15, ratio)));
       return {
-        id: String(v.vid || `var-${idx}`),
+        id: vKey,
         name: String(v.variantKey || v.variantNameEn || v.variantSku || `Opción ${idx + 1}`),
         sku: String(v.variantSku || `${item.sku}-${idx + 1}`),
         image: v.variantImage || item.image,
@@ -660,6 +675,11 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
         publicPrice: varPublicPrice,
       };
     });
+
+    // El precio público general del producto será el precio más accesible de las variantes activas
+    const minVariantPrice = mappedVariants.length > 0
+      ? Math.min(...mappedVariants.map(v => v.publicPrice))
+      : salePrice;
 
     const chosenCategory = (isCreatingModalCategory && newModalCategoryName.trim())
       ? newModalCategoryName.trim()
@@ -680,7 +700,7 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
           categoryName: chosenCategory,
           baseCostUsd: Number(totalUsd.toFixed(2)),
           baseCostMxn: costMxn,
-          publicPrice: salePrice,
+          publicPrice: minVariantPrice || salePrice,
           imageUrl: item.image,
           images: activeDetail?.images && activeDetail.images.length > 0 ? activeDetail.images : [item.image],
           videos: videoUrls,
@@ -2099,49 +2119,69 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                     {/* SELECCIÓN DE VARIANTES / PAQUETES A IMPORTAR */}
                     {matchedDetail?.variants && matchedDetail.variants.length > 0 && (
                       <div className="space-y-2 bg-slate-50/90 p-3 rounded-2xl border border-slate-200">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <span className="text-xs font-black text-slate-800">
-                              Variantes y Paquetes ({matchedDetail.variants.length} disponibles):
+                              Variantes y Precios por Modelo ({matchedDetail.variants.length} disponibles):
                             </span>
                             <p className="text-[10px] text-slate-500 font-medium">
-                              Desmarca los paquetes que no desees vender o que estén descontinuados en CJ.
+                              Configura el precio de venta individual para cada modelo y desmarca los que no quieras ofrecer.
                             </p>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                            <span className="text-[10px] text-slate-400 font-semibold mr-1">Margen rápido:</span>
                             <button
                               type="button"
                               onClick={() => {
-                                const allMap: Record<string, boolean> = {};
+                                const newMap: Record<string, number> = {};
                                 matchedDetail.variants.forEach((v: any, idx: number) => {
-                                  allMap[String(v.vid || `var-${idx}`)] = true;
+                                  const vKey = String(v.vid || `var-${idx}`);
+                                  const vUsd = Number(v.variantSellPrice) || baseUsd;
+                                  const vLanded = Math.round((vUsd + freightUsd) * safeRate);
+                                  newMap[vKey] = Math.max(99, Math.round(vLanded * 1.25));
                                 });
-                                setSelectedVariantIds(allMap);
+                                setVariantCustomPrices(newMap);
                               }}
-                              className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                              className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md hover:bg-emerald-100 transition cursor-pointer"
                             >
-                              Marcar todas
+                              +25%
                             </button>
-                            <span className="text-slate-300">•</span>
                             <button
                               type="button"
                               onClick={() => {
-                                const noneMap: Record<string, boolean> = {};
+                                const newMap: Record<string, number> = {};
                                 matchedDetail.variants.forEach((v: any, idx: number) => {
-                                  noneMap[String(v.vid || `var-${idx}`)] = false;
+                                  const vKey = String(v.vid || `var-${idx}`);
+                                  const vUsd = Number(v.variantSellPrice) || baseUsd;
+                                  const vLanded = Math.round((vUsd + freightUsd) * safeRate);
+                                  newMap[vKey] = Math.max(99, Math.round(vLanded * 1.40));
                                 });
-                                const firstKey = String(matchedDetail.variants[0]?.vid || 'var-0');
-                                noneMap[firstKey] = true;
-                                setSelectedVariantIds(noneMap);
+                                setVariantCustomPrices(newMap);
                               }}
-                              className="text-[10px] font-bold text-slate-500 hover:underline cursor-pointer"
+                              className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md hover:bg-indigo-100 transition cursor-pointer"
                             >
-                              Solo 1ª
+                              +40%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newMap: Record<string, number> = {};
+                                matchedDetail.variants.forEach((v: any, idx: number) => {
+                                  const vKey = String(v.vid || `var-${idx}`);
+                                  const vUsd = Number(v.variantSellPrice) || baseUsd;
+                                  const vLanded = Math.round((vUsd + freightUsd) * safeRate);
+                                  newMap[vKey] = Math.max(99, Math.round(vLanded * 1.60));
+                                });
+                                setVariantCustomPrices(newMap);
+                              }}
+                              className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md hover:bg-purple-100 transition cursor-pointer"
+                            >
+                              +60%
                             </button>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                           {matchedDetail.variants.map((v: any, idx: number) => {
                             const vKey = String(v.vid || `var-${idx}`);
                             const isChecked = selectedVariantIds[vKey] !== false;
@@ -2150,45 +2190,78 @@ export default function AdminCjTab({ usdRate, existingProducts = [], storeCatego
                             const vLandedUsd = vUsd + freightUsd;
                             const vCostMxn = Math.round(vLandedUsd * safeRate);
                             const vImg = v.variantImage || modalItem.image;
+                            const currentPrice = variantCustomPrices[vKey] ?? Math.max(99, Math.round(vCostMxn * 1.25));
+                            const profit = currentPrice - vCostMxn;
+                            const profitPct = vCostMxn > 0 ? Math.round((profit / vCostMxn) * 100) : 0;
 
                             return (
-                              <label
+                              <div
                                 key={vKey}
-                                className={`flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer text-left select-none ${
+                                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl border transition ${
                                   isChecked
-                                    ? 'bg-white border-indigo-500/50 shadow-2xs ring-1 ring-indigo-500/20'
-                                    : 'bg-slate-100/70 border-slate-200/80 opacity-50 hover:opacity-75'
+                                    ? 'bg-white border-indigo-200 shadow-2xs'
+                                    : 'bg-slate-100/70 border-slate-200/80 opacity-50'
                                 }`}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={(e) => {
-                                    const nextChecked = e.target.checked;
-                                    setSelectedVariantIds(prev => ({
-                                      ...prev,
-                                      [vKey]: nextChecked,
-                                    }));
-                                  }}
-                                  className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
-                                />
-                                {vImg && (
-                                  <img
-                                    src={getSafeImageUrl(vImg)}
-                                    alt={vName}
-                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                                    className="w-8 h-8 rounded-lg object-cover shrink-0 border border-slate-200 bg-white"
+                                <label className="flex items-center gap-2.5 min-w-0 cursor-pointer select-none flex-1">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      const nextChecked = e.target.checked;
+                                      setSelectedVariantIds(prev => ({
+                                        ...prev,
+                                        [vKey]: nextChecked,
+                                      }));
+                                    }}
+                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                                   />
+                                  {vImg && (
+                                    <img
+                                      src={getSafeImageUrl(vImg)}
+                                      alt={vName}
+                                      onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                      className="w-9 h-9 rounded-lg object-cover shrink-0 border border-slate-200 bg-white"
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-[11px] font-bold text-slate-800 truncate" title={vName}>
+                                      {vName}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500 font-semibold">
+                                      Costo landed: <strong className="text-slate-700">${vCostMxn} MXN</strong>
+                                    </p>
+                                  </div>
+                                </label>
+
+                                {isChecked && (
+                                  <div className="flex items-center gap-2 pl-7 sm:pl-0 shrink-0">
+                                    <div className="flex flex-col items-end">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-[10px] font-bold text-slate-500">Precio MXN:</span>
+                                        <div className="relative w-24">
+                                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">$</span>
+                                          <input
+                                            type="number"
+                                            value={currentPrice}
+                                            onChange={(e) => {
+                                              const val = Number(e.target.value);
+                                              setVariantCustomPrices(prev => ({
+                                                ...prev,
+                                                [vKey]: val,
+                                              }));
+                                            }}
+                                            className="w-full pl-5 pr-1.5 py-1 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-right"
+                                          />
+                                        </div>
+                                      </div>
+                                      <span className={`text-[9px] font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {profit >= 0 ? '+' : ''}${profit} ({profitPct}%)
+                                      </span>
+                                    </div>
+                                  </div>
                                 )}
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-[11px] font-bold text-slate-800 truncate" title={vName}>
-                                    {vName}
-                                  </p>
-                                  <p className="text-[10px] text-slate-500 font-semibold">
-                                    ${vCostMxn} MXN costo
-                                  </p>
-                                </div>
-                              </label>
+                              </div>
                             );
                           })}
                         </div>

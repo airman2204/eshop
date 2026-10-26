@@ -382,6 +382,7 @@ export default function AdminCRM() {
 
   // Edición Rápida de Precio en Línea (Inline Price Edit)
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [previewingVariantsProduct, setPreviewingVariantsProduct] = useState<any | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const [savingPriceId, setSavingPriceId] = useState<string | null>(null);
 
@@ -2408,21 +2409,26 @@ export default function AdminCRM() {
   const totalExpectedProfit = totalExpectedRevenue - totalInvestment;
   const avgMargin = totalExpectedRevenue > 0 ? (totalExpectedProfit / totalExpectedRevenue) * 100 : 0;
 
-  // Métricas específicas para Catálogo Virtual (Importación CJ Dropshipping) - por unidad de venta
+  // Métricas específicas para Catálogo Virtual (Importación CJ Dropshipping) - rangos y promedios claros
   const totalCjVariantsCount = scopedProducts.reduce((acc, p) => acc + (Array.isArray(p.variants) && p.variants.length > 0 ? p.variants.length : 1), 0);
-  const avgCjLandedCost = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => acc + (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0), 0) / pricedProducts.length
-    : 0;
-  const avgCjPublicPrice = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => acc + (Number(p.publicPrice || (p as any).public_price) || 0), 0) / pricedProducts.length
-    : 0;
-  const avgCjProfitPerSale = pricedProducts.length > 0
-    ? pricedProducts.reduce((acc, p) => {
-        const price = Number(p.publicPrice || (p as any).public_price) || 0;
-        const cost = Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0;
-        return acc + (price - cost);
-      }, 0) / pricedProducts.length
-    : 0;
+  const cjCosts = pricedProducts.map(p => Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0).filter(c => c > 0);
+  const minCjCost = cjCosts.length > 0 ? Math.min(...cjCosts) : 0;
+  const maxCjCost = cjCosts.length > 0 ? Math.max(...cjCosts) : 0;
+  const avgCjLandedCost = cjCosts.length > 0 ? cjCosts.reduce((a, b) => a + b, 0) / cjCosts.length : 0;
+
+  const cjPrices = pricedProducts.map(p => Number(p.publicPrice || (p as any).public_price) || 0).filter(pr => pr > 0);
+  const minCjPrice = cjPrices.length > 0 ? Math.min(...cjPrices) : 0;
+  const maxCjPrice = cjPrices.length > 0 ? Math.max(...cjPrices) : 0;
+  const avgCjPublicPrice = cjPrices.length > 0 ? cjPrices.reduce((a, b) => a + b, 0) / cjPrices.length : 0;
+
+  const cjProfits = pricedProducts.map(p => {
+    const pr = Number(p.publicPrice || (p as any).public_price) || 0;
+    const co = Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0;
+    return pr - co;
+  });
+  const minCjProfit = cjProfits.length > 0 ? Math.min(...cjProfits) : 0;
+  const maxCjProfit = cjProfits.length > 0 ? Math.max(...cjProfits) : 0;
+  const avgCjProfitPerSale = cjProfits.length > 0 ? cjProfits.reduce((a, b) => a + b, 0) / cjProfits.length : 0;
   const avgCjMarginPercent = avgCjPublicPrice > 0 ? (avgCjProfitPerSale / avgCjPublicPrice) * 100 : 0;
 
   // Finanzas Reales de Pedidos Concretados/Entregados
@@ -4732,43 +4738,43 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {scopedProducts.length} <span className="text-[11px] font-normal text-indigo-300">productos</span>
                   </span>
                   <span className="text-[10px] text-indigo-300/80 block truncate">
-                    {totalCjVariantsCount} opciones / variantes totales
+                    {totalCjVariantsCount} modelos disponibles en total
                   </span>
                 </div>
 
                 <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
-                    <DollarSign className="w-3 h-3 text-sky-400" /> Costo Prom. Puesto en MX
+                    <DollarSign className="w-3 h-3 text-sky-400" /> Rango Costo Puesto en MX
                   </span>
-                  <span className="text-lg sm:text-xl font-black text-sky-300">
-                    ${avgCjLandedCost.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-sky-200/80">MXN</span>
+                  <span className="text-base sm:text-lg font-black text-sky-300">
+                    ${minCjCost.toFixed(0)} - ${maxCjCost.toFixed(0)} <span className="text-[10px] font-normal text-sky-200/80">MXN</span>
                   </span>
-                  <span className="text-[10px] text-indigo-300/80 block">
-                    Producto + Envío CJ incluido
-                  </span>
-                </div>
-
-                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Precio Venta Promedio
-                  </span>
-                  <span className="text-lg sm:text-xl font-black text-emerald-400">
-                    ${avgCjPublicPrice.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-emerald-200/80">MXN</span>
-                  </span>
-                  <span className="text-[10px] text-emerald-300/80 block">
-                    Precio público en tienda
+                  <span className="text-[10px] text-indigo-300/80 block truncate">
+                    Prod + flete (prom: ${avgCjLandedCost.toFixed(0)})
                   </span>
                 </div>
 
                 <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
-                    <Percent className="w-3 h-3 text-amber-400" /> Ganancia Libre Prom. / Venta
+                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Rango Precios en Tienda
                   </span>
-                  <span className="text-lg sm:text-xl font-black text-amber-300">
-                    +${avgCjProfitPerSale.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-[11px] font-normal text-amber-200/80">MXN</span>
+                  <span className="text-base sm:text-lg font-black text-emerald-400">
+                    ${minCjPrice.toFixed(0)} - ${maxCjPrice.toFixed(0)} <span className="text-[10px] font-normal text-emerald-200/80">MXN</span>
                   </span>
-                  <span className="text-[10px] text-amber-400/90 font-bold block">
-                    Margen prom: {avgCjMarginPercent.toFixed(0)}% (sin stock parado)
+                  <span className="text-[10px] text-emerald-300/80 block truncate">
+                    Precio venta (prom: ${avgCjPublicPrice.toFixed(0)})
+                  </span>
+                </div>
+
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <Percent className="w-3 h-3 text-amber-400" /> Tu Ganancia Libre / Venta
+                  </span>
+                  <span className="text-base sm:text-lg font-black text-amber-300">
+                    +${minCjProfit.toFixed(0)} a +${maxCjProfit.toFixed(0)} <span className="text-[10px] font-normal text-amber-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-amber-400/90 font-bold block truncate">
+                    Margen prom: {avgCjMarginPercent.toFixed(0)}% por pedido
                   </span>
                 </div>
               </div>
@@ -5210,9 +5216,20 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">
                                   <span>✈️ CJ Dropshipping</span>
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
-                                  {p.variants && p.variants.length > 0 ? `${p.variants.length} opciones / modelos` : 'Envío directo MX'}
-                                </span>
+                                {p.variants && p.variants.length > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewingVariantsProduct(p)}
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 underline block mt-0.5 cursor-pointer text-left"
+                                    title="Ver modelos, costos y precios"
+                                  >
+                                    👁️ {p.variants.length} opciones / modelos (ver)
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                                    Envío directo MX
+                                  </span>
+                                )}
                               </>
                             ) : (
                               <>
@@ -5290,7 +5307,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                     <span className="text-[9px] text-emerald-600 font-sans font-bold animate-pulse">...</span>
                                   )}
                                 </div>
-                                {p.discountPercent && p.discountPercent > 0 && (
+                                {Boolean(p.discountPercent && p.discountPercent > 0) && (
                                   <span className="inline-block mt-0.5 bg-[#E65F2B] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">
                                     -{p.discountPercent}% OFF
                                   </span>
@@ -10025,6 +10042,98 @@ ESTÉTICA Y CONCEPTO VISUAL:
         )}
 
         {/* MODAL ALTA / EDICIÓN DE ARTÍCULO OPTIMIZADO */}
+        {/* MODAL DETALLE DE MODELOS / VARIANTES DEL PRODUCTO DE CJ */}
+        {previewingVariantsProduct && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={previewingVariantsProduct.images?.[0] || '/no-image.svg'}
+                    alt={previewingVariantsProduct.title}
+                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-white shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                      {previewingVariantsProduct.title}
+                    </h3>
+                    <p className="text-[10px] text-slate-500">
+                      {previewingVariantsProduct.variants?.length || 0} modelos configurados • SKU: {previewingVariantsProduct.sku}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewingVariantsProduct(null)}
+                  className="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center font-bold text-sm transition cursor-pointer shrink-0 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-4 overflow-y-auto space-y-2 flex-1">
+                {previewingVariantsProduct.variants && previewingVariantsProduct.variants.length > 0 ? (
+                  previewingVariantsProduct.variants.map((v: any, vIdx: number) => {
+                    const vCost = Number(v.costMxn || v.cost_mxn) || 0;
+                    const vPrice = Number(v.publicPrice || v.public_price || previewingVariantsProduct.publicPrice) || 0;
+                    const vProfit = vPrice - vCost;
+                    const vMargin = vPrice > 0 ? Math.round((vProfit / vPrice) * 100) : 0;
+                    return (
+                      <div
+                        key={v.id || vIdx}
+                        className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <img
+                            src={v.image || previewingVariantsProduct.images?.[0] || '/no-image.svg'}
+                            alt={v.name}
+                            className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-white shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">
+                              {v.name || ('Opción ' + (vIdx + 1))}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-mono">
+                              SKU: {v.sku || ('CJ-VAR-' + (vIdx + 1))}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-xs font-black text-slate-900">
+                            ${vPrice.toFixed(2)} MXN
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-semibold">
+                            Costo: ${vCost.toFixed(2)}
+                          </div>
+                          <div className={'text-[9px] font-bold ' + (vProfit >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+                            {vProfit >= 0 ? '+' : ''}${vProfit.toFixed(2)} ({vMargin}%)
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-400 text-center py-6">Este producto no tiene variantes registradas.</p>
+                )}
+              </div>
+
+              <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 font-medium">
+                  Para cambiar precios o títulos, usa el botón "Editar" en la tabla.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewingVariantsProduct(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showAddModal && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
             <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto border border-slate-200">
