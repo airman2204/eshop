@@ -107,6 +107,15 @@ function getSafeProductVideo(url: string | undefined): string {
   return clean;
 }
 
+// Detector seguro de productos de importación internacional (CJ Dropshipping)
+function isProductImportationItem(p: Product | null | undefined): boolean {
+  if (!p) return false;
+  const sku = (p.sku || '').toUpperCase();
+  const brand = (p.brand || '').toLowerCase();
+  const title = (p.title || '').toLowerCase();
+  return sku.startsWith('CJ') || brand.includes('cj dropshipping') || title.includes('humidifier') || title.includes('magic shadow');
+}
+
 export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -866,10 +875,20 @@ export default function TiendaFoxDrop() {
     'navidad': Sparkles,
   };
 
-  // Categorías calculadas dinámicamente: SOLO categorías que contengan al menos 1 producto, con Navidad destacada al principio
+  // Catálogo base con control estricto de visibilidad para productos de importación:
+  // Mientras la pasarela no esté activa en prod, los productos de importación (CJ Dropshipping)
+  // SOLO son visibles para Mario y Nydia (administradores).
+  const visibleProducts = products.filter(p => {
+    if (isProductImportationItem(p)) {
+      return isPrivilegedPartner;
+    }
+    return true;
+  });
+
+  // Categorías calculadas dinámicamente: SOLO categorías que contengan al menos 1 producto visible, con Navidad destacada al principio
   const dynamicCategories = Array.from(
     new Set(
-      products
+      visibleProducts
         .map(p => p.category?.trim())
         .filter((cat): cat is string => Boolean(cat && cat.length > 0))
     )
@@ -888,10 +907,10 @@ export default function TiendaFoxDrop() {
   });
 
   // Productos con descuento real para Promociones / Deals
-  const dealsProducts = products.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
+  const dealsProducts = visibleProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
 
   // Filtrado dinámico por búsqueda de palabras clave (sin acentos, flexible) y categoría
-  const baseFilteredProducts = products.filter(p => {
+  const baseFilteredProducts = visibleProducts.filter(p => {
     const matchSearch = matchesProductSearch(p, searchTerm);
     const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
@@ -910,7 +929,7 @@ export default function TiendaFoxDrop() {
 
   // Sugerencias rápidas para el buscador predictivo (máximo 5 productos)
   const searchSuggestions = searchTerm.trim().length >= 2 
-    ? products.filter(p => matchesProductSearch(p, searchTerm)).slice(0, 5)
+    ? visibleProducts.filter(p => matchesProductSearch(p, searchTerm)).slice(0, 5)
     : [];
 
   // Productos mostrados según la pestaña activa y ordenados según selección:
@@ -1595,13 +1614,7 @@ export default function TiendaFoxDrop() {
   };
 
 
-  const isImportProdItem = (p: Product) => {
-    if (!p) return false;
-    const sku = (p.sku || '').toUpperCase();
-    const brand = (p.brand || '').toLowerCase();
-    const title = (p.title || '').toLowerCase();
-    return sku.startsWith('CJ') || brand.includes('cj dropshipping') || title.includes('humidifier') || title.includes('magic shadow');
-  };
+  const isImportProdItem = (p: Product) => isProductImportationItem(p);
   const cartHasImportItems = cart.some(i => isImportProdItem(i.product));
   const cartHasBoutiqueItems = cart.some(i => !isImportProdItem(i.product));
   const isMixedCart = cartHasImportItems && cartHasBoutiqueItems;
@@ -2947,6 +2960,18 @@ export default function TiendaFoxDrop() {
               </div>
 
               <div className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={async () => {
+                    await authSignOut();
+                    setUser(null);
+                    setCurrentView('store');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-rose-200 transition cursor-pointer"
+                  title="Cerrar sesión"
+                >
+                  <span>Cerrar sesión</span>
+                </button>
                 <button
                   onClick={() => {
                     loadFullProfileData();
@@ -6986,7 +7011,7 @@ export default function TiendaFoxDrop() {
             <span className="text-[10px] tracking-tight">Mi Bolsa</span>
           </button>
 
-          {/* BOTÓN MIS PEDIDOS / CUENTA */}
+          {/* BOTÓN MI CUENTA / PEDIDOS */}
           <button
             type="button"
             onClick={() => {
@@ -7000,15 +7025,15 @@ export default function TiendaFoxDrop() {
               }
             }}
             className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
-              currentView === 'account' && accountTab === 'orders'
+              currentView === 'account'
                 ? 'text-[#DF7F2D] font-bold'
                 : 'text-gray-500 hover:text-[#0F3E36]'
             }`}
           >
-            <div className={`p-1 rounded-xl transition ${currentView === 'account' && accountTab === 'orders' ? 'bg-[#FFF3E6]' : ''}`}>
-              <Package className="w-5 h-5" />
+            <div className={`p-1 rounded-xl transition ${currentView === 'account' ? 'bg-[#FFF3E6]' : ''}`}>
+              <User className="w-5 h-5" />
             </div>
-            <span className="text-[10px] tracking-tight">{user ? 'Pedidos' : 'Ingresar'}</span>
+            <span className="text-[10px] tracking-tight">{user ? 'Mi Cuenta' : 'Ingresar'}</span>
           </button>
         </div>
       </nav>
