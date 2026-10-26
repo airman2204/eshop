@@ -5608,49 +5608,85 @@ export default function TiendaFoxDrop() {
                   )}
                 </div>
 
-                {/* Miniaturas: Galería de fotos primero y videos al final */}
+                {/* Miniaturas: Galería con flechas para PC + videos al frente para máxima visibilidad */}
                 {((selectedProduct.videos && selectedProduct.videos.length > 0) || (selectedProduct.images && selectedProduct.images.length > 1)) && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center">
-                    {/* Fotos del producto */}
-                    {selectedProduct.images?.map((imgUrl, i) => (
-                      <button
-                        key={`img-${i}`}
-                        type="button"
-                        onClick={() => {
-                          setSelectedModalVideo(null);
-                          setActiveModalImageIndex(i);
-                        }}
-                        className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
-                          !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200 bg-orange-50/20' : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
-                      </button>
-                    ))}
+                  <div className="relative group/thumbs">
+                    {/* Botón flecha izquierda para PC */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('product-modal-thumbs');
+                        if (el) el.scrollBy({ left: -140, behavior: 'smooth' });
+                      }}
+                      className="hidden sm:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-md border border-slate-200 items-center justify-center transition cursor-pointer hover:scale-110 opacity-80 group-hover/thumbs:opacity-100"
+                      title="Anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+                    </button>
 
-                    {/* Videos del producto (destacados al inicio o final de las miniaturas) */}
-                    {selectedProduct.videos?.map((vidUrl, vIdx) => (
-                      <button
-                        key={`vid-${vIdx}`}
-                        type="button"
-                        onClick={() => setSelectedModalVideo(vidUrl)}
-                        className={`w-16 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden shadow-xs group ${
-                          selectedModalVideo === vidUrl
-                            ? 'border-[#E65F2B] ring-2 ring-orange-300 bg-gradient-to-br from-slate-900 to-indigo-950 text-white'
-                            : 'border-indigo-400/80 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white hover:border-[#E65F2B]'
-                        }`}
-                        title="Ver Video Demostrativo"
-                      >
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs group-hover:scale-125 transition">▶️</span>
-                          <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase">VIDEO</span>
-                        </div>
-                        <span className="text-[8px] font-bold text-white/80 mt-0.5">
-                          {selectedProduct.videos && selectedProduct.videos.length > 1 ? `#${vIdx + 1}` : 'En vivo'}
-                        </span>
-                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      </button>
-                    ))}
+                    {/* Botón flecha derecha para PC */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('product-modal-thumbs');
+                        if (el) el.scrollBy({ left: 140, behavior: 'smooth' });
+                      }}
+                      className="hidden sm:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-md border border-slate-200 items-center justify-center transition cursor-pointer hover:scale-110 opacity-80 group-hover/thumbs:opacity-100"
+                      title="Siguiente"
+                    >
+                      <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+
+                    <div
+                      id="product-modal-thumbs"
+                      onWheel={(e) => {
+                        if (e.deltaY !== 0) {
+                          e.currentTarget.scrollLeft += e.deltaY;
+                        }
+                      }}
+                      className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center scroll-smooth px-1"
+                    >
+                      {/* 1. VIDEOS DEL PRODUCTO (AL FRENTE PARA QUE NUNCA SE PIERDAN) */}
+                      {selectedProduct.videos?.map((vidUrl, vIdx) => (
+                        <button
+                          key={`vid-${vIdx}`}
+                          type="button"
+                          onClick={() => setSelectedModalVideo(vidUrl)}
+                          className={`w-16 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden shadow-xs group ${
+                            selectedModalVideo === vidUrl
+                              ? 'border-[#E65F2B] ring-2 ring-orange-300 bg-gradient-to-br from-slate-900 to-indigo-950 text-white'
+                              : 'border-amber-400/90 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white hover:border-[#E65F2B] ring-1 ring-amber-200/50'
+                          }`}
+                          title="Ver Video Demostrativo"
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs group-hover:scale-125 transition">▶️</span>
+                            <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase">VIDEO</span>
+                          </div>
+                          <span className="text-[8px] font-bold text-white/80 mt-0.5">
+                            {selectedProduct.videos && selectedProduct.videos.length > 1 ? `#${vIdx + 1}` : 'En vivo'}
+                          </span>
+                          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        </button>
+                      ))}
+
+                      {/* 2. FOTOS DEL PRODUCTO */}
+                      {selectedProduct.images?.map((imgUrl, i) => (
+                        <button
+                          key={`img-${i}`}
+                          type="button"
+                          onClick={() => {
+                            setSelectedModalVideo(null);
+                            setActiveModalImageIndex(i);
+                          }}
+                          className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
+                            !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200 bg-orange-50/20' : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                        >
+                          <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
