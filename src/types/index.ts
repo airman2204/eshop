@@ -383,3 +383,66 @@ export interface WhatsAppCallRecord {
   duration?: string;
 }
 
+
+// ============================================================================
+// WEAVY AI STUDIO — LIENZO & NODOS CREATIVOS (IMAGEN & VIDEO)
+// ============================================================================
+
+export type WeavyNodeType = 
+  | 'product_source'  // Nodo de producto de catálogo FoxDrop
+  | 'external_upload' // Nodo de imagen subida desde PC o URL externa
+  | 'prompt_script'   // Nodo de guion, estilo, ratio e instrucciones
+  | 'image_generator' // Nodo generador de imágenes (Imagen 3 / Flux)
+  | 'video_generator' // Nodo generador de video (Google Veo / Omni Flash)
+  | 'media_viewer';   // Nodo visor de resultado / exportador
+
+export interface WeavyNodeData {
+  // Datos de Producto / Subida
+  productId?: string;
+  productTitle?: string;
+  productSku?: string;
+  sourceImageUrl?: string;
+  
+  // Prompt & Configuración de Escenario
+  promptText?: string;
+  negativePrompt?: string;
+  aspectRatio?: '9:16' | '1:1' | '16:9';
+  visualStyle?: 'cinematic' | 'commercial_studio' | 'aesthetic_lifestyle' | 'neon_night' | 'minimalist_clean';
+  cameraMotion?: 'slow_zoom_in' | 'orbit_360' | 'dynamic_pan' | 'smoke_atmospheric' | 'static_studio';
+  videoDurationSec?: number;
+
+  // Resultados
+  status?: 'idle' | 'generating' | 'success' | 'error';
+  progress?: number;
+  outputMediaUrl?: string;
+  outputMediaType?: 'image' | 'video';
+  errorMessage?: string;
+  generatedAt?: string;
+}
+
+export interface WeavyNode {
+  id: string;
+  type: WeavyNodeType;
+  title: string;
+  position: { x: number; y: number };
+  data: WeavyNodeData;
+}
+
+export interface WeavyConnection {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  fromPort?: string;
+  toPort?: string;
+}
+
+export interface WeavyProjectFlow {
+  id: string;
+  name: string;
+  description?: string;
+  productId?: string;
+  createdAt: string;
+  updatedAt: string;
+  nodes: WeavyNode[];
+  connections: WeavyConnection[];
+}

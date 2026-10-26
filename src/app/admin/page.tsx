@@ -8,6 +8,7 @@ import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
 import AdminCjTab from '@/components/AdminCjTab';
 import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
+import WeavyStudio from '@/components/WeavyStudio';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -109,7 +110,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM (Persistente en recarga)
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'whatsapp' | 'cj_dropship'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Leer pestaña persistida al cargar
@@ -4372,6 +4373,29 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
             </button>
+
+            {/* BOTÓN WEAVY STUDIO (LIENZO DE NODOS IA) */}
+            <button
+              onClick={() => { setCrmSubTab('weavy'); setMobileSidebarOpen(false); }}
+              className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
+                crmSubTab === 'weavy'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500 shadow-md shadow-purple-950/30'
+                  : 'bg-purple-950/20 text-purple-200 border-purple-900/40 hover:border-purple-700/60 hover:bg-purple-900/30'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 text-left">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'weavy' ? 'bg-white/20 text-white' : 'bg-purple-500/20 text-purple-300'}`}>
+                  <Wand2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="block font-bold text-xs leading-none flex items-center gap-1">
+                    Weavy Studio
+                    <span className="bg-purple-400/20 text-purple-300 text-[8px] px-1 py-0.2 rounded font-mono">AI</span>
+                  </span>
+                  <span className={`text-[10px] font-normal ${crmSubTab === 'weavy' ? 'text-white/80' : 'text-purple-300/70'}`}>Lienzo Visual Nodos</span>
+                </div>
+              </div>
+            </button>
           </div>
 
           {/* GRUPO 1: OPERACIONES & CATÁLOGO */}
@@ -4587,6 +4611,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
                     {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
                     {crmSubTab === 'agent' && 'Marketing'}
+                    {crmSubTab === 'weavy' && 'Weavy Studio — Lienzo Creativo de Nodos IA'}
                   </h1>
                 </div>
                 <p className="text-xs text-slate-500 hidden sm:block truncate mt-0.5">
@@ -4598,6 +4623,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
                   {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
                   {crmSubTab === 'agent' && 'Dirección de estrategia comercial, embudo en tiempo real y publicación en redes'}
+                  {crmSubTab === 'weavy' && 'Diseña flujos visuales conectando productos, fotos externas, prompts, generación de imágenes y videos comerciales'}
                 </p>
               </div>
             </div>
@@ -10113,6 +10139,13 @@ ESTÉTICA Y CONCEPTO VISUAL:
 
                 </div>
 
+          </div>
+        )}
+
+        {/* 12.1 SECCIÓN WEAVY STUDIO (LIENZO DE NODOS INFINITO) */}
+        {crmSubTab === 'weavy' && (
+          <div className="space-y-4">
+            <WeavyStudio products={products} />
           </div>
         )}
 
