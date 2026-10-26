@@ -1123,6 +1123,30 @@ export async function POST(req: NextRequest) {
 
       if (error) throw error;
 
+      // Guardar variantes actualizadas en product_extras.json
+      if (Array.isArray(product.variants) && id) {
+        try {
+          let extrasMap: Record<string, { videos?: string[]; variants?: any[] }> = {};
+          const { data: exFile } = await supabase.storage
+            .from("product-images")
+            .download("_system/product_extras.json");
+          if (exFile) extrasMap = JSON.parse(await exFile.text() || "{}");
+          extrasMap[id] = {
+            ...(extrasMap[id] || {}),
+            variants: product.variants,
+          };
+          await supabase.storage
+            .from("product-images")
+            .upload("_system/product_extras.json", Buffer.from(JSON.stringify(extrasMap, null, 2)), {
+              contentType: "application/json",
+              upsert: true,
+            });
+          if (data) data.variants = product.variants;
+        } catch (exErr) {
+          console.warn("Aviso guardando variantes en Storage:", exErr);
+        }
+      }
+
       // Guardar la marca del producto en el mapa permanente de marcas en Storage
       if (product.brand !== undefined && id) {
         try {

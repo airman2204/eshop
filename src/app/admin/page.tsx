@@ -243,6 +243,7 @@ export default function AdminCRM() {
   const [newStock, setNewStock] = useState(15);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newImages, setNewImages] = useState<string[]>([]);
+  const [editingVariants, setEditingVariants] = useState<any[]>([]);
   const [isCombo, setIsCombo] = useState(false);
   const [selectedComboProductIds, setSelectedComboProductIds] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -2462,6 +2463,7 @@ export default function AdminCRM() {
     setNewStock(prod.stock);
     setNewImageUrl(prod.images[0] || '');
     setNewImages(prod.images && prod.images.length > 0 ? prod.images : []);
+    setEditingVariants(Array.isArray(prod.variants) ? JSON.parse(JSON.stringify(prod.variants)) : []);
     setIsCombo(Boolean(prod.isCombo));
     setSelectedComboProductIds(prod.comboProductIds || []);
     setNewIsActive(prod.isActive !== false);
@@ -2518,6 +2520,7 @@ export default function AdminCRM() {
     setNewStock(isCjScope ? 50 : 15);
     setNewImageUrl('');
     setNewImages([]);
+    setEditingVariants([]);
     setIsCombo(false);
     setSelectedComboProductIds([]);
     setNewIsActive(true);
@@ -2555,16 +2558,13 @@ export default function AdminCRM() {
           isCombo,
           comboProductIds: isCombo ? selectedComboProductIds : [],
           isActive: newIsActive,
+          variants: (isEditingCjProduct && editingVariants.length > 0) ? editingVariants : undefined,
         });
 
         setProducts(prev => prev.map(p => {
           if (p.id === editingProductId) {
-            const priceScaleRatio = (p.publicPrice > 0 && newPublicPrice > 0) ? (newPublicPrice / p.publicPrice) : 1;
-            const updatedVariants = (isEditingCjProduct && p.variants && p.variants.length > 0 && Math.abs(priceScaleRatio - 1) > 0.01)
-              ? p.variants.map(v => ({
-                  ...v,
-                  publicPrice: v.publicPrice ? Math.round(v.publicPrice * priceScaleRatio) : newPublicPrice,
-                }))
+            const updatedVariants = (isEditingCjProduct && editingVariants.length > 0)
+              ? editingVariants
               : p.variants;
 
             return {
@@ -10712,6 +10712,123 @@ ESTÉTICA Y CONCEPTO VISUAL:
                             <span className="text-sm font-black text-slate-900 font-semibold">{marginPercent.toFixed(1)}%</span>
                           </div>
                         </div>
+
+                        {/* Editor individual de precios por modelo / variante */}
+                        {editingVariants.length > 0 && (
+                          <div className="bg-slate-50/90 border border-indigo-200/80 rounded-2xl p-3 space-y-2.5">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-slate-200/70 pb-2">
+                              <div>
+                                <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                                  <span>🎨 Modelos / Variantes ({editingVariants.length})</span>
+                                  <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-1.5 py-0.2 rounded-md">
+                                    Precios Individuales
+                                  </span>
+                                </span>
+                                <p className="text-[10px] text-slate-500 font-medium">
+                                  Modifica el precio público de cada opción o aplica un margen masivo a todas.
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] text-slate-400 font-semibold mr-1">Margen masivo:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingVariants(prev => prev.map(v => {
+                                      const cost = Number(v.costMxn || v.cost_mxn) || totalCostUnitMxn;
+                                      return { ...v, publicPrice: Math.max(99, Math.round(cost * 1.25)) };
+                                    }));
+                                  }}
+                                  className="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-md transition cursor-pointer"
+                                >
+                                  +25%
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingVariants(prev => prev.map(v => {
+                                      const cost = Number(v.costMxn || v.cost_mxn) || totalCostUnitMxn;
+                                      return { ...v, publicPrice: Math.max(99, Math.round(cost * 1.35)) };
+                                    }));
+                                  }}
+                                  className="text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-md transition cursor-pointer"
+                                >
+                                  +35%
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingVariants(prev => prev.map(v => {
+                                      const cost = Number(v.costMxn || v.cost_mxn) || totalCostUnitMxn;
+                                      return { ...v, publicPrice: Math.max(99, Math.round(cost * 1.50)) };
+                                    }));
+                                  }}
+                                  className="text-[10px] font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-md transition cursor-pointer"
+                                >
+                                  +50%
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                              {editingVariants.map((v: any, vIdx: number) => {
+                                const vCost = Number(v.costMxn || v.cost_mxn) || totalCostUnitMxn;
+                                const vPrice = Number(v.publicPrice || v.public_price || newPublicPrice) || 0;
+                                const vProfit = vPrice - vCost;
+                                const vProfitPct = vCost > 0 ? Math.round((vProfit / vCost) * 100) : 0;
+                                const vImg = v.image || newImages[0] || '/no-image.svg';
+
+                                return (
+                                  <div
+                                    key={v.id || vIdx}
+                                    className="flex items-center justify-between gap-2.5 p-2 bg-white rounded-xl border border-slate-200/90 shadow-2xs hover:border-indigo-300 transition"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                      <img
+                                        src={getSafeAdminImageUrl(vImg)}
+                                        alt={v.name}
+                                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-50"
+                                      />
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] font-bold text-slate-800 truncate" title={v.name}>
+                                          {v.name || ('Opción ' + (vIdx + 1))}
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-medium">
+                                          Costo: <strong className="text-slate-700">${vCost.toFixed(0)} MXN</strong>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <div className="flex flex-col items-end">
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-[10px] font-bold text-slate-400">$</span>
+                                          <input
+                                            type="number"
+                                            value={vPrice}
+                                            onChange={(e) => {
+                                              const newP = Number(e.target.value);
+                                              setEditingVariants(prev => prev.map((item, idx) => {
+                                                if (idx === vIdx) return { ...item, publicPrice: newP };
+                                                return item;
+                                              }));
+                                            }}
+                                            className="w-20 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-right"
+                                          />
+                                          <span className="text-[10px] font-bold text-slate-500">MXN</span>
+                                        </div>
+                                        <span className={'text-[9px] font-bold ' + (vProfit >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+                                          {vProfit >= 0 ? '+' : ''}${vProfit.toFixed(0)} ({vProfitPct}%)
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })()

@@ -61,6 +61,7 @@ export interface NewProductInput {
   fulfillmentType?: 'stock_local' | 'cj_dropship';
   cjProductId?: string;
   cjSku?: string;
+  variants?: any[];
 }
 
 /**
