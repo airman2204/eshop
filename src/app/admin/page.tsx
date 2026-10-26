@@ -5396,17 +5396,67 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             )}
                           </td>
                           <td className="py-3.5 px-4 font-semibold">
-                            <span className="font-black text-slate-900 block text-xs">
-                              ${(Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}
-                            </span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">
-                              {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: ${(Number(p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}`}
-                            </span>
+                            {p.variants && p.variants.length > 1 ? (
+                              (() => {
+                                const costs = p.variants.map((v: any) => Number(v.costMxn || v.cost_mxn) || Number(p.totalCostMxn || p.baseCostMxn) || 0).filter(Boolean);
+                                const minC = costs.length > 0 ? Math.min(...costs) : (Number(p.totalCostMxn || p.baseCostMxn) || 0);
+                                const maxC = costs.length > 0 ? Math.max(...costs) : (Number(p.totalCostMxn || p.baseCostMxn) || 0);
+                                return (
+                                  <div>
+                                    <span className="font-black text-slate-900 block text-xs">
+                                      {minC === maxC ? `${minC.toFixed(2)}` : `${minC.toFixed(0)} - ${maxC.toFixed(0)}`}
+                                    </span>
+                                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                                      {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : 'Landed'}
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <div>
+                                <span className="font-black text-slate-900 block text-xs">
+                                  ${(Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}
+                                </span>
+                                <span className="text-[10px] text-slate-400 block mt-0.5">
+                                  {inventoryScope === 'cj_international' ? 'Prod + Envío CJ' : `Base: ${(Number(p.baseCostMxn || (p as any).base_cost_mxn) || 0).toFixed(2)}`}
+                                </span>
+                              </div>
+                            )}
                           </td>
                           
-                          {/* PRECIO VENTA CON EDICIÓN RÁPIDA EN LÍNEA Y BADGE DE OFERTA */}
+                          {/* PRECIO VENTA: RANGO SI TIENE MÚLTIPLES VARIANTES O EDICIÓN RÁPIDA SI ES PRODUCTO ÚNICO */}
                           <td className="py-3.5 px-4 font-black bg-emerald-50/40">
-                            {editingPriceId === p.id ? (
+                            {p.variants && p.variants.length > 1 ? (
+                              (() => {
+                                const varPrices = p.variants.map((v: any) => Number(v.publicPrice || v.public_price) || p.publicPrice).filter(Boolean);
+                                const minP = varPrices.length > 0 ? Math.min(...varPrices) : p.publicPrice;
+                                const maxP = varPrices.length > 0 ? Math.max(...varPrices) : p.publicPrice;
+
+                                return (
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewingVariantsProduct(p)}
+                                      className="text-left group/range cursor-pointer block"
+                                      title="Clic para ver o cambiar precios por modelo"
+                                    >
+                                      {minP === maxP ? (
+                                        <span className="text-xs font-black text-slate-900 group-hover/range:text-indigo-600">
+                                          ${minP.toFixed(2)}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs font-black text-indigo-700 group-hover/range:underline block">
+                                          ${minP.toFixed(0)} - ${maxP.toFixed(0)}
+                                        </span>
+                                      )}
+                                      <span className="text-[9px] text-slate-400 block font-semibold">
+                                        ({p.variants.length} precios)
+                                      </span>
+                                    </button>
+                                  </div>
+                                );
+                              })()
+                            ) : editingPriceId === p.id ? (
                               <div className="flex items-center gap-1">
                                 <span className="text-slate-400 font-bold">$</span>
                                 <input
@@ -5462,7 +5512,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
 
                           <td className="py-3.5 px-4 font-bold text-emerald-600">
-                            +${(Number(p.profitUnit ?? ((Number(p.publicPrice || (p as any).public_price) || 0) - (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0))) || 0).toFixed(2)} <span className="text-[10px] text-slate-400">({(Number(p.marginPercent) || 0).toFixed(0)}%)</span>
+                            {p.variants && p.variants.length > 1 ? (
+                              (() => {
+                                const profits = p.variants.map((v: any) => {
+                                  const pr = Number(v.publicPrice || v.public_price || p.publicPrice) || 0;
+                                  const co = Number(v.costMxn || v.cost_mxn || p.totalCostMxn || p.baseCostMxn) || 0;
+                                  return pr - co;
+                                });
+                                const minProf = profits.length > 0 ? Math.min(...profits) : 0;
+                                const maxProf = profits.length > 0 ? Math.max(...profits) : 0;
+                                return (
+                                  <div>
+                                    <span className="text-xs font-black block">
+                                      {minProf === maxProf ? `+${minProf.toFixed(0)}` : `+${minProf.toFixed(0)} a +${maxProf.toFixed(0)}`}
+                                    </span>
+                                    <span className="text-[9px] text-slate-400 font-medium block">
+                                      según modelo
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <>
+                                +${(Number(p.profitUnit ?? ((Number(p.publicPrice || (p as any).public_price) || 0) - (Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0))) || 0).toFixed(2)} <span className="text-[10px] text-slate-400">({(Number(p.marginPercent) || 0).toFixed(0)}%)</span>
+                              </>
+                            )}
                           </td>
                           
                           {/* CONTROL RÁPIDO DE STOCK (+ / -) */}
