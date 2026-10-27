@@ -168,20 +168,76 @@ REGLAS OBLIGATORIAS:
 
     // ──────────────────────────────────────────────────────────────────────────
     // ──────────────────────────────────────────────────────────────────────────
-    // 5. GENERAR IMAGEN PUBLICITARIA (GEMINI FLASH IMAGE & FALLBACK PRO-CREATIVE)
+    // 5. GENERAR IMAGEN PUBLICITARIA (LOCAL RTX 4070 AUTO-DETECT O GEMINI NUBE)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "generate_image") {
       const { promptText, sourceImageUrl, aspectRatio } = body;
       const apiKey = process.env.GEMINI_API_KEY;
 
+      // 5.1 INTENTO PRIORITARIO: ESTACIÓN LOCAL RTX 4070 (SD WEBUI / FORGE / COMFYUI)
+      // Si tienes Stability Matrix / Forge corriendo en tu máquina, responde en localhost:7860
+      try {
+        const localDimensions = aspectRatio === "9:16" 
+          ? { width: 576, height: 1024 }
+          : aspectRatio === "16:9"
+          ? { width: 1024, height: 576 }
+          : { width: 768, height: 768 };
+
+        const localRes = await fetch("http://127.0.0.1:7860/sdapi/v1/txt2img", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: promptText + ", 8k, photorealistic, cinematic studio product photography",
+            negative_prompt: "blurry, low quality, distorted, watermark",
+            width: localDimensions.width,
+            height: localDimensions.height,
+            steps: 25,
+            cfg_scale: 7,
+          }),
+          // Timeout rápido por si el servidor local está apagado
+          signal: AbortSignal.timeout(3000),
+        }).catch(() => null);
+
+        if (localRes && localRes.ok) {
+          const localData = await localRes.json();
+          const firstImageB64 = localData.images?.[0];
+          if (firstImageB64) {
+            const fullB64 = `data:image/png;base64,${firstImageB64}`;
+            // Guardar en storage para tener URL limpia
+            try {
+              const buffer = Buffer.from(firstImageB64, "base64");
+              const fileName = `weavy/local_rtx_${Date.now()}.png`;
+              await supabase.storage.from("product-images").upload(fileName, buffer, {
+                contentType: "image/png",
+                upsert: true,
+              });
+              const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+              return NextResponse.json({
+                success: true,
+                imageUrl: pubData?.publicUrl || fullB64,
+                engine: "local_rtx_4070",
+              });
+            } catch {
+              return NextResponse.json({
+                success: true,
+                imageUrl: fullB64,
+                engine: "local_rtx_4070",
+              });
+            }
+          }
+        }
+      } catch (localErr) {
+        // Servidor local no activo, pasar al fallback de nube
+      }
+
       if (!apiKey || apiKey === "TU_API_KEY_AQUI") {
         return NextResponse.json(
-          { error: "GEMINI_API_KEY no configurada en las variables de entorno." },
+          { error: "GEMINI_API_KEY no configurada y servidor local RTX no detectado." },
           { status: 400 }
         );
       }
 
-      // Priorizar modelos con soporte de imagen multimodal en la API de Google
+      // 5.2 INTENTO SECUNDARIO: GEMINI CLOUD
       const imageModels = [
         "gemini-2.5-flash-image",
         "gemini-3.1-flash-image",
