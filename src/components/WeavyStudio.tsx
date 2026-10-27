@@ -6,7 +6,7 @@ import {
   Trash2, Copy, Download, RefreshCw, ZoomIn, ZoomOut, Maximize2, 
   Save, FolderOpen, Sliders, CheckCircle2, AlertCircle, Eye, Share2, 
   Layers, Palette, Film, Camera, Move, Wand2, X, ChevronRight, Check,
-  Link as LinkIcon, Unlink, Paperclip
+  Link as LinkIcon, Unlink, Paperclip, Cpu, Radio, ShieldCheck
 } from 'lucide-react';
 import { Product, WeavyNode, WeavyConnection, WeavyProjectFlow, WeavyNodeType } from '@/types';
 import { getStoredAdminToken } from '@/lib/adminAuth';
@@ -48,12 +48,74 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
   const [targetNodeForProduct, setTargetNodeForProduct] = useState<string | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<{ url: string; type: 'image' | 'video'; title: string } | null>(null);
 
+  // Estados de Conexión a Estación Local RTX 4070 (Túnel HTTPS / Localhost)
+  const [aiEndpoint, setAiEndpoint] = useState<string>('https://follow-mai-enjoy-randy.trycloudflare.com');
+  const [stationStatus, setStationStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [showStationModal, setShowStationModal] = useState(false);
+  const [stationModalInput, setStationModalInput] = useState<string>('');
+  const [testingStation, setTestingStation] = useState(false);
+
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  const checkStationHealth = async (targetUrl?: string) => {
+    const raw = targetUrl !== undefined ? targetUrl : (aiEndpoint || (typeof window !== 'undefined' ? localStorage.getItem('foxdrop_ai_station_endpoint') : '') || 'https://follow-mai-enjoy-randy.trycloudflare.com');
+    const clean = (raw || '').trim().replace(/\/+$/, '');
+    if (!clean) {
+      setStationStatus('offline');
+      return false;
+    }
+
+    try {
+      setTestingStation(true);
+      const res = await fetch(`${clean}/sdapi/v1/progress?skip_current_image=true`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(4000),
+      });
+      if (res.ok) {
+        setStationStatus('online');
+        setAiEndpoint(clean);
+        if (typeof window !== 'undefined') localStorage.setItem('foxdrop_ai_station_endpoint', clean);
+        setTestingStation(false);
+        return true;
+      }
+    } catch {
+      // Fallback a localhost si se está probando directamente
+      if (!clean.includes('127.0.0.1') && !clean.includes('localhost')) {
+        try {
+          const loc = await fetch('http://127.0.0.1:7860/sdapi/v1/progress?skip_current_image=true', {
+            signal: AbortSignal.timeout(1500),
+          });
+          if (loc.ok) {
+            setStationStatus('online');
+            setAiEndpoint('http://127.0.0.1:7860');
+            if (typeof window !== 'undefined') localStorage.setItem('foxdrop_ai_station_endpoint', 'http://127.0.0.1:7860');
+            setTestingStation(false);
+            return true;
+          }
+        } catch {}
+      }
+    }
+
+    setStationStatus('offline');
+    setTestingStation(false);
+    return false;
+  };
 
   // Cargar proyectos guardados o iniciar plantilla por defecto
   useEffect(() => {
     loadSavedFlows();
     initializeDefaultFlow();
+
+    const storedEndpoint = (typeof window !== 'undefined' ? localStorage.getItem('foxdrop_ai_station_endpoint') : null) || 'https://follow-mai-enjoy-randy.trycloudflare.com';
+    setAiEndpoint(storedEndpoint);
+    setStationModalInput(storedEndpoint);
+    checkStationHealth(storedEndpoint);
+
+    // Verificación periódica cada 30 segundos
+    const interval = setInterval(() => {
+      checkStationHealth();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const initializeDefaultFlow = () => {
@@ -474,9 +536,11 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
     try {
-      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (LOCALHOST)
+      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (TÚNEL HTTPS SEGURO O LOCAL)
       let directLocalSuccess = false;
       let directLocalUrl = '';
+
+      const targetEndpoint = (aiEndpoint || (typeof window !== 'undefined' ? localStorage.getItem('foxdrop_ai_station_endpoint') : '') || 'https://follow-mai-enjoy-randy.trycloudflare.com').trim().replace(/\/+$/, '');
 
       try {
         const localDims = ratio === '9:16' 
@@ -485,7 +549,7 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
           ? { width: 1024, height: 576 }
           : { width: 768, height: 768 };
 
-        const localRes = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
+        const localRes = await fetch(`${targetEndpoint}/sdapi/v1/txt2img`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -504,6 +568,7 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
           if (lData.images?.[0]) {
             directLocalUrl = 'data:image/png;base64,' + lData.images[0];
             directLocalSuccess = true;
+            setStationStatus('online');
           }
         }
       } catch (localErr) {
@@ -591,9 +656,11 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
     try {
-      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (ANIMATEDIFF)
+      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (TÚNEL HTTPS O LOCALHOST)
       let directLocalSuccess = false;
       let directLocalUrl = '';
+
+      const targetEndpoint = (aiEndpoint || (typeof window !== 'undefined' ? localStorage.getItem('foxdrop_ai_station_endpoint') : '') || 'https://follow-mai-enjoy-randy.trycloudflare.com').trim().replace(/\/+$/, '');
 
       try {
         const localDims = ratio === '9:16' 
@@ -602,7 +669,7 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
           ? { width: 768, height: 448 }
           : { width: 512, height: 512 };
 
-        const localRes = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
+        const localRes = await fetch(`${targetEndpoint}/sdapi/v1/txt2img`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -637,6 +704,7 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
             const mime = isGif ? 'image/gif' : 'video/mp4';
             directLocalUrl = `data:${mime};base64,` + lData.images[0];
             directLocalSuccess = true;
+            setStationStatus('online');
           }
         }
       } catch (localErr) {
@@ -810,6 +878,35 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
 
         {/* Acciones de Proyecto (Historial & Guardar Caminito) */}
         <div className="flex items-center gap-2">
+          {/* Botón de Estado de Estación RTX 4070 */}
+          <button
+            type="button"
+            onClick={() => {
+              setStationModalInput(aiEndpoint);
+              setShowStationModal(true);
+            }}
+            className={`px-2.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition border cursor-pointer ${
+              stationStatus === 'online'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                : stationStatus === 'checking'
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/40 hover:bg-amber-500/20'
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/40 hover:bg-rose-500/20'
+            }`}
+            title="Configurar conexión con tu tarjeta gráfica RTX 4070"
+          >
+            <span className={`w-2 h-2 rounded-full ${
+              stationStatus === 'online'
+                ? 'bg-emerald-400 animate-pulse'
+                : stationStatus === 'checking'
+                ? 'bg-amber-400 animate-ping'
+                : 'bg-rose-400'
+            }`} />
+            <Cpu className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              {stationStatus === 'online' ? 'RTX 4070 Online ($0)' : stationStatus === 'checking' ? 'Conectando...' : 'RTX Offline'}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowSavedModal(true)}
@@ -1488,6 +1585,118 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
                 <Download className="w-4 h-4" />
                 <span>Descargar Archivo</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 4: CONFIGURACIÓN DE ESTACIÓN LOCAL RTX 4070 */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showStationModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121624] border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setShowStationModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg">
+                <Cpu className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-white text-base">Estación Local de IA (RTX 4070)</h3>
+                <p className="text-xs text-slate-400">Generación publicitaria ilimitada a $0 MXN en tu tarjeta gráfica</p>
+              </div>
+            </div>
+
+            {/* Estado Actual */}
+            <div className={`p-4 rounded-2xl border mb-4 flex items-center justify-between ${
+              stationStatus === 'online'
+                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-950/40 border-rose-500/30 text-rose-300'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <span className={`w-3 h-3 rounded-full ${
+                  stationStatus === 'online' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                }`} />
+                <div>
+                  <p className="font-black text-xs">
+                    {stationStatus === 'online' ? 'Estación Conectada y Lista' : 'Estación Desconectada'}
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    {stationStatus === 'online'
+                      ? 'NVIDIA GeForce RTX 4070 (12GB VRAM) activa para generar'
+                      : 'Abre el acceso FoxDrop_Estacion_IA en tu Escritorio'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={testingStation}
+                onClick={() => checkStationHealth(stationModalInput)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-600/60 flex items-center gap-1 transition"
+              >
+                {testingStation ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                <span>Probar</span>
+              </button>
+            </div>
+
+            {/* Input URL Túnel HTTPS */}
+            <div className="space-y-2 mb-4">
+              <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span>URL Segura HTTPS (Túnel Cloudflare o Subdominio)</span>
+                <span className="text-[10px] text-emerald-400 font-normal">Cifrado SSL Oficial</span>
+              </label>
+              <input
+                type="url"
+                value={stationModalInput}
+                onChange={e => setStationModalInput(e.target.value)}
+                placeholder="https://follow-mai-enjoy-randy.trycloudflare.com"
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-indigo-500 transition"
+              />
+              <p className="text-[11px] text-slate-400">
+                Pega aquí el enlace verde que te entrega tu consola al abrir <code className="text-indigo-400 bg-slate-800 px-1 py-0.5 rounded">FoxDrop_Estacion_IA.bat</code> o tu subdominio oficial <code className="text-indigo-400 bg-slate-800 px-1 py-0.5 rounded">https://ai.foxdrop.mx</code>.
+              </p>
+            </div>
+
+            {/* Guía Rápida */}
+            <div className="p-3.5 bg-slate-900/60 rounded-2xl border border-slate-800 text-[11px] text-slate-300 space-y-1.5 mb-5">
+              <p className="font-bold text-white flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                ¿Cómo funciona la conexión segura?
+              </p>
+              <p className="text-slate-400 leading-relaxed">
+                Gracias al túnel Cloudflare, tus solicitudes desde <strong>admin.foxdrop.mx</strong> viajan cifradas por HTTPS hacia tu RTX 4070 física sin bloqueos de navegador ni costos de API en la nube.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowStationModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const success = await checkStationHealth(stationModalInput);
+                  if (success) {
+                    setShowStationModal(false);
+                  } else {
+                    alert('No se pudo establecer conexión con esa URL. Asegúrate de tener la estación iniciada en tu PC.');
+                  }
+                }}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg"
+              >
+                Guardar y Conectar
+              </button>
             </div>
           </div>
         </div>
