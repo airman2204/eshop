@@ -474,6 +474,62 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
     try {
+      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (LOCALHOST)
+      let directLocalSuccess = false;
+      let directLocalUrl = '';
+
+      try {
+        const localDims = ratio === '9:16' 
+          ? { width: 576, height: 1024 }
+          : ratio === '16:9'
+          ? { width: 1024, height: 576 }
+          : { width: 768, height: 768 };
+
+        const localRes = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: promptText + ', 8k, photorealistic, cinematic product advertising shot',
+            negative_prompt: 'blurry, low quality, distorted',
+            width: localDims.width,
+            height: localDims.height,
+            steps: 25,
+            cfg_scale: 7,
+          }),
+          signal: AbortSignal.timeout(45000),
+        });
+
+        if (localRes.ok) {
+          const lData = await localRes.json();
+          if (lData.images?.[0]) {
+            directLocalUrl = 'data:image/png;base64,' + lData.images[0];
+            directLocalSuccess = true;
+          }
+        }
+      } catch (localErr) {
+        // Fallback a la nube
+      }
+
+      if (directLocalSuccess && directLocalUrl) {
+        setNodes(prev => prev.map(n => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                status: 'success',
+                outputMediaUrl: directLocalUrl,
+                outputMediaType: 'image',
+                generatedAt: new Date().toLocaleTimeString() + ' (RTX 4070 Local)',
+              },
+            };
+          }
+          return n;
+        }));
+        return;
+      }
+
+      // 2. FALLBACK A LA NUBE EN FOXDROP
       const token = getStoredAdminToken();
       const res = await fetch('/api/admin/weavy', {
         method: 'POST',
@@ -535,6 +591,78 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
     try {
+      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (ANIMATEDIFF)
+      let directLocalSuccess = false;
+      let directLocalUrl = '';
+
+      try {
+        const localDims = ratio === '9:16' 
+          ? { width: 448, height: 768 }
+          : ratio === '16:9'
+          ? { width: 768, height: 448 }
+          : { width: 512, height: 512 };
+
+        const localRes = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: promptText + ', cinematic motion, commercial advertising, 8k, smooth pan',
+            negative_prompt: 'static, blurry, low quality',
+            width: localDims.width,
+            height: localDims.height,
+            steps: 20,
+            cfg_scale: 7,
+            alwayson_scripts: {
+              AnimateDiff: {
+                args: [
+                  {
+                    model: 'mm_sdxl_v10_beta.safetensors',
+                    enable: true,
+                    video_length: 16,
+                    fps: 8,
+                    loop_number: 0,
+                    format: ['GIF', 'MP4'],
+                  },
+                ],
+              },
+            },
+          }),
+          signal: AbortSignal.timeout(90000),
+        });
+
+        if (localRes.ok) {
+          const lData = await localRes.json();
+          if (lData.images?.[0]) {
+            const isGif = lData.images[0].startsWith('R0lGOD');
+            const mime = isGif ? 'image/gif' : 'video/mp4';
+            directLocalUrl = `data:${mime};base64,` + lData.images[0];
+            directLocalSuccess = true;
+          }
+        }
+      } catch (localErr) {
+        // Fallback a la nube
+      }
+
+      if (directLocalSuccess && directLocalUrl) {
+        setNodes(prev => prev.map(n => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                status: 'success',
+                outputMediaUrl: directLocalUrl,
+                outputMediaType: 'video',
+                generatedAt: new Date().toLocaleTimeString() + ' (RTX 4070 Local)',
+              },
+            };
+          }
+          return n;
+        }));
+        return;
+      }
+
+      // 2. FALLBACK A LA NUBE EN FOXDROP
       const token = getStoredAdminToken();
       const res = await fetch('/api/admin/weavy', {
         method: 'POST',
