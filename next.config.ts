@@ -76,7 +76,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com",
+              "connect-src 'self' http://127.0.0.1:7860 http://localhost:7860 https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com https://*.cjdropshipping.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },
