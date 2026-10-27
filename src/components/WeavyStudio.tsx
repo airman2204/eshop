@@ -518,6 +518,34 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     }
   };
 
+  // Convertir URL de imagen a base64 limpio para la estación IA
+  const getCleanImageBase64 = async (urlOrData: string): Promise<string> => {
+    if (!urlOrData) return '';
+    if (urlOrData.startsWith('data:image')) {
+      return urlOrData.split(',')[1] || '';
+    }
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 768;
+          canvas.height = img.naturalHeight || 768;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve('');
+          ctx.drawImage(img, 0, 0);
+          const dataUri = canvas.toDataURL('image/png');
+          resolve(dataUri.split(',')[1] || '');
+        } catch {
+          resolve('');
+        }
+      };
+      img.onerror = () => resolve('');
+      img.src = urlOrData;
+    });
+  };
+
   // ──────────────────────────────────────────────────────────────────────────
   // EJECUTAR GENERACIÓN DE IMAGEN IA (TOTALMENTE INDEPENDIENTE)
   // ──────────────────────────────────────────────────────────────────────────
@@ -549,18 +577,40 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
           ? { width: 1024, height: 576 }
           : { width: 768, height: 768 };
 
-        const localRes = await fetch(`${targetEndpoint}/sdapi/v1/txt2img`, {
+        // Detección si se solicita una persona/modelo explícitamente o si es solo producto
+        const hasHumanRequest = /\b(persona|modelo|mujer|hombre|chica|chico|model|person|woman|man|girl|boy)\b/i.test(promptText);
+        const autoNegative = hasHumanRequest
+          ? 'blurry, low quality, distorted, bad anatomy, deformed, watermark'
+          : 'person, human, woman, girl, doll, figurine, statue, action figure, anime, cartoon, 3d render, illustration, drawing, deformed, blurry, low quality, distorted, bad anatomy';
+
+        // Si hay foto de producto conectada, usamos img2img para respetar el producto exacto
+        let initB64 = '';
+        if (sourceImage && !sourceImage.toLowerCase().endsWith('.mp4')) {
+          initB64 = await getCleanImageBase64(sourceImage);
+        }
+
+        const isImg2Img = Boolean(initB64);
+        const endpointUrl = `${targetEndpoint}/sdapi/v1/${isImg2Img ? 'img2img' : 'txt2img'}`;
+
+        const requestPayload: any = {
+          prompt: promptText + ', commercial product photography, luxury studio advertising shot, hyperrealistic, sharp focus on product, 8k, professional studio lighting',
+          negative_prompt: autoNegative,
+          width: localDims.width,
+          height: localDims.height,
+          steps: 25,
+          cfg_scale: 7,
+        };
+
+        if (isImg2Img) {
+          requestPayload.init_images = [initB64];
+          requestPayload.denoising_strength = 0.55;
+        }
+
+        const localRes = await fetch(endpointUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: promptText + ', 8k, photorealistic, cinematic product advertising shot',
-            negative_prompt: 'blurry, low quality, distorted',
-            width: localDims.width,
-            height: localDims.height,
-            steps: 25,
-            cfg_scale: 7,
-          }),
-          signal: AbortSignal.timeout(45000),
+          body: JSON.stringify(requestPayload),
+          signal: AbortSignal.timeout(60000),
         });
 
         if (localRes.ok) {
