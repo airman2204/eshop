@@ -403,6 +403,9 @@ export interface WeavyNodeData {
   productSku?: string;
   sourceImageUrl?: string;
   
+  // Imagen de referencia / respaldo para Prompt y generación
+  referenceImageUrl?: string;
+
   // Prompt & Configuración de Escenario
   promptText?: string;
   negativePrompt?: string;

@@ -4694,8 +4694,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* CONTENIDO PRINCIPAL */}
         <main className={`flex-1 w-full mx-auto ${
-          crmSubTab === 'whatsapp' 
-            ? 'max-w-none p-0 md:p-4 pb-0 md:pb-4 space-y-0' 
+          (crmSubTab === 'whatsapp' || crmSubTab === 'weavy')
+            ? 'max-w-none p-0 md:p-2 pb-0 md:pb-2 space-y-0' 
             : 'max-w-7xl p-4 sm:p-6 pb-36 md:pb-8 space-y-6'
         }`}>
 
