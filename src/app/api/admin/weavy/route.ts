@@ -472,10 +472,11 @@ REGLAS OBLIGATORIAS:
 
       return NextResponse.json(
         {
+          success: false,
           error:
-            "El motor de Google Veo requiere acceso a billing activo o permisos de preview en tu cuenta Google Cloud. Mientras tanto, puedes usar los clips HD oficiales del catálogo o generar imágenes fotorrealistas al instante.",
+            "El motor de Google Veo requiere acceso a billing activo o permisos de preview en tu cuenta Google Cloud. Mientras tanto, puedes usar los clips HD oficiales del catálogo o generar imágenes fotorrealistas al instante con tu RTX 4070.",
         },
-        { status: 500 }
+        { status: 200 }
       );
     }
 

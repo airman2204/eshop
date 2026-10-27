@@ -652,85 +652,38 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
     const ratio = currentNode.data.aspectRatio || resolvedRatio || '9:16';
     const duration = currentNode.data.videoDurationSec || resolvedDuration || 5;
 
+    // A. SI EL NODO DE ENTRADA YA TIENE UN VIDEO MP4 (POR EJEMPLO CLIP OFICIAL DEL CATÁLOGO DE CJ)
+    const isDirectVideo = sourceImage && (
+      sourceImage.toLowerCase().endsWith('.mp4') || 
+      sourceImage.toLowerCase().includes('.mp4') || 
+      sourceImage.toLowerCase().endsWith('.webm') || 
+      sourceImage.startsWith('data:video')
+    );
+
+    if (isDirectVideo) {
+      setNodes(prev => prev.map(n => {
+        if (n.id === nodeId) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: 'success',
+              outputMediaUrl: sourceImage,
+              outputMediaType: 'video',
+              generatedAt: new Date().toLocaleTimeString() + ' (Clip Oficial HD)',
+            },
+          };
+        }
+        return n;
+      }));
+      return;
+    }
+
     setGeneratingNodeId(nodeId);
     setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'generating' } } : n));
 
     try {
-      // 1. INTENTO DIRECTO EN TU TARJETA GRÁFICA RTX 4070 (TÚNEL HTTPS O LOCALHOST)
-      let directLocalSuccess = false;
-      let directLocalUrl = '';
-
-      const targetEndpoint = (aiEndpoint || (typeof window !== 'undefined' ? localStorage.getItem('foxdrop_ai_station_endpoint') : '') || 'https://follow-mai-enjoy-randy.trycloudflare.com').trim().replace(/\/+$/, '');
-
-      try {
-        const localDims = ratio === '9:16' 
-          ? { width: 448, height: 768 }
-          : ratio === '16:9'
-          ? { width: 768, height: 448 }
-          : { width: 512, height: 512 };
-
-        const localRes = await fetch(`${targetEndpoint}/sdapi/v1/txt2img`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: promptText + ', cinematic motion, commercial advertising, 8k, smooth pan',
-            negative_prompt: 'static, blurry, low quality',
-            width: localDims.width,
-            height: localDims.height,
-            steps: 20,
-            cfg_scale: 7,
-            alwayson_scripts: {
-              AnimateDiff: {
-                args: [
-                  {
-                    model: 'mm_sdxl_v10_beta.safetensors',
-                    enable: true,
-                    video_length: 16,
-                    fps: 8,
-                    loop_number: 0,
-                    format: ['GIF', 'MP4'],
-                  },
-                ],
-              },
-            },
-          }),
-          signal: AbortSignal.timeout(90000),
-        });
-
-        if (localRes.ok) {
-          const lData = await localRes.json();
-          if (lData.images?.[0]) {
-            const isGif = lData.images[0].startsWith('R0lGOD');
-            const mime = isGif ? 'image/gif' : 'video/mp4';
-            directLocalUrl = `data:${mime};base64,` + lData.images[0];
-            directLocalSuccess = true;
-            setStationStatus('online');
-          }
-        }
-      } catch (localErr) {
-        // Fallback a la nube
-      }
-
-      if (directLocalSuccess && directLocalUrl) {
-        setNodes(prev => prev.map(n => {
-          if (n.id === nodeId) {
-            return {
-              ...n,
-              data: {
-                ...n.data,
-                status: 'success',
-                outputMediaUrl: directLocalUrl,
-                outputMediaType: 'video',
-                generatedAt: new Date().toLocaleTimeString() + ' (RTX 4070 Local)',
-              },
-            };
-          }
-          return n;
-        }));
-        return;
-      }
-
-      // 2. FALLBACK A LA NUBE EN FOXDROP
+      // B. GENERACIÓN DE VIDEO PUBLICITARIO
       const token = getStoredAdminToken();
       const res = await fetch('/api/admin/weavy', {
         method: 'POST',
@@ -747,7 +700,7 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (data.success && data.videoUrl) {
         setNodes(prev => prev.map(n => {
           if (n.id === nodeId) {
@@ -765,11 +718,14 @@ export default function WeavyStudio({ products, onExportToProduct }: WeavyStudio
           return n;
         }));
       } else {
-        throw new Error(data.error || 'Aviso en motor de video');
+        const msg = data.error || 'La generación de video IA desde cero requiere Google Veo con billing activo en Google Cloud. Tu RTX 4070 física actualmente tiene activo el motor SDXL para Generación de Imágenes Fotorrealistas ($0 MXN). Los productos con video de catálogo de CJ se reproducen automáticamente en alta definición.';
+        alert(`Información del Motor de Video:\n${msg}`);
+        setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'idle', errorMessage: msg } } : n));
       }
     } catch (err: any) {
-      alert(`Información del Motor de Video:\n${err.message}`);
-      setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'error', errorMessage: err.message } } : n));
+      const msg = err.message || 'Error al procesar video';
+      alert(`Información del Motor de Video:\n${msg}`);
+      setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, data: { ...n.data, status: 'error', errorMessage: msg } } : n));
     } finally {
       setGeneratingNodeId(null);
     }

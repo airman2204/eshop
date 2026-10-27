@@ -75,6 +75,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com https://*.trycloudflare.com https://ai.foxdrop.mx",
+              "media-src 'self' data: blob: https://*.cjdropshipping.com https://*.cjdot.com https://*.supabase.co https://*.trycloudflare.com https://ai.foxdrop.mx",
               "font-src 'self'",
               "connect-src 'self' http://127.0.0.1:7860 http://localhost:7860 https://*.trycloudflare.com https://ai.foxdrop.mx https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com https://*.cjdropshipping.com",
               "frame-ancestors 'none'",
