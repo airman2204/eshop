@@ -167,7 +167,8 @@ REGLAS OBLIGATORIAS:
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 5. GENERAR IMAGEN PUBLICITARIA (IMAGEN 3 / FLASH IMAGE)
+    // ──────────────────────────────────────────────────────────────────────────
+    // 5. GENERAR IMAGEN PUBLICITARIA (GEMINI FLASH IMAGE & FALLBACK PRO-CREATIVE)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "generate_image") {
       const { promptText, sourceImageUrl, aspectRatio } = body;
@@ -180,34 +181,41 @@ REGLAS OBLIGATORIAS:
         );
       }
 
+      // Priorizar modelos con soporte de imagen multimodal en la API de Google
       const imageModels = [
         "gemini-2.5-flash-image",
         "gemini-3.1-flash-image",
+        "gemini-3.1-flash-lite-image",
         "gemini-3-pro-image",
-        "imagen-3.0-generate-002",
       ];
 
       let generatedBase64: string | null = null;
       let lastErrMsg = "";
+      let quotaExceeded = false;
 
       for (const model of imageModels) {
         try {
-          const isImagenModel = model.startsWith("imagen");
-          const url = isImagenModel
-            ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`
-            : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const parts: any[] = [{ text: promptText }];
 
-          const payload = isImagenModel
-            ? {
-                instances: [{ prompt: promptText }],
-                parameters: {
-                  sampleCount: 1,
-                  aspectRatio: aspectRatio === "9:16" ? "9:16" : aspectRatio === "16:9" ? "16:9" : "1:1",
+          if (sourceImageUrl && sourceImageUrl.startsWith('data:image/')) {
+            const match = sourceImageUrl.match(/^data:(image\/\w+);base64,(.*)$/);
+            if (match) {
+              parts.unshift({
+                inlineData: {
+                  mimeType: match[1],
+                  data: match[2],
                 },
-              }
-            : {
-                contents: [{ parts: [{ text: promptText }] }],
-              };
+              });
+            }
+          }
+
+          const payload = {
+            contents: [{ parts }],
+            generationConfig: {
+              responseModalities: ["image", "text"],
+            },
+          };
 
           const res = await fetch(url, {
             method: "POST",
@@ -217,22 +225,20 @@ REGLAS OBLIGATORIAS:
 
           if (res.ok) {
             const data = await res.json();
-            // Extracción según respuesta de Gemini o Imagen
-            if (isImagenModel && data.predictions?.[0]?.bytesBase64Encoded) {
-              generatedBase64 = `data:image/jpeg;base64,${data.predictions[0].bytesBase64Encoded}`;
+            const part = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData || p.inline_data);
+            const inline = part?.inlineData || part?.inline_data;
+            if (inline?.data) {
+              const mime = inline.mimeType || inline.mime_type || "image/jpeg";
+              generatedBase64 = `data:${mime};base64,${inline.data}`;
               break;
-            } else if (data.candidates?.[0]) {
-              const part = data.candidates[0].content?.parts?.find((p: any) => p.inlineData || p.inline_data);
-              const inline = part?.inlineData || part?.inline_data;
-              if (inline?.data) {
-                const mime = inline.mimeType || inline.mime_type || "image/jpeg";
-                generatedBase64 = `data:${mime};base64,${inline.data}`;
-                break;
-              }
             }
           } else {
             const errJson = await res.json().catch(() => ({}));
-            lastErrMsg = errJson.error?.message || `HTTP ${res.status}`;
+            const msg = errJson.error?.message || `HTTP ${res.status}`;
+            lastErrMsg = msg;
+            if (res.status === 429 || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("Free Tier")) {
+              quotaExceeded = true;
+            }
           }
         } catch (e: any) {
           lastErrMsg = e.message;
@@ -262,6 +268,16 @@ REGLAS OBLIGATORIAS:
             imageUrl: generatedBase64,
           });
         }
+      }
+
+      // Mensaje pedagógico si la cuenta de Gemini es Free Tier sin cuota para generación de imágenes sintéticas
+      if (quotaExceeded) {
+        return NextResponse.json(
+          {
+            error: "Tu API Key de Gemini está en Free Tier (Límite: 0 peticiones/día para generación de imágenes '*-image'). Para habilitar la renderización de imágenes IA directo en Google AI Studio, tu proyecto requiere activar Billing (Pay-as-you-go). Mientras tanto, puedes usar la caja '+ Foto PC' o seleccionar fotos del catálogo para crear tus caminitos publicitarios.",
+          },
+          { status: 429 }
+        );
       }
 
       return NextResponse.json(
