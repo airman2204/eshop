@@ -345,15 +345,86 @@ REGLAS OBLIGATORIAS:
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 6. GENERAR VIDEO (GOOGLE VEO / OMNI FLASH VIDEO)
+    // 6. GENERAR VIDEO (LOCAL RTX 4070 AUTO-DETECT O GOOGLE VEO)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "generate_video") {
       const { promptText, sourceImageUrl, aspectRatio, durationSec } = body;
       const apiKey = process.env.GEMINI_API_KEY;
 
+      // 6.1 INTENTO PRIORITARIO: ANIMATEDIFF LOCAL EN RTX 4070
+      try {
+        const localDimensions = aspectRatio === "9:16" 
+          ? { width: 448, height: 768 }
+          : aspectRatio === "16:9"
+          ? { width: 768, height: 448 }
+          : { width: 512, height: 512 };
+
+        const localRes = await fetch("http://127.0.0.1:7860/sdapi/v1/txt2img", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: promptText + ", cinematic commercial video, dynamic lighting, 8k",
+            negative_prompt: "static, blurry, low quality, distorted",
+            width: localDimensions.width,
+            height: localDimensions.height,
+            steps: 20,
+            cfg_scale: 7,
+            alwayson_scripts: {
+              AnimateDiff: {
+                args: [
+                  {
+                    model: "mm_sdxl_v10_beta.safetensors",
+                    enable: true,
+                    video_length: 16,
+                    fps: 8,
+                    loop_number: 0,
+                    format: ["GIF", "MP4"],
+                  },
+                ],
+              },
+            },
+          }),
+          signal: AbortSignal.timeout(60000),
+        }).catch(() => null);
+
+        if (localRes && localRes.ok) {
+          const localData = await localRes.json();
+          const firstMediaB64 = localData.images?.[0];
+          if (firstMediaB64) {
+            const isGif = firstMediaB64.startsWith("R0lGOD");
+            const mime = isGif ? "image/gif" : "video/mp4";
+            const ext = isGif ? "gif" : "mp4";
+            const fullB64 = `data:${mime};base64,${firstMediaB64}`;
+
+            try {
+              const buffer = Buffer.from(firstMediaB64, "base64");
+              const fileName = `weavy/local_video_${Date.now()}.${ext}`;
+              await supabase.storage.from("product-images").upload(fileName, buffer, {
+                contentType: mime,
+                upsert: true,
+              });
+              const { data: pubData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+              return NextResponse.json({
+                success: true,
+                videoUrl: pubData?.publicUrl || fullB64,
+                engine: "local_rtx_4070_animatediff",
+              });
+            } catch {
+              return NextResponse.json({
+                success: true,
+                videoUrl: fullB64,
+                engine: "local_rtx_4070_animatediff",
+              });
+            }
+          }
+        }
+      } catch (localVidErr) {
+        // Fallback a nube
+      }
+
       if (!apiKey || apiKey === "TU_API_KEY_AQUI") {
         return NextResponse.json(
-          { error: "GEMINI_API_KEY no configurada en las variables de entorno." },
+          { error: "GEMINI_API_KEY no configurada y estación local no disponible para video." },
           { status: 400 }
         );
       }
