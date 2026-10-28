@@ -2046,21 +2046,31 @@ export default function TiendaFoxDrop() {
   };
 
   return (
-    <div className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}>
+    <div 
+      className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative ${pullDistance === 0 ? 'transition-transform duration-300 ease-out' : ''}`}
+      style={{
+        transform: pullDistance > 0 ? `translateY(${pullDistance * 0.75}px)` : (isPullRefreshing ? 'translateY(45px)' : 'none'),
+      }}
+    >
       {/* Atmósfera dinámica de Halloween (Noche mística, murciélagos y rayos) */}
       {storeSettings?.halloweenThemeEnabled && <HalloweenAtmosphere />}
 
-      {/* Indicador visual elástico Pull-To-Refresh estilo Nativo (Móvil) */}
+      {/* Indicador visual circular flotante nativo (Estilo iOS / Material You) */}
       <div 
         aria-hidden="true"
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pointer-events-none transition-transform duration-200"
+        className="fixed top-3 left-0 right-0 z-50 flex items-center justify-center pointer-events-none transition-all duration-300"
         style={{
-          transform: `translateY(${pullDistance > 0 ? pullDistance : (isPullRefreshing ? 55 : -80)}px)`,
+          opacity: pullDistance > 8 || isPullRefreshing ? 1 : 0,
+          transform: `translateY(${pullDistance > 0 ? Math.min(pullDistance * 0.9, 50) : (isPullRefreshing ? 30 : -40)}px) scale(${Math.min(0.6 + (pullDistance / 80) * 0.4, 1.05)})`,
         }}
       >
-        <div className="bg-[#0F3E36] text-white px-4 py-2 rounded-full shadow-2xl border border-amber-400/40 flex items-center gap-2.5 backdrop-blur-md text-xs font-black">
-          <RefreshCw className={`w-4 h-4 text-amber-400 ${isPullRefreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullDistance * 4}deg)` }} />
-          <span>{isPullRefreshing ? 'Actualizando tienda...' : (pullDistance >= 65 ? 'Suelta para actualizar' : 'Desliza para actualizar')}</span>
+        <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl flex items-center justify-center text-[#E65F2B]">
+          <RefreshCw 
+            className={`w-4 h-4 transition-transform ${isPullRefreshing ? 'animate-spin' : ''}`}
+            style={{ 
+              transform: isPullRefreshing ? undefined : `rotate(${pullDistance * 4.5}deg)`,
+            }} 
+          />
         </div>
       </div>
       
