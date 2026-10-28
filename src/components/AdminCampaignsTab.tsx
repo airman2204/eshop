@@ -124,6 +124,60 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   const [qrSizeMm, setQrSizeMm] = useState<number>(24); // 24 mm = 2.4 cm
   const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
   const [generatingQrs, setGeneratingQrs] = useState(false);
+  const [isDraggingQr, setIsDraggingQr] = useState(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initOffsetX: number; initOffsetY: number } | null>(null);
+
+  const handleQrMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingQr(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStartRef.current = {
+      startX: clientX,
+      startY: clientY,
+      initOffsetX: qrOffsetX,
+      initOffsetY: qrOffsetY,
+    };
+  };
+
+  useEffect(() => {
+    if (!isDraggingQr) return;
+
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragStartRef.current) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const deltaX = clientX - dragStartRef.current.startX;
+      const deltaY = clientY - dragStartRef.current.startY;
+
+      // Sensitivity factor: 1px movement ~ 0.5% offset
+      const newX = Math.round(Math.max(-38, Math.min(38, dragStartRef.current.initOffsetX + deltaX * 0.55)));
+      const newY = Math.round(Math.max(-38, Math.min(38, dragStartRef.current.initOffsetY + deltaY * 0.55)));
+
+      setQrOffsetX(newX);
+      setQrOffsetY(newY);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingQr(false);
+      dragStartRef.current = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDraggingQr]);
+
 
   // Cargar campañas desde la API
   const loadCampaigns = async () => {
@@ -382,7 +436,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
 <html>
 <head>
   <meta charset="utf-8">
-  <title>FoxDrop ${currentPaper.shortName} ${tabloidSheetIndex + 1} (${currentPaper.sizeDesc})</title>
+  <title>FoxDrop Stickers ${currentPaper.shortName} ${tabloidSheetIndex + 1}</title>
   <style>
     @page {
       size: ${currentPaper.widthMm}mm ${currentPaper.heightMm}mm;
@@ -398,8 +452,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       padding: 0 !important;
       width: ${currentPaper.widthMm}mm !important;
       height: ${currentPaper.heightMm}mm !important;
-      background: #FAF6F0 !important;
-      font-family: system-ui, -apple-system, sans-serif;
+      background: #FFFFFF !important;
       overflow: hidden;
     }
     .sheet-container {
@@ -408,44 +461,19 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       padding: ${currentPaper.paddingMm};
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      background: #FAF6F0;
-    }
-    .sheet-header {
-      display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      border-bottom: 2px solid #cbd5e1;
-      padding-bottom: 8px;
-      margin-bottom: 6px;
-    }
-    .sheet-title {
-      font-size: 13px;
-      font-weight: 900;
-      color: #0F3E36;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .sheet-sub {
-      font-size: 10px;
-      color: #475569;
-      margin-top: 2px;
-    }
-    .sheet-badge {
-      font-size: 11px;
-      font-weight: 800;
-      color: #E65F2B;
-      text-align: right;
+      background: #FFFFFF !important;
     }
     .stickers-grid {
       display: grid;
       grid-template-columns: repeat(${currentPaper.cols}, 1fr);
       grid-template-rows: repeat(${currentPaper.rows}, 1fr);
       gap: ${currentPaper.gapMm};
-      flex: 1;
+      width: 100%;
+      height: 100%;
       align-items: center;
       justify-items: center;
-      margin: 4mm 0;
     }
     .sticker-cell {
       display: flex;
@@ -458,7 +486,6 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       position: relative;
       border-radius: 50%;
       overflow: hidden;
-      border: 1.5px dashed rgba(223, 127, 45, 0.55);
       background: #0d2a23;
     }
     .sticker-img {
@@ -470,9 +497,9 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     .sticker-qr {
       position: absolute;
       background: #ffffff;
-      padding: 2.5px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      padding: 2px;
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
       border: 1px solid #cbd5e1;
       display: flex;
       align-items: center;
@@ -485,37 +512,12 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       object-fit: contain;
       display: block;
     }
-    .sheet-footer {
-      display: flex;
-      justify-content: space-between;
-      border-top: 2px solid #cbd5e1;
-      padding-top: 8px;
-      font-size: 9px;
-      color: #64748b;
-      font-weight: 600;
-    }
   </style>
 </head>
 <body>
   <div class="sheet-container">
-    <div class="sheet-header">
-      <div>
-        <div class="sheet-title">FOXDROP MÉXICO — HOJA ${currentPaper.shortName.toUpperCase()} (${currentPaper.sizeDesc})</div>
-        <div class="sheet-sub">Campaña: ${currentCampaign.name} • Medio Corte / Suaje Circular • Hoja ${tabloidSheetIndex + 1} de ${totalTabloidSheets}</div>
-      </div>
-      <div class="sheet-badge">
-        <div>Descuento: ${currentCampaign.discountPercent}% OFF</div>
-        <div style="font-size: 9px; color: #64748b; font-weight: normal;">Cada QR es único e intransferible</div>
-      </div>
-    </div>
-    
     <div class="stickers-grid">
       ${stickersHtml}
-    </div>
-
-    <div class="sheet-footer">
-      <span>Preparado para Impresión en Vinil Adhesivo / Papel Sticker • Resolución 300 DPI</span>
-      <span>FOXDROP MÉXICO • www.foxdrop.mx</span>
     </div>
   </div>
   <script>
@@ -1004,7 +1006,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               <div className="flex items-center gap-4 flex-wrap">
                 {/* Desplazamiento X (Horizontal) */}
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-300">Posición X:</span>
+                  <span className="font-bold text-amber-300 flex items-center gap-1">✋ Arrastra con el cursor o:</span><span className="font-bold text-slate-300 ml-1">X:</span>
                   <input
                     type="range"
                     min="-38"
@@ -1138,7 +1140,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               {/* LIENZO TABLOIDE (ESCALADO VISUALMENTE, LISTO PARA IMPRIMIR) */}
               <div 
                 id="printable-tabloid-sheet"
-                className="bg-[#FAF6F0] text-slate-900 shadow-2xl p-6 sm:p-8 flex flex-col justify-between border border-slate-300 print:border-none print:shadow-none print:m-0"
+                className="bg-white text-slate-900 shadow-2xl p-6 sm:p-8 flex flex-col justify-center items-center border border-slate-300 select-none"
                 style={{
                   width: '100%',
                   maxWidth: '780px',
@@ -1147,20 +1149,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 }}
               >
                 {/* Cabecera Técnica para la Imprenta */}
-                <div className="border-b-2 border-slate-300 pb-3 mb-4 flex items-center justify-between text-xs">
-                  <div>
-                    <h4 className="font-black text-[#0F3E36] text-sm uppercase tracking-wider">
-                      FOXDROP MÉXICO — HOJA {currentPaper.shortName.toUpperCase()} ({currentPaper.sizeDesc})
-                    </h4>
-                    <p className="text-[11px] text-slate-600 font-medium">
-                      Campaña: <strong>{currentCampaign.name}</strong> • Medio Corte / Suaje Circular • Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-[#E65F2B] text-xs">Descuento: {currentCampaign.discountPercent}% OFF</span>
-                    <span className="block text-[10px] text-slate-500">Cada QR es único e intransferible</span>
-                  </div>
-                </div>
+                
 
                 {/* MATRIZ DE 12 STICKERS (3 COLUMNAS x 4 FILAS) */}
                 <div className="tabloid-grid grid gap-y-6 gap-x-4 ${currentPaper.cols === 2 ? 'grid-cols-2' : 'grid-cols-3'} flex-1 items-center justify-items-center">
@@ -1187,13 +1176,21 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                           {/* QR SOBREPUESTO EN ALTA DEFINICIÓN SEGÚN LA POSICIÓN ELEGIDA */}
                           {qrImg && (
                             <div
-                              className="absolute z-10 flex flex-col items-center justify-center bg-white p-0.5 rounded-lg shadow-md border border-slate-300 select-none"
+                              onMouseDown={handleQrMouseDown}
+                              onTouchStart={handleQrMouseDown}
+                              className={`absolute z-20 flex flex-col items-center justify-center bg-white p-0.5 rounded-lg shadow-lg border-2 transition-shadow select-none ${
+                                isDraggingQr 
+                                  ? 'cursor-grabbing border-amber-500 ring-2 ring-amber-400/50 scale-105' 
+                                  : 'cursor-grab border-slate-400 hover:border-amber-500'
+                              }`}
                               style={{
                                 width: `${qrSizeMm * 2.2}px`,
                                 height: `${qrSizeMm * 2.2}px`,
                                 left: `calc(50% + ${qrOffsetX * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
                                 top: `calc(50% + ${qrOffsetY * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
+                                touchAction: 'none',
                               }}
+                              title="¡Arrastra libremente con el mouse o dedo dentro del sticker!"
                             >
                               <img
                                 src={qrImg}
@@ -1211,10 +1208,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 </div>
 
                 {/* Pie de Página para Imprenta */}
-                <div className="border-t-2 border-slate-300 pt-3 mt-4 flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                  <span>Preparado para Impresión en Vinil Adhesivo / Papel Sticker • Resolución 300 DPI</span>
-                  <span>FOXDROP MÉXICO • www.foxdrop.mx</span>
-                </div>
+                
               </div>
 
             </div>
