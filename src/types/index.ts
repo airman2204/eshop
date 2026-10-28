@@ -449,3 +449,41 @@ export interface WeavyProjectFlow {
   nodes: WeavyNode[];
   connections: WeavyConnection[];
 }
+
+// ============================================================================
+// MÓDULO DE CAMPAÑAS Y CUPONES QR (FOXDROP PHYGITAL MARKETING)
+// ============================================================================
+
+export interface CampaignCoupon {
+  code: string;
+  qrPayloadUrl: string;
+  isActive: boolean;
+  scanCount: number;
+  firstScannedAt?: string;
+  lastScannedAt?: string;
+  redeemed: boolean;
+  redeemedAt?: string;
+  orderNumber?: string;
+}
+
+export interface MarketingCampaign {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  discountPercent: number; // Ej. 10 o 15
+  discountType: 'percentage' | 'fixed_mxn';
+  singleUse: boolean; // Si el cupón se desactiva permanentemente tras una compra
+  expiresAt: string; // ISO datetime
+  isActive: boolean;
+  bannerTitle: string;
+  bannerMessage: string;
+  ctaText: string;
+  createdAt: string;
+  updatedAt: string;
+  coupons: CampaignCoupon[];
+  // Métricas calculadas o agregadas
+  totalQrs?: number;
+  totalScans?: number;
+  totalRedemptions?: number;
+}

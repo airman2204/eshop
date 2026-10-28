@@ -35,6 +35,7 @@ export interface CreateOrderInput {
     product: Product;
     quantity: number;
   }[];
+  couponCode?: string;
 }
 
 /**

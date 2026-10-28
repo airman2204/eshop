@@ -191,6 +191,18 @@ export default function TiendaFoxDrop() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent: number; description: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  // Campañas promocionales de QRs físicos (Halloween, stickers, etc.)
+  const [campaignPromo, setCampaignPromo] = useState<{
+    code: string;
+    discountPercent: number;
+    bannerTitle: string;
+    bannerMessage: string;
+    ctaText: string;
+    expiresAt?: string;
+  } | null>(null);
+  const [showPromoBanner, setShowPromoBanner] = useState(false);
+  const [promoNoticeMessage, setPromoNoticeMessage] = useState<string | null>(null);
+
   // Estimador de envío por Código Postal en ficha de producto
   const [modalZipCode, setModalZipCode] = useState('');
   const [modalShippingEstimate, setModalShippingEstimate] = useState<{ zip: string; cost: number; time: string; label: string } | null>(null);
@@ -278,6 +290,39 @@ export default function TiendaFoxDrop() {
             if (found) {
               setSelectedProduct(found);
             }
+          }
+
+          // Detección de escaneo de QR promocional (?promo=CODE o ?cupon=CODE)
+          const promoCode = urlParams.get('promo') || urlParams.get('cupon');
+          if (promoCode) {
+            fetch('/api/campaigns/scan', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: promoCode }),
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.valid) {
+                  setAppliedCoupon({
+                    code: data.code,
+                    discountPercent: data.discountPercent,
+                    description: `${data.discountPercent}% OFF (${data.campaignName})`,
+                  });
+                  setCampaignPromo({
+                    code: data.code,
+                    discountPercent: data.discountPercent,
+                    bannerTitle: data.bannerTitle,
+                    bannerMessage: data.bannerMessage,
+                    ctaText: data.ctaText,
+                    expiresAt: data.expiresAt,
+                  });
+                  setShowPromoBanner(true);
+                  setCouponError(null);
+                } else if (data.message) {
+                  setPromoNoticeMessage(data.message);
+                }
+              })
+              .catch(err => console.warn('Aviso verificando QR de campaña:', err));
           }
 
           // Detección de retorno de pasarela de pago (Mercado Pago)
@@ -1699,6 +1744,7 @@ export default function TiendaFoxDrop() {
           city: shippingAddress.city || '',
         },
         items: cart,
+        couponCode: appliedCoupon?.code,
       });
       setConfirmedOrderId(created.orderNumber);
       setConfirmedOrderSummary({
@@ -1841,7 +1887,7 @@ export default function TiendaFoxDrop() {
     'FOXDROP50': { discountPercent: 20, description: '20% OFF especial' },
   };
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanCode = couponInput.trim().toUpperCase();
     if (!cleanCode) return;
@@ -1851,8 +1897,28 @@ export default function TiendaFoxDrop() {
         ...VALID_COUPONS[cleanCode],
       });
       setCouponError(null);
-    } else {
-      setCouponError(`El cupón "${cleanCode}" no es válido o ha expirado.`);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/campaigns/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: cleanCode }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.code,
+          discountPercent: data.discountPercent,
+          description: `${data.discountPercent}% OFF (${data.campaignName})`,
+        });
+        setCouponError(null);
+      } else {
+        setCouponError(data.message || `El cupón "${cleanCode}" no es válido o ha expirado.`);
+      }
+    } catch {
+      setCouponError(`El cupón "${cleanCode}" no es válido.`);
     }
   };
 
@@ -1883,6 +1949,82 @@ export default function TiendaFoxDrop() {
           </button>
         </div>
       </aside>
+
+      {/* ======================================================== */}
+      {/* 0.5. BANNER FESTIVO DE CAMPAÑA QR (HALLOWEEN DULCE O TRUCO) */}
+      {/* ======================================================== */}
+      {showPromoBanner && campaignPromo && (
+        <aside aria-label="Promoción especial escaneada" className="bg-gradient-to-r from-[#0d2a23] via-[#143e33] to-[#0d2a23] border-b-2 border-[#E65F2B] text-white py-3 px-4 shadow-xl relative animate-in fade-in slide-in-from-top-4 duration-300 z-30">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#E65F2B]/20 border border-[#E65F2B]/40 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                🎃
+              </div>
+              <div>
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                  <h3 className="font-black text-sm tracking-wide text-amber-300">
+                    {campaignPromo.bannerTitle || '¡Dulce o Truco FoxDrop!'}
+                  </h3>
+                  <span className="bg-[#E65F2B] text-white font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                    {campaignPromo.discountPercent}% OFF APLICADO
+                  </span>
+                  <span className="text-[10px] text-amber-200/80 font-mono bg-black/30 px-2 py-0.5 rounded-md border border-white/10">
+                    Cód: {campaignPromo.code}
+                  </span>
+                </div>
+                <p className="text-xs text-white/90 mt-0.5 leading-tight">
+                  {campaignPromo.bannerMessage}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCartOpen(true);
+                  setShowPromoBanner(false);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-[#E65F2B] hover:bg-[#d45322] text-white font-extrabold text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                {campaignPromo.ctaText || 'Ver mi Carrito con Descuento'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPromoBanner(false)}
+                className="p-1.5 text-white/60 hover:text-white rounded-lg transition"
+                title="Cerrar aviso"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* AVISO DE CUPÓN INACTIVO O YA REDIMIDO */}
+      {promoNoticeMessage && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-[#FAF6F0] border-2 border-amber-500/40 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-3xl shadow-inner">
+              🦊
+            </div>
+            <div>
+              <h4 className="text-base font-black text-[#0F3E36]">Aviso de Promoción FoxDrop</h4>
+              <p className="text-xs text-gray-700 mt-2 leading-relaxed">
+                {promoNoticeMessage}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPromoNoticeMessage(null)}
+              className="w-full py-2.5 rounded-xl bg-[#0F3E36] hover:bg-[#0B332C] text-white font-bold text-xs shadow-md transition"
+            >
+              Entendido, Continuar Comprando
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* 1. HEADER PRINCIPAL ESTILO TJ MAXX (CON FONDO VERDE BOSQUE EMBLEMÁTICO DE FOXDROP) */}

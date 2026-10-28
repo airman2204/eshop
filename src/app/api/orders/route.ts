@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       shippingAddress,
       items,
+      couponCode,
     } = body;
 
     if (!clientName || !clientPhone || !items || !Array.isArray(items) || items.length === 0) {
@@ -164,6 +165,45 @@ export async function POST(req: NextRequest) {
         await q;
       } catch (cartCleanupErr) {
         console.warn("Aviso limpiando carrito abandonado tras crear orden:", cartCleanupErr);
+      }
+    }
+
+    // 5. Redención automática de cupón de campaña (Un solo uso -> Se desactiva y se vincula a esta orden)
+    if (couponCode) {
+      try {
+        const cleanCoupon = String(couponCode).trim().toUpperCase();
+        const { data: file } = await supabase.storage
+          .from("product-images")
+          .download("_system/marketing_campaigns.json");
+
+        if (file) {
+          const campaigns = JSON.parse((await file.text()) || "[]");
+          let modified = false;
+
+          for (const camp of campaigns) {
+            if (!Array.isArray(camp.coupons)) continue;
+            const targetCoupon = camp.coupons.find((c: any) => c.code === cleanCoupon);
+            if (targetCoupon && !targetCoupon.redeemed) {
+              targetCoupon.redeemed = true;
+              targetCoupon.redeemedAt = new Date().toISOString();
+              targetCoupon.orderNumber = order.order_number;
+              targetCoupon.isActive = false; // Se desactiva inmediatamente
+              camp.updatedAt = new Date().toISOString();
+              modified = true;
+              break;
+            }
+          }
+
+          if (modified) {
+            const buffer = Buffer.from(JSON.stringify(campaigns, null, 2));
+            await supabase.storage.from("product-images").upload("_system/marketing_campaigns.json", buffer, {
+              contentType: "application/json",
+              upsert: true,
+            });
+          }
+        }
+      } catch (couponRedeemErr) {
+        console.warn("Aviso procesando redención de cupón de campaña:", couponRedeemErr);
       }
     }
 

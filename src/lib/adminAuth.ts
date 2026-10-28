@@ -134,6 +134,26 @@ export async function fetchAgentApi(bodyOrOptions: any): Promise<Response> {
 /**
  * Helper para llamar a /api/admin/cj inyectando automáticamente el token en Authorization header
  */
+
+/**
+ * Helper para llamar a endpoints admin personalizados (ej. /api/admin/campaigns) con autenticacion
+ */
+export async function fetchAdminCustomApi(url: string, options: RequestInit = {}): Promise<Response> {
+  const token = getStoredAdminToken();
+  const email = getStoredAdminEmail();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+  if (token) headers['Authorization'] = "Bearer " + token;
+  if (email) headers['x-admin-email'] = email;
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
+
 export async function fetchAdminCjApi(bodyOrOptions: any): Promise<Response> {
   const token = getStoredAdminToken();
   const email = getStoredAdminEmail();
