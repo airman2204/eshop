@@ -189,6 +189,17 @@ export default function TiendaFoxDrop() {
   // Cupones de descuento promocionales en checkout
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent: number; description: string } | null>(null);
+
+  // Sincronizar el cupón aplicado en localStorage para resguardarlo incluso si se registra, recarga o inicia sesión
+  useEffect(() => {
+    try {
+      if (appliedCoupon) {
+        localStorage.setItem('foxdrop_applied_coupon', JSON.stringify(appliedCoupon));
+      } else {
+        localStorage.removeItem('foxdrop_applied_coupon');
+      }
+    } catch {}
+  }, [appliedCoupon]);
   const [couponError, setCouponError] = useState<string | null>(null);
 
   // Campañas promocionales de QRs físicos (Halloween, stickers, etc.)
@@ -547,6 +558,15 @@ export default function TiendaFoxDrop() {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setCart(parsed);
+        }
+      }
+
+      // Restaurar cupón persistido si existe
+      const savedCoupon = localStorage.getItem('foxdrop_applied_coupon');
+      if (savedCoupon) {
+        const parsedCoupon = JSON.parse(savedCoupon);
+        if (parsedCoupon?.code) {
+          setAppliedCoupon(parsedCoupon);
         }
       }
     } catch (e) {
