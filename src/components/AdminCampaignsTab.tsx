@@ -454,17 +454,16 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       const qrWidthMm = qrSizeMm;
       const diameterMm = currentPaper.stickerDiameterMm;
 
+      // Cálculo milimétrico directo y seguro para cualquier motor de impresión PDF (sin depender de calc en Chrome)
+      const leftMm = ((diameterMm / 2) + (qrOffsetX * (diameterMm / 200)) - (qrWidthMm / 2)).toFixed(2);
+      const topMm = ((diameterMm / 2) + (qrOffsetY * (diameterMm / 200)) - (qrWidthMm / 2)).toFixed(2);
+
       return `
         <div class="sticker-cell">
           <div class="sticker-circle" style="width: ${diameterMm}mm; height: ${diameterMm}mm;">
             <img class="sticker-img" src="${variant.img}" alt="${variant.name}" />
             ${qrImg ? `
-              <div class="sticker-qr" style="
-                width: ${qrWidthMm}mm;
-                height: ${qrWidthMm}mm;
-                left: calc(50% + (${qrOffsetX} * ${(diameterMm / 100).toFixed(2)}mm) - (${qrWidthMm}mm / 2));
-                top: calc(50% + (${qrOffsetY} * ${(diameterMm / 100).toFixed(2)}mm) - (${qrWidthMm}mm / 2));
-              ">
+              <div class="sticker-qr" style="width: ${qrWidthMm}mm; height: ${qrWidthMm}mm; left: ${leftMm}mm; top: ${topMm}mm;">
                 <img src="${qrImg}" alt="QR" />
               </div>
             ` : ''}
