@@ -1151,8 +1151,12 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 {/* Cabecera Técnica para la Imprenta */}
                 
 
-                {/* MATRIZ DE 12 STICKERS (3 COLUMNAS x 4 FILAS) */}
-                <div className="tabloid-grid grid gap-y-6 gap-x-4 ${currentPaper.cols === 2 ? 'grid-cols-2' : 'grid-cols-3'} flex-1 items-center justify-items-center">
+                {/* MATRIZ DE STICKERS (COLUMNAS x FILAS SEGÚN EL FORMATO DE PAPEL) */}
+                <div 
+                  className={`grid gap-y-4 gap-x-4 w-full flex-1 items-center justify-items-center ${
+                    currentPaper.cols === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                  }`}
+                >
                   {currentSheetCoupons.map((coupon, i) => {
                     const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
                     const qrImg = qrDataUrls[coupon.code];
