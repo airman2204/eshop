@@ -153,8 +153,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       const deltaY = clientY - dragStartRef.current.startY;
 
       // Sensitivity factor: 1px movement ~ 0.5% offset
-      const newX = Math.round(Math.max(-48, Math.min(48, dragStartRef.current.initOffsetX + deltaX * 0.55)));
-      const newY = Math.round(Math.max(-48, Math.min(48, dragStartRef.current.initOffsetY + deltaY * 0.55)));
+      const newX = Math.round(Math.max(-75, Math.min(75, dragStartRef.current.initOffsetX + deltaX * 0.55)));
+      const newY = Math.round(Math.max(-75, Math.min(75, dragStartRef.current.initOffsetY + deltaY * 0.55)));
 
       setQrOffsetX(newX);
       setQrOffsetY(newY);
@@ -1009,8 +1009,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <span className="font-bold text-amber-300 flex items-center gap-1">✋ Arrastra con el cursor o:</span><span className="font-bold text-slate-300 ml-1">X:</span>
                   <input
                     type="range"
-                    min="-48"
-                    max="48"
+                    min="-75"
+                    max="75"
                     value={qrOffsetX}
                     onChange={e => setQrOffsetX(parseInt(e.target.value, 10))}
                     className="w-20 accent-amber-500 cursor-pointer"
@@ -1023,8 +1023,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <span className="font-bold text-slate-300">Posición Y:</span>
                   <input
                     type="range"
-                    min="-48"
-                    max="48"
+                    min="-75"
+                    max="75"
                     value={qrOffsetY}
                     onChange={e => setQrOffsetY(parseInt(e.target.value, 10))}
                     className="w-20 accent-amber-500 cursor-pointer"
@@ -1066,7 +1066,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setQrOffsetX(36); setQrOffsetY(0); }}
+                    onClick={() => { setQrOffsetX(55); setQrOffsetY(6); }}
                     className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
                     title="Derecha"
                   >
@@ -1074,7 +1074,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setQrOffsetX(-36); setQrOffsetY(0); }}
+                    onClick={() => { setQrOffsetX(-55); setQrOffsetY(6); }}
                     className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
                     title="Izquierda"
                   >
