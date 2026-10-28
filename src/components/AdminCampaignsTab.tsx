@@ -14,6 +14,83 @@ interface AdminCampaignsTabProps {
   onNotify?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
+
+export type PaperFormat = 'tabloide' | 'carta' | 'oficio' | 'a4';
+
+interface PaperSpec {
+  id: PaperFormat;
+  name: string;
+  shortName: string;
+  widthMm: number;
+  heightMm: number;
+  sizeDesc: string;
+  cols: number;
+  rows: number;
+  stickersCount: number;
+  stickerDiameterMm: number;
+  gapMm: string;
+  paddingMm: string;
+}
+
+const PAPER_SPECS: Record<PaperFormat, PaperSpec> = {
+  tabloide: {
+    id: 'tabloide',
+    name: 'Tabloide (11 × 17 in)',
+    shortName: 'Tabloide',
+    widthMm: 279,
+    heightMm: 432,
+    sizeDesc: '27.9 × 43.2 cm',
+    cols: 3,
+    rows: 4,
+    stickersCount: 12,
+    stickerDiameterMm: 76,
+    gapMm: '8mm 6mm',
+    paddingMm: '16mm 14mm',
+  },
+  carta: {
+    id: 'carta',
+    name: 'Carta (Letter)',
+    shortName: 'Carta',
+    widthMm: 216,
+    heightMm: 279,
+    sizeDesc: '21.6 × 27.9 cm',
+    cols: 2,
+    rows: 3,
+    stickersCount: 6,
+    stickerDiameterMm: 68,
+    gapMm: '7mm 6mm',
+    paddingMm: '12mm 10mm',
+  },
+  oficio: {
+    id: 'oficio',
+    name: 'Oficio (Legal)',
+    shortName: 'Oficio',
+    widthMm: 216,
+    heightMm: 356,
+    sizeDesc: '21.6 × 35.6 cm',
+    cols: 2,
+    rows: 4,
+    stickersCount: 8,
+    stickerDiameterMm: 70,
+    gapMm: '8mm 6mm',
+    paddingMm: '14mm 10mm',
+  },
+  a4: {
+    id: 'a4',
+    name: 'A4 Estándar',
+    shortName: 'A4',
+    widthMm: 210,
+    heightMm: 297,
+    sizeDesc: '21.0 × 29.7 cm',
+    cols: 2,
+    rows: 3,
+    stickersCount: 6,
+    stickerDiameterMm: 68,
+    gapMm: '8mm 6mm',
+    paddingMm: '12mm 10mm',
+  },
+};
+
 export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) {
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
@@ -40,6 +117,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   // Modal de Impresión Tabloide
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [tabloidSheetIndex, setTabloidSheetIndex] = useState(0);
+  const [paperFormat, setPaperFormat] = useState<PaperFormat>('tabloide');
   const [qrPosition, setQrPosition] = useState<'free' | 'center_bottom' | 'center_total' | 'bottom_right'>('free');
   const [qrOffsetX, setQrOffsetX] = useState<number>(0);
   const [qrOffsetY, setQrOffsetY] = useState<number>(26);
@@ -250,12 +328,13 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   const conversionRate = totalScans > 0 ? ((totalRedemptions / totalScans) * 100).toFixed(1) : '0';
   const activeAvailable = (currentCampaign?.coupons || []).filter(c => c.isActive && !c.redeemed).length;
 
-  // Distribución de stickers por hoja Tabloide (12 stickers por hoja: 3 columnas x 4 filas)
-  const STICKERS_PER_TABLOID = 12;
-  const totalTabloidSheets = Math.ceil(totalQrs / STICKERS_PER_TABLOID) || 1;
+  // Configuración dinámica según el formato de hoja seleccionado (Tabloide, Carta, Oficio, A4)
+  const currentPaper = PAPER_SPECS[paperFormat];
+  const stickersPerSheet = currentPaper.stickersCount;
+  const totalTabloidSheets = Math.ceil(totalQrs / stickersPerSheet) || 1;
   const currentSheetCoupons = (currentCampaign?.coupons || []).slice(
-    tabloidSheetIndex * STICKERS_PER_TABLOID,
-    (tabloidSheetIndex + 1) * STICKERS_PER_TABLOID
+    tabloidSheetIndex * stickersPerSheet,
+    (tabloidSheetIndex + 1) * stickersPerSheet
   );
 
   const STICKER_VARIANTS = [
@@ -271,25 +350,25 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       return;
     }
 
-    // Build the 12 stickers markup cleanly with inline styles and exact cm measurements
+    const currentPaper = PAPER_SPECS[paperFormat];
+
+    // Build stickers markup cleanly with inline styles and exact mm measurements for the selected paper
     const stickersHtml = currentSheetCoupons.map((coupon, i) => {
       const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
       const qrImg = qrDataUrls[coupon.code] || '';
-      
-      // Calculate QR position in pixels / percentages
-      // Sticker diameter in print: ~7.2cm (272px scaled)
       const qrWidthMm = qrSizeMm;
+      const diameterMm = currentPaper.stickerDiameterMm;
 
       return `
         <div class="sticker-cell">
-          <div class="sticker-circle">
+          <div class="sticker-circle" style="width: ${diameterMm}mm; height: ${diameterMm}mm;">
             <img class="sticker-img" src="${variant.img}" alt="${variant.name}" />
             ${qrImg ? `
               <div class="sticker-qr" style="
                 width: ${qrWidthMm}mm;
                 height: ${qrWidthMm}mm;
-                left: calc(50% + (${qrOffsetX} * 0.72mm) - (${qrWidthMm}mm / 2));
-                top: calc(50% + (${qrOffsetY} * 0.72mm) - (${qrWidthMm}mm / 2));
+                left: calc(50% + (${qrOffsetX} * ${(diameterMm / 100).toFixed(2)}mm) - (${qrWidthMm}mm / 2));
+                top: calc(50% + (${qrOffsetY} * ${(diameterMm / 100).toFixed(2)}mm) - (${qrWidthMm}mm / 2));
               ">
                 <img src="${qrImg}" alt="QR" />
               </div>
@@ -303,10 +382,10 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
 <html>
 <head>
   <meta charset="utf-8">
-  <title>FoxDrop Tabloide ${tabloidSheetIndex + 1} (27.9 x 43.2 cm)</title>
+  <title>FoxDrop ${currentPaper.shortName} ${tabloidSheetIndex + 1} (${currentPaper.sizeDesc})</title>
   <style>
     @page {
-      size: 279mm 432mm;
+      size: ${currentPaper.widthMm}mm ${currentPaper.heightMm}mm;
       margin: 0;
     }
     * {
@@ -317,16 +396,16 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     html, body {
       margin: 0 !important;
       padding: 0 !important;
-      width: 279mm !important;
-      height: 432mm !important;
+      width: ${currentPaper.widthMm}mm !important;
+      height: ${currentPaper.heightMm}mm !important;
       background: #FAF6F0 !important;
       font-family: system-ui, -apple-system, sans-serif;
       overflow: hidden;
     }
     .sheet-container {
-      width: 279mm;
-      height: 432mm;
-      padding: 16mm 14mm;
+      width: ${currentPaper.widthMm}mm;
+      height: ${currentPaper.heightMm}mm;
+      padding: ${currentPaper.paddingMm};
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -338,7 +417,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       align-items: center;
       border-bottom: 2px solid #cbd5e1;
       padding-bottom: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .sheet-title {
       font-size: 13px;
@@ -360,9 +439,9 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     }
     .stickers-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(4, 1fr);
-      gap: 8mm 6mm;
+      grid-template-columns: repeat(${currentPaper.cols}, 1fr);
+      grid-template-rows: repeat(${currentPaper.rows}, 1fr);
+      gap: ${currentPaper.gapMm};
       flex: 1;
       align-items: center;
       justify-items: center;
@@ -377,8 +456,6 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     }
     .sticker-circle {
       position: relative;
-      width: 76mm;
-      height: 76mm;
       border-radius: 50%;
       overflow: hidden;
       border: 1.5px dashed rgba(223, 127, 45, 0.55);
@@ -423,7 +500,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   <div class="sheet-container">
     <div class="sheet-header">
       <div>
-        <div class="sheet-title">FOXDROP MÉXICO — HOJA TABLOIDE (27.9 × 43.2 cm)</div>
+        <div class="sheet-title">FOXDROP MÉXICO — HOJA ${currentPaper.shortName.toUpperCase()} (${currentPaper.sizeDesc})</div>
         <div class="sheet-sub">Campaña: ${currentCampaign.name} • Medio Corte / Suaje Circular • Hoja ${tabloidSheetIndex + 1} de ${totalTabloidSheets}</div>
       </div>
       <div class="sheet-badge">
@@ -489,7 +566,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
             className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Centro de Impresión Tabloide (27.9 × 43.2 cm)</span>
+            <span>Centro de Impresión de Stickers (Tabloide, Carta, Oficio)</span>
           </button>
 
           <button
@@ -894,10 +971,12 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <Printer className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-white text-base">Hojas Tabloide (27.9 × 43.2 cm) — Medio Corte Stickers</h3>
-                  <p className="text-xs text-slate-400">
-                    Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets} • 12 stickers redondos por hoja tabloide
-                  </p>
+                  <h3 className="font-black text-white text-base">Impresión de Stickers (Tabloide, Carta, Oficio, A4)</h3>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-xs text-slate-400">
+                      Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets} • {currentPaper.stickersCount} stickers por hoja ({currentPaper.sizeDesc})
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1002,6 +1081,33 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 </div>
               </div>
 
+              
+              {/* Selector de Tamaño de Papel */}
+              <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-700">
+                <span className="text-[10px] uppercase font-bold text-slate-400 px-1">Papel:</span>
+                {(['tabloide', 'carta', 'oficio', 'a4'] as PaperFormat[]).map(fmt => {
+                  const spec = PAPER_SPECS[fmt];
+                  const isSelected = paperFormat === fmt;
+                  return (
+                    <button
+                      key={fmt}
+                      type="button"
+                      onClick={() => {
+                        setPaperFormat(fmt);
+                        setTabloidSheetIndex(0);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        isSelected 
+                          ? 'bg-amber-500 text-slate-950 shadow-sm' 
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      {spec.shortName}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Selector de Hoja Tabloide */}
               <div className="flex items-center gap-1.5">
                 <button
@@ -1037,14 +1143,14 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   width: '100%',
                   maxWidth: '780px',
                   minHeight: '1080px',
-                  aspectRatio: '11 / 17',
+                  aspectRatio: `${currentPaper.widthMm} / ${currentPaper.heightMm}`,
                 }}
               >
                 {/* Cabecera Técnica para la Imprenta */}
                 <div className="border-b-2 border-slate-300 pb-3 mb-4 flex items-center justify-between text-xs">
                   <div>
                     <h4 className="font-black text-[#0F3E36] text-sm uppercase tracking-wider">
-                      FOXDROP MÉXICO — HOJA TABLOIDE (27.9 × 43.2 cm)
+                      FOXDROP MÉXICO — HOJA {currentPaper.shortName.toUpperCase()} ({currentPaper.sizeDesc})
                     </h4>
                     <p className="text-[11px] text-slate-600 font-medium">
                       Campaña: <strong>{currentCampaign.name}</strong> • Medio Corte / Suaje Circular • Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets}
@@ -1057,7 +1163,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 </div>
 
                 {/* MATRIZ DE 12 STICKERS (3 COLUMNAS x 4 FILAS) */}
-                <div className="tabloid-grid grid grid-cols-3 gap-y-6 gap-x-4 flex-1 items-center justify-items-center">
+                <div className="tabloid-grid grid gap-y-6 gap-x-4 ${currentPaper.cols === 2 ? 'grid-cols-2' : 'grid-cols-3'} flex-1 items-center justify-items-center">
                   {currentSheetCoupons.map((coupon, i) => {
                     const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
                     const qrImg = qrDataUrls[coupon.code];
