@@ -231,6 +231,95 @@ export default function TiendaFoxDrop() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
 
+  // Gesto táctil nativo Pull-To-Refresh (Deslizar hacia abajo en móvil para refrescar)
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+  const isPullingRef = useRef(false);
+
+  // Función universal para recargar el catálogo y configuración
+  const handleManualRefresh = async () => {
+    setIsPullRefreshing(true);
+    try {
+      const bootstrap = await getClientBootstrap();
+      if (bootstrap?.products && Array.isArray(bootstrap.products)) {
+        setProducts(bootstrap.products);
+      }
+      if (bootstrap?.brands && Array.isArray(bootstrap.brands)) {
+        setStoreBrands(bootstrap.brands);
+      }
+      if (bootstrap?.storeSettings) {
+        setStoreSettings(bootstrap.storeSettings);
+      }
+      if (bootstrap?.slides && Array.isArray(bootstrap.slides) && bootstrap.slides.length > 0) {
+        setSlides(bootstrap.slides);
+      }
+      if (bootstrap?.clubSettings) {
+        setClubSettings(bootstrap.clubSettings);
+      }
+    } catch (err) {
+      console.warn('Aviso refrescando tienda:', err);
+    } finally {
+      setTimeout(() => {
+        setIsPullRefreshing(false);
+        setPullDistance(0);
+      }, 500);
+    }
+  };
+
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      // Solo activar si el scroll está en el tope de la pantalla
+      if (window.scrollY <= 2) {
+        touchStartYRef.current = e.touches[0].clientY;
+        isPullingRef.current = true;
+      } else {
+        isPullingRef.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPullingRef.current || isPullRefreshing) return;
+      if (window.scrollY > 5) {
+        isPullingRef.current = false;
+        setPullDistance(0);
+        return;
+      }
+
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - touchStartYRef.current;
+
+      if (diff > 0) {
+        // Resistencia elástica tipo iOS/Android
+        const resistance = Math.min(diff * 0.45, 95);
+        setPullDistance(resistance);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!isPullingRef.current) return;
+      isPullingRef.current = false;
+
+      setPullDistance(prev => {
+        if (prev >= 65 && !isPullRefreshing) {
+          handleManualRefresh();
+          return 55; // Mantener indicador visible mientras refresca
+        }
+        return 0;
+      });
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isPullRefreshing]);
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleBeforeInstallPrompt = (e: any) => {
@@ -1960,6 +2049,20 @@ export default function TiendaFoxDrop() {
     <div className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}>
       {/* Atmósfera dinámica de Halloween (Noche mística, murciélagos y rayos) */}
       {storeSettings?.halloweenThemeEnabled && <HalloweenAtmosphere />}
+
+      {/* Indicador visual elástico Pull-To-Refresh estilo Nativo (Móvil) */}
+      <div 
+        aria-hidden="true"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pointer-events-none transition-transform duration-200"
+        style={{
+          transform: `translateY(${pullDistance > 0 ? pullDistance : (isPullRefreshing ? 55 : -80)}px)`,
+        }}
+      >
+        <div className="bg-[#0F3E36] text-white px-4 py-2 rounded-full shadow-2xl border border-amber-400/40 flex items-center gap-2.5 backdrop-blur-md text-xs font-black">
+          <RefreshCw className={`w-4 h-4 text-amber-400 ${isPullRefreshing ? 'animate-spin' : ''}`} style={{ transform: `rotate(${pullDistance * 4}deg)` }} />
+          <span>{isPullRefreshing ? 'Actualizando tienda...' : (pullDistance >= 65 ? 'Suelta para actualizar' : 'Desliza para actualizar')}</span>
+        </div>
+      </div>
       
       {/* ======================================================== */}
       {/* 0. TICKER SUPERIOR DE ANUNCIOS & ENVÍOS (ESTILO TJ MAXX) */}
