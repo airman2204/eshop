@@ -40,7 +40,9 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   // Modal de Impresión Tabloide
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [tabloidSheetIndex, setTabloidSheetIndex] = useState(0);
-  const [qrPosition, setQrPosition] = useState<'center_bottom' | 'center_total' | 'bottom_right'>('center_bottom');
+  const [qrPosition, setQrPosition] = useState<'free' | 'center_bottom' | 'center_total' | 'bottom_right'>('free');
+  const [qrOffsetX, setQrOffsetX] = useState<number>(0);
+  const [qrOffsetY, setQrOffsetY] = useState<number>(26);
   const [qrSizeMm, setQrSizeMm] = useState<number>(24); // 24 mm = 2.4 cm
   const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({});
   const [generatingQrs, setGeneratingQrs] = useState(false);
@@ -263,78 +265,191 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   ];
 
   const handlePrintSheet = () => {
-    const sheetEl = document.getElementById('printable-tabloid-sheet');
-    if (!sheetEl) {
-      window.print();
-      return;
-    }
-
     const printWindow = window.open('', '_blank', 'width=1200,height=900');
     if (!printWindow) {
       window.print();
       return;
     }
 
-    const cleanSheet = sheetEl.cloneNode(true) as HTMLElement;
+    // Build the 12 stickers markup cleanly with inline styles and exact cm measurements
+    const stickersHtml = currentSheetCoupons.map((coupon, i) => {
+      const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
+      const qrImg = qrDataUrls[coupon.code] || '';
+      
+      // Calculate QR position in pixels / percentages
+      // Sticker diameter in print: ~7.2cm (272px scaled)
+      const qrWidthMm = qrSizeMm;
 
-    const htmlContent = '<!DOCTYPE html>' +
-      '<html>' +
-      '<head>' +
-      '<meta charset="utf-8">' +
-      '<title>FoxDrop - Hoja Tabloide ' + (tabloidSheetIndex + 1) + ' (27.9 x 43.2 cm)</title>' +
-      '<style>' +
-      '  @page {' +
-      '    size: 27.9cm 43.2cm;' +
-      '    margin: 0;' +
-      '  }' +
-      '  html, body {' +
-      '    margin: 0 !important;' +
-      '    padding: 0 !important;' +
-      '    width: 27.9cm !important;' +
-      '    height: 43.2cm !important;' +
-      '    background: #FAF6F0 !important;' +
-      '    -webkit-print-color-adjust: exact !important;' +
-      '    print-color-adjust: exact !important;' +
-      '    box-sizing: border-box;' +
-      '    display: flex;' +
-      '    justify-content: center;' +
-      '    align-items: center;' +
-      '    overflow: hidden;' +
-      '    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;' +
-      '  }' +
-      '  * { box-sizing: border-box; }' +
-      '  #printable-tabloid-sheet {' +
-      '    width: 27.9cm !important;' +
-      '    height: 43.2cm !important;' +
-      '    max-width: 27.9cm !important;' +
-      '    max-height: 43.2cm !important;' +
-      '    padding: 1.6cm 1.5cm !important;' +
-      '    margin: 0 !important;' +
-      '    border: none !important;' +
-      '    box-shadow: none !important;' +
-      '    display: flex !important;' +
-      '    flex-direction: column !important;' +
-      '    justify-content: space-between !important;' +
-      '    background: #FAF6F0 !important;' +
-      '  }' +
-      '  .tabloid-grid {' +
-      '    display: grid !important;' +
-      '    grid-template-columns: repeat(3, 1fr) !important;' +
-      '    gap: 1.0cm 0.8cm !important;' +
-      '    align-items: center !important;' +
-      '    justify-items: center !important;' +
-      '    width: 100% !important;' +
-      '  }' +
-      '</style>' +
-      '<script src="https://cdn.tailwindcss.com"></script>' +
-      '</head>' +
-      '<body>' +
-      cleanSheet.outerHTML +
-      '<script>' +
-      '  setTimeout(function() { window.print(); }, 600);' +
-      '</script>' +
-      '</body>' +
-      '</html>';
+      return `
+        <div class="sticker-cell">
+          <div class="sticker-circle">
+            <img class="sticker-img" src="${variant.img}" alt="${variant.name}" />
+            ${qrImg ? `
+              <div class="sticker-qr" style="
+                width: ${qrWidthMm}mm;
+                height: ${qrWidthMm}mm;
+                left: calc(50% + (${qrOffsetX} * 0.72mm) - (${qrWidthMm}mm / 2));
+                top: calc(50% + (${qrOffsetY} * 0.72mm) - (${qrWidthMm}mm / 2));
+              ">
+                <img src="${qrImg}" alt="QR" />
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FoxDrop Tabloide ${tabloidSheetIndex + 1} (27.9 x 43.2 cm)</title>
+  <style>
+    @page {
+      size: 279mm 432mm;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 279mm !important;
+      height: 432mm !important;
+      background: #FAF6F0 !important;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+    }
+    .sheet-container {
+      width: 279mm;
+      height: 432mm;
+      padding: 16mm 14mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: #FAF6F0;
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+    .sheet-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #0F3E36;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sheet-sub {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .sheet-badge {
+      font-size: 11px;
+      font-weight: 800;
+      color: #E65F2B;
+      text-align: right;
+    }
+    .stickers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 8mm 6mm;
+      flex: 1;
+      align-items: center;
+      justify-items: center;
+      margin: 4mm 0;
+    }
+    .sticker-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .sticker-circle {
+      position: relative;
+      width: 76mm;
+      height: 76mm;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1.5px dashed rgba(223, 127, 45, 0.55);
+      background: #0d2a23;
+    }
+    .sticker-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .sticker-qr {
+      position: absolute;
+      background: #ffffff;
+      padding: 2.5px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      border: 1px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .sticker-qr img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .sheet-footer {
+      display: flex;
+      justify-content: space-between;
+      border-top: 2px solid #cbd5e1;
+      padding-top: 8px;
+      font-size: 9px;
+      color: #64748b;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet-container">
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title">FOXDROP MÉXICO — HOJA TABLOIDE (27.9 × 43.2 cm)</div>
+        <div class="sheet-sub">Campaña: ${currentCampaign.name} • Medio Corte / Suaje Circular • Hoja ${tabloidSheetIndex + 1} de ${totalTabloidSheets}</div>
+      </div>
+      <div class="sheet-badge">
+        <div>Descuento: ${currentCampaign.discountPercent}% OFF</div>
+        <div style="font-size: 9px; color: #64748b; font-weight: normal;">Cada QR es único e intransferible</div>
+      </div>
+    </div>
+    
+    <div class="stickers-grid">
+      ${stickersHtml}
+    </div>
+
+    <div class="sheet-footer">
+      <span>Preparado para Impresión en Vinil Adhesivo / Papel Sticker • Resolución 300 DPI</span>
+      <span>FOXDROP MÉXICO • www.foxdrop.mx</span>
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    };
+  </script>
+</body>
+</html>`;
 
     printWindow.document.open();
     printWindow.document.write(htmlContent);
@@ -805,45 +920,85 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               </div>
             </div>
 
-            {/* Barra de Ajuste de Diseño (Posición y Tamaño del QR) */}
-            <div className="p-3 sm:px-6 bg-[#181e30] border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
-              <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                <span className="font-bold text-slate-300">Acomodo del QR:</span>
-                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-700">
-                  <button
-                    type="button"
-                    onClick={() => setQrPosition('center_bottom')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${qrPosition === 'center_bottom' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Centrado Abajo (Recomendado)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQrPosition('center_total')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${qrPosition === 'center_total' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Centro Total
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQrPosition('bottom_right')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${qrPosition === 'bottom_right' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                  >
-                    Original (Derecha)
-                  </button>
-                </div>
-
+            {/* Barra de Ajuste de Diseño (Posición Libre X / Y y Tamaño del QR) */}
+            <div className="p-3 sm:px-6 bg-[#181e30] border-b border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs shrink-0">
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Desplazamiento X (Horizontal) */}
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-300">Tamaño QR:</span>
+                  <span className="font-bold text-slate-300">Posición X:</span>
                   <input
                     type="range"
-                    min="18"
-                    max="32"
+                    min="-38"
+                    max="38"
+                    value={qrOffsetX}
+                    onChange={e => setQrOffsetX(parseInt(e.target.value, 10))}
+                    className="w-20 accent-amber-500 cursor-pointer"
+                  />
+                  <span className="font-mono text-amber-300 font-bold w-10 text-right">{qrOffsetX > 0 ? `+${qrOffsetX}` : qrOffsetX}%</span>
+                </div>
+
+                {/* Desplazamiento Y (Vertical) */}
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-300">Posición Y:</span>
+                  <input
+                    type="range"
+                    min="-38"
+                    max="38"
+                    value={qrOffsetY}
+                    onChange={e => setQrOffsetY(parseInt(e.target.value, 10))}
+                    className="w-20 accent-amber-500 cursor-pointer"
+                  />
+                  <span className="font-mono text-amber-300 font-bold w-10 text-right">{qrOffsetY > 0 ? `+${qrOffsetY}` : qrOffsetY}%</span>
+                </div>
+
+                {/* Tamaño QR */}
+                <div className="flex items-center gap-2 border-l border-slate-700/80 pl-3">
+                  <span className="font-bold text-slate-300">Tamaño:</span>
+                  <input
+                    type="range"
+                    min="14"
+                    max="45"
                     value={qrSizeMm}
                     onChange={e => setQrSizeMm(parseInt(e.target.value, 10))}
                     className="w-24 accent-amber-500 cursor-pointer"
                   />
-                  <span className="font-mono text-amber-300 font-bold">{qrSizeMm} mm</span>
+                  <span className="font-mono text-amber-300 font-bold w-12">{qrSizeMm} mm</span>
+                </div>
+
+                {/* Botones de Atajos Rápidos */}
+                <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => { setQrOffsetX(0); setQrOffsetY(26); }}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    title="Abajo en el centro"
+                  >
+                    Abajo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setQrOffsetX(0); setQrOffsetY(0); }}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    title="Centro exacto"
+                  >
+                    Centro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setQrOffsetX(26); setQrOffsetY(0); }}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    title="Derecha"
+                  >
+                    Derecha
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setQrOffsetX(-26); setQrOffsetY(0); }}
+                    className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    title="Izquierda"
+                  >
+                    Izquierda
+                  </button>
                 </div>
               </div>
 
@@ -926,16 +1081,12 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                           {/* QR SOBREPUESTO EN ALTA DEFINICIÓN SEGÚN LA POSICIÓN ELEGIDA */}
                           {qrImg && (
                             <div
-                              className={`absolute z-10 flex flex-col items-center justify-center bg-white p-1 rounded-xl shadow-lg border border-slate-300 ${
-                                qrPosition === 'center_bottom'
-                                  ? 'bottom-3 inset-x-0 mx-auto'
-                                  : qrPosition === 'center_total'
-                                  ? 'inset-0 m-auto'
-                                  : 'top-1/2 -translate-y-1/2 right-3'
-                              }`}
+                              className="absolute z-10 flex flex-col items-center justify-center bg-white p-0.5 rounded-lg shadow-md border border-slate-300 select-none"
                               style={{
                                 width: `${qrSizeMm * 2.2}px`,
                                 height: `${qrSizeMm * 2.2}px`,
+                                left: `calc(50% + ${qrOffsetX * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
+                                top: `calc(50% + ${qrOffsetY * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
                               }}
                             >
                               <img
