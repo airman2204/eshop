@@ -419,7 +419,26 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     { name: 'Calabaza', img: '/campaigns/stickers/calabaza.png' },
   ];
 
-  const handlePrintSheet = () => {
+  const handlePrintSheet = async () => {
+    // 1. Asegurar que los QRs de los cupones de la hoja actual estén generados en DataURL antes de abrir la ventana
+    const qrMap: Record<string, string> = { ...qrDataUrls };
+    for (const coupon of currentSheetCoupons) {
+      if (!qrMap[coupon.code]) {
+        try {
+          const url = coupon.qrPayloadUrl || `https://foxdrop.mx/?promo=${coupon.code}`;
+          qrMap[coupon.code] = await QRCode.toDataURL(url, {
+            width: 360,
+            margin: 1,
+            color: { dark: '#000000', light: '#FFFFFF' },
+            errorCorrectionLevel: 'M',
+          });
+        } catch (e) {
+          console.warn('Error asegurando QR para impresión:', e);
+        }
+      }
+    }
+    setQrDataUrls(qrMap);
+
     const printWindow = window.open('', '_blank', 'width=1200,height=900');
     if (!printWindow) {
       window.print();
@@ -431,7 +450,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     // Build stickers markup cleanly with inline styles and exact mm measurements for the selected paper
     const stickersHtml = currentSheetCoupons.map((coupon, i) => {
       const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
-      const qrImg = qrDataUrls[coupon.code] || '';
+      const qrImg = qrMap[coupon.code] || qrDataUrls[coupon.code] || '';
       const qrWidthMm = qrSizeMm;
       const diameterMm = currentPaper.stickerDiameterMm;
 

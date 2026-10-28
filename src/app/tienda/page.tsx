@@ -28,6 +28,7 @@ import { getCategoryIconEmoji } from '@/lib/constants';
 import { ClubFoxDropSettings } from '@/types';
 import { trackEcommerceEvent } from '@/components/Analytics';
 import { soundManager } from '@/lib/sounds';
+import HalloweenAtmosphere from '@/components/HalloweenAtmosphere';
 
 // Normaliza texto eliminando acentos, caracteres especiales y mayúsculas
 function normalizeSearchText(text: string): string {
@@ -1956,7 +1957,9 @@ export default function TiendaFoxDrop() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2EC] text-[#113B34] flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0">
+    <div className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}>
+      {/* Atmósfera dinámica de Halloween (Noche mística, murciélagos y rayos) */}
+      {storeSettings?.halloweenThemeEnabled && <HalloweenAtmosphere />}
       
       {/* ======================================================== */}
       {/* 0. TICKER SUPERIOR DE ANUNCIOS & ENVÍOS (ESTILO TJ MAXX) */}

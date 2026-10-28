@@ -266,3 +266,176 @@ html, body {
 .admin-dark-mode .divide-slate-200 > * + * {
   border-color: #1e293b !important;
 }
+
+/* ======================================================== */
+/* TEMATIZACIÓN DE HALLOWEEN (ATMÓSFERA Y MURCIÉLAGOS)     */
+/* ======================================================== */
+
+/* 1. Bat Wing Flapping (Aleteo suave a 60 FPS) */
+@keyframes batWingLeft {
+  0%, 100% {
+    transform: rotate(0deg) scaleY(1);
+  }
+  50% {
+    transform: rotate(26deg) scaleY(0.72);
+  }
+}
+
+@keyframes batWingRight {
+  0%, 100% {
+    transform: rotate(0deg) scaleY(1);
+  }
+  50% {
+    transform: rotate(-26deg) scaleY(0.72);
+  }
+}
+
+.animate-bat-wing-left {
+  animation: batWingLeft ease-in-out infinite;
+  transform-origin: 50px 35px;
+}
+
+.animate-bat-wing-right {
+  animation: batWingRight ease-in-out infinite;
+  transform-origin: 50px 35px;
+}
+
+/* 2. Trayectorias de vuelo de murciélagos */
+@keyframes batFly1 {
+  0% {
+    transform: translate(105vw, 15vh) scale(0.9) rotate(-10deg);
+    opacity: 0;
+  }
+  10% { opacity: 0.85; }
+  50% {
+    transform: translate(50vw, 8vh) scale(1.05) rotate(4deg);
+  }
+  90% { opacity: 0.85; }
+  100% {
+    transform: translate(-15vw, 25vh) scale(0.85) rotate(-14deg);
+    opacity: 0;
+  }
+}
+
+@keyframes batFly2 {
+  0% {
+    transform: translate(110vw, 32vh) scale(0.8) rotate(6deg);
+    opacity: 0;
+  }
+  15% { opacity: 0.75; }
+  55% {
+    transform: translate(45vw, 22vh) scale(0.9) rotate(-8deg);
+  }
+  85% { opacity: 0.75; }
+  100% {
+    transform: translate(-10vw, 38vh) scale(0.75) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+@keyframes batFly3 {
+  0% {
+    transform: translate(100vw, 6vh) scale(0.6) rotate(-15deg);
+    opacity: 0;
+  }
+  20% { opacity: 0.65; }
+  60% {
+    transform: translate(75vw, 12vh) scale(0.65) rotate(0deg);
+  }
+  80% { opacity: 0.65; }
+  100% {
+    transform: translate(55vw, 2vh) scale(0.55) rotate(-12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes batFly4 {
+  0% {
+    transform: translate(-15vw, 45vh) scale(0.85) rotate(12deg);
+    opacity: 0;
+  }
+  10% { opacity: 0.8; }
+  45% {
+    transform: translate(40vw, 35vh) scale(1) rotate(-6deg);
+  }
+  90% { opacity: 0.8; }
+  100% {
+    transform: translate(110vw, 28vh) scale(0.85) rotate(8deg);
+    opacity: 0;
+  }
+}
+
+@keyframes batFly5 {
+  0% {
+    transform: translate(95vw, 18vh) scale(0.5) rotate(-8deg);
+    opacity: 0;
+  }
+  30% { opacity: 0.55; }
+  70% {
+    transform: translate(25vw, 14vh) scale(0.55) rotate(4deg);
+  }
+  100% {
+    transform: translate(-10vw, 22vh) scale(0.48) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+.bat-flight-1 {
+  animation: batFly1 18s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 0s;
+}
+
+.bat-flight-2 {
+  animation: batFly2 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 6s;
+}
+
+.bat-flight-3 {
+  animation: batFly3 15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 2s;
+}
+
+.bat-flight-4 {
+  animation: batFly4 22s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 11s;
+}
+
+.bat-flight-5 {
+  animation: batFly5 28s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 4s;
+}
+
+/* 3. Relámpago ambiental sutil (Flash tenue de tormenta cada 16 segundos) */
+@keyframes ambientLightning {
+  0%, 88%, 91.5%, 94%, 100% {
+    opacity: 0;
+  }
+  89% {
+    opacity: 0.12;
+  }
+  90% {
+    opacity: 0.04;
+  }
+  92% {
+    opacity: 0.16;
+  }
+  93% {
+    opacity: 0.02;
+  }
+}
+
+.animate-lightning {
+  animation: ambientLightning 16s ease-in-out infinite;
+}
+
+/* 4. Estilos de ambiente para modo Halloween en tienda */
+.theme-halloween-store {
+  background: radial-gradient(circle at 85% 10%, #0d1e2b 0%, #061118 45%, #04090f 100%) !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-halloween-store header {
+  background: rgba(11, 26, 23, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(230, 95, 43, 0.3) !important;
+}

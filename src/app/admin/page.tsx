@@ -7747,6 +7747,74 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               )}
             </div>
 
+            {/* INTERRUPTOR DE TEMATIZACIÓN DE TEMPORADA (HALLOWEEN) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 mb-6 shadow-xl relative overflow-hidden">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#E65F2B]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#E65F2B] to-amber-600 flex items-center justify-center text-2xl shadow-lg shrink-0">
+                    🎃
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-black text-sm text-white">
+                        Tematización Especial de Halloween
+                      </h3>
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                        storeSettings.halloweenThemeEnabled
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}>
+                        {storeSettings.halloweenThemeEnabled ? '🦇 Activo en Tienda' : 'Apagado (Diseño Regular)'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+                      Activa la atmósfera festiva en la tienda con noche mística, rayos de fondo tenues y murciélagos con aleteo suave. No altera la navegación ni satura la experiencia de compra.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const updated = {
+                        ...storeSettings,
+                        halloweenThemeEnabled: !storeSettings.halloweenThemeEnabled,
+                      };
+                      setStoreSettings(updated);
+                      setSavingStoreSettings(true);
+                      try {
+                        await saveStoreSettings(updated);
+                        setStoreSettingsSavedNotice(true);
+                        setTimeout(() => setStoreSettingsSavedNotice(false), 3000);
+                      } catch {
+                        alert('Error al guardar el estado de tematización');
+                      } finally {
+                        setSavingStoreSettings(false);
+                      }
+                    }}
+                    disabled={savingStoreSettings}
+                    className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      storeSettings.halloweenThemeEnabled ? 'bg-[#E65F2B]' : 'bg-slate-700'
+                    }`}
+                    role="switch"
+                    aria-checked={storeSettings.halloweenThemeEnabled}
+                    title="Activar / Desactivar Tematización de Halloween"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out flex items-center justify-center text-xs ${
+                        storeSettings.halloweenThemeEnabled ? 'translate-x-8 text-amber-600' : 'translate-x-0 text-slate-400'
+                      }`}
+                    >
+                      {storeSettings.halloweenThemeEnabled ? '🦇' : '✕'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* PANEL DE CONTROL DE VELOCIDAD DEL CARRUSEL HERO */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
