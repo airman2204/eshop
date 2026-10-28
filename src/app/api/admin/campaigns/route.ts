@@ -223,6 +223,12 @@ export async function PATCH(req: NextRequest) {
       if (updates.bannerMessage !== undefined) target.bannerMessage = updates.bannerMessage;
       if (updates.ctaText !== undefined) target.ctaText = updates.ctaText;
       if (updates.singleUse !== undefined) target.singleUse = Boolean(updates.singleUse);
+      if (updates.couponDesigns !== undefined) {
+        target.couponDesigns = {
+          ...target.couponDesigns,
+          ...updates.couponDesigns,
+        };
+      }
     }
 
     target.updatedAt = new Date().toISOString();

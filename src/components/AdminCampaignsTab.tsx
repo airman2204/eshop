@@ -5,10 +5,12 @@ import QRCode from 'qrcode';
 import { 
   Megaphone, Plus, Calendar, Tag, Percent, QrCode, Eye, CheckCircle2, 
   XCircle, Clock, Printer, Download, RefreshCw, Search, Sliders, 
-  ExternalLink, Sparkles, AlertTriangle, Check, Layers, ChevronRight, X
+  ExternalLink, Sparkles, AlertTriangle, Check, Layers, ChevronRight, X,
+  Upload, Image as ImageIcon
 } from 'lucide-react';
 import { MarketingCampaign, CampaignCoupon } from '@/types';
 import { fetchAdminCustomApi } from '@/lib/adminAuth';
+import { uploadProductImage } from '@/lib/storage';
 
 interface AdminCampaignsTabProps {
   onNotify?: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -96,6 +98,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingDesign, setUploadingDesign] = useState<'calabaza' | 'vampiro' | 'hechicero' | null>(null);
 
   // Filtros de cupones
   const [searchTerm, setSearchTerm] = useState('');
@@ -298,6 +301,25 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       alert(`Error al actualizar: ${err.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadCouponDesign = async (variant: 'calabaza' | 'vampiro' | 'hechicero', file: File) => {
+    if (!currentCampaign) return;
+    setUploadingDesign(variant);
+    try {
+      const publicUrl = await uploadProductImage(file);
+      const newDesigns = {
+        ...(currentCampaign.couponDesigns || {}),
+        [variant]: publicUrl,
+      };
+      await handleUpdateSettings({ couponDesigns: newDesigns });
+      if (onNotify) onNotify(`Arte de ${variant} actualizado con éxito`, 'success');
+    } catch (err: any) {
+      console.error('Error al subir diseño de cupón:', err);
+      if (onNotify) onNotify(err.message || 'Error al subir la imagen', 'error');
+    } finally {
+      setUploadingDesign(null);
     }
   };
 
@@ -778,6 +800,100 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-lg shrink-0">
                 Auto-aplica {currentCampaign.discountPercent}% en Carrito
               </span>
+            </div>
+
+            {/* Gestión de Artes de Cupones Digitales (Popup de Escaneo) */}
+            <div className="pt-2 border-t border-slate-800/80">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+                    <ImageIcon className="w-3.5 h-3.5" /> Artes de Cupones Digitales (Popup al Escanear QR)
+                  </h4>
+                  <p className="text-[11px] text-slate-400">
+                    Sube o personaliza los 3 artes gráficos (1024 × 572 px) vinculados a cada personaje del sticker.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { key: 'calabaza' as const, name: 'Calabaza', emoji: '🎃', defaultImg: '/campaigns/coupons/calabaza.png' },
+                  { key: 'vampiro' as const, name: 'Vampiro', emoji: '🧛', defaultImg: '/campaigns/coupons/vampiro.png' },
+                  { key: 'hechicero' as const, name: 'Mago / Hechicero', emoji: '🧙‍♂️', defaultImg: '/campaigns/coupons/hechicero.png' },
+                ].map((item) => {
+                  const currentImg = currentCampaign.couponDesigns?.[item.key] || item.defaultImg;
+                  const isUploading = uploadingDesign === item.key;
+
+                  return (
+                    <div key={item.key} className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                          <span>{item.emoji}</span> {item.name}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-500 uppercase">
+                          {currentCampaign.couponDesigns?.[item.key] ? 'Personalizado' : 'Por defecto'}
+                        </span>
+                      </div>
+
+                      {/* Preview del diseño */}
+                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-slate-700/60 bg-black/40 group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={currentImg} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover transition group-hover:scale-105 duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-2">
+                          <label className="cursor-pointer px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-lg flex items-center gap-1.5 transition">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Cambiar Arte</span>
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              disabled={isUploading}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleUploadCouponDesign(item.key, file);
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <label className={`w-full py-1.5 rounded-xl border text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer transition ${
+                          isUploading 
+                            ? 'bg-slate-800 border-slate-700 text-slate-400 cursor-not-allowed'
+                            : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-200 hover:border-amber-500/50'
+                        }`}>
+                          {isUploading ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+                              <span>Subiendo a Storage...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3 h-3 text-amber-400" />
+                              <span>Subir Nuevo Diseño</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            disabled={isUploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadCouponDesign(item.key, file);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

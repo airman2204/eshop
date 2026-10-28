@@ -120,6 +120,13 @@ export async function POST(req: NextRequest) {
       console.warn("Aviso guardando conteo de escaneo:", saveErr);
     }
 
+    // Determinar la variante del sticker (0: hechicero, 1: vampiro, 2: calabaza)
+    const variants: Array<'hechicero' | 'vampiro' | 'calabaza'> = ['hechicero', 'vampiro', 'calabaza'];
+    const variant = variants[foundCouponIndex % 3];
+    const customDesign = campaign.couponDesigns?.[variant];
+    const defaultDesign = `/campaigns/coupons/${variant}.png`;
+    const couponImage = customDesign || defaultDesign;
+
     return NextResponse.json({
       valid: true,
       code: coupon.code,
@@ -130,6 +137,8 @@ export async function POST(req: NextRequest) {
       ctaText: campaign.ctaText || "¡Aprovechar Descuento!",
       expiresAt: campaign.expiresAt,
       scanCount: coupon.scanCount,
+      variant,
+      couponImage,
     });
   } catch (err: any) {
     console.error("Error en /api/campaigns/scan:", err);

@@ -482,6 +482,11 @@ export interface MarketingCampaign {
   createdAt: string;
   updatedAt: string;
   coupons: CampaignCoupon[];
+  couponDesigns?: {
+    calabaza?: string;
+    vampiro?: string;
+    hechicero?: string;
+  };
   // Métricas calculadas o agregadas
   totalQrs?: number;
   totalScans?: number;

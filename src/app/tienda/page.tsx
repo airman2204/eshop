@@ -199,8 +199,12 @@ export default function TiendaFoxDrop() {
     bannerMessage: string;
     ctaText: string;
     expiresAt?: string;
+    variant?: 'calabaza' | 'vampiro' | 'hechicero';
+    couponImage?: string;
   } | null>(null);
   const [showPromoBanner, setShowPromoBanner] = useState(false);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoCopiedFeedback, setPromoCopiedFeedback] = useState(false);
   const [promoNoticeMessage, setPromoNoticeMessage] = useState<string | null>(null);
 
   // Estimador de envío por Código Postal en ficha de producto
@@ -315,8 +319,11 @@ export default function TiendaFoxDrop() {
                     bannerMessage: data.bannerMessage,
                     ctaText: data.ctaText,
                     expiresAt: data.expiresAt,
+                    variant: data.variant,
+                    couponImage: data.couponImage,
                   });
                   setShowPromoBanner(true);
+                  setShowPromoModal(true);
                   setCouponError(null);
                 } else if (data.message) {
                   setPromoNoticeMessage(data.message);
@@ -1949,6 +1956,119 @@ export default function TiendaFoxDrop() {
           </button>
         </div>
       </aside>
+
+      {/* ======================================================== */}
+      {/* 0.4. POPUP INTERACTIVO DE CUPÓN GRÁFICO (DULCE O DESCUENTO) */}
+      {/* ======================================================== */}
+      {showPromoModal && campaignPromo && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-300">
+          <div className="relative max-w-2xl w-full bg-[#071d18] border-2 border-amber-500/50 rounded-3xl shadow-[0_25px_60px_-15px_rgba(230,95,43,0.35)] overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Botón cerrar modal en la esquina superior */}
+            <button
+              type="button"
+              onClick={() => setShowPromoModal(false)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 p-2 rounded-full bg-black/60 hover:bg-black/90 text-white/80 hover:text-white backdrop-blur-sm transition shadow-lg cursor-pointer"
+              title="Cerrar cupón"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Contenedor relativo del arte del cupón (proporción 1024 x 572 = 1.79) */}
+            <div className="relative w-full aspect-[1024/572] select-none bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={campaignPromo.couponImage || `/campaigns/coupons/${campaignPromo.variant || 'calabaza'}.png`}
+                alt="Cupón Promocional FoxDrop"
+                className="w-full h-full object-contain pointer-events-none"
+              />
+
+              {/* Inyección dinámica del Código en el recuadro blanco */}
+              {/* Coordenadas precisas del arte: left: 45.0%, top: 57.5%, width: 46.8%, height: 9.8% */}
+              <div 
+                className="absolute flex items-center justify-center pointer-events-none"
+                style={{
+                  left: '45.0%',
+                  top: '57.5%',
+                  width: '46.8%',
+                  height: '9.8%',
+                }}
+              >
+                <span className="font-mono font-black text-stone-900 tracking-wider text-base sm:text-2xl md:text-3xl leading-none drop-shadow-xs">
+                  {campaignPromo.code}
+                </span>
+              </div>
+
+              {/* Hotspot / Botón invisible interactivo posicionado exactamente sobre el gráfico "COPIAR CÓDIGO" */}
+              {/* Coordenadas precisas: left: 52.0%, top: 68.3%, width: 33.0%, height: 11.2% */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(campaignPromo.code);
+                  } catch (clipErr) {
+                    console.warn('Error al escribir en portapapeles:', clipErr);
+                  }
+
+                  // Asegurar que quede aplicado en el carrito
+                  setAppliedCoupon({
+                    code: campaignPromo.code,
+                    discountPercent: campaignPromo.discountPercent,
+                    description: `${campaignPromo.discountPercent}% OFF (Campaña Dulce o Descuento)`,
+                  });
+
+                  setPromoCopiedFeedback(true);
+
+                  // Cierre automático tras 1.5 segundos como solicitó el usuario
+                  setTimeout(() => {
+                    setShowPromoModal(false);
+                    setPromoCopiedFeedback(false);
+                  }, 1500);
+                }}
+                className="absolute rounded-xl sm:rounded-2xl cursor-pointer transition-all active:scale-95 focus:outline-none flex items-center justify-center overflow-hidden group"
+                style={{
+                  left: '52.0%',
+                  top: '68.3%',
+                  width: '33.0%',
+                  height: '11.2%',
+                }}
+                title="Copiar código al portapapeles"
+              >
+                {/* Micro-animación de overlay al pasar el cursor o hacer clic */}
+                <span className="absolute inset-0 bg-white/0 group-hover:bg-white/10 group-active:bg-white/20 transition-colors rounded-xl" />
+
+                {/* Feedback visual interactivo cuando se copia */}
+                {promoCopiedFeedback && (
+                  <div className="absolute inset-0 bg-[#0F3E36] text-amber-300 font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-2xl animate-in zoom-in duration-200">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    <span>¡CÓDIGO COPIADO!</span>
+                  </div>
+                )}
+              </button>
+            </div>
+
+            {/* Barra inferior informativa con auto-aplicación en carrito */}
+            <div className="bg-[#0b2923] border-t border-emerald-900/60 px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 text-sm">✨</span>
+                <p className="text-xs text-white/90">
+                  Descuento del <strong className="text-amber-300">{campaignPromo.discountPercent}% OFF</strong> pre-aplicado automáticamente en tu carrito de compra.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPromoModal(false);
+                  setIsCartOpen(true);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition shrink-0 cursor-pointer"
+              >
+                Comenzar a Comprar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* 0.5. BANNER FESTIVO DE CAMPAÑA QR (HALLOWEEN DULCE O TRUCO) */}
