@@ -400,6 +400,15 @@ export default function TiendaFoxDrop() {
           // Detección de escaneo de QR promocional (?promo=CODE o ?cupon=CODE)
           const promoCode = urlParams.get('promo') || urlParams.get('cupon');
           if (promoCode) {
+            // Limpiar el parámetro de la URL inmediatamente sin recargar la página (evita que al refrescar vuelva a salir el popup)
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('promo');
+            cleanUrl.searchParams.delete('cupon');
+            window.history.replaceState({}, '', cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : ''));
+
+            // Verificar si este cupón específico ya fue visto o guardado en esta sesión para no ser invasivo
+            const alreadySeen = sessionStorage.getItem(`foxdrop_promo_seen_${promoCode}`);
+
             fetch('/api/campaigns/scan', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -424,10 +433,16 @@ export default function TiendaFoxDrop() {
                     couponImage: data.couponImage,
                   });
                   setShowPromoBanner(true);
-                  setShowPromoModal(true);
+
+                  // Solo mostrar el popup invasivo si no lo había visto antes en esta sesión
+                  if (!alreadySeen) {
+                    setShowPromoModal(true);
+                    sessionStorage.setItem(`foxdrop_promo_seen_${promoCode}`, 'true');
+                  }
                   setCouponError(null);
-                } else if (data.message) {
+                } else if (data.message && !alreadySeen) {
                   setPromoNoticeMessage(data.message);
+                  sessionStorage.setItem(`foxdrop_promo_seen_${promoCode}`, 'true');
                 }
               })
               .catch(err => console.warn('Aviso verificando QR de campaña:', err));
