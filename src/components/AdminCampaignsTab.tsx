@@ -153,8 +153,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
       const deltaY = clientY - dragStartRef.current.startY;
 
       // Sensitivity factor: 1px movement ~ 0.5% offset
-      const newX = Math.round(Math.max(-38, Math.min(38, dragStartRef.current.initOffsetX + deltaX * 0.55)));
-      const newY = Math.round(Math.max(-38, Math.min(38, dragStartRef.current.initOffsetY + deltaY * 0.55)));
+      const newX = Math.round(Math.max(-48, Math.min(48, dragStartRef.current.initOffsetX + deltaX * 0.55)));
+      const newY = Math.round(Math.max(-48, Math.min(48, dragStartRef.current.initOffsetY + deltaY * 0.55)));
 
       setQrOffsetX(newX);
       setQrOffsetY(newY);
@@ -1009,8 +1009,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <span className="font-bold text-amber-300 flex items-center gap-1">✋ Arrastra con el cursor o:</span><span className="font-bold text-slate-300 ml-1">X:</span>
                   <input
                     type="range"
-                    min="-38"
-                    max="38"
+                    min="-48"
+                    max="48"
                     value={qrOffsetX}
                     onChange={e => setQrOffsetX(parseInt(e.target.value, 10))}
                     className="w-20 accent-amber-500 cursor-pointer"
@@ -1023,8 +1023,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <span className="font-bold text-slate-300">Posición Y:</span>
                   <input
                     type="range"
-                    min="-38"
-                    max="38"
+                    min="-48"
+                    max="48"
                     value={qrOffsetY}
                     onChange={e => setQrOffsetY(parseInt(e.target.value, 10))}
                     className="w-20 accent-amber-500 cursor-pointer"
@@ -1066,7 +1066,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setQrOffsetX(26); setQrOffsetY(0); }}
+                    onClick={() => { setQrOffsetX(36); setQrOffsetY(0); }}
                     className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
                     title="Derecha"
                   >
@@ -1074,7 +1074,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setQrOffsetX(-26); setQrOffsetY(0); }}
+                    onClick={() => { setQrOffsetX(-36); setQrOffsetY(0); }}
                     className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition"
                     title="Izquierda"
                   >
@@ -1190,8 +1190,8 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                               style={{
                                 width: `${qrSizeMm * 2.2}px`,
                                 height: `${qrSizeMm * 2.2}px`,
-                                left: `calc(50% + ${qrOffsetX * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
-                                top: `calc(50% + ${qrOffsetY * 0.9}px - ${(qrSizeMm * 2.2) / 2}px)`,
+                                left: `calc(50% + ${(qrOffsetX * 0.975)}px - ${(qrSizeMm * 2.2) / 2}px)`,
+                                top: `calc(50% + ${(qrOffsetY * 0.975)}px - ${(qrSizeMm * 2.2) / 2}px)`,
                                 touchAction: 'none',
                               }}
                               title="¡Arrastra libremente con el mouse o dedo dentro del sticker!"
