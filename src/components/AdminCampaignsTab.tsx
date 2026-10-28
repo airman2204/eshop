@@ -262,6 +262,86 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
     { name: 'Calabaza', img: '/campaigns/stickers/calabaza.png' },
   ];
 
+  const handlePrintSheet = () => {
+    const sheetEl = document.getElementById('printable-tabloid-sheet');
+    if (!sheetEl) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=900');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const cleanSheet = sheetEl.cloneNode(true) as HTMLElement;
+
+    const htmlContent = '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+      '<meta charset="utf-8">' +
+      '<title>FoxDrop - Hoja Tabloide ' + (tabloidSheetIndex + 1) + ' (27.9 x 43.2 cm)</title>' +
+      '<style>' +
+      '  @page {' +
+      '    size: 27.9cm 43.2cm;' +
+      '    margin: 0;' +
+      '  }' +
+      '  html, body {' +
+      '    margin: 0 !important;' +
+      '    padding: 0 !important;' +
+      '    width: 27.9cm !important;' +
+      '    height: 43.2cm !important;' +
+      '    background: #FAF6F0 !important;' +
+      '    -webkit-print-color-adjust: exact !important;' +
+      '    print-color-adjust: exact !important;' +
+      '    box-sizing: border-box;' +
+      '    display: flex;' +
+      '    justify-content: center;' +
+      '    align-items: center;' +
+      '    overflow: hidden;' +
+      '    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;' +
+      '  }' +
+      '  * { box-sizing: border-box; }' +
+      '  #printable-tabloid-sheet {' +
+      '    width: 27.9cm !important;' +
+      '    height: 43.2cm !important;' +
+      '    max-width: 27.9cm !important;' +
+      '    max-height: 43.2cm !important;' +
+      '    padding: 1.6cm 1.5cm !important;' +
+      '    margin: 0 !important;' +
+      '    border: none !important;' +
+      '    box-shadow: none !important;' +
+      '    display: flex !important;' +
+      '    flex-direction: column !important;' +
+      '    justify-content: space-between !important;' +
+      '    background: #FAF6F0 !important;' +
+      '  }' +
+      '  .tabloid-grid {' +
+      '    display: grid !important;' +
+      '    grid-template-columns: repeat(3, 1fr) !important;' +
+      '    gap: 1.0cm 0.8cm !important;' +
+      '    align-items: center !important;' +
+      '    justify-items: center !important;' +
+      '    width: 100% !important;' +
+      '  }' +
+      '</style>' +
+      '<script src="https://cdn.tailwindcss.com"></script>' +
+      '</head>' +
+      '<body>' +
+      cleanSheet.outerHTML +
+      '<script>' +
+      '  setTimeout(function() { window.print(); }, 600);' +
+      '</script>' +
+      '</body>' +
+      '</html>';
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
+
   return (
     <div className="space-y-6">
 
@@ -294,7 +374,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
             className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Centro de Impresión Tabloide (11x17)</span>
+            <span>Centro de Impresión Tabloide (27.9 × 43.2 cm)</span>
           </button>
 
           <button
@@ -699,7 +779,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                   <Printer className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-white text-base">Hojas Tabloide (11 x 17 in) — Medio Corte Stickers</h3>
+                  <h3 className="font-black text-white text-base">Hojas Tabloide (27.9 × 43.2 cm) — Medio Corte Stickers</h3>
                   <p className="text-xs text-slate-400">
                     Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets} • 12 stickers redondos por hoja tabloide
                   </p>
@@ -709,7 +789,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrintSheet}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition"
                 >
                   <Printer className="w-4 h-4" />
@@ -809,7 +889,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 <div className="border-b-2 border-slate-300 pb-3 mb-4 flex items-center justify-between text-xs">
                   <div>
                     <h4 className="font-black text-[#0F3E36] text-sm uppercase tracking-wider">
-                      FOXDROP MÉXICO — HOJA TABLOIDE (11 x 17 in / 279 x 432 mm)
+                      FOXDROP MÉXICO — HOJA TABLOIDE (27.9 × 43.2 cm)
                     </h4>
                     <p className="text-[11px] text-slate-600 font-medium">
                       Campaña: <strong>{currentCampaign.name}</strong> • Medio Corte / Suaje Circular • Hoja {tabloidSheetIndex + 1} de {totalTabloidSheets}
@@ -822,7 +902,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                 </div>
 
                 {/* MATRIZ DE 12 STICKERS (3 COLUMNAS x 4 FILAS) */}
-                <div className="grid grid-cols-3 gap-y-6 gap-x-4 flex-1 items-center justify-items-center">
+                <div className="tabloid-grid grid grid-cols-3 gap-y-6 gap-x-4 flex-1 items-center justify-items-center">
                   {currentSheetCoupons.map((coupon, i) => {
                     const variant = STICKER_VARIANTS[i % STICKER_VARIANTS.length];
                     const qrImg = qrDataUrls[coupon.code];
@@ -867,12 +947,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                           )}
                         </div>
 
-                        {/* Pie de sticker con Código para control de la imprenta */}
-                        <div className="mt-1 text-center">
-                          <span className="font-mono font-black text-[10px] text-slate-700 bg-white/80 px-2 py-0.5 rounded border border-slate-300">
-                            {coupon.code}
-                          </span>
-                        </div>
+                        
                       </div>
                     );
                   })}
