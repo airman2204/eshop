@@ -361,7 +361,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Genera 100 stickers con QRs únicos de un solo uso, vigencia y hojas tabloide para imprenta
+              Genera stickers con QRs únicos de un solo uso, vigencia personalizada y hojas tabloide para imprenta
             </p>
           </div>
         </div>
@@ -383,7 +383,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
             className="px-4 py-2.5 rounded-2xl bg-[#E65F2B] hover:bg-[#d45322] text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Nueva Campaña (100 QRs)</span>
+            <span>+ Nueva Campaña QR</span>
           </button>
         </div>
       </div>
@@ -985,7 +985,7 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
               </div>
               <div>
                 <h3 className="font-black text-white text-base">Crear Nueva Campaña QR</h3>
-                <p className="text-xs text-slate-400">Genera 100 cupones únicos para tus stickers físicos</p>
+                <p className="text-xs text-slate-400">Genera la cantidad exacta de cupones únicos para tus stickers físicos</p>
               </div>
             </div>
 
@@ -1013,19 +1013,20 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                     placeholder="HAL-FOX"
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-amber-300 focus:outline-none focus:border-amber-500 uppercase"
                   />
-                  <span className="text-[10px] text-slate-500 mt-0.5 block">Ej. HAL-FOX-001 ... 100</span>
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">Ej. {newPrefix || 'PROMO'}-001 ... {newQuantity}</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Cantidad de Stickers</label>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">Cantidad de Cupones / QRs</label>
                   <input
                     type="number"
                     min="1"
-                    max="500"
+                    max="5000"
                     value={newQuantity}
-                    onChange={e => setNewQuantity(parseInt(e.target.value, 10) || 100)}
+                    onChange={e => setNewQuantity(parseInt(e.target.value, 10) || 1)}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                   />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">Cualquier cantidad (ej. 150, 200, 500)</span>
                 </div>
               </div>
 

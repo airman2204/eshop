@@ -107,9 +107,9 @@ export async function POST(req: NextRequest) {
     const campaignId = `camp-${Date.now()}`;
     const cleanPrefix = (prefix || "PROMO").toUpperCase().replace(/[^A-Z0-9-]/g, "");
 
-    // Generar cupones únicos en lote
+    // Generar cupones únicos en lote (configurable libremente hasta 5,000 cupones)
     const coupons: CampaignCoupon[] = [];
-    const count = Math.min(Math.max(1, parseInt(quantity, 10) || 100), 500);
+    const count = Math.min(Math.max(1, parseInt(quantity, 10) || 100), 5000);
 
     for (let i = 1; i <= count; i++) {
       const paddedNum = i.toString().padStart(3, "0");
