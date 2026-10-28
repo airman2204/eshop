@@ -848,10 +848,10 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
                             <div
                               className={`absolute z-10 flex flex-col items-center justify-center bg-white p-1 rounded-xl shadow-lg border border-slate-300 ${
                                 qrPosition === 'center_bottom'
-                                  ? 'bottom-8 inset-x-0 mx-auto'
+                                  ? 'bottom-3 inset-x-0 mx-auto'
                                   : qrPosition === 'center_total'
                                   ? 'inset-0 m-auto'
-                                  : 'bottom-7 right-4'
+                                  : 'top-1/2 -translate-y-1/2 right-3'
                               }`}
                               style={{
                                 width: `${qrSizeMm * 2.2}px`,
