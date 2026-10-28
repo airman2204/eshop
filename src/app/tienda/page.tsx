@@ -625,16 +625,10 @@ export default function TiendaFoxDrop() {
     };
     window.addEventListener('focus', handleFocus);
 
-    // 3. Sincronización silenciosa periódica cada 10 segundos
-    const syncInterval = setInterval(() => {
-      refreshProductsSilently();
-    }, 10000);
-
     return () => {
       isMounted = false;
       unsubscribeProducts();
       window.removeEventListener('focus', handleFocus);
-      clearInterval(syncInterval);
     };
   }, []);
 
@@ -2066,10 +2060,7 @@ export default function TiendaFoxDrop() {
 
   return (
     <div 
-      className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative ${pullDistance === 0 ? 'transition-transform duration-300 ease-out' : ''}`}
-      style={{
-        transform: pullDistance > 0 ? `translateY(${pullDistance * 0.75}px)` : (isPullRefreshing ? 'translateY(45px)' : 'none'),
-      }}
+      className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}
     >
       {/* Atmósfera dinámica de Halloween (Noche mística, murciélagos y rayos) */}
       {storeSettings?.halloweenThemeEnabled && <HalloweenAtmosphere />}

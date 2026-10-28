@@ -562,9 +562,21 @@ export default function AdminCampaignsTab({ onNotify }: AdminCampaignsTabProps) 
   </div>
   <script>
     window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
+      // Esperar activamente a que todas las imágenes y QRs terminen de cargar y decodificarse
+      var imgs = Array.from(document.images);
+      var promises = imgs.map(function(img) {
+        if (img.complete) return Promise.resolve();
+        return new Promise(function(resolve) {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      });
+      Promise.all(promises).then(function() {
+        setTimeout(function() {
+          window.focus();
+          window.print();
+        }, 350);
+      });
     };
   </script>
 </body>
