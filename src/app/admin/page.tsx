@@ -13978,7 +13978,7 @@ ${ticketImg}
                 <div>
                   <h1 className="text-xl font-black text-slate-900 tracking-tight">FOXDROP PUEBLA</h1>
                   <p className="text-[11px] text-slate-500">Comercializadora & Envíos Directos</p>
-                  <p className="text-[10px] text-slate-400">Puebla, Pue. • WhatsApp: 221 216 4504</p>
+                  <p className="text-[10px] text-slate-400">Puebla, Pue. • WhatsApp: 222 380 6846</p>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block">Folio de Pedido</span>

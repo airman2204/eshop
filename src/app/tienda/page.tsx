@@ -3888,7 +3888,7 @@ export default function TiendaFoxDrop() {
 
                                   {/* Botón WhatsApp con Folio */}
                                   <a
-                                    href={`https://wa.me/522221234567?text=${encodeURIComponent(`Hola FoxDrop 🦊, tengo una duda sobre mi pedido *${order.order_number || order.id}* por *$${Number(order.total).toFixed(2)} MXN*.`)}`}
+                                    href={`https://wa.me/522223806846?text=${encodeURIComponent(`Hola FoxDrop 🦊, tengo una duda sobre mi pedido *${order.order_number || order.id}* por *$${Number(order.total).toFixed(2)} MXN*.`)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition cursor-pointer"
@@ -3911,9 +3911,13 @@ export default function TiendaFoxDrop() {
                                   )}
 
                                   {(() => {
-                                    const createdMs = order.created_at ? new Date(order.created_at).getTime() : 0;
-                                    const elapsedMs = createdMs ? Math.max(0, nowTick - createdMs) : Infinity;
-                                    const remainingSec = Math.max(0, Math.ceil((2 * 60 * 1000 - elapsedMs) / 1000));
+                                    // Para órdenes pagadas (ej. Mercado Pago), el cronómetro de 5 minutos inicia cuando se confirmó el pago (updated_at)
+                                    // Para órdenes pendientes de pago, inicia en created_at
+                                    const refIso = (order.payment_status === 'paid' && order.updated_at) ? order.updated_at : order.created_at;
+                                    const refMs = refIso ? new Date(refIso).getTime() : 0;
+                                    const elapsedMs = refMs ? Math.max(0, nowTick - refMs) : Infinity;
+                                    const windowMs = 5 * 60 * 1000; // 5 minutos de margen de cancelación
+                                    const remainingSec = Math.max(0, Math.ceil((windowMs - elapsedMs) / 1000));
                                     const isSentToCj = Boolean(order.notes && order.notes.includes('[CJ-ORDER:'));
                                     const canClientCancel = order.status === 'pending' && remainingSec > 0 && !isSentToCj && !isPos;
                                     const countdownStr = `${Math.floor(remainingSec / 60)}:${String(remainingSec % 60).padStart(2, '0')}`;
@@ -3929,7 +3933,7 @@ export default function TiendaFoxDrop() {
                                             setShowClientCancelModal(true);
                                           }}
                                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs transition cursor-pointer"
-                                          title="Puedes cancelar directamente durante los primeros 2 minutos o antes de que sea confirmado"
+                                          title="Puedes cancelar directamente durante los primeros 5 minutos o antes de que sea confirmado"
                                         >
                                           <Ban className="w-3.5 h-3.5 text-rose-600" />
                                           <span>Cancelar ({countdownStr})</span>
@@ -3945,7 +3949,7 @@ export default function TiendaFoxDrop() {
                                           title={
                                             order.status !== 'pending' || isSentToCj
                                               ? 'El pedido ya fue confirmado por la tienda y no puede cancelarse directamente'
-                                              : 'El periodo de 2 minutos para cancelación directa ha finalizado'
+                                              : 'El periodo de 5 minutos para cancelación directa ha finalizado'
                                           }
                                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-100 text-slate-400 font-bold text-xs cursor-not-allowed opacity-75"
                                         >
@@ -5797,7 +5801,7 @@ export default function TiendaFoxDrop() {
               </p>
               <div className="pt-1">
                 <a
-                  href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '522221234567'}?text=${encodeURIComponent('Hola FoxDrop, tengo una duda sobre un producto.')}`}
+                  href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '522223806846'}?text=${encodeURIComponent('Hola FoxDrop, tengo una duda sobre un producto.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-bold px-3 py-2 rounded-xl transition border border-emerald-500/30"
@@ -6537,7 +6541,7 @@ export default function TiendaFoxDrop() {
                         type="button"
                         onClick={() => {
                           const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible en 24 a 48 hrs?`;
-                          const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "";
+                          const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "522223806846";
                           const waUrl = whatsappNum 
                             ? `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`
                             : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -7253,7 +7257,7 @@ export default function TiendaFoxDrop() {
 
         const orderNum = order.order_number || order.id;
         const waMsg = `Hola FoxDrop 🦊, deseo consultar el estado de mi pedido *${orderNum}* por un total de *${Number(order.total).toFixed(2)} MXN*.`;
-        const waLink = `https://wa.me/522221234567?text=${encodeURIComponent(waMsg)}`;
+        const waLink = `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '522223806846'}?text=${encodeURIComponent(waMsg)}`;
 
         // Resolver items si vienen vacíos usando catálogo local
         const orderItems = (order.order_items && order.order_items.length > 0)

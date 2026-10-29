@@ -411,7 +411,7 @@ export async function POST(req: NextRequest) {
 
       // 1. Verificar el estado actual de la orden para garantizar que no esté ya enviada o entregada
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
-      let fetchQuery = supabase.from("orders").select("id, order_number, user_id, client_email, client_phone, status, payment_status, payment_method, total, client_name, created_at, notes, order_items(*)");
+      let fetchQuery = supabase.from("orders").select("id, order_number, user_id, client_email, client_phone, status, payment_status, payment_method, total, client_name, created_at, updated_at, notes, order_items(*)");
       if (isUuid) {
         fetchQuery = fetchQuery.eq("id", orderId);
       } else {
@@ -444,13 +444,20 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
-      // Regla de 2 minutos máximos para cancelación directa por parte del cliente
-      if (!isAdmin && orderData.created_at) {
-        const elapsedMs = Date.now() - new Date(orderData.created_at).getTime();
-        if (elapsedMs > 2 * 60 * 1000) {
-          return NextResponse.json({
-            error: "El tiempo límite de 2 minutos para cancelación directa ha concluido. Por favor contacta a soporte por WhatsApp si necesitas ayuda con tu pedido."
-          }, { status: 400 });
+      // Regla de 5 minutos máximos para cancelación directa por parte del cliente.
+      // Si el pedido fue pagado (ej. Mercado Pago), el cronómetro de 5 minutos corre desde la fecha de confirmación del pago (updated_at)
+      if (!isAdmin) {
+        const referenceTime = (orderData.payment_status === "paid" && orderData.updated_at)
+          ? new Date(orderData.updated_at).getTime()
+          : (orderData.created_at ? new Date(orderData.created_at).getTime() : 0);
+
+        if (referenceTime > 0) {
+          const elapsedMs = Date.now() - referenceTime;
+          if (elapsedMs > 5 * 60 * 1000) {
+            return NextResponse.json({
+              error: "El tiempo límite de 5 minutos para cancelación directa ha concluido. Por favor contacta a soporte por WhatsApp si necesitas ayuda con tu pedido."
+            }, { status: 400 });
+          }
         }
       }
 

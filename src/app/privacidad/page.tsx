@@ -148,7 +148,7 @@ export default function PrivacidadPage() {
             <div className="flex flex-wrap gap-4 text-xs font-semibold pt-1">
               <div className="flex items-center gap-2 bg-[#FAF6F0] p-3 rounded-2xl border border-gray-200">
                 <Phone className="w-4 h-4 text-emerald-600" />
-                <span>WhatsApp de Atención Oficial: {process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '221 216 4504'}</span>
+                <span>WhatsApp de Atención Oficial: {process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '222 380 6846'}</span>
               </div>
               <div className="flex items-center gap-2 bg-[#FAF6F0] p-3 rounded-2xl border border-gray-200">
                 <Mail className="w-4 h-4 text-[#DF7F2D]" />
