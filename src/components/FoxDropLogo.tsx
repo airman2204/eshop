@@ -7,14 +7,12 @@ interface FoxDropLogoProps {
   variant?: 'light' | 'dark';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showTagline?: boolean;
-  isHalloween?: boolean;
 }
 
 export default function FoxDropLogo({
   className = '',
   size = 'md',
   showTagline = true,
-  isHalloween = false,
 }: FoxDropLogoProps) {
   const foxSizes = {
     sm: 'w-7 h-7 sm:w-8 sm:h-8',
@@ -62,9 +60,9 @@ export default function FoxDropLogo({
         )}
       </div>
 
-      {/* Carita 3D del zorrito FoxDrop a la derecha (Normal o Vampiro festivo) */}
+      {/* Carita 3D del zorrito FoxDrop a la derecha */}
       <img
-        src={isHalloween ? "/fox-logo-head-vampire.png" : "/fox-logo-head-3d.png"}
+        src="/fox-logo-head-3d.png"
         alt="FoxDrop 3D Logo"
         onError={(e) => {
           (e.currentTarget as HTMLElement).style.display = 'none';

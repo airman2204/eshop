@@ -2378,7 +2378,7 @@ export default function TiendaFoxDrop() {
             className="cursor-pointer shrink-0 transition-transform hover:scale-102 flex items-center gap-2"
             title="Ir al inicio de FoxDrop"
           >
-            <FoxDropLogo size="lg" variant="dark" isHalloween={isHalloween} />
+            <FoxDropLogo size="lg" variant="dark" />
           </div>
 
           {/* CENTRO: BARRA DE BÚSQUEDA PROTAGÓNICA (AMAZON / MERCADO LIBRE STYLE) */}
@@ -5702,7 +5702,7 @@ export default function TiendaFoxDrop() {
             
             {/* COL 1: IDENTIDAD & MARCA */}
             <div className="space-y-3.5">
-              <FoxDropLogo size="md" variant="dark" isHalloween={isHalloween} />
+              <FoxDropLogo size="md" variant="dark" />
               <p className="text-white/70 text-xs leading-relaxed max-w-xs">
                 Tu atajo al mundo. Curaduría y productos exclusivos de importación con inspección de calidad y envíos garantizados a todo México.
               </p>
