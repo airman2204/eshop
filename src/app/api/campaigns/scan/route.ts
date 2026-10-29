@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/security";
 import { MarketingCampaign } from "@/types";
+import { decryptPromoToken } from "@/lib/campaignTokens";
 
 const CAMPAIGNS_FILE = "_system/marketing_campaigns.json";
 
@@ -13,10 +14,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const rawCode = (body.code || "").trim().toUpperCase();
+    const rawInput = (body.code || "").trim();
 
-    if (!rawCode) {
+    if (!rawInput) {
       return NextResponse.json({ error: "Código de cupón requerido" }, { status: 400 });
+    }
+
+    // Intentar desencriptar en caso de que sea un token cifrado de URL, o tomar como código en texto plano
+    const decryptedCode = decryptPromoToken(rawInput);
+    const candidateCodes = [rawInput.toUpperCase()];
+    if (decryptedCode && !candidateCodes.includes(decryptedCode)) {
+      candidateCodes.unshift(decryptedCode); // Prioridad al código descifrado
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,13 +42,13 @@ export async function POST(req: NextRequest) {
       console.warn("Aviso leyendo campañas para escaneo:", err);
     }
 
-    // Buscar en qué campaña está el cupón
+    // Buscar en qué campaña está el cupón (probando candidateCodes)
     let foundCampaignIndex = -1;
     let foundCouponIndex = -1;
 
     for (let cIdx = 0; cIdx < campaigns.length; cIdx++) {
       const c = campaigns[cIdx];
-      const couponIdx = (c.coupons || []).findIndex((cp) => cp.code === rawCode);
+      const couponIdx = (c.coupons || []).findIndex((cp) => candidateCodes.includes(cp.code.toUpperCase()));
       if (couponIdx !== -1) {
         foundCampaignIndex = cIdx;
         foundCouponIndex = couponIdx;
@@ -52,7 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         valid: false,
         reason: "not_found",
-        message: `El código promocional "${rawCode}" no existe o ya no es válido.`,
+        message: `El código promocional no existe o ya no es válido.`,
       });
     }
 

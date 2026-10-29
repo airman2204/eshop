@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { verifyAdminToken } from "@/lib/security";
 import { MarketingCampaign, CampaignCoupon } from "@/types";
+import { encryptPromoToken } from "@/lib/campaignTokens";
 
 const CAMPAIGNS_FILE = "_system/marketing_campaigns.json";
 
@@ -114,7 +115,9 @@ export async function POST(req: NextRequest) {
     for (let i = 1; i <= count; i++) {
       const paddedNum = i.toString().padStart(3, "0");
       const code = `${cleanPrefix}-${paddedNum}`;
-      const qrPayloadUrl = `${baseUrl.replace(/\/+$/, "")}/?promo=${code}`;
+      // Generar token encriptado para que no se pueda adivinar ni modificar el código en la URL
+      const token = encryptPromoToken(code);
+      const qrPayloadUrl = `${baseUrl.replace(/\/+$/, "")}/?promo=${token}`;
 
       coupons.push({
         code,
