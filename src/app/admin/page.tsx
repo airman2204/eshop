@@ -5316,9 +5316,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           className="text-slate-500 hover:text-slate-800 transition cursor-pointer"
                         >
                           {filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.includes(p.id)) ? (
-                            <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                            <CheckSquare className="w-5 h-5 text-[#E65F2B] fill-orange-100" />
                           ) : (
-                            <Square className="w-4 h-4 text-slate-300 hover:text-slate-500" />
+                            <Square className="w-5 h-5 text-slate-500 hover:text-slate-700 stroke-[2.2]" />
                           )}
                         </button>
                       </th>
@@ -5364,9 +5364,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               title={isSelected ? "Quitar selección" : "Seleccionar artículo"}
                             >
                               {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                                <CheckSquare className="w-5 h-5 text-[#E65F2B] fill-orange-100" />
                               ) : (
-                                <Square className="w-4 h-4 text-slate-300 hover:text-slate-500" />
+                                <Square className="w-5 h-5 text-slate-500 hover:text-slate-700 stroke-[2.2]" />
                               )}
                             </button>
                           </td>
@@ -5715,9 +5715,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       className="text-xs font-bold text-slate-700 flex items-center gap-2 cursor-pointer hover:text-slate-900"
                     >
                       {filteredProducts.every(p => selectedProductIds.includes(p.id)) ? (
-                        <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                        <CheckSquare className="w-5 h-5 text-[#E65F2B] fill-orange-100" />
                       ) : (
-                        <Square className="w-4 h-4 text-slate-400" />
+                        <Square className="w-5 h-5 text-slate-500 hover:text-slate-700 stroke-[2.2]" />
                       )}
                       <span>
                         {filteredProducts.every(p => selectedProductIds.includes(p.id))
@@ -5763,9 +5763,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             title={isSelected ? "Quitar selección" : "Seleccionar artículo"}
                           >
                             {isSelected ? (
-                              <CheckSquare className="w-5 h-5 text-[#E65F2B]" />
+                              <CheckSquare className="w-5 h-5 text-[#E65F2B] fill-orange-100" />
                             ) : (
-                              <Square className="w-5 h-5 text-slate-300" />
+                              <Square className="w-5 h-5 text-slate-500 hover:text-slate-700 stroke-[2.2]" />
                             )}
                           </button>
 
