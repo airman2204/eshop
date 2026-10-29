@@ -521,14 +521,51 @@ html, body {
   color: #f1f5f9 !important;
 }
 
-.theme-halloween-store .text-slate-900,
-.theme-halloween-store .text-slate-800 {
+/* Limitar los estilos oscuros de Halloween para no romper los modales claros (modal de producto, auth, info) */
+.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-900,
+.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-800 {
   color: #f8fafc !important;
 }
 
-.theme-halloween-store .text-slate-600,
-.theme-halloween-store .text-slate-500 {
+.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-600,
+.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-500 {
   color: #94a3b8 !important;
+}
+
+/* Modal de detalle de producto: mantener fondo blanco puro y tipografías oscuras de alto contraste */
+.product-modal-content {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.product-modal-content h1,
+.product-modal-content h2,
+.product-modal-content h3,
+.product-modal-content h4,
+.product-modal-content h5,
+.product-modal-content strong {
+  color: #0f172a !important;
+}
+
+.product-modal-content p,
+.product-modal-content span.text-slate-700,
+.product-modal-content span.text-slate-600,
+.product-modal-content span.text-slate-500,
+.product-modal-content .text-slate-700,
+.product-modal-content .text-slate-600,
+.product-modal-content .text-slate-500 {
+  color: #334155 !important;
+}
+
+.product-modal-content .bg-slate-50\/80 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.product-modal-content .border-slate-200\/80,
+.product-modal-content .border-slate-200\/70,
+.product-modal-content .border-slate-200\/60 {
+  border-color: #e2e8f0 !important;
 }
 
 /* Encabezados y barras */

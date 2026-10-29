@@ -6133,7 +6133,7 @@ export default function TiendaFoxDrop() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-6 relative shadow-2xl animate-in slide-in-from-bottom duration-200 cursor-default"
+            className="product-modal-content bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-6 relative shadow-2xl animate-in slide-in-from-bottom duration-200 cursor-default"
           >
             
             {/* TIRADOR VISUAL PARA MÓVIL (BOTTOM SHEET HANDLE) */}
