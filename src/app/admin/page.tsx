@@ -43,6 +43,8 @@ import { getCategoryIconEmoji } from '@/lib/constants';
 import { soundManager } from '@/lib/sounds';
 import { generateTicketCanvasDataUrl } from '@/lib/ticketCanvas';
 import { translateVariantName } from '@/lib/translateVariant';
+import SmartPricingHelper from '@/components/SmartPricingHelper';
+import { LOTE3_FREIGHT_RULES, detectFreightCategory, calculateSmartPrices } from '@/lib/pricingEngine';
 
 const getSafeAdminImageUrl = (url: string | undefined): string => {
   if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
@@ -253,6 +255,7 @@ export default function AdminCRM() {
   const [creatingCategoryLoading, setCreatingCategoryLoading] = useState(false);
   const [newCostUsd, setNewCostUsd] = useState(5.00);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
+  const [selectedFreightRuleKey, setSelectedFreightRuleKey] = useState<string>('auto');
   const [newPublicPrice, setNewPublicPrice] = useState(230.00);
   const [priceMarkupPercent, setPriceMarkupPercent] = useState<number>(100);
   const [newDiscountPercent, setNewDiscountPercent] = useState<number>(0);
