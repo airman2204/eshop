@@ -1095,15 +1095,8 @@ export default function TiendaFoxDrop() {
     'navidad': Sparkles,
   };
 
-  // Catálogo base con control estricto de visibilidad para productos de importación:
-  // Mientras la pasarela no esté activa en prod, los productos de importación (CJ Dropshipping)
-  // SOLO son visibles para Mario y Nydia (administradores).
-  const visibleProducts = products.filter(p => {
-    if (isProductImportationItem(p)) {
-      return isPrivilegedPartner;
-    }
-    return true;
-  });
+  // Catálogo base: Todos los productos activos de la tienda, incluyendo la línea de importación internacional (CJ Dropshipping)
+  const visibleProducts = products;
 
   // Categorías calculadas dinámicamente: SOLO categorías que contengan al menos 1 producto visible, con Navidad destacada al principio
   const dynamicCategories = Array.from(
