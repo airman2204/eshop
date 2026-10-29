@@ -24,57 +24,40 @@ export default function HalloweenAtmosphere() {
   return (
     <div 
       aria-hidden="true" 
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
+      className="pointer-events-none fixed inset-0 z-10 overflow-hidden select-none"
     >
-      {/* 1. Telaraña gótica izquierda superior (exacta del diseño) */}
-      <div 
-        className="absolute top-0 left-0 w-44 sm:w-64 h-24 sm:h-36 opacity-35 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 0% 0%, transparent 0%, transparent 20px, rgba(255, 255, 255, 0.08) 21px, transparent 22px), repeating-radial-gradient(circle at 0% 0%, transparent 0, transparent 28px, rgba(255,255,255,0.06) 29px, transparent 30px)'
-        }}
-      >
-        <svg viewBox="0 0 100 60" className="w-full h-full text-slate-400/40" fill="none" stroke="currentColor" strokeWidth="0.75">
-          <path d="M0,0 Q30,25 70,15 T100,0" />
-          <path d="M0,0 Q25,35 50,45 T70,60" />
-          <path d="M0,0 Q15,45 25,60" />
-          <path d="M20,12 Q35,28 45,35" strokeDasharray="1,1" />
-          <path d="M40,16 Q52,32 60,45" strokeDasharray="1,1" />
-          <path d="M60,15 Q72,25 85,20" strokeDasharray="1,1" />
-          <line x1="0" y1="0" x2="100" y2="25" />
-          <line x1="0" y1="0" x2="60" y2="60" />
-          <line x1="0" y1="0" x2="25" y2="60" />
-        </svg>
-      </div>
+      {/* 1. Luna llena mágica en la esquina superior derecha */}
+      <div className="absolute -top-10 -right-10 sm:top-2 sm:right-10 w-44 h-44 sm:w-60 sm:h-60 rounded-full bg-radial from-amber-100/50 via-amber-200/25 to-transparent blur-xl pointer-events-none" />
+      <div className="absolute top-2 right-4 sm:top-6 sm:right-14 w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-[#FFF5DC] via-[#FFE5A3] to-[#F59E0B] shadow-[0_0_50px_rgba(245,158,11,0.45)] opacity-90 border border-amber-200/50" />
 
-      {/* 2. Telaraña gótica derecha superior (exacta del diseño) */}
-      <div className="absolute top-0 right-0 w-44 sm:w-64 h-24 sm:h-36 opacity-35 pointer-events-none transform -scale-x-100">
-        <svg viewBox="0 0 100 60" className="w-full h-full text-slate-400/40" fill="none" stroke="currentColor" strokeWidth="0.75">
-          <path d="M0,0 Q30,25 70,15 T100,0" />
-          <path d="M0,0 Q25,35 50,45 T70,60" />
-          <path d="M0,0 Q15,45 25,60" />
-          <path d="M20,12 Q35,28 45,35" strokeDasharray="1,1" />
-          <path d="M40,16 Q52,32 60,45" strokeDasharray="1,1" />
-          <path d="M60,15 Q72,25 85,20" strokeDasharray="1,1" />
-          <line x1="0" y1="0" x2="100" y2="25" />
-          <line x1="0" y1="0" x2="60" y2="60" />
-          <line x1="0" y1="0" x2="25" y2="60" />
-        </svg>
-      </div>
+      {/* 2. Relámpago ambiental blanco/azulado bien visible */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-100/25 via-cyan-100/15 to-transparent animate-lightning pointer-events-none" />
 
-      {/* 3. Luces de Candil / Linternas Cálidas a los costados del Hero */}
-      <div className="absolute top-28 sm:top-36 left-4 sm:left-12 lg:left-24 w-40 sm:w-64 h-40 sm:h-64 rounded-full bg-gradient-to-br from-[#E67E22]/25 via-[#D35400]/10 to-transparent blur-3xl pointer-events-none" />
-      <div className="absolute top-28 sm:top-36 right-4 sm:right-12 lg:right-24 w-40 sm:w-64 h-40 sm:h-64 rounded-full bg-gradient-to-bl from-[#E67E22]/25 via-[#D35400]/10 to-transparent blur-3xl pointer-events-none" />
-
-      {/* 4. Murciélagos vectoriales en movimiento suave */}
+      {/* 3. Murciélagos nítidos volando en capas */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Murciélago 1: Grande, trayectoria diagonal media, cruza de derecha a izquierda */}
         <div className="absolute bat-flight-1">
-          <BatSvg className="w-9 h-6 text-stone-900/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" flapSpeed="0.32s" />
+          <BatSvg className="w-12 h-9 text-slate-900 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-90" flapSpeed="0.32s" />
         </div>
+
+        {/* Murciélago 2: Mediano, trayectoria ondulante alta */}
         <div className="absolute bat-flight-2">
-          <BatSvg className="w-7 h-5 text-stone-950/70 drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]" flapSpeed="0.28s" />
+          <BatSvg className="w-9 h-7 text-stone-900 drop-shadow-[0_3px_6px_rgba(0,0,0,0.7)]" flapSpeed="0.28s" />
         </div>
+
+        {/* Murciélago 3: Cerca de la luna */}
+        <div className="absolute bat-flight-3">
+          <BatSvg className="w-7 h-5 text-stone-950 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" flapSpeed="0.24s" />
+        </div>
+
+        {/* Murciélago 4: Mediano, cruce opuesto */}
         <div className="absolute bat-flight-4">
-          <BatSvg className="w-8 h-5 text-stone-900/75 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" flapSpeed="0.30s" />
+          <BatSvg className="w-10 h-7 text-slate-950 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" flapSpeed="0.30s" />
+        </div>
+
+        {/* Murciélago 5: Rápido en lo alto */}
+        <div className="absolute bat-flight-5">
+          <BatSvg className="w-6 h-4 text-stone-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" flapSpeed="0.22s" />
         </div>
       </div>
     </div>
