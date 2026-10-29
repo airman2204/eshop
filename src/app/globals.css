@@ -430,24 +430,23 @@ html, body {
 
 /* 4. Estilos de ambiente para modo Halloween en tienda */
 .theme-halloween-store {
-  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
+  background-color: #07101a !important;
+  background-image: 
+    radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 15% 35%, rgba(230, 95, 43, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 50% 0%, #0d1e2e 0%, #060e17 60%, #03070c 100%) !important;
   color: #f1f5f9 !important;
 }
 
 .theme-halloween-store header {
-  background: rgba(11, 26, 23, 0.94) !important;
+  background: rgba(8, 20, 28, 0.96) !important;
   backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(230, 95, 43, 0.3) !important;
+  border-bottom: 2px solid #e65f2b !important;
 }
 
 /* ======================================================== */
 /* MODO HALLOWEEN: COLORES Y FONDOS TEMATIZADOS             */
 /* ======================================================== */
-
-.theme-halloween-store {
-  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
-  color: #f1f5f9 !important;
-}
 
 /* Vista Mi Cuenta / Hub cuando Halloween está activo */
 .theme-halloween-store [class*="bg-[#F5F6F8]"],
@@ -532,21 +531,34 @@ html, body {
 
 /* Tarjetas de Producto */
 .theme-halloween-store .bg-white.rounded-xl {
-  background-color: #0a1926 !important;
-  border-color: rgba(230, 95, 43, 0.25) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+  background-color: #0b1824 !important;
+  border-color: rgba(230, 95, 43, 0.3) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
 }
 
 .theme-halloween-store .bg-white.rounded-xl:hover {
   border-color: #e65f2b !important;
-  box-shadow: 0 10px 25px -3px rgba(230, 95, 43, 0.25) !important;
+  box-shadow: 0 10px 25px -3px rgba(230, 95, 43, 0.35) !important;
 }
 
+/* Títulos y textos de los productos - 100% legibles y de alto contraste */
+.theme-halloween-store .bg-white.rounded-xl h4,
 .theme-halloween-store .bg-white.rounded-xl h3 {
-  color: #f8fafc !important;
+  color: #ffffff !important;
 }
 
-.theme-halloween-store .bg-white.rounded-xl .font-black.text-\[\#0F3E36\] {
+.theme-halloween-store .bg-white.rounded-xl p,
+.theme-halloween-store .bg-white.rounded-xl span.text-gray-500,
+.theme-halloween-store .bg-white.rounded-xl .text-gray-500 {
+  color: #cbd5e1 !important;
+}
+
+.theme-halloween-store .bg-white.rounded-xl .border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.theme-halloween-store .bg-white.rounded-xl .font-black.text-\[\#0F3E36\],
+.theme-halloween-store .bg-white.rounded-xl span.text-\[\#0F3E36\] {
   color: #fb923c !important;
 }
 

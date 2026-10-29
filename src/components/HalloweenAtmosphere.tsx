@@ -24,14 +24,14 @@ export default function HalloweenAtmosphere() {
   return (
     <div 
       aria-hidden="true" 
-      className="pointer-events-none fixed inset-0 z-10 overflow-hidden select-none"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
     >
-      {/* 1. Luna llena mágica en la esquina superior derecha */}
-      <div className="absolute -top-10 -right-10 sm:top-2 sm:right-10 w-44 h-44 sm:w-60 sm:h-60 rounded-full bg-radial from-amber-100/50 via-amber-200/25 to-transparent blur-xl pointer-events-none" />
-      <div className="absolute top-2 right-4 sm:top-6 sm:right-14 w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-[#FFF5DC] via-[#FFE5A3] to-[#F59E0B] shadow-[0_0_50px_rgba(245,158,11,0.45)] opacity-90 border border-amber-200/50" />
+      {/* 1. Luna llena mágica bajada para verse completa y deslumbrante debajo de la barra */}
+      <div className="absolute top-28 sm:top-24 right-4 sm:right-16 w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-radial from-amber-100/50 via-amber-200/25 to-transparent blur-2xl pointer-events-none" />
+      <div className="absolute top-32 sm:top-28 right-8 sm:right-24 w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-[#FFF8E7] via-[#FFE29A] to-[#F59E0B] shadow-[0_0_60px_rgba(245,158,11,0.55)] opacity-95 border-2 border-amber-200/60" />
 
       {/* 2. Relámpago ambiental blanco/azulado bien visible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-100/25 via-cyan-100/15 to-transparent animate-lightning pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 via-cyan-100/10 to-transparent animate-lightning pointer-events-none" />
 
       {/* 3. Murciélagos nítidos volando en capas */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
