@@ -138,7 +138,15 @@ export default function TiendaFoxDrop() {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
-  const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('foxdrop_store_settings');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return DEFAULT_STORE_SETTINGS;
+  });
 
   // Filtros avanzados: Rango de precio
   const [priceFilter, setPriceFilter] = useState<'all' | 'under150' | '150to350' | 'above350'>('all');
@@ -249,7 +257,7 @@ export default function TiendaFoxDrop() {
         setStoreBrands(bootstrap.brands);
       }
       if (bootstrap?.storeSettings) {
-        setStoreSettings(bootstrap.storeSettings);
+        setStoreSettings(bootstrap.storeSettings); try { localStorage.setItem('foxdrop_store_settings', JSON.stringify(bootstrap.storeSettings)); } catch {}
       }
       if (bootstrap?.slides && Array.isArray(bootstrap.slides) && bootstrap.slides.length > 0) {
         setSlides(bootstrap.slides);
@@ -356,7 +364,7 @@ export default function TiendaFoxDrop() {
         if (isMounted && bootstrap?.products && Array.isArray(bootstrap.products)) {
           setProducts(bootstrap.products);
           if (bootstrap.brands && Array.isArray(bootstrap.brands)) setStoreBrands(bootstrap.brands);
-          if (bootstrap.storeSettings) setStoreSettings(bootstrap.storeSettings);
+          if (bootstrap.storeSettings) setStoreSettings(bootstrap.storeSettings); try { localStorage.setItem('foxdrop_store_settings', JSON.stringify(bootstrap.storeSettings)); } catch {}
         }
       } catch {}
     }
@@ -368,7 +376,7 @@ export default function TiendaFoxDrop() {
         const remoteProducts = bootstrap?.products || [];
         setProducts(remoteProducts);
 
-        if (bootstrap?.storeSettings) setStoreSettings(bootstrap.storeSettings);
+        if (bootstrap?.storeSettings) { setStoreSettings(bootstrap.storeSettings); try { localStorage.setItem('foxdrop_store_settings', JSON.stringify(bootstrap.storeSettings)); } catch {} }
         if (bootstrap?.checkoutSettings) {
           setCheckoutSettings(bootstrap.checkoutSettings);
           const firstActive = bootstrap.checkoutSettings.shippingMethods?.find((m: any) => m.enabled);
