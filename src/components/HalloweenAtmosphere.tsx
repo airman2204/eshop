@@ -40,59 +40,34 @@ export default function HalloweenAtmosphere() {
       aria-hidden="true" 
       className="pointer-events-none fixed inset-0 z-10 overflow-hidden select-none"
     >
-      {/* 0. Telaraña interactiva superior izquierda (reacciona al clic / hover) */}
+      {/* 0. Telaraña realista superior izquierda (filamentos finos translúcidos de la referencia) */}
       <div 
         onClick={triggerWebLeft}
-        className={`pointer-events-auto absolute top-0 left-0 w-44 sm:w-64 h-28 sm:h-40 cursor-pointer transition-transform duration-300 group ${
-          vibrateLeft ? 'animate-web-vibrate' : 'animate-web-sway hover:scale-105'
+        className={`pointer-events-auto absolute top-0 left-0 w-48 sm:w-72 h-24 sm:h-36 cursor-pointer select-none transition-opacity duration-300 ${
+          vibrateLeft ? 'animate-web-vibrate opacity-85' : 'animate-web-sway opacity-45 hover:opacity-75'
         }`}
         title="¡Toca la telaraña!"
       >
-        <svg viewBox="0 0 100 65" className="w-full h-full text-slate-300/40 group-hover:text-amber-400/70 transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" fill="none" stroke="currentColor" strokeWidth="0.8">
-          {/* Hilos radiales principales */}
-          <line x1="0" y1="0" x2="100" y2="20" />
-          <line x1="0" y1="0" x2="80" y2="45" />
-          <line x1="0" y1="0" x2="50" y2="65" />
-          <line x1="0" y1="0" x2="20" y2="65" />
-          {/* Espirales concéntricas */}
-          <path d="M 0 12 Q 10 11 16 7" strokeDasharray="1,0.5" />
-          <path d="M 0 25 Q 22 22 36 14 Q 48 10 50 0" strokeDasharray="1.2,0.6" />
-          <path d="M 0 42 Q 28 38 48 24 Q 68 18 78 0" strokeDasharray="1.5,0.8" />
-          <path d="M 0 60 Q 38 52 68 32 Q 88 22 100 12" strokeDasharray="1.5,0.8" />
-          {/* Arañita colgante interactiva */}
-          <g className="origin-[38px_28px] animate-bounce duration-1000">
-            <line x1="38" y1="20" x2="38" y2="34" stroke="currentColor" strokeWidth="0.5" />
-            <circle cx="38" cy="36" r="2.2" fill="#E65F2B" />
-            <circle cx="38" cy="34" r="1.4" fill="#D97706" />
-            <path d="M 36 35 Q 33 34 31 36 M 40 35 Q 43 34 45 36 M 36 37 Q 33 38 31 40 M 40 37 Q 43 38 45 40" stroke="#E65F2B" strokeWidth="0.5" />
-          </g>
-        </svg>
+        <img 
+          src="/campaigns/web_clean_transparent_left.png" 
+          alt="Telaraña gótica decorativa" 
+          className="w-full h-full object-contain object-top-left pointer-events-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
+        />
       </div>
 
-      {/* 0.1 Telaraña interactiva superior derecha (reacciona al clic / hover) */}
+      {/* 0.1 Telaraña realista superior derecha (filamentos finos translúcidos de la referencia) */}
       <div 
         onClick={triggerWebRight}
-        className={`pointer-events-auto absolute top-0 right-0 w-44 sm:w-64 h-28 sm:h-40 cursor-pointer transition-transform duration-300 group transform -scale-x-100 ${
-          vibrateRight ? 'animate-web-vibrate' : 'animate-web-sway-right hover:scale-105'
+        className={`pointer-events-auto absolute top-0 right-0 w-48 sm:w-72 h-24 sm:h-36 cursor-pointer select-none transition-opacity duration-300 ${
+          vibrateRight ? 'animate-web-vibrate opacity-85' : 'animate-web-sway-right opacity-45 hover:opacity-75'
         }`}
         title="¡Toca la telaraña!"
       >
-        <svg viewBox="0 0 100 65" className="w-full h-full text-slate-300/40 group-hover:text-amber-400/70 transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" fill="none" stroke="currentColor" strokeWidth="0.8">
-          <line x1="0" y1="0" x2="100" y2="20" />
-          <line x1="0" y1="0" x2="80" y2="45" />
-          <line x1="0" y1="0" x2="50" y2="65" />
-          <line x1="0" y1="0" x2="20" y2="65" />
-          <path d="M 0 12 Q 10 11 16 7" strokeDasharray="1,0.5" />
-          <path d="M 0 25 Q 22 22 36 14 Q 48 10 50 0" strokeDasharray="1.2,0.6" />
-          <path d="M 0 42 Q 28 38 48 24 Q 68 18 78 0" strokeDasharray="1.5,0.8" />
-          <path d="M 0 60 Q 38 52 68 32 Q 88 22 100 12" strokeDasharray="1.5,0.8" />
-          <g className="origin-[42px_30px] animate-bounce duration-1000">
-            <line x1="42" y1="22" x2="42" y2="36" stroke="currentColor" strokeWidth="0.5" />
-            <circle cx="42" cy="38" r="2.2" fill="#E65F2B" />
-            <circle cx="42" cy="36" r="1.4" fill="#D97706" />
-            <path d="M 40 37 Q 37 36 35 38 M 44 37 Q 47 36 49 38 M 40 39 Q 37 40 35 42 M 44 39 Q 47 40 49 42" stroke="#E65F2B" strokeWidth="0.5" />
-          </g>
-        </svg>
+        <img 
+          src="/campaigns/web_clean_transparent_right.png" 
+          alt="Telaraña gótica decorativa" 
+          className="w-full h-full object-contain object-top-right pointer-events-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
+        />
       </div>
 
       {/* 1. Luna llena mágica bajada para verse completa y deslumbrante debajo de la barra */}
