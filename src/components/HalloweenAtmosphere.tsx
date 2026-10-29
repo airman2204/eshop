@@ -14,62 +14,18 @@ import React, { useEffect, useState } from 'react';
  */
 export default function HalloweenAtmosphere() {
   const [mounted, setMounted] = useState(false);
-  const [vibrateLeft, setVibrateLeft] = useState(false);
-  const [vibrateRight, setVibrateRight] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const triggerWebLeft = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setVibrateLeft(true);
-    setTimeout(() => setVibrateLeft(false), 650);
-  };
-
-  const triggerWebRight = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setVibrateRight(true);
-    setTimeout(() => setVibrateRight(false), 650);
-  };
 
   if (!mounted) return null;
 
   return (
     <div 
       aria-hidden="true" 
-      className="pointer-events-none fixed inset-0 z-10 overflow-hidden select-none"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
     >
-      {/* 0. Telaraña realista superior izquierda (filamentos finos translúcidos de la referencia) */}
-      <div 
-        onClick={triggerWebLeft}
-        className={`pointer-events-auto absolute top-0 left-0 w-48 sm:w-72 h-24 sm:h-36 cursor-pointer select-none transition-opacity duration-300 ${
-          vibrateLeft ? 'animate-web-vibrate opacity-85' : 'animate-web-sway opacity-45 hover:opacity-75'
-        }`}
-        title="¡Toca la telaraña!"
-      >
-        <img 
-          src="/campaigns/web_clean_transparent_left.png" 
-          alt="Telaraña gótica decorativa" 
-          className="w-full h-full object-contain object-top-left pointer-events-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
-        />
-      </div>
-
-      {/* 0.1 Telaraña realista superior derecha (filamentos finos translúcidos de la referencia) */}
-      <div 
-        onClick={triggerWebRight}
-        className={`pointer-events-auto absolute top-0 right-0 w-48 sm:w-72 h-24 sm:h-36 cursor-pointer select-none transition-opacity duration-300 ${
-          vibrateRight ? 'animate-web-vibrate opacity-85' : 'animate-web-sway-right opacity-45 hover:opacity-75'
-        }`}
-        title="¡Toca la telaraña!"
-      >
-        <img 
-          src="/campaigns/web_clean_transparent_right.png" 
-          alt="Telaraña gótica decorativa" 
-          className="w-full h-full object-contain object-top-right pointer-events-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]"
-        />
-      </div>
-
       {/* 1. Luna llena mágica bajada para verse completa y deslumbrante debajo de la barra */}
       <div className="absolute top-28 sm:top-24 right-4 sm:right-16 w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-radial from-amber-100/50 via-amber-200/25 to-transparent blur-2xl pointer-events-none" />
       <div className="absolute top-32 sm:top-28 right-8 sm:right-24 w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-[#FFF8E7] via-[#FFE29A] to-[#F59E0B] shadow-[0_0_60px_rgba(245,158,11,0.55)] opacity-95 border-2 border-amber-200/60" />
