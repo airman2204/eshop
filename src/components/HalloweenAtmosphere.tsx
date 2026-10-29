@@ -24,43 +24,40 @@ export default function HalloweenAtmosphere() {
   return (
     <div 
       aria-hidden="true" 
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
+      className="pointer-events-none fixed inset-0 z-10 overflow-hidden select-none"
     >
-      {/* 1. Fondo atmosférico de noche mística (degradado sutil que se funde con el contenido) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#030914]/90 via-[#05111B]/60 to-transparent" />
+      {/* 1. Luna llena mágica en la esquina superior derecha */}
+      <div className="absolute -top-10 -right-10 sm:top-2 sm:right-10 w-44 h-44 sm:w-60 sm:h-60 rounded-full bg-radial from-amber-100/50 via-amber-200/25 to-transparent blur-xl pointer-events-none" />
+      <div className="absolute top-2 right-4 sm:top-6 sm:right-14 w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-[#FFF5DC] via-[#FFE5A3] to-[#F59E0B] shadow-[0_0_50px_rgba(245,158,11,0.45)] opacity-90 border border-amber-200/50" />
 
-      {/* 2. Luna plateada/azulada en la esquina superior derecha */}
-      <div className="absolute -top-12 -right-12 sm:top-4 sm:right-12 w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-gradient-to-br from-cyan-100/35 via-blue-200/20 to-transparent blur-2xl animate-pulse duration-1000" />
-      <div className="absolute top-2 right-6 sm:top-8 sm:right-20 w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-radial from-[#dff2fc]/40 via-[#9cc5df]/20 to-transparent shadow-[0_0_60px_rgba(156,197,223,0.25)] opacity-85" />
+      {/* 2. Relámpago ambiental blanco/azulado bien visible */}
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-100/25 via-cyan-100/15 to-transparent animate-lightning pointer-events-none" />
 
-      {/* 3. Relámpago ambiental tenue (destellos intermitentes suaves) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-300/10 via-amber-200/5 to-transparent animate-lightning" />
-
-      {/* 4. Murciélagos volando con aleteo fluido en distintas trayectorias y profundidades */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* 3. Murciélagos nítidos volando en capas */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Murciélago 1: Grande, trayectoria diagonal media, cruza de derecha a izquierda */}
         <div className="absolute bat-flight-1">
-          <BatSvg className="w-10 h-7 text-stone-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] opacity-80" />
+          <BatSvg className="w-12 h-9 text-slate-900 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-90" flapSpeed="0.32s" />
         </div>
 
         {/* Murciélago 2: Mediano, trayectoria ondulante alta */}
         <div className="absolute bat-flight-2">
-          <BatSvg className="w-7 h-5 text-stone-950 opacity-70" flapSpeed="0.32s" />
+          <BatSvg className="w-9 h-7 text-stone-900 drop-shadow-[0_3px_6px_rgba(0,0,0,0.7)]" flapSpeed="0.28s" />
         </div>
 
-        {/* Murciélago 3: Pequeño (en la lejanía, cerca de la luna) */}
+        {/* Murciélago 3: Cerca de la luna */}
         <div className="absolute bat-flight-3">
-          <BatSvg className="w-5 h-3.5 text-slate-900 opacity-60" flapSpeed="0.25s" />
+          <BatSvg className="w-7 h-5 text-stone-950 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" flapSpeed="0.24s" />
         </div>
 
-        {/* Murciélago 4: Mediano, cruce de izquierda a derecha en sector medio */}
+        {/* Murciélago 4: Mediano, cruce opuesto */}
         <div className="absolute bat-flight-4">
-          <BatSvg className="w-8 h-5.5 text-stone-900 opacity-75" flapSpeed="0.36s" />
+          <BatSvg className="w-10 h-7 text-slate-950 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" flapSpeed="0.30s" />
         </div>
 
-        {/* Murciélago 5: Enjambre lejano en lo alto */}
+        {/* Murciélago 5: Rápido en lo alto */}
         <div className="absolute bat-flight-5">
-          <BatSvg className="w-4 h-3 text-slate-950 opacity-50" flapSpeed="0.28s" />
+          <BatSvg className="w-6 h-4 text-stone-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" flapSpeed="0.22s" />
         </div>
       </div>
     </div>

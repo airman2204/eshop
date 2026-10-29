@@ -405,33 +405,33 @@ html, body {
   animation-delay: 4s;
 }
 
-/* 3. Relámpago ambiental sutil (Flash tenue de tormenta cada 16 segundos) */
+/* 3. Relámpago ambiental nítido (Flash de tormenta visible cada 12 segundos) */
 @keyframes ambientLightning {
-  0%, 88%, 91.5%, 94%, 100% {
+  0%, 82%, 85.5%, 88%, 100% {
     opacity: 0;
   }
-  89% {
-    opacity: 0.12;
+  83% {
+    opacity: 0.35;
   }
-  90% {
-    opacity: 0.04;
+  84% {
+    opacity: 0.08;
   }
-  92% {
-    opacity: 0.16;
+  86% {
+    opacity: 0.45;
   }
-  93% {
-    opacity: 0.02;
+  87% {
+    opacity: 0.05;
   }
 }
 
 .animate-lightning {
-  animation: ambientLightning 16s ease-in-out infinite;
+  animation: ambientLightning 12s ease-in-out infinite;
 }
 
 /* 4. Estilos de ambiente para modo Halloween en tienda */
 .theme-halloween-store {
-  background: radial-gradient(circle at 85% 10%, #0d1e2b 0%, #061118 45%, #04090f 100%) !important;
-  color: #e2e8f0 !important;
+  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
+  color: #f1f5f9 !important;
 }
 
 .theme-halloween-store header {
@@ -445,8 +445,36 @@ html, body {
 /* ======================================================== */
 
 .theme-halloween-store {
-  background-color: #060d17 !important;
+  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
   color: #f1f5f9 !important;
+}
+
+/* Vista Mi Cuenta / Hub cuando Halloween está activo */
+.theme-halloween-store [class*="bg-[#F5F6F8]"],
+.theme-halloween-store div.bg-\[\#F5F6F8\] {
+  background-color: transparent !important;
+}
+
+.theme-halloween-store div.bg-white.border-b.border-slate-200 {
+  background-color: #0b1a26 !important;
+  border-color: rgba(230, 95, 43, 0.3) !important;
+}
+
+.theme-halloween-store div.bg-white.rounded-2xl.border.border-slate-200,
+.theme-halloween-store div.bg-white.rounded-3xl.border.border-slate-200 {
+  background-color: #0c1c2a !important;
+  border-color: rgba(230, 95, 43, 0.25) !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-halloween-store .text-slate-900,
+.theme-halloween-store .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+.theme-halloween-store .text-slate-600,
+.theme-halloween-store .text-slate-500 {
+  color: #94a3b8 !important;
 }
 
 /* Encabezados y barras */
