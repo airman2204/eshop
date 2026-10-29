@@ -33,7 +33,11 @@ export default function HalloweenAtmosphere() {
       {/* 2. Relámpago ambiental blanco/azulado bien visible */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 via-cyan-100/10 to-transparent animate-lightning pointer-events-none" />
 
-      {/* 3. Murciélagos naranjas brillantes con glow volando en capas con alto contraste */}
+      {/* 4. Niebla espectral suave y rodante a ras de pantalla */}
+      <div className="absolute -bottom-10 left-0 right-0 h-44 pointer-events-none opacity-45 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-orange-950/30 via-slate-900/40 to-transparent" />
+        <div className="w-[200%] h-full bg-[radial-gradient(ellipse_at_center,rgba(251,146,60,0.18)_0%,transparent_70%)] animate-[pulse_6s_ease-in-out_infinite]" />
+      </div>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Murciélago 1: Grande naranja neón con glow */}
         <div className="absolute bat-flight-1">

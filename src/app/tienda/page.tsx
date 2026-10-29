@@ -775,6 +775,7 @@ export default function TiendaFoxDrop() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [infoModal, setInfoModal] = useState<'envios' | 'devoluciones' | 'privacidad' | null>(null);
+  const [halloweenSparks, setHalloweenSparks] = useState<{ id: number; x: number; y: number; emoji: string }[]>([]);
 
   // Detectar ?tab=cuenta o ?view=cuenta en URL
   useEffect(() => {
@@ -1180,6 +1181,24 @@ export default function TiendaFoxDrop() {
 
   const addToCart = (product: Product, e?: React.MouseEvent, quantityToAdd: number = 1) => {
     if (e) e.stopPropagation();
+
+    // Efecto lúdico Halloween: pequeños caramelos/calabazas volando desde el clic
+    if (isHalloween && e) {
+      const clientX = e.clientX || window.innerWidth / 2;
+      const clientY = e.clientY || window.innerHeight / 2;
+      const icons = ['🍬', '🎃', '✨', '🍭'];
+      const newSparks = Array.from({ length: 4 }).map((_, i) => ({
+        id: Date.now() + i,
+        x: clientX + (Math.random() * 40 - 20),
+        y: clientY - 10,
+        emoji: icons[Math.floor(Math.random() * icons.length)],
+      }));
+      setHalloweenSparks(prev => [...prev, ...newSparks]);
+      setTimeout(() => {
+        setHalloweenSparks(prev => prev.filter(s => !newSparks.some(ns => ns.id === s.id)));
+      }, 1000);
+    }
+
     try {
       soundManager.playAddToCart();
     } catch {}
@@ -3076,49 +3095,37 @@ export default function TiendaFoxDrop() {
               </>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-white border border-gray-200/90 rounded-2xl p-3 shadow-2xs text-gray-700">
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-2.5 rounded-2xl p-3 shadow-2xs transition-colors duration-300 ${
+              isHalloween 
+                ? 'bg-[#0B1A28]/80 backdrop-blur-md border border-orange-500/25 text-gray-200' 
+                : 'bg-white border border-gray-200/90 text-gray-700'
+            }`}>
               <div className="flex items-center gap-2.5 px-2">
-                {isHalloween ? (
-                  <img src="/campaigns/icon_envios_real.png" alt="Envíos Rápidos" className="w-5 h-5 object-contain shrink-0" />
-                ) : (
-                  <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />
-                )}
+                <Truck className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-orange-400' : 'text-[#DF7F2D]'}`} />
                 <div>
-                  <p className="text-xs font-black text-gray-900 leading-tight">Envíos Rápidos</p>
-                  <p className="text-[10px] text-gray-400">Cobertura a todo México</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Envíos Rápidos</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Cobertura a todo México</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                {isHalloween ? (
-                  <img src="/campaigns/icon_protegida_real.png" alt="Compra Protegida" className="w-5 h-5 object-contain shrink-0" />
-                ) : (
-                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-                )}
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <ShieldCheck className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 <div>
-                  <p className="text-xs font-black text-gray-900 leading-tight">Compra Protegida</p>
-                  <p className="text-[10px] text-gray-400">Garantía en cada pedido</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Compra Protegida</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Garantía en cada pedido</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                {isHalloween ? (
-                  <img src="/campaigns/icon_rewards_real.png" alt="Puntos Fox Rewards" className="w-5 h-5 object-contain shrink-0" />
-                ) : (
-                  <Coins className="w-5 h-5 text-amber-500 shrink-0" />
-                )}
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <Coins className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-amber-400' : 'text-amber-500'}`} />
                 <div>
-                  <p className="text-xs font-black text-gray-900 leading-tight">Puntos Fox Rewards</p>
-                  <p className="text-[10px] text-gray-400">Canjeables por dinero</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Puntos Fox Rewards</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Canjeables por dinero</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                {isHalloween ? (
-                  <img src="/campaigns/icon_encargos_real.png" alt="Pedidos Especiales" className="w-5 h-5 object-contain shrink-0" />
-                ) : (
-                  <Send className="w-5 h-5 text-[#0F3E36] shrink-0" />
-                )}
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <Send className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-orange-400' : 'text-[#0F3E36]'}`} />
                 <div>
-                  <p className="text-xs font-black text-gray-900 leading-tight">Pedidos Especiales</p>
-                  <p className="text-[10px] text-gray-400">Traemos lo que busques</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Pedidos Especiales</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Traemos lo que busques</p>
                 </div>
               </div>
             </div>
@@ -5874,6 +5881,20 @@ export default function TiendaFoxDrop() {
       </footer>
 
       {/* MODAL INFORMATIVO (ENVÍOS / DEVOLUCIONES / PRIVACIDAD) */}
+      {/* Partículas de Halloween al agregar al carrito */}
+      {halloweenSparks.map(spark => (
+        <span
+          key={spark.id}
+          className="fixed pointer-events-none select-none z-[9999] text-xl transition-all duration-1000 ease-out animate-bounce"
+          style={{
+            left: `${spark.x}px`,
+            top: `${spark.y}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          {spark.emoji}
+        </span>
+      ))}
       {infoModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200">
