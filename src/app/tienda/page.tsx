@@ -2867,8 +2867,8 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
-                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
+                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO (Ocultar si es el banner gráfico integrado de Halloween) */}
+                    {!isHalloween && Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
                       <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-center pointer-events-none">
                         <div className="space-y-1 max-w-[210px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
@@ -2974,8 +2974,8 @@ export default function TiendaFoxDrop() {
                       </div>
                     )}
 
-                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
-                    {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
+                    {/* CONTENIDO TIPOGRÁFICO DINÁMICO (Ocultar si es el banner gráfico integrado de Halloween) */}
+                    {!isHalloween && Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
                       <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-center pointer-events-none">
                         <div className="space-y-1.5 max-w-[340px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
@@ -3043,7 +3043,21 @@ export default function TiendaFoxDrop() {
           </section>
 
           {/* CINTILLO DE CONFIANZA TIPO AMAZON / MERCADO LIBRE */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1 relative">
+            {isHalloween && (
+              <>
+                <img 
+                  src="/campaigns/icon_bat_left.png" 
+                  alt="Murciélago festivo" 
+                  className="hidden sm:block absolute -left-2 top-1/2 -translate-y-1/2 w-6 h-6 object-contain pointer-events-none drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                />
+                <img 
+                  src="/campaigns/icon_bat_right.png" 
+                  alt="Murciélago festivo" 
+                  className="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 w-6 h-6 object-contain pointer-events-none drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                />
+              </>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-white border border-gray-200/90 rounded-2xl p-3 shadow-2xs text-gray-700">
               <div className="flex items-center gap-2.5 px-2">
                 <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />

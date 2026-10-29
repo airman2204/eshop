@@ -430,24 +430,22 @@ html, body {
 
 /* 4. Estilos de ambiente para modo Halloween en tienda */
 .theme-halloween-store {
-  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
+  background-color: #070F18 !important;
+  background-image: 
+    radial-gradient(circle at 10% 25%, rgba(230, 126, 34, 0.16) 0%, transparent 35%),
+    radial-gradient(circle at 90% 25%, rgba(230, 126, 34, 0.16) 0%, transparent 35%),
+    radial-gradient(circle at 50% 12%, rgba(15, 34, 53, 0.7) 0%, #060D15 100%) !important;
   color: #f1f5f9 !important;
 }
 
 .theme-halloween-store header {
-  background: rgba(11, 26, 23, 0.94) !important;
-  backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(230, 95, 43, 0.3) !important;
+  background: #0B1924 !important;
+  border-bottom: 2px solid #E65F2B !important;
 }
 
 /* ======================================================== */
 /* MODO HALLOWEEN: COLORES Y FONDOS TEMATIZADOS             */
 /* ======================================================== */
-
-.theme-halloween-store {
-  background: radial-gradient(circle at 85% 10%, #102336 0%, #081622 45%, #050d15 100%) !important;
-  color: #f1f5f9 !important;
-}
 
 /* Vista Mi Cuenta / Hub cuando Halloween está activo */
 .theme-halloween-store [class*="bg-[#F5F6F8]"],
@@ -479,7 +477,7 @@ html, body {
 
 /* Encabezados y barras */
 .theme-halloween-store aside[aria-label="Aviso de beneficios FoxDrop"] {
-  background-color: #081420 !important;
+  background-color: #060E16 !important;
   color: #fbd38d !important;
   border-bottom-color: rgba(230, 95, 43, 0.3) !important;
 }
@@ -488,16 +486,25 @@ html, body {
   color: #fbd38d !important;
 }
 
-.theme-halloween-store header {
-  background-color: #051419 !important;
-  border-bottom: 2px solid #e65f2b !important;
+/* Barra de subcategorías / tabs */
+.theme-halloween-store div.border-t.border-white\/10.bg-\[\#0B332C\]\/40 {
+  background-color: #07121C !important;
 }
 
-/* Barra de confianza */
+/* Tab activo seleccionado naranja como en el mockup */
+.theme-halloween-store button.bg-amber-400,
+.theme-halloween-store div.bg-\[\#FFF3E6\] {
+  background: linear-gradient(135deg, #E65F2B, #C2410C) !important;
+  color: #ffffff !important;
+  border-color: #FB923C !important;
+}
+
+/* Barra de confianza estilo mockup */
 .theme-halloween-store .bg-white.border.border-gray-200\/90 {
-  background-color: #0a1926 !important;
-  border-color: rgba(230, 95, 43, 0.3) !important;
+  background: rgba(11, 23, 34, 0.85) !important;
+  border-color: rgba(230, 95, 43, 0.35) !important;
   color: #f1f5f9 !important;
+  backdrop-filter: blur(8px);
 }
 
 .theme-halloween-store .bg-white.border.border-gray-200\/90 p {
@@ -522,24 +529,26 @@ html, body {
 
 /* Selectores de ordenamiento */
 .theme-halloween-store .bg-white.border.border-gray-200.rounded-xl {
-  background-color: #0a1926 !important;
-  border-color: #1e293b !important;
+  background-color: #0B1926 !important;
+  border-color: rgba(230, 95, 43, 0.3) !important;
 }
 
 .theme-halloween-store .bg-white.border.border-gray-200.rounded-xl select {
   color: #f8fafc !important;
+  background-color: #0B1926 !important;
 }
 
-/* Tarjetas de Producto */
+/* Tarjetas de Producto estilo Mockup de Referencia */
 .theme-halloween-store .bg-white.rounded-xl {
-  background-color: #0a1926 !important;
-  border-color: rgba(230, 95, 43, 0.25) !important;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+  background-color: #0D1D2B !important;
+  border: 1px solid rgba(230, 95, 43, 0.35) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
 }
 
 .theme-halloween-store .bg-white.rounded-xl:hover {
-  border-color: #e65f2b !important;
-  box-shadow: 0 10px 25px -3px rgba(230, 95, 43, 0.25) !important;
+  border-color: #E65F2B !important;
+  box-shadow: 0 10px 25px -3px rgba(230, 95, 43, 0.35) !important;
 }
 
 .theme-halloween-store .bg-white.rounded-xl h3 {
@@ -547,11 +556,11 @@ html, body {
 }
 
 .theme-halloween-store .bg-white.rounded-xl .font-black.text-\[\#0F3E36\] {
-  color: #fb923c !important;
+  color: #FB923C !important;
 }
 
 /* Footer */
 .theme-halloween-store footer {
-  background-color: #040910 !important;
-  border-top: 2px solid rgba(230, 95, 43, 0.3) !important;
+  background-color: #050C13 !important;
+  border-top: 2px solid rgba(230, 95, 43, 0.4) !important;
 }
