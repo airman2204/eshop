@@ -3073,7 +3073,7 @@ export default function TiendaFoxDrop() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-white border border-gray-200/90 rounded-2xl p-3 shadow-2xs text-gray-700">
               <div className="flex items-center gap-2.5 px-2">
                 {isHalloween ? (
-                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🚚</span>
+                  <img src="/campaigns/icon_envios_real.png" alt="Envíos Rápidos" className="w-5 h-5 object-contain shrink-0" />
                 ) : (
                   <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />
                 )}
@@ -3084,7 +3084,7 @@ export default function TiendaFoxDrop() {
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
                 {isHalloween ? (
-                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🛡️</span>
+                  <img src="/campaigns/icon_protegida_real.png" alt="Compra Protegida" className="w-5 h-5 object-contain shrink-0" />
                 ) : (
                   <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
                 )}
@@ -3095,7 +3095,7 @@ export default function TiendaFoxDrop() {
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
                 {isHalloween ? (
-                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🪙</span>
+                  <img src="/campaigns/icon_rewards_real.png" alt="Puntos Fox Rewards" className="w-5 h-5 object-contain shrink-0" />
                 ) : (
                   <Coins className="w-5 h-5 text-amber-500 shrink-0" />
                 )}
@@ -3106,7 +3106,7 @@ export default function TiendaFoxDrop() {
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
                 {isHalloween ? (
-                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">📦</span>
+                  <img src="/campaigns/icon_encargos_real.png" alt="Pedidos Especiales" className="w-5 h-5 object-contain shrink-0" />
                 ) : (
                   <Send className="w-5 h-5 text-[#0F3E36] shrink-0" />
                 )}

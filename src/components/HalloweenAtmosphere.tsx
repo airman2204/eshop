@@ -33,31 +33,31 @@ export default function HalloweenAtmosphere() {
       {/* 2. Relámpago ambiental blanco/azulado bien visible */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 via-cyan-100/10 to-transparent animate-lightning pointer-events-none" />
 
-      {/* 3. Murciélagos nítidos volando en capas */}
+      {/* 3. Murciélagos naranjas brillantes con glow volando en capas con alto contraste */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Murciélago 1: Grande, trayectoria diagonal media, cruza de derecha a izquierda */}
+        {/* Murciélago 1: Grande naranja neón con glow */}
         <div className="absolute bat-flight-1">
-          <BatSvg className="w-12 h-9 text-slate-900 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-90" flapSpeed="0.32s" />
+          <BatSvg className="w-12 h-9 text-[#FF7A1A] drop-shadow-[0_0_14px_rgba(255,122,26,0.95)]" flapSpeed="0.32s" />
         </div>
 
-        {/* Murciélago 2: Mediano, trayectoria ondulante alta */}
+        {/* Murciélago 2: Mediano naranja ámbar */}
         <div className="absolute bat-flight-2">
-          <BatSvg className="w-9 h-7 text-stone-900 drop-shadow-[0_3px_6px_rgba(0,0,0,0.7)]" flapSpeed="0.28s" />
+          <BatSvg className="w-9 h-7 text-[#FB923C] drop-shadow-[0_0_12px_rgba(251,146,60,0.9)]" flapSpeed="0.28s" />
         </div>
 
         {/* Murciélago 3: Cerca de la luna */}
         <div className="absolute bat-flight-3">
-          <BatSvg className="w-7 h-5 text-stone-950 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" flapSpeed="0.24s" />
+          <BatSvg className="w-7 h-5 text-[#F59E0B] drop-shadow-[0_0_10px_rgba(245,158,11,0.85)]" flapSpeed="0.24s" />
         </div>
 
-        {/* Murciélago 4: Mediano, cruce opuesto */}
+        {/* Murciélago 4: Mediano cruce opuesto */}
         <div className="absolute bat-flight-4">
-          <BatSvg className="w-10 h-7 text-slate-950 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]" flapSpeed="0.30s" />
+          <BatSvg className="w-10 h-7 text-[#EA580C] drop-shadow-[0_0_12px_rgba(234,88,12,0.9)]" flapSpeed="0.30s" />
         </div>
 
         {/* Murciélago 5: Rápido en lo alto */}
         <div className="absolute bat-flight-5">
-          <BatSvg className="w-6 h-4 text-stone-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" flapSpeed="0.22s" />
+          <BatSvg className="w-6 h-4 text-[#F97316] drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" flapSpeed="0.22s" />
         </div>
       </div>
     </div>
