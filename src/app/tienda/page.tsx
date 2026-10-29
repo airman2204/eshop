@@ -1957,6 +1957,8 @@ export default function TiendaFoxDrop() {
               items: cart,
               total: cartTotal,
               shippingCost: shippingFee,
+              discountAmount: couponDiscountAmount,
+              couponCode: appliedCoupon?.code,
               clientName: user?.name || shippingAddress.street || 'Cliente',
               clientEmail: user?.email,
               clientPhone: user?.phone,
@@ -5124,6 +5126,11 @@ export default function TiendaFoxDrop() {
                 <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="text-xs text-gray-600 space-y-1">
                     <div>Artículos ({cartItemCount}): <strong className="text-gray-900 font-bold">${cartSubtotal.toFixed(0)} MXN</strong></div>
+                    {appliedCoupon && (
+                      <div className="text-emerald-700 font-bold">
+                        Cupón {appliedCoupon.code}: -${couponDiscountAmount.toFixed(0)} MXN
+                      </div>
+                    )}
                     <div>Costo de entrega: <strong className="text-gray-900 font-bold">{shippingFee === 0 ? <span className="text-emerald-600 font-black">Gratis</span> : `$${shippingFee.toFixed(0)} MXN`}</strong></div>
                     <div className="text-sm font-black text-gray-900 pt-1">
                       Total a pagar: <span className="text-[#DF7F2D] text-lg">${cartTotal.toFixed(0)} MXN</span>

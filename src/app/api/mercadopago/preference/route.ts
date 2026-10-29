@@ -5,7 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { orderNumber, items, total, shippingCost, clientName, clientEmail, clientPhone } = body;
+    const { orderNumber, items, total, shippingCost, clientName, clientEmail, clientPhone, discountAmount, couponCode } = body;
 
     if (!orderNumber || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Datos de orden incompletos" }, { status: 400 });
@@ -72,6 +72,28 @@ export async function POST(req: NextRequest) {
         unit_price: Math.round(numericShipping),
         currency_id: "MXN",
       });
+    }
+
+    // Si hay descuento por cupón promocional, aplicarlo proporcionalmente a los items o reducir el total
+    const numericDiscount = Number(discountAmount) || 0;
+    if (numericDiscount > 0 && mpItems.length > 0) {
+      // Mercado Pago no admite items con unit_price negativo.
+      // Distribuimos el descuento proporcionalmente entre los artículos de la compra
+      const itemsSum = mpItems.reduce((acc, it) => acc + (it.id !== "SHIPPING" ? it.unit_price * it.quantity : 0), 0);
+      if (itemsSum > 0) {
+        let remainingDiscount = numericDiscount;
+        for (let i = 0; i < mpItems.length; i++) {
+          if (mpItems[i].id === "SHIPPING") continue;
+          const it = mpItems[i];
+          const itShare = Math.round((it.unit_price * it.quantity / itemsSum) * numericDiscount);
+          const applyNow = Math.min(itShare, remainingDiscount, (it.unit_price - 1) * it.quantity);
+          if (applyNow > 0) {
+            const unitDeduct = Math.floor(applyNow / it.quantity);
+            it.unit_price = Math.max(1, it.unit_price - unitDeduct);
+            remainingDiscount -= unitDeduct * it.quantity;
+          }
+        }
+      }
     }
 
     // Determinar la URL pública real del dominio (nunca enviar localhost a Mercado Pago)
