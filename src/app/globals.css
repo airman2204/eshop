@@ -405,6 +405,32 @@ html, body {
   animation-delay: 4s;
 }
 
+/* Murciélagos adicionales con desfases temporales y trayectorias alternas */
+.bat-flight-6 {
+  animation: batFly1 16s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 8s;
+}
+
+.bat-flight-7 {
+  animation: batFly2 20s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 14s;
+}
+
+.bat-flight-8 {
+  animation: batFly3 13s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 7s;
+}
+
+.bat-flight-9 {
+  animation: batFly4 19s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 3s;
+}
+
+.bat-flight-10 {
+  animation: batFly5 23s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: 12s;
+}
+
 /* 3. Relámpago ambiental nítido (Flash de tormenta visible cada 12 segundos) */
 @keyframes ambientLightning {
   0%, 82%, 85.5%, 88%, 100% {

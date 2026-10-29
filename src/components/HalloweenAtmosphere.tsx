@@ -59,6 +59,31 @@ export default function HalloweenAtmosphere() {
         <div className="absolute bat-flight-5">
           <BatSvg className="w-6 h-4 text-[#F97316] drop-shadow-[0_0_10px_rgba(249,115,22,0.8)]" flapSpeed="0.22s" />
         </div>
+
+        {/* Murciélago 6: Cruce adicional en sector medio */}
+        <div className="absolute bat-flight-6">
+          <BatSvg className="w-11 h-8 text-[#FF8533] drop-shadow-[0_0_13px_rgba(255,133,51,0.9)]" flapSpeed="0.31s" />
+        </div>
+
+        {/* Murciélago 7: Suave y ondulante */}
+        <div className="absolute bat-flight-7">
+          <BatSvg className="w-8 h-6 text-[#FFA366] drop-shadow-[0_0_11px_rgba(255,163,102,0.85)]" flapSpeed="0.26s" />
+        </div>
+
+        {/* Murciélago 8: Rápido cruzando la luna */}
+        <div className="absolute bat-flight-8">
+          <BatSvg className="w-6 h-4.5 text-[#F59E0B] drop-shadow-[0_0_9px_rgba(245,158,11,0.85)]" flapSpeed="0.21s" />
+        </div>
+
+        {/* Murciélago 9: Grande en trayectoria baja */}
+        <div className="absolute bat-flight-9">
+          <BatSvg className="w-13 h-9.5 text-[#FF7A1A] drop-shadow-[0_0_15px_rgba(255,122,26,0.95)]" flapSpeed="0.33s" />
+        </div>
+
+        {/* Murciélago 10: Enjambre lejano en horizonte */}
+        <div className="absolute bat-flight-10">
+          <BatSvg className="w-7 h-5 text-[#EA580C] drop-shadow-[0_0_10px_rgba(234,88,12,0.8)]" flapSpeed="0.25s" />
+        </div>
       </div>
     </div>
   );
