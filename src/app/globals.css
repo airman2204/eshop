@@ -514,52 +514,56 @@ html, body {
   border-color: rgba(230, 95, 43, 0.3) !important;
 }
 
-/* Modal de detalle de producto: fondo blanco y textos oscuros garantizados */
+/* Modales y ventanas emergentes (diálogos) en modo Halloween: forzar fondo blanco y textos de alto contraste */
+.fixed.inset-0 .bg-white,
 .product-modal-content,
-div.product-modal-content {
+div.product-modal-content,
+.halloween-modal-light,
+div.halloween-modal-light {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
 
-.product-modal-content * {
-  color: inherit;
-}
-
+.fixed.inset-0 .bg-white h1,
+.fixed.inset-0 .bg-white h2,
+.fixed.inset-0 .bg-white h3,
+.fixed.inset-0 .bg-white h4,
+.fixed.inset-0 .bg-white h5,
 .product-modal-content h1,
 .product-modal-content h2,
 .product-modal-content h3,
 .product-modal-content h4,
 .product-modal-content h5,
-.product-modal-content strong,
-.product-modal-content .text-slate-900,
-.product-modal-content .text-gray-900 {
+.halloween-modal-light h1,
+.halloween-modal-light h2,
+.halloween-modal-light h3,
+.halloween-modal-light h4,
+.halloween-modal-light h5 {
   color: #0f172a !important;
 }
 
-.product-modal-content p,
-.product-modal-content span,
-.product-modal-content .text-slate-700,
-.product-modal-content .text-slate-600,
+.fixed.inset-0 .bg-white .text-\[\#0F3E36\],
+.product-modal-content .text-\[\#0F3E36\],
+.halloween-modal-light .text-\[\#0F3E36\] {
+  color: #0F3E36 !important;
+}
+
+.fixed.inset-0 .bg-white .text-slate-500,
+.fixed.inset-0 .bg-white .text-gray-500,
 .product-modal-content .text-slate-500,
-.product-modal-content .text-gray-700,
-.product-modal-content .text-gray-600,
-.product-modal-content .text-gray-500 {
-  color: #334155 !important;
+.product-modal-content .text-gray-500,
+.halloween-modal-light .text-slate-500,
+.halloween-modal-light .text-gray-500 {
+  color: #64748b !important;
 }
 
-.product-modal-content .bg-slate-50\/80,
-.product-modal-content .bg-slate-50,
-.product-modal-content .bg-gray-50 {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-}
-
-.product-modal-content .border-slate-200\/80,
-.product-modal-content .border-slate-200\/70,
-.product-modal-content .border-slate-200\/60,
-.product-modal-content .border-slate-200,
-.product-modal-content .border-gray-200 {
-  border-color: #e2e8f0 !important;
+.fixed.inset-0 .bg-white .text-gray-900,
+.fixed.inset-0 .bg-white .text-slate-900,
+.product-modal-content .text-gray-900,
+.product-modal-content .text-slate-900,
+.halloween-modal-light .text-gray-900,
+.halloween-modal-light .text-slate-900 {
+  color: #0f172a !important;
 }
 
 /* Encabezados y barras */
@@ -591,13 +595,13 @@ div.product-modal-content {
 
 /* Título de sección Lo Más Nuevo en FoxDrop */
 .theme-halloween-store #catalog-section h3,
-.theme-halloween-store h3.text-\[\#0F3E36\],
-.theme-halloween-store .text-\[\#0F3E36\] {
+.theme-halloween-store #catalog-section h3.text-\[\#0F3E36\],
+.theme-halloween-store #catalog-section .text-\[\#0F3E36\] {
   color: #ffedd5 !important;
 }
 
 .theme-halloween-store #catalog-section p,
-.theme-halloween-store .text-gray-500 {
+.theme-halloween-store #catalog-section .text-gray-500 {
   color: #cbd5e1 !important;
 }
 

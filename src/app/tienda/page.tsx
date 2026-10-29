@@ -6769,14 +6769,14 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
+          <div className="halloween-modal-light bg-white rounded-xl max-w-sm w-full p-6 space-y-4 relative shadow-2xl">
             <button onClick={() => setShowAuthModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
               <X className="w-5 h-5" />
             </button>
 
             <div className="text-center space-y-1">
               <h3 className="text-base font-bold text-[#0F3E36]">Acceso Rápido a FoxDrop</h3>
-              <p className="text-xs text-gray-500">Accede a tus pedidos, rastreo en vivo y puntos sin contraseñas.</p>
+              <p className="text-xs text-slate-500">Accede a tus pedidos, rastreo en vivo y puntos sin contraseñas.</p>
             </div>
 
             {/* PASO 1: SOLO CORREO ELECTRÓNICO */}
@@ -6820,10 +6820,10 @@ export default function TiendaFoxDrop() {
               <form onSubmit={handleVerifyOtp} className="space-y-3.5 text-xs animate-in fade-in duration-200">
                 <div className="bg-[#EDF5F7] border border-[#D5E6EA] p-3 rounded-2xl text-center text-[#0F3E36]">
                   {recognizedUser ? (
-                    <p className="font-extrabold text-sm mb-0.5">¡Hola de nuevo, {recognizedUser}! 👋</p>
+                    <p className="font-extrabold text-sm mb-0.5 text-[#0F3E36]">¡Hola de nuevo, {recognizedUser}! 👋</p>
                   ) : null}
                   <p className="font-semibold text-gray-800">Ingresa el código numérico de 6 dígitos</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Enviado a: <strong>{authEmail}</strong></p>
+                  <p className="text-[11px] text-gray-600 mt-0.5">Enviado a: <strong className="text-gray-900">{authEmail}</strong></p>
                 </div>
 
                 <input
