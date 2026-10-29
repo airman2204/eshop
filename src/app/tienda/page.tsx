@@ -3043,31 +3043,73 @@ export default function TiendaFoxDrop() {
           </section>
 
           {/* CINTILLO DE CONFIANZA TIPO AMAZON / MERCADO LIBRE */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1 relative">
+            {/* Murciélagos naranjas brillantes con halo de fuego a los costados del cintillo */}
+            {isHalloween && (
+              <>
+                <div 
+                  aria-hidden="true" 
+                  className="hidden lg:flex items-center justify-center absolute -left-8 top-1/2 -translate-y-1/2 pointer-events-none select-none z-10"
+                >
+                  <svg viewBox="0 0 48 26" className="w-10 h-6 text-[#FF7A1A] drop-shadow-[0_0_12px_rgba(255,122,26,0.9)] animate-pulse" fill="currentColor">
+                    <path d="M24 16 C20 8, 12 4, 2 8 C6 14, 9 17, 12 16 C16 21, 21 20, 24 16 Z" />
+                    <path d="M24 16 C28 8, 36 4, 46 8 C42 14, 39 17, 36 16 C32 21, 27 20, 24 16 Z" />
+                    <circle cx="24" cy="11" r="3" />
+                  </svg>
+                </div>
+                <div 
+                  aria-hidden="true" 
+                  className="hidden lg:flex items-center justify-center absolute -right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none z-10"
+                >
+                  <svg viewBox="0 0 48 26" className="w-10 h-6 text-[#FF7A1A] drop-shadow-[0_0_12px_rgba(255,122,26,0.9)] animate-pulse" fill="currentColor">
+                    <path d="M24 16 C20 8, 12 4, 2 8 C6 14, 9 17, 12 16 C16 21, 21 20, 24 16 Z" />
+                    <path d="M24 16 C28 8, 36 4, 46 8 C42 14, 39 17, 36 16 C32 21, 27 20, 24 16 Z" />
+                    <circle cx="24" cy="11" r="3" />
+                  </svg>
+                </div>
+              </>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-white border border-gray-200/90 rounded-2xl p-3 shadow-2xs text-gray-700">
               <div className="flex items-center gap-2.5 px-2">
-                <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />
+                {isHalloween ? (
+                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🚚</span>
+                ) : (
+                  <Truck className="w-5 h-5 text-[#DF7F2D] shrink-0" />
+                )}
                 <div>
                   <p className="text-xs font-black text-gray-900 leading-tight">Envíos Rápidos</p>
                   <p className="text-[10px] text-gray-400">Cobertura a todo México</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                {isHalloween ? (
+                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🛡️</span>
+                ) : (
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                )}
                 <div>
                   <p className="text-xs font-black text-gray-900 leading-tight">Compra Protegida</p>
                   <p className="text-[10px] text-gray-400">Garantía en cada pedido</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+                {isHalloween ? (
+                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">🪙</span>
+                ) : (
+                  <Coins className="w-5 h-5 text-amber-500 shrink-0" />
+                )}
                 <div>
                   <p className="text-xs font-black text-gray-900 leading-tight">Puntos Fox Rewards</p>
                   <p className="text-[10px] text-gray-400">Canjeables por dinero</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 px-2 border-l border-gray-100">
-                <Send className="w-5 h-5 text-[#0F3E36] shrink-0" />
+                {isHalloween ? (
+                  <span className="text-xl shrink-0 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]">📦</span>
+                ) : (
+                  <Send className="w-5 h-5 text-[#0F3E36] shrink-0" />
+                )}
                 <div>
                   <p className="text-xs font-black text-gray-900 leading-tight">Pedidos Especiales</p>
                   <p className="text-[10px] text-gray-400">Traemos lo que busques</p>
