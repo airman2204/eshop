@@ -34,7 +34,7 @@ export default function HalloweenAtmosphere() {
       <div className="absolute inset-0 bg-gradient-to-b from-blue-100/35 via-cyan-100/15 to-transparent animate-lightning pointer-events-none" />
 
       {/* 3. Silueta panorámica profesional de horizonte (colina, árboles góticos y mansión) */}
-      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-64 pointer-events-none overflow-hidden select-none z-0">
+      <div className="absolute bottom-0 left-0 right-0 h-64 sm:h-80 md:h-96 pointer-events-none overflow-hidden select-none z-0">
         <img
           src="/campaigns/halloween-horizon-cutout.png"
           alt=""
