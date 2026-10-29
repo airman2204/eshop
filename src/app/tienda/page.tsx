@@ -3454,7 +3454,7 @@ export default function TiendaFoxDrop() {
         <div className="w-full flex-1 animate-in fade-in duration-200 bg-[#F5F6F8]">
           
           {/* BARRA SUPERIOR DE NAVEGACIÓN LIMPIA Y PROFESIONAL (ESTILO MERCADO LIBRE / AMAZON) */}
-          <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+          <div className="account-hub-topbar bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
@@ -3504,7 +3504,7 @@ export default function TiendaFoxDrop() {
           </div>
 
           {/* CABECERA PRINCIPAL ELEGANTE CON CREDENCIALES DE SEGURIDAD (ESTILO AMAZON / MERCADO LIBRE) */}
-          <div className="bg-white border-b border-slate-200 py-6 sm:py-7 px-4 sm:px-6">
+          <div className="account-hub-header bg-white border-b border-slate-200 py-6 sm:py-7 px-4 sm:px-6">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
               
               <div className="flex items-center gap-4">

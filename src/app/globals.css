@@ -504,14 +504,84 @@ html, body {
 /* ======================================================== */
 
 /* Vista Mi Cuenta / Hub cuando Halloween está activo */
-.theme-halloween-store [class*="bg-[#F5F6F8]"],
-.theme-halloween-store div.bg-\[\#F5F6F8\] {
-  background-color: transparent !important;
-}
-
-.theme-halloween-store div.bg-white.border-b.border-slate-200 {
+.theme-halloween-store .account-hub-topbar,
+.theme-halloween-store .account-hub-header {
   background-color: #0b1a26 !important;
   border-color: rgba(230, 95, 43, 0.3) !important;
+}
+
+.theme-halloween-store .account-hub-header h1,
+.theme-halloween-store .account-hub-header .text-slate-900 {
+  color: #ffffff !important;
+}
+
+.theme-halloween-store .account-hub-header p,
+.theme-halloween-store .account-hub-header span,
+.theme-halloween-store .account-hub-header .text-slate-500 {
+  color: #cbd5e1 !important;
+}
+
+.theme-halloween-store .account-hub-header .bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.theme-halloween-store .account-hub-header .text-\[\#0F3E36\] {
+  color: #fb923c !important;
+}
+
+/* Tarjeta FoxDrop Club dentro de la cabecera de cuenta */
+.theme-halloween-store .account-hub-header .bg-slate-50 {
+  background-color: #05131f !important;
+  border-color: rgba(230, 95, 43, 0.3) !important;
+}
+
+.theme-halloween-store .account-hub-header .bg-slate-50 .text-slate-900,
+.theme-halloween-store .account-hub-header .bg-slate-50 .font-mono {
+  color: #ffffff !important;
+}
+
+.theme-halloween-store .account-hub-header .bg-slate-50 .text-slate-600 {
+  color: #fb923c !important;
+}
+
+.theme-halloween-store .account-hub-header .bg-slate-50 .text-slate-400,
+.theme-halloween-store .account-hub-header .bg-slate-50 .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Barra superior volver / inicio / sincronizar */
+.theme-halloween-store .account-hub-topbar .text-slate-900 {
+  color: #ffffff !important;
+}
+
+.theme-halloween-store .account-hub-topbar .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.theme-halloween-store .account-hub-topbar .text-slate-600,
+.theme-halloween-store .account-hub-topbar .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.theme-halloween-store .account-hub-topbar .bg-slate-100 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-halloween-store .account-hub-topbar .bg-slate-100:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.theme-halloween-store .account-hub-topbar .bg-white {
+  background-color: #071520 !important;
+  border-color: rgba(230, 95, 43, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+.theme-halloween-store .account-hub-topbar .bg-white:hover {
+  background-color: #0b1a26 !important;
 }
 
 /* Modales y ventanas emergentes (diálogos) en modo Halloween: forzar fondo blanco y textos de alto contraste */
