@@ -5147,6 +5147,15 @@ export default function TiendaFoxDrop() {
                       }
                       setAddressError(null);
                       setCheckoutStep('payment');
+                      // Si no es cliente de Puebla y tenía seleccionado SPEI o Efectivo, asegurar que pase a tarjeta
+                      const zipNum = parseInt(String(shippingAddress.zip || '').trim(), 10);
+                      const isZipPuebla = !isNaN(zipNum) && zipNum >= 72000 && zipNum <= 72999;
+                      const cityStr = (shippingAddress.city || '').toLowerCase().trim();
+                      const isCityPuebla = cityStr.includes('puebla') || cityStr.includes('cholula') || cityStr.includes('cuautlancingo');
+                      const isPueblaHere = isPersonalDelivery || selectedShippingId === 'pickup' || selectedShippingId === 'local_puebla' || isZipPuebla || isCityPuebla;
+                      if (!isPueblaHere || cartHasImportItems) {
+                        setPaymentMethod('mercadopago');
+                      }
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className="bg-[#0F3E36] hover:bg-[#1A5248] text-white font-extrabold px-8 py-3.5 rounded-2xl text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
@@ -5161,6 +5170,29 @@ export default function TiendaFoxDrop() {
             {/* PASO 2: SELECCIÓN DE PAGO (SPEI O EFECTIVO O MERCADO PAGO / TARJETAS) */}
             {checkoutStep === 'payment' && (() => {
               const hasImportItemsInCart = cart.some(i => isImportProdItem(i.product));
+
+              // Detección estricta de cliente local en Puebla Capital / Zona Conurbada
+              const isPueblaCustomer = (() => {
+                if (isPersonalDelivery || selectedShippingId === 'pickup' || selectedShippingId === 'local_puebla') {
+                  return true;
+                }
+                const zipNum = parseInt(String(shippingAddress.zip || '').trim(), 10);
+                if (!isNaN(zipNum) && zipNum >= 72000 && zipNum <= 72999) {
+                  return true;
+                }
+                const cityStr = (shippingAddress.city || '').toLowerCase().trim();
+                const stateStr = (shippingAddress.state || '').toLowerCase().trim();
+                if (cityStr.includes('puebla') || cityStr.includes('cholula') || cityStr.includes('cuautlancingo') || cityStr.includes('coronango')) {
+                  return true;
+                }
+                if (stateStr.includes('puebla') && (cityStr.includes('heroica') || cityStr.includes('angelopolis') || cityStr.includes('metropolitana'))) {
+                  return true;
+                }
+                return false;
+              })();
+
+              // SPEI y Efectivo solo se permiten si NO hay importación y el cliente reside en Puebla Capital / Zona Local
+              const allowLocalMethods = !hasImportItemsInCart && isPueblaCustomer;
 
               return (
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
@@ -5230,8 +5262,8 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* Opción SPEI (Oculta si hay productos de importación que requieren solo tarjeta/Mercado Pago) */}
-                  {!hasImportItemsInCart && (
+                  {/* Opción SPEI (Exclusiva para clientes de Puebla Capital / Zona Conurbada) */}
+                  {allowLocalMethods && (
                     <div
                       onClick={() => setPaymentMethod('spei')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -5245,20 +5277,25 @@ export default function TiendaFoxDrop() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-sm text-gray-900">Transferencia Bancaria SPEI</span>
-                          <span className="text-[10px] text-emerald-800 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
+                          <span className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                            <span>Transferencia Bancaria SPEI</span>
+                            <span className="text-[10px] text-[#0F3E36] bg-emerald-100 font-extrabold px-2 py-0.5 rounded-full">
+                              📍 Local Puebla
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">
                             Sin comisión
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          Transfiere desde tu app bancaria a nuestra cuenta oficial FoxDrop.
+                          Transfiere desde tu app bancaria a nuestra cuenta oficial FoxDrop. Acreditación inmediata para entrega local.
                         </p>
                       </div>
                     </div>
                   )}
 
                   {/* Cuadro de datos SPEI */}
-                  {!hasImportItemsInCart && paymentMethod === 'spei' && (
+                  {allowLocalMethods && paymentMethod === 'spei' && (
                     <div className="bg-[#0F3E36] text-white rounded-3xl p-6 space-y-4 shadow-md border border-emerald-950 animate-in fade-in duration-200">
                       <div className="flex items-center justify-between border-b border-white/15 pb-3">
                         <span className="text-xs uppercase tracking-wider font-bold text-amber-300">
@@ -5356,8 +5393,8 @@ export default function TiendaFoxDrop() {
                     </div>
                   )}
 
-                  {/* Opción Efectivo (Solo disponible para pedidos regulares de boutique, no para importación internacional) */}
-                  {checkoutSettings.allowCashOnDelivery && !hasImportItemsInCart && (
+                  {/* Opción Efectivo (Solo disponible para entregas presenciales o locales en Puebla) */}
+                  {checkoutSettings.allowCashOnDelivery && allowLocalMethods && (
                     <div
                       onClick={() => setPaymentMethod('cash')}
                       className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3.5 ${
@@ -5370,9 +5407,27 @@ export default function TiendaFoxDrop() {
                         {paymentMethod === 'cash' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
                       <div>
-                        <span className="font-extrabold text-sm text-gray-900">Efectivo contra Entrega</span>
+                        <span className="font-extrabold text-sm text-gray-900 flex items-center gap-1.5">
+                          <span>Efectivo contra Entrega</span>
+                          <span className="text-[10px] text-[#0F3E36] bg-emerald-100 font-extrabold px-2 py-0.5 rounded-full">
+                            📍 Local Puebla
+                          </span>
+                        </span>
                         <p className="text-xs text-gray-500 mt-1">
-                          Paga en efectivo al recibir tu producto o en el punto de entrega acordado.
+                          Paga en efectivo al recibir tu producto o en el punto de entrega acordado en Puebla.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Banner explicativo para envíos nacionales fuera de Puebla */}
+                  {!allowLocalMethods && !hasImportItemsInCart && (
+                    <div className="bg-sky-50 border border-sky-200/90 rounded-2xl p-3.5 flex items-start gap-3 text-sky-950 text-xs">
+                      <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Envío Nacional con Despacho Seguro</strong>
+                        <p className="text-sky-800 text-[11px] leading-relaxed mt-0.5">
+                          Para compras foráneas fuera de Puebla, el pago con tarjeta de crédito/débito garantiza confirmación automática 24/7 y generación inmediata de tu guía de paquetería.
                         </p>
                       </div>
                     </div>
