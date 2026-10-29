@@ -514,28 +514,15 @@ html, body {
   border-color: rgba(230, 95, 43, 0.3) !important;
 }
 
-.theme-halloween-store div.bg-white.rounded-2xl.border.border-slate-200,
-.theme-halloween-store div.bg-white.rounded-3xl.border.border-slate-200 {
-  background-color: #0c1c2a !important;
-  border-color: rgba(230, 95, 43, 0.25) !important;
-  color: #f1f5f9 !important;
-}
-
-/* Limitar los estilos oscuros de Halloween para no romper los modales claros (modal de producto, auth, info) */
-.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-900,
-.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-800 {
-  color: #f8fafc !important;
-}
-
-.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-600,
-.theme-halloween-store :not(.product-modal-content):not(.product-modal-content *) .text-slate-500 {
-  color: #94a3b8 !important;
-}
-
-/* Modal de detalle de producto: mantener fondo blanco puro y tipografías oscuras de alto contraste */
-.product-modal-content {
+/* Modal de detalle de producto: fondo blanco y textos oscuros garantizados */
+.product-modal-content,
+div.product-modal-content {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+.product-modal-content * {
+  color: inherit;
 }
 
 .product-modal-content h1,
@@ -543,28 +530,35 @@ html, body {
 .product-modal-content h3,
 .product-modal-content h4,
 .product-modal-content h5,
-.product-modal-content strong {
+.product-modal-content strong,
+.product-modal-content .text-slate-900,
+.product-modal-content .text-gray-900 {
   color: #0f172a !important;
 }
 
 .product-modal-content p,
-.product-modal-content span.text-slate-700,
-.product-modal-content span.text-slate-600,
-.product-modal-content span.text-slate-500,
+.product-modal-content span,
 .product-modal-content .text-slate-700,
 .product-modal-content .text-slate-600,
-.product-modal-content .text-slate-500 {
+.product-modal-content .text-slate-500,
+.product-modal-content .text-gray-700,
+.product-modal-content .text-gray-600,
+.product-modal-content .text-gray-500 {
   color: #334155 !important;
 }
 
-.product-modal-content .bg-slate-50\/80 {
+.product-modal-content .bg-slate-50\/80,
+.product-modal-content .bg-slate-50,
+.product-modal-content .bg-gray-50 {
   background-color: #f8fafc !important;
   border-color: #e2e8f0 !important;
 }
 
 .product-modal-content .border-slate-200\/80,
 .product-modal-content .border-slate-200\/70,
-.product-modal-content .border-slate-200\/60 {
+.product-modal-content .border-slate-200\/60,
+.product-modal-content .border-slate-200,
+.product-modal-content .border-gray-200 {
   border-color: #e2e8f0 !important;
 }
 

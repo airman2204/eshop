@@ -6578,15 +6578,18 @@ export default function TiendaFoxDrop() {
               <div className="space-y-2.5">
                 <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#E65F2B]" />
-                  <span>Acerca de este artículo y características</span>
+                  <span style={{ color: '#0f172a' }}>Acerca de este artículo y características</span>
                 </h4>
-                <div className="bg-slate-50/80 border border-slate-200/70 rounded-2xl p-4 space-y-2 text-xs sm:text-[13px] text-slate-700 leading-relaxed">
+                <div 
+                  className="rounded-2xl p-4 space-y-2 text-xs sm:text-[13px] leading-relaxed border"
+                  style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#334155' }}
+                >
                   {formattedDescriptionLines.map((line, lIdx) => {
                     const cleanedLine = line.replace(/\*\*/g, '').replace(/^[•*]\s*/, '').trim();
                     const isSectionHeader = /^(✨|📐|📦|Características|Beneficios|Especificaciones)/i.test(cleanedLine) && cleanedLine.endsWith(':');
                     if (isSectionHeader) {
                       return (
-                        <h5 key={lIdx} className="font-black text-slate-900 text-xs sm:text-sm pt-2 first:pt-0 border-b border-slate-200/60 pb-1">
+                        <h5 key={lIdx} className="font-black text-xs sm:text-sm pt-2 first:pt-0 border-b pb-1" style={{ color: '#0f172a', borderColor: '#cbd5e1' }}>
                           {cleanedLine}
                         </h5>
                       );
@@ -6598,9 +6601,9 @@ export default function TiendaFoxDrop() {
                       return (
                         <div key={lIdx} className="flex items-start gap-2 py-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0F3E36] mt-2 shrink-0" />
-                          <p>
-                            <strong className="font-black text-slate-900">{kvMatch[1]}:</strong>{' '}
-                            <span className="text-slate-700">{kvMatch[2]}</span>
+                          <p style={{ color: '#334155' }}>
+                            <strong className="font-black" style={{ color: '#0f172a' }}>{kvMatch[1]}:</strong>{' '}
+                            <span style={{ color: '#334155' }}>{kvMatch[2]}</span>
                           </p>
                         </div>
                       );
@@ -6610,13 +6613,13 @@ export default function TiendaFoxDrop() {
                       return (
                         <div key={lIdx} className="flex items-start gap-2 py-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#E65F2B] mt-2 shrink-0" />
-                          <p className="text-slate-700">{cleanedLine}</p>
+                          <p style={{ color: '#334155' }}>{cleanedLine}</p>
                         </div>
                       );
                     }
 
                     return (
-                      <p key={lIdx} className="text-slate-700">
+                      <p key={lIdx} style={{ color: '#334155' }}>
                         {cleanedLine}
                       </p>
                     );
@@ -6627,7 +6630,7 @@ export default function TiendaFoxDrop() {
               {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS */}
               {crossSellItems.length > 0 && (
                 <div className="pt-1">
-                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <p className="text-[11px] font-black uppercase tracking-wider mb-2 flex items-center gap-1" style={{ color: '#475569' }}>
                     <Sparkles className="w-3 h-3 text-[#E65F2B]" /> También te podría interesar:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
