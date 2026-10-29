@@ -41,8 +41,8 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   mercadopago: {
     enabled: true,
     sandbox: false,
-    publicKey: 'APP_USR-071ae951-fa96-4df5-a281-bea27ac4d544',
-    accessToken: 'APP_USR-2696735870200983-102212-37956d25b0de4da0271830b00d2682e6-3786813278',
+    publicKey: 'APP_USR-d97bd7f3-142a-4231-8c32-2f5d20068a5f',
+    accessToken: 'APP_USR-7072476248470076-102212-39444b271633c2c2864dc800eda269cc-3782951173',
   },
 };
 
