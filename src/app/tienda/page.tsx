@@ -2876,9 +2876,9 @@ export default function TiendaFoxDrop() {
                   >
                     {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
                     <img 
-                      src={isDefaultSlide ? (isHalloween ? '/campaigns/halloween_hero_banner.png' : '/banner-bg-official.png') : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      src={isDefaultSlide ? (isHalloween ? '/campaigns/halloween_hero_banner_mobile_wide.png' : '/banner-bg-official.png') : (currentSlide.image_url || '/banner-bg-official.png')} 
                       alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      className="absolute inset-0 w-full h-full object-cover object-right pointer-events-none select-none"
                     />
 
                     {/* Zorrito oficial solo en slide por defecto cuando NO es Halloween */}
@@ -2983,9 +2983,9 @@ export default function TiendaFoxDrop() {
                   >
                     {/* FONDO LIMPIO: Banner oficial si es default o imagen personalizada limpia de slide */}
                     <img 
-                      src={isDefaultSlide ? (isHalloween ? '/campaigns/halloween_hero_banner.png' : '/banner-bg-official.png') : (currentSlide.image_url || '/banner-bg-official.png')} 
+                      src={isDefaultSlide ? (isHalloween ? '/campaigns/halloween_hero_banner_desktop_wide.png' : '/banner-bg-official.png') : (currentSlide.image_url || '/banner-bg-official.png')} 
                       alt="FoxDrop Banner" 
-                      className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+                      className="absolute inset-0 w-full h-full object-cover object-right pointer-events-none select-none"
                     />
 
                     {/* Zorrito oficial solo en slide por defecto cuando NO es Halloween */}
