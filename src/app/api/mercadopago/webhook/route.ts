@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createServerClient } from "@/lib/supabase/server";
 
+// Manejador GET (por si Mercado Pago o el verificador hace un ping GET inicial)
+export async function GET() {
+  return NextResponse.json({ status: "ok", service: "Mercado Pago Webhook FoxDrop" }, { status: 200 });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const url = new URL(req.url);
