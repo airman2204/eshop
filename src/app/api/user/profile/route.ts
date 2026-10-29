@@ -411,7 +411,7 @@ export async function POST(req: NextRequest) {
 
       // 1. Verificar el estado actual de la orden para garantizar que no esté ya enviada o entregada
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
-      let fetchQuery = supabase.from("orders").select("id, order_number, user_id, client_email, client_phone, status, payment_status, payment_method, total, client_name, created_at, updated_at, notes, order_items(*)");
+      let fetchQuery = supabase.from("orders").select("id, order_number, user_id, client_email, client_phone, status, shipping_type, pickup_point, payment_status, payment_method, total, client_name, created_at, updated_at, notes, order_items(*)");
       if (isUuid) {
         fetchQuery = fetchQuery.eq("id", orderId);
       } else {
@@ -518,14 +518,19 @@ export async function POST(req: NextRequest) {
       if (orderData.client_phone) {
         try {
           const { dispatchOrderStatusNotification } = await import("@/lib/orderNotifications");
-          dispatchOrderStatusNotification({
+          await dispatchOrderStatusNotification({
             orderId: orderData.order_number || orderData.id,
             clientName: orderData.client_name || "Cliente",
             clientPhone: orderData.client_phone,
             newStatus: "cancelled",
+            shippingType: orderData.shipping_type,
+            pickupPoint: orderData.pickup_point,
+            total: orderData.total,
             notes: cancelReason,
-          }).catch(() => {});
-        } catch {}
+          }).catch(err => console.warn("Aviso notificando cancelacion por WhatsApp:", err));
+        } catch (notifErr) {
+          console.warn("Fallo cargando modulo de notificaciones:", notifErr);
+        }
       }
 
       return NextResponse.json({ 

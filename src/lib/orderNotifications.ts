@@ -288,21 +288,22 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
   }
 
   // =========================================================================
-  // FLUJO C: COMPRA EN LÍNEA CON PAQUETERÍA NACIONAL
+  // FLUJO C: COMPRA EN LÍNEA CON PAQUETERÍA NACIONAL O INTERNACIONAL
   // =========================================================================
-  else if (shippingType === "national_shipping") {
-    const courier = shippingCompany || "Paquetexpress / DHL / Estafeta";
+  else if (shippingType === "national_shipping" || shippingType === "international_shipping" || !messageText) {
+    const isInternational = shippingType === "international_shipping";
+    const courier = shippingCompany || (isInternational ? "Línea Aérea / Paquetexpress / Correos" : "Paquetexpress / DHL / Estafeta");
 
     switch (newStatus) {
       case "pending":
-        messageText = `🦊 ¡Hola *${firstName}*! Registramos tu pedido *#${orderId}* con envío nacional.\n\n` +
+        messageText = `🦊 ¡Hola *${firstName}*! Registramos tu pedido *#${orderId}* con envío ${isInternational ? "internacional" : "nacional"}.\n\n` +
           (totalFormatted ? `💵 *Total:* ${totalFormatted}\n` : "") +
           `Estamos validando el pago para iniciar el proceso de preparación y despacho de tu paquete.`;
         break;
 
       case "processing":
         messageText = `🦊 ¡Pago confirmado y pedido en almacén, *${firstName}*!\n\n` +
-          `Tu pedido *#${orderId}* está siendo protegido y embalado en nuestro almacén central para su entrega a la paquetería.\n` +
+          `Tu pedido *#${orderId}* está siendo protegido y embalado en nuestro almacén para su entrega a la paquetería.\n` +
           `En breve te proporcionaremos tu número de guía y enlace de rastreo.`;
         stickerUrl = `${baseUrl}/stickers/sticker-pago-recibido.webp`;
         break;
@@ -326,9 +327,16 @@ export async function dispatchOrderStatusNotification(params: OrderNotificationP
       case "cancelled":
         messageText = `🦊 Hola *${firstName}*, tu pedido *#${orderId}* ha sido cancelado.` +
           (notes ? `\nMotivo: ${notes}` : "") +
-          `\nSi tienes saldo a favor o alguna pregunta sobre tu reembolso, estamos listos para atenderte por aquí.`;
+          `\nSi requieres asistencia o tienes dudas sobre tu reembolso, estamos listos para atenderte por aquí.`;
         break;
     }
+  }
+
+  // Fallback universal para cancelación: si es cualquier otro shippingType no contemplado
+  if (!messageText && newStatus === "cancelled") {
+    messageText = `🦊 Hola *${firstName}*, te confirmamos que tu pedido *#${orderId}* ha sido cancelado con éxito.` +
+      (notes ? `\nMotivo: ${notes}` : "") +
+      `\nSi requieres asistencia o seguimiento, puedes responder a este mismo chat.`;
   }
 
   // Si no se armó ningún mensaje para la combinación, retornar
