@@ -2089,16 +2089,22 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       <aside aria-label="Aviso de beneficios FoxDrop" className="bg-[#FAF6F0] text-[#0F3E36] text-[11px] font-bold py-1.5 px-4 border-b border-[#E8DFC8]/60 tracking-tight text-center">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
-          <span className="font-extrabold text-[#0F3E36]">envíos seguros a todo México</span>
+          <span className="font-extrabold text-[#0F3E36] flex items-center gap-1">
+            {isHalloween && <span>🎃</span>}
+            <span>envíos seguros a todo México</span>
+          </span>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-600 font-medium">pagos protegidos vía transferencia SPEI y entrega garantizada</span>
+          <span className="text-gray-600 font-medium flex items-center gap-1">
+            {isHalloween && <span>🦇</span>}
+            <span>pagos protegidos vía transferencia SPEI y entrega garantizada</span>
+          </span>
           <span className="text-gray-400 hidden sm:inline">|</span>
           <button 
             type="button" 
             onClick={() => setInfoModal('envios')}
             className="text-[#DF7F2D] hover:underline font-bold hidden sm:inline cursor-pointer"
           >
-            ver detalles ›
+            {isHalloween ? 'ver detalles y promociones ›' : 'ver detalles ›'}
           </button>
         </div>
       </aside>
@@ -3284,16 +3290,22 @@ export default function TiendaFoxDrop() {
                   {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
                   <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
                     <div className="flex flex-wrap items-center gap-1">
+                      {isHalloween && hasDiscount && (
+                        <span className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5 border border-amber-300/40">
+                          🎃 {product.discountPercent}% OFF
+                        </span>
+                      )}
+                      {!isHalloween && hasDiscount && (
+                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
+                          -{product.discountPercent}%
+                        </span>
+                      )}
                       {product.isCombo && (
                         <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
                           <Sparkles className="w-2.5 h-2.5" /> COMBO
                         </span>
                       )}
-                      {hasDiscount ? (
-                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
-                          -{product.discountPercent}%
-                        </span>
-                      ) : product.stock === 1 ? (
+                      {!hasDiscount && product.stock === 1 ? (
                         <span className="bg-amber-500 text-white font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow-xs">
                           Último
                         </span>
