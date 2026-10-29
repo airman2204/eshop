@@ -524,6 +524,13 @@ div.halloween-modal-light {
   color: #0f172a !important;
 }
 
+.fixed.inset-0 input,
+.fixed.inset-0 textarea,
+.product-modal-content input,
+.halloween-modal-light input {
+  color: #0f172a !important;
+}
+
 .fixed.inset-0 .bg-white h1,
 .fixed.inset-0 .bg-white h2,
 .fixed.inset-0 .bg-white h3,
@@ -609,30 +616,33 @@ div.halloween-modal-light {
   border-bottom-color: rgba(230, 95, 43, 0.25) !important;
 }
 
-/* Selectores de ordenamiento */
-.theme-halloween-store .bg-white.border.border-gray-200.rounded-xl {
+/* Selectores de ordenamiento - SOLO en catálogo */
+.theme-halloween-store #catalog-section .bg-white.border.border-gray-200.rounded-xl {
   background-color: #0a1926 !important;
   border-color: #1e293b !important;
 }
 
-.theme-halloween-store .bg-white.border.border-gray-200.rounded-xl select {
+.theme-halloween-store #catalog-section .bg-white.border.border-gray-200.rounded-xl select {
   color: #f8fafc !important;
 }
 
-/* Tarjetas de Producto */
-.theme-halloween-store .bg-white.rounded-xl {
+/* Tarjetas de Producto - SOLO dentro del catálogo o recomendaciones, NUNCA en modales */
+#catalog-section .bg-white.rounded-xl,
+.product-card-halloween {
   background-color: #0c1a26 !important;
   border-color: rgba(230, 95, 43, 0.35) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.6) !important;
 }
 
-.theme-halloween-store .bg-white.rounded-xl:hover {
+#catalog-section .bg-white.rounded-xl:hover,
+.product-card-halloween:hover {
   border-color: #e65f2b !important;
   box-shadow: 0 10px 25px -3px rgba(230, 95, 43, 0.4) !important;
 }
 
 /* Contenedor suave de imagen del producto como en la imagen de referencia */
-.theme-halloween-store .bg-white.rounded-xl .aspect-square.bg-white {
+#catalog-section .bg-white.rounded-xl .aspect-square.bg-white,
+.product-card-halloween .aspect-square.bg-white {
   background: radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f5f9 100%) !important;
   border-radius: 0.85rem !important;
   margin: 0.35rem !important;
@@ -640,33 +650,43 @@ div.halloween-modal-light {
 }
 
 /* Botón circular de añadir al carrito (+) en amarillo/ámbar de alta visibilidad */
-.theme-halloween-store .bg-white.rounded-xl button.bg-amber-400,
-.theme-halloween-store .bg-white.rounded-xl button[title="Agregar al carrito"],
-.theme-halloween-store .bg-white.rounded-xl .bg-amber-400 {
+#catalog-section .bg-white.rounded-xl button.bg-amber-400,
+#catalog-section .bg-white.rounded-xl button[title="Agregar al carrito"],
+#catalog-section .bg-white.rounded-xl .bg-amber-400,
+.product-card-halloween button.bg-amber-400,
+.product-card-halloween .bg-amber-400 {
   background: linear-gradient(135deg, #F59E0B, #D97706) !important;
   color: #1e1b18 !important;
   box-shadow: 0 2px 10px rgba(245, 158, 11, 0.45) !important;
 }
 
 /* Títulos y textos de los productos - 100% legibles y de alto contraste */
-.theme-halloween-store .bg-white.rounded-xl h4,
-.theme-halloween-store .bg-white.rounded-xl h3 {
+#catalog-section .bg-white.rounded-xl h4,
+#catalog-section .bg-white.rounded-xl h3,
+.product-card-halloween h4,
+.product-card-halloween h3 {
   color: #ffffff !important;
   font-weight: 700 !important;
 }
 
-.theme-halloween-store .bg-white.rounded-xl p,
-.theme-halloween-store .bg-white.rounded-xl span.text-gray-500,
-.theme-halloween-store .bg-white.rounded-xl .text-gray-500 {
+#catalog-section .bg-white.rounded-xl p,
+#catalog-section .bg-white.rounded-xl span.text-gray-500,
+#catalog-section .bg-white.rounded-xl .text-gray-500,
+.product-card-halloween p,
+.product-card-halloween span.text-gray-500,
+.product-card-halloween .text-gray-500 {
   color: #94a3b8 !important;
 }
 
-.theme-halloween-store .bg-white.rounded-xl .border-gray-100 {
+#catalog-section .bg-white.rounded-xl .border-gray-100,
+.product-card-halloween .border-gray-100 {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.theme-halloween-store .bg-white.rounded-xl .font-black.text-\[\#0F3E36\],
-.theme-halloween-store .bg-white.rounded-xl span.text-\[\#0F3E36\] {
+#catalog-section .bg-white.rounded-xl .font-black.text-\[\#0F3E36\],
+#catalog-section .bg-white.rounded-xl span.text-\[\#0F3E36\],
+.product-card-halloween .font-black.text-\[\#0F3E36\],
+.product-card-halloween span.text-\[\#0F3E36\] {
   color: #fb923c !important;
 }
 

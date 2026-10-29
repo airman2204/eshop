@@ -6791,7 +6791,8 @@ export default function TiendaFoxDrop() {
                     placeholder="cliente@ejemplo.com"
                     value={authEmail}
                     onChange={e => setAuthEmail(e.target.value)}
-                    className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-3 text-sm text-gray-900 focus:outline-none focus:border-[#DF7F2D] shadow-inner font-medium"
+                    style={{ backgroundColor: '#FAF6F0', color: '#0f172a' }}
+                    className="w-full border border-gray-300 rounded-xl p-3 text-sm focus:outline-none focus:border-[#DF7F2D] shadow-inner font-medium"
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     Te enviaremos un código de seguridad para acceder de inmediato.
@@ -6834,7 +6835,8 @@ export default function TiendaFoxDrop() {
                   placeholder="------"
                   value={otpCode}
                   onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-white border-2 border-gray-300 rounded-xl p-3 text-center text-xl font-mono font-bold tracking-[0.3em] text-gray-900 focus:outline-none focus:border-[#0F3E36]"
+                  style={{ backgroundColor: '#ffffff', color: '#0f172a', borderColor: '#cbd5e1' }}
+                  className="w-full border-2 rounded-xl p-3 text-center text-xl font-mono font-bold tracking-[0.3em] focus:outline-none focus:border-[#0F3E36] focus:bg-white"
                 />
 
                 <button 
@@ -6898,7 +6900,8 @@ export default function TiendaFoxDrop() {
                       placeholder="Ej. Mario"
                       value={authFirstName}
                       onChange={e => setAuthFirstName(e.target.value)}
-                      className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                      style={{ backgroundColor: '#FAF6F0', color: '#0f172a' }}
+                      className="w-full border border-gray-300 rounded-xl p-2.5 text-xs font-medium focus:outline-none focus:border-[#DF7F2D]"
                     />
                   </div>
                   <div>
@@ -6909,7 +6912,8 @@ export default function TiendaFoxDrop() {
                       placeholder="Ej. Gómez"
                       value={authLastName}
                       onChange={e => setAuthLastName(e.target.value)}
-                      className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                      style={{ backgroundColor: '#FAF6F0', color: '#0f172a' }}
+                      className="w-full border border-gray-300 rounded-xl p-2.5 text-xs font-medium focus:outline-none focus:border-[#DF7F2D]"
                     />
                   </div>
                 </div>
@@ -6922,7 +6926,8 @@ export default function TiendaFoxDrop() {
                     placeholder="10 dígitos (ej. 2221234567)"
                     value={authPhone}
                     onChange={e => setAuthPhone(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-[#FAF6F0] border border-gray-300 rounded-xl p-2.5 text-gray-900 focus:outline-none focus:border-[#DF7F2D] text-xs font-medium"
+                    style={{ backgroundColor: '#FAF6F0', color: '#0f172a' }}
+                    className="w-full border border-gray-300 rounded-xl p-2.5 text-xs font-medium focus:outline-none focus:border-[#DF7F2D]"
                   />
                   <p className="text-[10px] text-gray-400 mt-1">
                     Lo usamos para la entrega y para enviarte tu número de guía.
