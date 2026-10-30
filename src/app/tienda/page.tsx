@@ -7621,7 +7621,7 @@ export default function TiendaFoxDrop() {
       {/* ======================================================== */}
       <nav 
         aria-label="Navegación inferior móvil"
-        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] md:hidden safe-area-bottom select-none"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200/90 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] md:hidden safe-area-bottom select-none"
       >
         <div className="grid grid-cols-4 items-center h-16 px-1">
           {/* BOTÓN EXPLORAR / INICIO */}
@@ -7636,13 +7636,13 @@ export default function TiendaFoxDrop() {
             className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
               currentView === 'store'
                 ? 'text-[#DF7F2D] font-bold'
-                : 'text-gray-500 hover:text-[#0F3E36]'
+                : 'text-slate-600 hover:text-slate-900 font-semibold'
             }`}
           >
             <div className={`p-1 rounded-xl transition ${currentView === 'store' ? 'bg-[#FFF3E6]' : ''}`}>
               <HomeIcon className="w-5 h-5" />
             </div>
-            <span className="text-[10px] tracking-tight">Catálogo</span>
+            <span className="text-[11px] font-bold tracking-tight">Catálogo</span>
           </button>
 
           {/* BOTÓN CLUB FOXDROP */}
@@ -7661,13 +7661,13 @@ export default function TiendaFoxDrop() {
             className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
               currentView === 'account' && accountTab === 'club'
                 ? 'text-[#DF7F2D] font-bold'
-                : 'text-gray-500 hover:text-[#0F3E36]'
+                : 'text-slate-600 hover:text-slate-900 font-semibold'
             }`}
           >
             <div className={`p-1 rounded-xl transition ${currentView === 'account' && accountTab === 'club' ? 'bg-[#FFF3E6]' : ''}`}>
               <Award className="w-5 h-5 text-amber-500" />
             </div>
-            <span className="text-[10px] tracking-tight">Club Fox</span>
+            <span className="text-[11px] font-bold tracking-tight">Club Fox</span>
           </button>
 
           {/* BOTÓN MI BOLSA / CARRITO CON BADGE FLOTANTE */}
@@ -7677,7 +7677,7 @@ export default function TiendaFoxDrop() {
               try { soundManager.triggerHaptic('medium'); } catch {}
               setIsCartOpen(true);
             }}
-            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-gray-500 hover:text-[#0F3E36] relative"
+            className="flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 text-slate-600 hover:text-slate-900 font-semibold relative"
           >
             <div className="relative p-1 rounded-xl">
               <ShoppingCart className="w-5 h-5" />
@@ -7687,7 +7687,7 @@ export default function TiendaFoxDrop() {
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-tight">Mi Bolsa</span>
+            <span className="text-[11px] font-bold tracking-tight">Mi Bolsa</span>
           </button>
 
           {/* BOTÓN MI CUENTA / PEDIDOS */}
@@ -7706,13 +7706,13 @@ export default function TiendaFoxDrop() {
             className={`flex flex-col items-center justify-center gap-1 py-1 transition-all active:scale-95 ${
               currentView === 'account'
                 ? 'text-[#DF7F2D] font-bold'
-                : 'text-gray-500 hover:text-[#0F3E36]'
+                : 'text-slate-600 hover:text-slate-900 font-semibold'
             }`}
           >
             <div className={`p-1 rounded-xl transition ${currentView === 'account' ? 'bg-[#FFF3E6]' : ''}`}>
               <User className="w-5 h-5" />
             </div>
-            <span className="text-[10px] tracking-tight">{user ? 'Mi Cuenta' : 'Ingresar'}</span>
+            <span className="text-[11px] font-bold tracking-tight">{user ? 'Mi Cuenta' : 'Ingresar'}</span>
           </button>
         </div>
       </nav>

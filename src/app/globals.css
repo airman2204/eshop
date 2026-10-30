@@ -81,11 +81,8 @@ html, body {
 
 /* Soporte para el notch y barra de inicio en iOS (Safe Area) */
 @supports (padding: env(safe-area-inset-bottom)) {
-  nav {
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  }
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 12px);
   }
 }
 
