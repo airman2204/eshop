@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -876,8 +876,13 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
             <button
               key={idx}
               type="button"
-              onClick={() => { setActiveCategory(idx); handleSearch(cat.subs[0].query, 1); }}
-              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition cursor-pointer border ${
+              onClick={() => {
+                setActiveCategory(idx);
+                setVerifiedShopOnly(true);
+                setSortOrder('-reviewCount');
+                handleSearch(cat.subs[0].query, 1, '-reviewCount', true, fastShipOnly, hasReviewsOnly);
+              }}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition cursor-pointer border shadow-xs ${
                 activeCategory === idx
                   ? 'bg-red-600 text-white border-red-600 shadow-xs'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700 hover:border-red-400 hover:text-red-500'
@@ -893,7 +898,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
             <button
               key={idx}
               type="button"
-              onClick={() => handleSearch(tag.query, 1)}
+              onClick={() => handleSearch(tag.query, 1, sortOrder, verifiedShopOnly, fastShipOnly, hasReviewsOnly)}
               className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition cursor-pointer border ${
                 searchQuery === tag.query
                   ? 'bg-red-500 text-white border-red-500 shadow-xs'
@@ -903,35 +908,6 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
               {tag.label}
             </button>
           ))}
-        </div>
-
-        {/* FILTROS ESPECÍFICOS DE DULCES & SNACKS JAPONESES */}
-        <div className="p-3 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-black text-amber-900 dark:text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
-              <span>🍬 Especial de Dulces & Confitería Japonesa:</span>
-            </span>
-            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
-              Directo de Tokio, Kioto y Osaka
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {JAPAN_CANDY_FILTERS.map((candy, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSearch(candy.query, 1)}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer border ${
-                  searchQuery === candy.query
-                    ? 'bg-gradient-to-r from-amber-500 to-[#E65F2B] text-white border-amber-600 shadow-sm'
-                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-amber-200 dark:border-slate-700 hover:border-amber-400 hover:bg-amber-50/50'
-                }`}
-              >
-                {candy.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* FILTROS AVANZADOS DE PROVEEDORES Y CALIDAD DE JAPÓN (IGUAL QUE EN CJ) */}
