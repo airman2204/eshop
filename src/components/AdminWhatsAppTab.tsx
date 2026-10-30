@@ -40,6 +40,19 @@ function getSafeAvatarUrl(url?: string): string {
   return url;
 }
 
+// Helper para garantizar que las fotos enviadas por clientes se muestren correctamente
+function getSafeChatMediaUrl(url?: string): string {
+  if (!url || typeof url !== 'string') return '';
+  const clean = url.trim();
+  if (clean.startsWith('data:image/') || clean.startsWith('/') || clean.startsWith('blob:')) {
+    return clean;
+  }
+  if (clean.includes('pps.whatsapp.net') || clean.includes('fbcdn.net') || clean.includes('whatsapp.net')) {
+    return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
+  }
+  return clean;
+}
+
 export default function AdminWhatsAppTab({ orders, clients, adminSessionName, initialPhone, initialMessage, onClose, onSelectAnyChat }: AdminWhatsAppTabProps) {
   const [chats, setChats] = useState<WhatsAppChat[]>([]);
   const [loadingChats, setLoadingChats] = useState(true);
@@ -118,6 +131,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
   const [stories, setStories] = useState<WhatsAppStatusItem[]>([]);
   const [loadingStories, setLoadingStories] = useState(false);
   const [activeStoryViewing, setActiveStoryViewing] = useState<WhatsAppStatusItem | null>(null);
+  const [copiedPhoneNotice, setCopiedPhoneNotice] = useState(false);
   const [showAddStoryModal, setShowAddStoryModal] = useState(false);
   const [newStoryCaption, setNewStoryCaption] = useState('');
   const [newStoryMediaUrl, setNewStoryMediaUrl] = useState('');
@@ -1215,8 +1229,29 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                     </span>
                   )}
                 </h3>
-                <div className="flex items-center gap-2 text-[11px] text-[#8696A0] truncate">
-                  <span className="font-semibold">+{activeChat.phone}</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-[#8696A0] truncate">
+                  <span className="font-semibold text-white/90 font-mono select-all">+{activeChat.phone}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const num = String(activeChat.phone || '').trim();
+                      navigator.clipboard.writeText(num);
+                      soundManager.triggerHaptic('light');
+                      setCopiedPhoneNotice(true);
+                      setTimeout(() => setCopiedPhoneNotice(false), 2000);
+                    }}
+                    className="p-1 hover:bg-[#374248] rounded text-[#8696A0] hover:text-[#00A884] transition cursor-pointer flex items-center gap-1"
+                    title="Copiar número de teléfono"
+                  >
+                    {copiedPhoneNotice ? (
+                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/60 px-1 py-0.5 rounded border border-emerald-500/40 flex items-center gap-0.5">
+                        <Check className="w-3 h-3 text-emerald-400" /> Copiado
+                      </span>
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 text-[#8696A0] hover:text-white" />
+                    )}
+                  </button>
                   <span>•</span>
                   <span className="text-[#00A884] font-medium">en línea</span>
                 </div>
@@ -1427,30 +1462,33 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                       )}
 
                       {/* Si es Sticker o Imagen */}
-                      {(msg.mediaType === 'sticker' || msg.mediaUrl || msg.text?.includes('[Sticker')) ? (
+                      {(msg.mediaType === 'sticker' || msg.mediaUrl || (msg as any).media_url || msg.text?.includes('[Sticker') || msg.text?.includes('📷 [Foto]')) ? (
                         <div className="py-1 flex flex-col items-center">
-                          {msg.mediaUrl ? (
+                          {((msg.mediaUrl || (msg as any).media_url)) ? (
                             <img 
-                              src={msg.mediaUrl} 
+                              src={getSafeChatMediaUrl(msg.mediaUrl || (msg as any).media_url)} 
                               alt="Media WhatsApp" 
+                              loading="lazy"
                               onError={(e) => {
-                                if (msg.mediaUrl?.includes('/stickers/')) {
-                                  const fileName = msg.mediaUrl.split('/stickers/').pop();
+                                const url = msg.mediaUrl || (msg as any).media_url;
+                                if (url?.includes('/stickers/')) {
+                                  const fileName = url.split('/stickers/').pop();
                                   if (fileName && !e.currentTarget.src.endsWith(`/stickers/${fileName}`)) {
                                     e.currentTarget.src = `/stickers/${fileName}`;
                                     return;
                                   }
                                 }
-                                e.currentTarget.style.display = 'none';
                               }}
-                              onClick={() => setPreviewMediaModal(msg.mediaUrl!)}
-                              className="w-48 max-h-64 object-contain rounded-xl mx-auto cursor-pointer hover:opacity-95 transition shadow-sm active:scale-98"
+                              onClick={() => setPreviewMediaModal(getSafeChatMediaUrl(msg.mediaUrl || (msg as any).media_url))}
+                              className="w-52 max-h-72 object-contain rounded-xl mx-auto cursor-pointer hover:opacity-95 transition shadow-sm active:scale-98 bg-black/20"
                               title="Toca para ver en pantalla completa"
                             />
                           ) : (
-                            <div className="p-3 text-center">👾 [Sticker]</div>
+                            <div className="p-3 text-center bg-black/20 rounded-xl text-slate-300">
+                              {msg.text?.includes('[Sticker') ? '👾 [Sticker]' : '📷 [Foto sin previsualización]'}
+                            </div>
                           )}
-                          {msg.text && !msg.text.startsWith('[Sticker:') && msg.text !== '👾 [Sticker]' && (
+                          {msg.text && !msg.text.startsWith('[Sticker:') && msg.text !== '👾 [Sticker]' && msg.text !== '📷 [Foto]' && (
                             <p className="whitespace-pre-wrap mt-1 font-medium">{msg.text}</p>
                           )}
                         </div>

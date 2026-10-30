@@ -102,8 +102,9 @@ const JAPAN_CANDY_FILTERS = [
 ];
 
 const QUICK_JAPAN_TAGS = [
-  { label: '🔥 Pokémon TCG & Merch', query: 'pokemon card box' },
+  { label: '🔥 Tendencias & Más Vendidos', query: 'ランキング 人気' },
   { label: '🍬 Dulces & Snacks Japoneses', query: 'お菓子 詰め合わせ' },
+  { label: '⚡ Pokémon TCG & Merch', query: 'pokemon card box' },
   { label: '🍫 KitKat Edición Japón', query: 'キットカット 日本' },
   { label: '🍓 Gomitas Japonesas (Gummy)', query: '日本 グミ 果実' },
   { label: '🍡 Dulces Tradicionales (Wagashi)', query: '和菓子 ギフト' },
@@ -138,7 +139,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
   const [editingNoteCode, setEditingNoteCode] = useState<string | null>(null);
   const [noteInput, setNoteInput] = useState('');
 
-  const [searchQuery, setSearchQuery] = useState('pokemon card box');
+  const [searchQuery, setSearchQuery] = useState('ランキング 人気');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<RakutenItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -146,7 +147,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
   const [pageCount, setPageCount] = useState(1);
 
   // Filtros de Calidad y Proveedores
-  const [sortOrder, setSortOrder] = useState<string>('standard');
+  const [sortOrder, setSortOrder] = useState<string>('-reviewCount'); // Más vendidos / más populares por default
   const [verifiedShopOnly, setVerifiedShopOnly] = useState(false); // Shop Of The Year
   const [fastShipOnly, setFastShipOnly] = useState(false); // Asuraku (<24h despacho)
   const [hasReviewsOnly, setHasReviewsOnly] = useState(false); // Calificaciones > 4 estrellas
@@ -299,7 +300,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
   };
 
   useEffect(() => {
-    handleSearch('pokemon card box', 1);
+    handleSearch('ランキング 人気', 1, '-reviewCount');
     loadWishlist();
   }, []);
 
