@@ -5032,242 +5032,301 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
                 ) : (
-                  /* VISTA TRADICIONAL PARA PRODUCTOS LOCALES DE BOUTIQUE */
-                  <>
-                    <div>
-                      <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
-                        <Truck className="w-6 h-6 text-[#DF7F2D]" />
-                        <span>Selecciona tu Método de Entrega</span>
-                      </h2>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Elige si deseas coordinar una entrega personal sin costo o envío paquetería a tu domicilio.
-                      </p>
-                    </div>
+                  /* VISTA INTELIGENTE SEGÚN DIRECCIÓN Y CÓDIGO POSTAL */
+                  (() => {
+                    // Evaluar el método a domicilio que le corresponde a la dirección actual
+                    const assessed = assessShippingByAddress({
+                      zip: shippingAddress.zip,
+                      state: shippingAddress.state,
+                    });
 
-                    {/* Métodos de Entrega Activos */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {checkoutSettings.shippingMethods
-                        .filter(m => m.enabled)
-                        .map((method) => {
-                          const isSelected = selectedShippingId === method.id;
-                          return (
+                    // Identificar el ID del método correspondiente en checkoutSettings
+                    const homeDeliveryId = assessed.tier === 'local_near' 
+                      ? 'local_cholula_near' 
+                      : assessed.tier === 'local_metro' 
+                        ? 'local_puebla' 
+                        : 'national';
+
+                    // Obtener objeto de la tarifa calculada o del checkoutSettings
+                    const homeDeliveryConfig = checkoutSettings.shippingMethods.find(m => m.id === homeDeliveryId) || {
+                      id: homeDeliveryId,
+                      name: assessed.label,
+                      price: assessed.cost,
+                      enabled: true,
+                      requiresAddress: true,
+                      description: assessed.description,
+                    };
+
+                    const isPickupSelected = selectedShippingId === 'pickup';
+                    const isHomeSelected = !isPickupSelected;
+
+                    return (
+                      <div className="space-y-6">
+                        {/* 1. SELECCIÓN O ENTRADA DE DIRECCIÓN DE ENTREGA PRIMERO */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="font-black text-sm text-gray-900 flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-[#DF7F2D]" />
+                              <span>Tu Dirección de Entrega:</span>
+                            </label>
+                            {fullProfile?.addresses && fullProfile.addresses.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setUseNewAddress(!useNewAddress)}
+                                className="text-[#DF7F2D] text-xs font-bold hover:underline cursor-pointer"
+                              >
+                                {useNewAddress ? 'Usar dirección guardada' : '+ Usar otra dirección'}
+                              </button>
+                            )}
+                          </div>
+
+                          {fullProfile?.addresses && fullProfile.addresses.length > 0 && !useNewAddress ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {fullProfile.addresses.map((addr) => {
+                                const isSel = selectedAddressId === addr.id;
+                                return (
+                                  <div
+                                    key={addr.id}
+                                    onClick={() => {
+                                      setSelectedAddressId(addr.id);
+                                      const newAddr = {
+                                        street: addr.street,
+                                        colonia: addr.colonia || '',
+                                        zip: addr.zip,
+                                        city: addr.city || '',
+                                        state: addr.state || '',
+                                      };
+                                      setShippingAddress(newAddr);
+                                      setAddressError(null);
+
+                                      if (addr.zip && addr.zip.length === 5 && selectedShippingId !== 'pickup') {
+                                        const autoAssess = assessShippingByAddress({
+                                          zip: addr.zip,
+                                          state: addr.state || '',
+                                        });
+                                        if (autoAssess.tier === 'local_near') setSelectedShippingId('local_cholula_near');
+                                        else if (autoAssess.tier === 'local_metro') setSelectedShippingId('local_puebla');
+                                        else setSelectedShippingId('national');
+                                      }
+                                    }}
+                                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition text-xs ${
+                                      isSel ? 'border-[#0F3E36] bg-[#EDF5F7]/40 shadow-xs ring-1 ring-[#0F3E36]/20' : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between font-bold text-gray-900">
+                                      <span>{addr.name || 'Mi Dirección'}</span>
+                                      {addr.isDefault && (
+                                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded">
+                                          Predeterminada
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-gray-600 text-[11px] mt-1 leading-relaxed">
+                                      {addr.street}{addr.colonia ? `, Col. ${addr.colonia}` : ''}, C.P. {addr.zip}, {addr.city}
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-gray-200">
+                              <p className="text-xs text-gray-600 mb-2 font-medium">
+                                Escribe tu calle o código postal para determinar automáticamente tus opciones de entrega:
+                              </p>
+                              <GoogleAddressInput
+                                initialStreet={shippingAddress.street}
+                                initialColonia={shippingAddress.colonia}
+                                initialZip={shippingAddress.zip}
+                                initialCity={shippingAddress.city}
+                                initialState={shippingAddress.state}
+                                onAddressChange={(parsed) => {
+                                  setShippingAddress({
+                                    street: parsed.street,
+                                    colonia: parsed.colonia || '',
+                                    zip: parsed.zip,
+                                    city: parsed.city || '',
+                                    state: parsed.state || '',
+                                  });
+                                  if (parsed.street && parsed.zip) {
+                                    setAddressError(null);
+                                  }
+
+                                  if (parsed.zip && parsed.zip.length === 5 && selectedShippingId !== 'pickup') {
+                                    const autoAssess = assessShippingByAddress({
+                                      zip: parsed.zip,
+                                      state: parsed.state,
+                                    });
+                                    if (autoAssess.tier === 'local_near') setSelectedShippingId('local_cholula_near');
+                                    else if (autoAssess.tier === 'local_metro') setSelectedShippingId('local_puebla');
+                                    else setSelectedShippingId('national');
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {addressError && (
+                            <p className="text-rose-600 text-xs font-bold bg-rose-50 border border-rose-200 p-3 rounded-xl animate-in fade-in">
+                              ⚠️ {addressError}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* 2. OPCIONES DE ENTREGA DISPONIBLES (SÓLO 2: ENTREGA PERSONAL $0 O ENVÍO A DOMICILIO EVALUADO) */}
+                        <div className="pt-2 border-t border-gray-100 space-y-3">
+                          <div>
+                            <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                              <Truck className="w-5 h-5 text-[#DF7F2D]" />
+                              <span>Elige tu Forma de Entrega:</span>
+                            </h2>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {shippingAddress.zip 
+                                ? `Opciones evaluadas para tu zona (C.P. ${shippingAddress.zip}):`
+                                : 'Selecciona cómo deseas recibir tus productos:'}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {/* OPCIÓN 1: ENTREGA PERSONAL EN PUNTOS OFICIALES (SIEMPRE $0 MXN) */}
                             <div
-                              key={method.id}
                               onClick={() => {
-                                setSelectedShippingId(method.id);
+                                setSelectedShippingId('pickup');
                                 setAddressError(null);
                               }}
                               className={`p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between space-y-3 ${
-                                isSelected
-                                  ? 'border-[#0F3E36] bg-[#EDF5F7]/50 shadow-xs'
+                                isPickupSelected
+                                  ? 'border-[#0F3E36] bg-[#EDF5F7]/50 shadow-xs ring-1 ring-[#0F3E36]/30'
                                   : 'border-gray-200 hover:border-gray-300 bg-white'
                               }`}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2.5">
                                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                    isSelected ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
+                                    isPickupSelected ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
                                   }`}>
-                                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    {isPickupSelected && <div className="w-2 h-2 bg-white rounded-full" />}
                                   </div>
-                                  <span className="font-extrabold text-sm text-gray-900">{method.name}</span>
+                                  <span className="font-extrabold text-sm text-gray-900">
+                                    Entrega Personal Oficial
+                                  </span>
                                 </div>
-                                <span className="font-black text-sm text-[#0F3E36]">
-                                  {method.id === 'pickup' || method.price === 0 ? 'Sin costo' : `${method.price.toFixed(0)} MXN`}
+                                <span className="font-black text-xs uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
+                                  ¡Gratis!
                                 </span>
                               </div>
 
-                              <p className="text-xs text-gray-500 leading-relaxed">{method.description}</p>
+                              <p className="text-xs text-gray-500 leading-relaxed">
+                                Punto de encuentro en Zerezotla, Plaza San Diego, Centro San Pedro o Centro San Andrés.
+                              </p>
 
-                              {!method.requiresAddress ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
-                                  🤝 Entrega acordada (no requiere dirección)
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md self-start">
-                                  📦 Envío a domicilio
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </>
-                )}
-
-                {/* Formulario de Dirección Física (Siempre obligatorio para Importación Directa, opcional para boutique según método) */}
-                {(!cartHasImportItems && isPersonalDelivery) ? (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 text-emerald-900 space-y-4">
-                    <div className="flex items-center gap-2 font-black text-sm text-emerald-900">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                      <span>Selecciona tu Punto Oficial de Entrega Gratuita</span>
-                    </div>
-                    <p className="text-xs text-emerald-800 leading-relaxed">
-                      Elige el lugar de encuentro que más te convenga. Al confirmar tu compra, te enviaremos por WhatsApp la ubicación de Google Maps y confirmaremos el horario exacto:
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      {OFFICIAL_PICKUP_POINTS.map((pt) => {
-                        const isPicked = selectedPickupPointId === pt.id;
-                        return (
-                          <div
-                            key={pt.id}
-                            onClick={() => setSelectedPickupPointId(pt.id)}
-                            className={`p-3.5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
-                              isPicked
-                                ? 'bg-white border-emerald-600 shadow-sm ring-2 ring-emerald-200'
-                                : 'bg-emerald-50/60 border-emerald-200 hover:bg-white hover:border-emerald-400'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                  isPicked ? 'border-emerald-600 bg-emerald-600' : 'border-emerald-400'
-                                }`}>
-                                  {isPicked && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                                </div>
-                                <span className="font-extrabold text-xs text-slate-900">{pt.shortName}</span>
-                              </div>
-                              <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                                ¡Sin Costo!
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md self-start">
+                                🤝 Punto de encuentro sin costo
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-600 mt-2 pl-6">
-                              📍 {pt.reference}
-                            </p>
-                            <a
-                              href={pt.googleMapsUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline mt-2 pl-6 self-start"
-                            >
-                              <span>Ver en Google Maps</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4 pt-2 border-t border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <label className="font-black text-sm text-gray-900 flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#DF7F2D]" />
-                        <span>Dirección de Entrega para el Paquete:</span>
-                      </label>
-                      {fullProfile?.addresses && fullProfile.addresses.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setUseNewAddress(!useNewAddress)}
-                          className="text-[#DF7F2D] text-xs font-bold hover:underline cursor-pointer"
-                        >
-                          {useNewAddress ? 'Usar dirección guardada' : '+ Usar otra dirección'}
-                        </button>
-                      )}
-                    </div>
 
-                    {fullProfile?.addresses && fullProfile.addresses.length > 0 && !useNewAddress ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {fullProfile.addresses.map((addr) => {
-                          const isSel = selectedAddressId === addr.id;
-                          return (
+                            {/* OPCIÓN 2: ENVÍO A TU DOMICILIO (ÚNICAMENTE EL QUE CORRESPONDE SEGÚN EL C.P.) */}
                             <div
-                              key={addr.id}
                               onClick={() => {
-                                setSelectedAddressId(addr.id);
-                                const newAddr = {
-                                  street: addr.street,
-                                  colonia: addr.colonia || '',
-                                  zip: addr.zip,
-                                  city: addr.city || '',
-                                  state: addr.state || '',
-                                };
-                                setShippingAddress(newAddr);
+                                setSelectedShippingId(homeDeliveryId);
                                 setAddressError(null);
-
-                                // Ajuste automático e inteligente según la dirección guardada
-                                if (addr.zip && addr.zip.length === 5 && selectedShippingId !== 'pickup') {
-                                  const assessed = assessShippingByAddress({
-                                    zip: addr.zip,
-                                    state: addr.state || '',
-                                  });
-
-                                  if (assessed.tier === 'local_near') {
-                                    setSelectedShippingId('local_cholula_near');
-                                  } else if (assessed.tier === 'local_metro') {
-                                    setSelectedShippingId('local_puebla');
-                                  } else if (assessed.tier === 'national') {
-                                    setSelectedShippingId('national');
-                                  }
-                                }
                               }}
-                              className={`p-3.5 rounded-xl border-2 cursor-pointer transition text-xs ${
-                                isSel ? 'border-[#0F3E36] bg-[#EDF5F7]/40' : 'border-gray-200 hover:border-gray-300 bg-white'
+                              className={`p-4 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between space-y-3 ${
+                                isHomeSelected
+                                  ? 'border-[#0F3E36] bg-[#EDF5F7]/50 shadow-xs ring-1 ring-[#0F3E36]/30'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white'
                               }`}
                             >
-                              <div className="flex items-center justify-between font-bold text-gray-900">
-                                <span>{addr.name || 'Mi Dirección'}</span>
-                                {addr.isDefault && (
-                                  <span className="text-[10px] bg-gray-200 text-gray-700 font-bold px-1.5 py-0.5 rounded">
-                                    Predeterminada
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5">
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                    isHomeSelected ? 'border-[#0F3E36] bg-[#0F3E36]' : 'border-gray-300'
+                                  }`}>
+                                    {isHomeSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                  </div>
+                                  <span className="font-extrabold text-sm text-gray-900">
+                                    Envío a tu Domicilio
                                   </span>
-                                )}
+                                </div>
+                                <span className="font-black text-sm text-[#0F3E36] shrink-0">
+                                  ${homeDeliveryConfig.price.toFixed(0)} MXN
+                                </span>
                               </div>
-                              <p className="text-gray-600 text-[11px] mt-1">
-                                {addr.street}{addr.colonia ? `, Col. ${addr.colonia}` : ''}, C.P. {addr.zip}, {addr.city}
-                              </p>
+
+                              <div>
+                                <span className="text-xs font-bold text-slate-800 block">
+                                  {homeDeliveryConfig.name}
+                                </span>
+                                <p className="text-xs text-gray-500 leading-relaxed mt-0.5">
+                                  {homeDeliveryConfig.description}
+                                </p>
+                              </div>
+
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md self-start">
+                                📦 Directo a tu dirección ({assessed.estimatedTime})
+                              </span>
                             </div>
-                          );
-                        })}
+                          </div>
+                        </div>
+
+                        {/* 3. SUB-SELECTOR DE PUNTOS OFICIALES SI ELIGIÓ ENTREGA PERSONAL */}
+                        {isPickupSelected && (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 text-emerald-900 space-y-4 animate-in fade-in duration-200">
+                            <div className="flex items-center gap-2 font-black text-sm text-emerald-900">
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <span>Selecciona tu Punto Oficial de Entrega Gratuita</span>
+                            </div>
+                            <p className="text-xs text-emerald-800 leading-relaxed">
+                              Elige el lugar de encuentro que más te convenga. Al confirmar tu compra, te enviaremos por WhatsApp la ubicación de Google Maps y coordinaremos el horario exacto:
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                              {OFFICIAL_PICKUP_POINTS.map((pt) => {
+                                const isPicked = selectedPickupPointId === pt.id;
+                                return (
+                                  <div
+                                    key={pt.id}
+                                    onClick={() => setSelectedPickupPointId(pt.id)}
+                                    className={`p-3.5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                                      isPicked
+                                        ? 'bg-white border-emerald-600 shadow-sm ring-2 ring-emerald-200'
+                                        : 'bg-emerald-50/60 border-emerald-200 hover:bg-white hover:border-emerald-400'
+                                    }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                          isPicked ? 'border-emerald-600 bg-emerald-600' : 'border-emerald-400'
+                                        }`}>
+                                          {isPicked && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                        </div>
+                                        <span className="font-extrabold text-xs text-slate-900">{pt.shortName}</span>
+                                      </div>
+                                      <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                        ¡Sin Costo!
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 mt-2 pl-6">
+                                      📍 {pt.reference}
+                                    </p>
+                                    <a
+                                      href={pt.googleMapsUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline mt-2 pl-6 self-start"
+                                    >
+                                      <span>Ver en Google Maps</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-gray-200">
-                        <GoogleAddressInput
-                          initialStreet={shippingAddress.street}
-                          initialColonia={shippingAddress.colonia}
-                          initialZip={shippingAddress.zip}
-                          initialCity={shippingAddress.city}
-                          initialState={shippingAddress.state}
-                          onAddressChange={(parsed) => {
-                            setShippingAddress({
-                              street: parsed.street,
-                              colonia: parsed.colonia || '',
-                              zip: parsed.zip,
-                              city: parsed.city || '',
-                              state: parsed.state || '',
-                            });
-                            if (parsed.street && parsed.zip) {
-                              setAddressError(null);
-                            }
-
-                            // Ajuste reactivo e inteligente de método de envío según Código Postal y Estado
-                            if (parsed.zip && parsed.zip.length === 5 && selectedShippingId !== 'pickup') {
-                              const assessed = assessShippingByAddress({
-                                zip: parsed.zip,
-                                state: parsed.state,
-                              });
-
-                              if (assessed.tier === 'local_near') {
-                                setSelectedShippingId('local_cholula_near');
-                              } else if (assessed.tier === 'local_metro') {
-                                setSelectedShippingId('local_puebla');
-                              } else if (assessed.tier === 'national') {
-                                setSelectedShippingId('national');
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {addressError && (
-                      <p className="text-rose-600 text-xs font-bold bg-rose-50 border border-rose-200 p-3 rounded-xl animate-in fade-in">
-                        ⚠️ {addressError}
-                      </p>
-                    )}
-                  </div>
+                    );
+                  })()
                 )}
 
                 {/* Resumen de Total y Botón Siguiente */}
