@@ -122,12 +122,20 @@ export async function GET(req: NextRequest) {
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const sort = searchParams.get("sort") || "standard";
+    const shopOfTheYearFlag = searchParams.get("shopOfTheYearFlag");
+    const asurakuFlag = searchParams.get("asurakuFlag");
+    const postageFlag = searchParams.get("postageFlag");
+    const hasReviewFlag = searchParams.get("hasReviewFlag");
 
     let url = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701?applicationId=${RAKUTEN_APP_ID}&accessKey=${RAKUTEN_ACCESS_KEY}&affiliateId=${RAKUTEN_AFFILIATE_ID}&keyword=${encodeURIComponent(keyword)}&page=${page}&hits=${hits}&format=json`;
 
     if (minPrice) url += `&minPrice=${minPrice}`;
     if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (sort) url += `&sort=${encodeURIComponent(sort)}`;
+    if (shopOfTheYearFlag === "1") url += `&shopOfTheYearFlag=1`;
+    if (asurakuFlag === "1") url += `&asurakuFlag=1`;
+    if (postageFlag === "1") url += `&postageFlag=1`;
+    if (hasReviewFlag === "1") url += `&hasReviewFlag=1`;
 
     const rakutenRes = await fetch(url, {
       headers: {
@@ -179,12 +187,16 @@ export async function GET(req: NextRequest) {
         suggestedPublicPrice: Math.max(149, suggestedPublicPrice),
         images: rawImages,
         shopName: item.shopName,
+        shopCode: item.shopCode,
         shopUrl: item.shopUrl,
         itemUrl: item.itemUrl,
         affiliateUrl: item.affiliateUrl,
         availability: item.availability === 1,
-        reviewAverage: item.reviewAverage || 0,
-        reviewCount: item.reviewCount || 0,
+        reviewAverage: Number(item.reviewAverage || 0),
+        reviewCount: Number(item.reviewCount || 0),
+        shopOfTheYear: item.shopOfTheYearFlag === 1,
+        asurakuFastShipping: item.asurakuFlag === 1,
+        freeJapanShipping: item.postageFlag === 1,
       };
     });
 

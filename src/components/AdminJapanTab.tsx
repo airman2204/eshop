@@ -18,12 +18,20 @@ import {
   DollarSign,
   ChevronLeft,
   ChevronRight,
-  Filter
+  Filter,
+  Maximize2,
+  Heart,
+  Share2,
+  Package,
+  Zap,
+  Star,
+  Award,
+  Globe
 } from 'lucide-react';
 import { fetchAdminApi } from '@/lib/adminAuth';
 import { Product } from '@/types';
 
-interface RakutenItem {
+export interface RakutenItem {
   itemCode: string;
   itemName: string;
   itemNameEs?: string;
@@ -36,12 +44,16 @@ interface RakutenItem {
   suggestedPublicPrice: number;
   images: string[];
   shopName: string;
+  shopCode?: string;
   shopUrl: string;
   itemUrl: string;
   affiliateUrl: string;
   availability: boolean;
   reviewAverage: number;
   reviewCount: number;
+  shopOfTheYear?: boolean;
+  asurakuFastShipping?: boolean;
+  freeJapanShipping?: boolean;
 }
 
 interface Props {
@@ -84,7 +96,19 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
 
-  // Modal de importación y traducción
+  // Filtros de Calidad y Proveedores
+  const [sortOrder, setSortOrder] = useState<string>('standard');
+  const [verifiedShopOnly, setVerifiedShopOnly] = useState(false); // Shop Of The Year
+  const [fastShipOnly, setFastShipOnly] = useState(false); // Asuraku (<24h despacho)
+  const [hasReviewsOnly, setHasReviewsOnly] = useState(false); // Calificaciones > 4 estrellas
+
+  // Modal Vista Previa en Grande (Estilo CJ Dropshipping)
+  const [previewItem, setPreviewItem] = useState<RakutenItem | null>(null);
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState<string>('');
+  const [previewMarginMult, setPreviewMarginMult] = useState<number>(1.35); // 35% margen
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  // Modal de importación y traducción Gemini
   const [selectedItem, setSelectedItem] = useState<RakutenItem | null>(null);
   const [translating, setTranslating] = useState(false);
   const [translatedData, setTranslatedData] = useState<{
@@ -100,14 +124,26 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
   // Buscar en Rakuten
-  const handleSearch = async (targetQuery = searchQuery, targetPage = 1) => {
+  const handleSearch = async (
+    targetQuery = searchQuery, 
+    targetPage = 1,
+    currentSort = sortOrder,
+    currentVerified = verifiedShopOnly,
+    currentFast = fastShipOnly,
+    currentReviews = hasReviewsOnly
+  ) => {
     setLoading(true);
     setSearchQuery(targetQuery);
     setPage(targetPage);
 
     try {
+      let endpoint = `/api/admin/rakuten?q=${encodeURIComponent(targetQuery)}&page=${targetPage}&hits=24&sort=${encodeURIComponent(currentSort)}`;
+      if (currentVerified) endpoint += `&shopOfTheYearFlag=1`;
+      if (currentFast) endpoint += `&asurakuFlag=1`;
+      if (currentReviews) endpoint += `&hasReviewFlag=1`;
+
       const res = await fetchAdminApi({
-        endpoint: `/api/admin/rakuten?q=${encodeURIComponent(targetQuery)}&page=${targetPage}&hits=24`,
+        endpoint,
         method: 'GET',
       });
 
@@ -130,6 +166,13 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
   useEffect(() => {
     handleSearch('pokemon card box', 1);
   }, []);
+
+  // Abrir Vista Previa en Grande estilo CJ
+  const handleOpenPreview = (item: RakutenItem) => {
+    setPreviewItem(item);
+    setSelectedPreviewImage(item.images[0] || '');
+    setPreviewMarginMult(1.35);
+  };
 
   // Abrir modal de importación con traducción Gemini
   const handleOpenImportModal = async (item: RakutenItem) => {
@@ -237,7 +280,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Explora más de 200 millones de productos de las tiendas oficiales de Japón. Importa directo a FoxDrop con traducción automática de IA y conversión de Yenes (JPY) a Pesos (MXN).
+              Explora más de 200 millones de productos de las tiendas oficiales de Japón. Filtra por los mejores proveedores de calidad y abre cualquier artículo en grande para ver detalles exactos e importar con traducción de IA a FoxDrop.
             </p>
           </div>
         </div>
@@ -300,6 +343,92 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
             </button>
           ))}
         </div>
+
+        {/* FILTROS AVANZADOS DE PROVEEDORES Y CALIDAD DE JAPÓN (IGUAL QUE EN CJ) */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span className="font-bold text-slate-700 dark:text-slate-200">Filtros de Calidad y Fiabilidad en Tokio:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tienda del Año / Proveedor Oficial Auditado */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !verifiedShopOnly;
+                setVerifiedShopOnly(nextVal);
+                handleSearch(searchQuery, 1, sortOrder, nextVal, fastShipOnly, hasReviewsOnly);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                verifiedShopOnly
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+              title="Filtra tiendas premiadas 'Shop of the Year' con máxima reputación oficial en Japón"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>🏆 Tiendas Oficiales (Shop of the Year)</span>
+              {verifiedShopOnly && <Check className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Asuraku / Despacho Inmediato (<24h) */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !fastShipOnly;
+                setFastShipOnly(nextVal);
+                handleSearch(searchQuery, 1, sortOrder, verifiedShopOnly, nextVal, hasReviewsOnly);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                fastShipOnly
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+              title="Artículos con envío express prioritario dentro de Japón"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>⚡ Despacho Rápido Japón (Asuraku)</span>
+              {fastShipOnly && <Check className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Mejor Calificados (Con Opiniones) */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = !hasReviewsOnly;
+                setHasReviewsOnly(nextVal);
+                handleSearch(searchQuery, 1, sortOrder, verifiedShopOnly, fastShipOnly, nextVal);
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+                hasReviewsOnly
+                  ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+              }`}
+              title="Filtra productos que cuentan con calificaciones verificadas de compradores japoneses"
+            >
+              <Star className="w-3.5 h-3.5 fill-current" />
+              <span>⭐ Con Reseñas de Clientes</span>
+              {hasReviewsOnly && <Check className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Ordenamiento */}
+            <select
+              value={sortOrder}
+              onChange={(e) => {
+                const nextSort = e.target.value;
+                setSortOrder(nextSort);
+                handleSearch(searchQuery, 1, nextSort, verifiedShopOnly, fastShipOnly, hasReviewsOnly);
+              }}
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="standard">🎯 Relevancia Estándar</option>
+              <option value="-reviewCount">🔥 Más Vendidos / Más Reseñas</option>
+              <option value="+itemPrice">💵 Precio: Menor a Mayor</option>
+              <option value="-itemPrice">💎 Precio: Mayor a Menor</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* CONTADOR DE RESULTADOS */}
@@ -310,7 +439,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
         <span>Página {page} de {pageCount}</span>
       </div>
 
-      {/* GRILLA DE PRODUCTOS JAPONESES */}
+      {/* GRILLA DE PRODUCTOS JAPONESES (CLIC EN LA IMAGEN ABRE VISTA COMPLETA EN GRANDE) */}
       {loading ? (
         <div className="min-h-[400px] flex flex-col items-center justify-center text-slate-400 space-y-3">
           <RefreshCw className="w-8 h-8 animate-spin text-red-500" />
@@ -332,35 +461,73 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
             return (
               <div
                 key={item.itemCode}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-red-500/40 transition group"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-lg hover:border-red-500/40 transition group p-3"
               >
-                <div>
-                  {/* FOTO DEL PRODUCTO */}
-                  <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 p-2 overflow-hidden flex items-center justify-center">
+                <div className="space-y-2">
+                  {/* FOTO DEL PRODUCTO (CLIC PARA ABRIR EN GRANDE ESTILO CJ) */}
+                  <div 
+                    onClick={() => handleOpenPreview(item)}
+                    className="relative aspect-square w-full bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center group cursor-pointer"
+                    title="Clic para ver fotos en grande y detalle del proveedor"
+                  >
                     <img
                       src={getSafeJapanImageUrl(item.images[0])}
                       alt={item.itemNameEs || item.itemName}
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                     />
-                    <span className="absolute top-2 left-2 bg-black/70 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                      ¥{item.priceJpy.toLocaleString()} JPY
+
+                    {/* BADGE PAÍS & PRECIO JPY */}
+                    <span className="absolute top-1.5 left-1.5 bg-black/75 backdrop-blur-xs text-white text-[9px] font-black px-2 py-0.5 rounded-full z-10">
+                      🇯🇵 ¥{item.priceJpy.toLocaleString()} JPY
                     </span>
+
+                    {/* BADGES DE CALIDAD PROVEEDOR */}
+                    <div className="absolute bottom-1.5 left-1.5 z-10 flex flex-wrap gap-1">
+                      {item.shopOfTheYear && (
+                        <span className="bg-emerald-600/95 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-xs">
+                          <Award className="w-2.5 h-2.5" />
+                          <span>Oficial</span>
+                        </span>
+                      )}
+                      {item.asurakuFastShipping && (
+                        <span className="bg-amber-500/95 backdrop-blur-xs text-white text-[8px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-xs">
+                          <Zap className="w-2.5 h-2.5 fill-current" />
+                          <span>&lt;24h</span>
+                        </span>
+                      )}
+                    </div>
+
                     {already && (
-                      <span className="absolute top-2 right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs">
+                      <span className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-xs z-10">
                         ✓ En Tienda
                       </span>
                     )}
+
+                    {/* OVERLAY INDICADOR DE ZOOM */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-bold text-xs">
+                      <Maximize2 className="w-4 h-4 text-white" />
+                      <span>Ver en grande</span>
+                    </div>
                   </div>
 
-                  {/* INFO */}
-                  <div className="p-3">
-                    <h3 className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-red-500 transition" title={item.itemName}>
+                  {/* INFO Y TÍTULO TRADUCIDO */}
+                  <div>
+                    <h3 
+                      onClick={() => handleOpenPreview(item)}
+                      className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-red-500 transition cursor-pointer" 
+                      title={item.itemName}
+                    >
                       {item.itemNameEs || item.itemName}
                     </h3>
-                    <p className="text-[10px] text-slate-400 mt-1 truncate">
-                      🏪 {item.shopName}
-                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                      <span className="truncate max-w-[110px]" title={item.shopName}>🏪 {item.shopName}</span>
+                      {item.reviewCount > 0 && (
+                        <span className="font-bold text-amber-500 flex items-center gap-0.5">
+                          ★ {item.reviewAverage ? item.reviewAverage.toFixed(1) : '5.0'} ({item.reviewCount})
+                        </span>
+                      )}
+                    </div>
 
                     {/* COSTEO Y PRECIO FOXDROP */}
                     <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
@@ -377,7 +544,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                 </div>
 
                 {/* BOTÓN IMPORTAR */}
-                <div className="p-3 pt-0">
+                <div className="pt-3">
                   <button
                     type="button"
                     onClick={() => handleOpenImportModal(item)}
@@ -388,7 +555,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>{already ? 'Reimportar' : 'Importar'}</span>
+                    <span>{already ? 'Reimportar' : 'Importar a FoxDrop'}</span>
                   </button>
                 </div>
               </div>
@@ -422,7 +589,289 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
         </div>
       )}
 
-      {/* MODAL DE IMPORTACIÓN & TRADUCCIÓN IA */}
+      {/* ══════════════════════════════════════════════════════════════════════════════ */}
+      {/* MODAL VISTA PREVIA EN GRANDE (RÉPLICA EXACTA DE CJ DROPSHIPPING)               */}
+      {/* ══════════════════════════════════════════════════════════════════════════════ */}
+      {previewItem && (
+        <div 
+          onClick={() => setPreviewItem(null)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-slate-900 rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 cursor-default"
+          >
+            {/* CABECERA MODAL */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-800/50">
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/60 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                  Catálogo Oficial Rakuten Japón 🎌
+                </span>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate" title={previewItem.itemName}>
+                  {previewItem.itemNameEs || previewItem.itemName}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewItem.itemUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-red-500"
+                  title="Abrir publicación original en Rakuten Tokio"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Ver en Rakuten</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewItem(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* CONTENIDO PRINCIPAL EN 2 COLUMNAS */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* COLUMNA IZQUIERDA: GALERÍA DE FOTOS EN ALTA RESOLUCIÓN */}
+              <div className="space-y-3">
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative flex items-center justify-center shadow-inner">
+                  <img
+                    src={getSafeJapanImageUrl(selectedPreviewImage || previewItem.images[0])}
+                    alt={previewItem.itemName}
+                    className="w-full h-full object-contain transition duration-200"
+                  />
+                </div>
+
+                {/* MINIATURAS HD DE JAPÓN */}
+                {previewItem.images.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                    {previewItem.images.map((img, idx) => {
+                      const isSelected = (selectedPreviewImage || previewItem.images[0]) === img;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedPreviewImage(img)}
+                          className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer bg-white ${
+                            isSelected
+                              ? 'border-red-600 ring-2 ring-red-200'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 opacity-70 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={getSafeJapanImageUrl(img)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* COLUMNA DERECHA: DATOS DEL PROVEEDOR, COSTOS Y DESGLOSE FINANCIERO */}
+              <div className="space-y-5 flex flex-col justify-between">
+                <div className="space-y-4">
+                  {/* BADGES Y REPUTACIÓN DEL PROVEEDOR EN TOKIO */}
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                        Proveedor Oficial en Japón:
+                      </span>
+                      {previewItem.shopOfTheYear ? (
+                        <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                          <Award className="w-3 h-3" /> Shop of the Year (Auditoría Máxima)
+                        </span>
+                      ) : (
+                        <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" /> Tienda Verificada Rakuten
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300">🏪 {previewItem.shopName}</span>
+                      <span className="text-amber-500 font-black">
+                        ★ {previewItem.reviewAverage > 0 ? previewItem.reviewAverage.toFixed(2) : '5.0'} / 5.0 ({previewItem.reviewCount} opiniones)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* DESGLOSE MATEMÁTICO PASO A PASO (IGUAL QUE EN CJ) */}
+                  {(() => {
+                    const priceJpy = previewItem.priceJpy;
+                    const costMxn = previewItem.baseCostMxn;
+                    const estimatedFreightMxn = previewItem.estimatedShippingMxn;
+                    const totalLandedMxn = costMxn + estimatedFreightMxn;
+
+                    const launchSale = Math.max(149, Math.round(totalLandedMxn * 1.25));
+                    const standardSale = Math.max(149, Math.round(totalLandedMxn * 1.35));
+                    const highSale = Math.max(149, Math.round(totalLandedMxn * 1.50));
+
+                    const currentSale = Math.max(149, Math.round(totalLandedMxn * previewMarginMult));
+                    const netProfit = currentSale - totalLandedMxn;
+                    const marginPercent = Math.round((previewMarginMult - 1) * 100);
+
+                    return (
+                      <div className="p-4 rounded-2xl border bg-gradient-to-br from-red-50/50 to-slate-50 dark:from-red-950/20 dark:to-slate-900 border-red-200/80 dark:border-red-900/40 space-y-2.5">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-red-600 block">
+                            Cálculo Exacto Paso a Paso (Tipo de Cambio: 1 MXN ≈ 8.35 JPY)
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                            Inventario Original Japón
+                          </span>
+                        </div>
+
+                        {/* PASO A: COSTO EN JAPÓN */}
+                        <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
+                          <span><strong>A)</strong> Costo Tienda Japón:</span>
+                          <span className="font-black text-slate-900 dark:text-white font-mono">
+                            ¥{priceJpy.toLocaleString()} JPY = <span className="text-red-600 font-bold">${costMxn} MXN</span>
+                          </span>
+                        </div>
+
+                        {/* PASO B: FLETE INTERNACIONAL */}
+                        <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
+                          <span><strong>B)</strong> Flete Aéreo Japón ➔ México (Asegurado):</span>
+                          <span className="font-black text-slate-900 dark:text-white font-mono">
+                            +${estimatedFreightMxn} MXN
+                          </span>
+                        </div>
+
+                        {/* PASO C: COSTO TOTAL */}
+                        <div className="flex items-center justify-between text-xs text-slate-900 dark:text-white font-black bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+                          <span><strong>C) Costo Total (A + B):</strong></span>
+                          <span className="text-rose-600 text-sm font-mono">${totalLandedMxn} MXN</span>
+                        </div>
+
+                        {/* SELECTOR DE MARGEN PARA COMPARAR EN VIVO */}
+                        <div className="pt-1 space-y-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 block">
+                            <strong>D) Elige el margen para comparar el precio final:</strong>
+                          </span>
+                          <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMarginMult(1.25)}
+                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                previewMarginMult === 1.25
+                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                                  : 'bg-white dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              🔥 +25% (${launchSale})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMarginMult(1.35)}
+                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                previewMarginMult === 1.35
+                                  ? 'bg-red-600 text-white border-red-600 shadow-2xs'
+                                  : 'bg-white dark:bg-slate-800 hover:bg-red-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              ⚖️ +35% (${standardSale})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMarginMult(1.50)}
+                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                previewMarginMult === 1.50
+                                  ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
+                                  : 'bg-white dark:bg-slate-800 hover:bg-purple-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              💎 +50% (${highSale})
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* PRECIO FINAL FOXDROP */}
+                        <div className="flex items-center justify-between text-xs text-red-900 dark:text-red-300 font-bold border-t border-slate-200/80 dark:border-slate-800 pt-2">
+                          <div>
+                            <span className="block">Precio Final Sugerido en FoxDrop:</span>
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              ${totalLandedMxn} Costo Total × {previewMarginMult.toFixed(2)} (+{marginPercent}% margen)
+                            </span>
+                          </div>
+                          <span className="text-lg font-black text-red-600 dark:text-red-400 font-mono">
+                            ${currentSale.toLocaleString('es-MX')} MXN
+                          </span>
+                        </div>
+
+                        {/* UTILIDAD ESTIMADA */}
+                        <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 rounded-xl border border-emerald-200/90 dark:border-emerald-800">
+                          <div>
+                            <span className="block">Tu Ganancia Libre Estimada:</span>
+                            <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                              ${currentSale} Venta − ${totalLandedMxn} Costo Total
+                            </span>
+                          </div>
+                          <span className="font-black text-sm text-emerald-700 dark:text-emerald-300 font-mono">
+                            +${netProfit.toLocaleString('es-MX')} MXN
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                          <span>Tiempo de Entrega al Cliente en México:</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            ✈️ 10 a 15 Días Hábiles (Importación Express)
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* FICHA TÉCNICA DEL PRODUCTO JAPONÉS */}
+                  <div className="space-y-2 text-xs">
+                    <span className="font-bold text-slate-700 dark:text-slate-300 block">Ficha Oficial del Proveedor:</span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <span className="text-slate-400 block font-medium">Código Japón:</span>
+                        <span className="font-bold text-slate-800 dark:text-white break-all">{previewItem.itemCode}</span>
+                      </div>
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <span className="text-slate-400 block font-medium">Disponibilidad en Bodega:</span>
+                        <span className="font-bold text-emerald-600">✓ En Existencia Tokio</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* BOTÓN DE ACCIÓN: IMPORTAR CON TRADUCCIÓN IA */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewItem(null)}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item = previewItem;
+                      setPreviewItem(null);
+                      handleOpenImportModal(item);
+                    }}
+                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Importar este producto a FoxDrop</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════════════ */}
+      {/* MODAL CONFIGURAR PRECIO Y PUBLICAR CON TRADUCCIÓN GEMINI                       */}
+      {/* ══════════════════════════════════════════════════════════════════════════════ */}
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 max-w-2xl w-full rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-150">
@@ -435,7 +884,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                     Importador de Japón a FoxDrop
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    Traducción con Gemini IA & Cálculo de Utilidad
+                    Traducción con Gemini IA & Cálculo de Margen
                   </p>
                 </div>
               </div>
@@ -601,10 +1050,10 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   type="button"
                   disabled={importing || translating || !translatedData}
                   onClick={handleConfirmImport}
-                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  <span>{importing ? 'Publicando...' : 'Publicar en FoxDrop'}</span>
+                  {importing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  <span>{importing ? 'Importando...' : 'Confirmar e Importar'}</span>
                 </button>
               </div>
             </div>
