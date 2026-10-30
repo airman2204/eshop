@@ -120,6 +120,19 @@ function isProductImportationItem(p: Product | null | undefined): boolean {
 export default function TiendaFoxDrop() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Rastrear búsquedas con debounce para capturar intereses de los usuarios
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (clean.length >= 3) {
+      const timer = setTimeout(() => {
+        trackEcommerceEvent('search', {
+          search_term: clean,
+        });
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [searchTerm]);
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedBrand, setSelectedBrand] = useState('Todas');
   const [storeBrands, setStoreBrands] = useState<any[]>([]);
@@ -129,6 +142,24 @@ export default function TiendaFoxDrop() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Rastrear vista de ficha de producto para embudo e historial de interés
+  useEffect(() => {
+    if (selectedProduct) {
+      trackEcommerceEvent('view_item', {
+        item_id: selectedProduct.id,
+        item_name: selectedProduct.title,
+        price: selectedProduct.publicPrice,
+        currency: 'MXN',
+        items: [{
+          item_id: selectedProduct.id,
+          item_name: selectedProduct.title,
+          price: selectedProduct.publicPrice,
+          item_category: selectedProduct.category,
+        }]
+      });
+    }
+  }, [selectedProduct?.id]);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [activeModalImageIndex, setActiveModalImageIndex] = useState(0);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
@@ -1243,6 +1274,16 @@ export default function TiendaFoxDrop() {
   };
 
   const handleCheckoutInit = () => {
+    trackEcommerceEvent('begin_checkout', {
+      value: cartSubtotal,
+      currency: 'MXN',
+      items: cart.map(it => ({
+        item_id: it.product.id,
+        item_name: it.product.title,
+        price: it.product.publicPrice,
+        quantity: it.quantity,
+      })),
+    });
     setIsCartOpen(false);
     if (!user) {
       openAuthModal();

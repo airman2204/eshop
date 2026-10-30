@@ -494,3 +494,107 @@ export interface MarketingCampaign {
   totalScans?: number;
   totalRedemptions?: number;
 }
+
+// ==========================================
+// ANALYTICS, SEO/SEM & TRAZABILIDAD
+// ==========================================
+
+export type TrafficChannel = 'organic_seo' | 'paid_sem' | 'social' | 'direct' | 'physical_qr' | 'referral';
+
+export interface TrafficUtmData {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  term?: string;
+  content?: string;
+  gclid?: string;
+  fbclid?: string;
+  ttclid?: string;
+  qrId?: string;
+}
+
+export interface AnalyticsEvent {
+  id: string;
+  sessionId: string;
+  visitorId: string;
+  eventType: 'pageview' | 'view_item' | 'search' | 'add_to_cart' | 'begin_checkout' | 'purchase';
+  path: string;
+  timestamp: string;
+  title?: string;
+  productId?: string;
+  productTitle?: string;
+  productPrice?: number;
+  productCategory?: string;
+  searchTerm?: string;
+  cartTotal?: number;
+  cartCount?: number;
+  orderId?: string;
+  orderTotal?: number;
+  channel: TrafficChannel;
+  utm?: TrafficUtmData;
+  referrer?: string;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+  os?: string;
+  browser?: string;
+  city?: string;
+  country?: string;
+}
+
+export interface UserSessionSummary {
+  sessionId: string;
+  visitorId: string;
+  startedAt: string;
+  lastActiveAt: string;
+  channel: TrafficChannel;
+  utm?: TrafficUtmData;
+  landingPage: string;
+  referrer?: string;
+  deviceType: 'mobile' | 'tablet' | 'desktop';
+  os?: string;
+  browser?: string;
+  country?: string;
+  pageviewsCount: number;
+  productsViewed: string[];
+  searchTerms: string[];
+  addedToCart: boolean;
+  beganCheckout: boolean;
+  purchased: boolean;
+  revenue: number;
+  events: AnalyticsEvent[];
+}
+
+export interface AnalyticsSettings {
+  gaMeasurementId?: string;
+  gtmId?: string;
+  metaPixelId?: string;
+  tiktokPixelId?: string;
+  googleSearchConsoleTag?: string;
+  updatedAt?: string;
+}
+
+export interface AnalyticsMetricsSummary {
+  totalVisits: number;
+  uniqueVisitors: number;
+  pageviews: number;
+  avgPagesPerVisit: number;
+  totalSearches: number;
+  funnel: {
+    totalSessions: number;
+    viewedItemSessions: number;
+    cartSessions: number;
+    checkoutSessions: number;
+    purchaseSessions: number;
+    viewItemRate: number;
+    cartRate: number;
+    checkoutRate: number;
+    conversionRate: number;
+  };
+  channels: Record<TrafficChannel, { visits: number; conversions: number; revenue: number }>;
+  topCampaigns: { campaign: string; source: string; visits: number; conversions: number; revenue: number }[];
+  topProductsViewed: { id: string; title: string; views: number; addToCartCount: number }[];
+  topSearchTerms: { term: string; count: number }[];
+  devices: { mobile: number; desktop: number; tablet: number };
+  dailyTrend: { date: string; visits: number; uniqueVisitors: number; purchases: number; revenue: number }[];
+  recentSessions: UserSessionSummary[];
+  settings: AnalyticsSettings;
+}

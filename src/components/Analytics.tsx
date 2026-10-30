@@ -1,23 +1,59 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
+import { trackFoxDropEvent } from '@/lib/tracker';
+import { AnalyticsSettings } from '@/types';
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
-const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
-
-// Helper global para disparar eventos de ecommerce en GA4 y Meta Pixel
+// Helper global para disparar eventos de ecommerce en FoxDrop, GA4 y Meta Pixel
 export function trackEcommerceEvent(eventName: string, params?: Record<string, unknown>) {
   if (typeof window === 'undefined') return;
 
-  // Google Analytics 4
+  // 1. Rastreo nativo en FoxDrop Analytics (Trazabilidad interna)
+  try {
+    if (eventName === 'view_item') {
+      const items = (params?.items as any[]) || [];
+      const first = items[0] || {};
+      trackFoxDropEvent('view_item', {
+        productId: first.item_id || String(params?.item_id || ''),
+        productTitle: first.item_name || String(params?.item_name || ''),
+        productPrice: Number(first.price || params?.value || 0),
+        productCategory: first.item_category || undefined,
+      });
+    } else if (eventName === 'add_to_cart') {
+      const items = (params?.items as any[]) || [];
+      const first = items[0] || {};
+      trackFoxDropEvent('add_to_cart', {
+        productId: first.item_id || String(params?.item_id || ''),
+        productTitle: first.item_name || String(params?.item_name || ''),
+        productPrice: Number(first.price || params?.value || 0),
+        cartTotal: Number(params?.value || 0),
+      });
+    } else if (eventName === 'begin_checkout') {
+      trackFoxDropEvent('begin_checkout', {
+        cartTotal: Number(params?.value || 0),
+      });
+    } else if (eventName === 'purchase') {
+      trackFoxDropEvent('purchase', {
+        orderId: String(params?.transaction_id || ''),
+        orderTotal: Number(params?.value || 0),
+      });
+    } else if (eventName === 'search') {
+      trackFoxDropEvent('search', {
+        searchTerm: String(params?.search_term || ''),
+      });
+    }
+  } catch (err) {
+    // Silencioso
+  }
+
+  // 2. Google Analytics 4
   const win = window as unknown as { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void };
   if (win.gtag) {
     win.gtag('event', eventName, params || {});
   }
 
-  // Meta Pixel
+  // 3. Meta Pixel
   if (win.fbq) {
     const metaEventMap: Record<string, string> = {
       'view_item': 'ViewContent',
@@ -32,6 +68,13 @@ export function trackEcommerceEvent(eventName: string, params?: Record<string, u
 }
 
 export default function Analytics() {
+  const [dynamicSettings, setDynamicSettings] = useState<AnalyticsSettings | null>(null);
+
+  // Registrar automáticamente el PageView de llegada en FoxDrop
+  useEffect(() => {
+    trackFoxDropEvent('pageview');
+  }, []);
+
   useEffect(() => {
     // Inicializar Google Consent Mode v2 por defecto
     if (typeof window !== 'undefined') {
@@ -54,8 +97,20 @@ export default function Analytics() {
         ad_personalization: granted ? 'granted' : 'denied',
         wait_for_update: 500,
       });
+
+      // Cargar configuraciones dinámicas de pixels si las hay guardadas en localStorage
+      try {
+        const cached = localStorage.getItem('foxdrop_analytics_settings');
+        if (cached) {
+          setDynamicSettings(JSON.parse(cached));
+        }
+      } catch {}
     }
   }, []);
+
+  const GA_ID = dynamicSettings?.gaMeasurementId || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const GTM_ID = dynamicSettings?.gtmId || process.env.NEXT_PUBLIC_GTM_ID;
+  const META_PIXEL_ID = dynamicSettings?.metaPixelId || process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
   return (
     <>

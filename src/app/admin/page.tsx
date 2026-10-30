@@ -10,6 +10,7 @@ import AdminCjTab from '@/components/AdminCjTab';
 import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
 import WeavyStudio from '@/components/WeavyStudio';
 import AdminCampaignsTab from '@/components/AdminCampaignsTab';
+import AdminAnalyticsTab from '@/components/AdminAnalyticsTab';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -113,7 +114,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM (Persistente en recarga)
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship' | 'campaigns'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship' | 'campaigns' | 'analytics'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Leer pestaña persistida al cargar
@@ -122,7 +123,7 @@ export default function AdminCRM() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab') as any;
     const tabFromStorage = localStorage.getItem('foxdrop_admin_active_tab') as any;
-    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp', 'cj_dropship', 'campaigns'];
+    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp', 'cj_dropship', 'campaigns', 'analytics'];
 
     const targetTab = validTabs.includes(tabFromUrl) ? tabFromUrl : (validTabs.includes(tabFromStorage) ? tabFromStorage : null);
     if (targetTab) {
@@ -4584,6 +4585,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
               </button>
 
+              {/* 5.1 MÉTRICAS & SEO / SEM */}
+              <button
+                onClick={() => { setCrmSubTab('analytics'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'analytics' 
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <TrendingUp className={`w-4 h-4 ${crmSubTab === 'analytics' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Métricas & SEO/SEM
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">
+                  Live
+                </span>
+              </button>
+
               {/* 6. TIENDA & CONFIGURACIÓN (Carrusel + Envíos & Pagos) */}
               <button
                 onClick={() => { setCrmSubTab('carousel'); setMobileSidebarOpen(false); }}
@@ -4670,6 +4688,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Gestión de Pedidos'}
                     {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Clientes & Club FoxDrop'}
                     {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
+                    {crmSubTab === 'analytics' && 'Métricas, SEO/SEM & Trazabilidad'}
                     {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Configuración de la Tienda'}
                     {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
                     {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
@@ -4683,6 +4702,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Despacho de pedidos activos, historial de ventas, cancelaciones y carritos'}
                   {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Directorio de compradores, historial de consumo y configuración de puntos'}
                   {crmSubTab === 'finance' && 'Rendimiento financiero neto, costos de importación y análisis de márgenes'}
+                    {crmSubTab === 'analytics' && 'Trazabilidad de visitas, origen de tráfico orgánico y pauta, embudo de conversión y Pixels'}
                   {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners principales de la tienda, métodos de entrega y cuentas bancarias SPEI'}
                   {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
                   {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
@@ -10296,6 +10316,13 @@ ESTÉTICA Y CONCEPTO VISUAL:
           {crmSubTab === 'campaigns' && (
             <div className="space-y-4">
               <AdminCampaignsTab />
+            </div>
+          )}
+
+          {/* 12.3 SECCIÓN ANALÍTICAS, SEO & TRAZABILIDAD */}
+          {crmSubTab === 'analytics' && (
+            <div className="space-y-4">
+              <AdminAnalyticsTab onNotify={(msg) => alert(msg)} />
             </div>
           )}
 
