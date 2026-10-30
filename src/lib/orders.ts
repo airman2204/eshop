@@ -202,13 +202,9 @@ export async function createPhysicalSaleOrder(sale: {
   // Intentar primero a través de la API administrativa con Service Role para asegurar
   // el descuento de inventario sin bloqueos de RLS
   try {
-    const res = await fetch("/api/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "create_pos_sale",
-        sale,
-      }),
+    const res = await fetchAdminApi({
+      action: "create_pos_sale",
+      sale,
     });
 
     if (res.ok) {

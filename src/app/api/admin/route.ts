@@ -1500,9 +1500,18 @@ export async function POST(req: NextRequest) {
             const currentStock = currentData && typeof currentData.stock === "number" ? currentData.stock : prod.stock;
             const newStock = Math.max(0, currentStock - qty);
 
+            // Si el stock llega a 0, se apaga automáticamente de la tienda pública (is_active = false)
+            const updatePayload: Record<string, any> = {
+              stock: newStock,
+              updated_at: new Date().toISOString(),
+            };
+            if (newStock === 0) {
+              updatePayload.is_active = false;
+            }
+
             await supabase
               .from("products")
-              .update({ stock: newStock, updated_at: new Date().toISOString() })
+              .update(updatePayload)
               .eq("id", prod.id);
           } catch (err) {
             console.warn(`Error al descontar stock del producto ${prod.id}:`, err);
