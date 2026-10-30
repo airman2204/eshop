@@ -117,6 +117,7 @@ export default function AdminCRM() {
   // Navegación CRM (Persistente en recarga)
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship' | 'japan' | 'campaigns' | 'analytics'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [previewAsVero, setPreviewAsVero] = useState(false);
 
   // Leer pestaña persistida al cargar
   useEffect(() => {
@@ -984,8 +985,8 @@ export default function AdminCRM() {
   useEffect(() => {
     if (!adminSession) return;
 
-    // Si es vendedora de Japón (Veronica), forzar permanentemente la pestaña Japón
-    const isSeller = adminSession.role === 'seller_japan' || adminSession.email === 'veronica.hdz.ms@gmail.com';
+    // Si es vendedora de Japón (Veronica) o Super Admin simulando su vista, forzar permanentemente la pestaña Japón
+    const isSeller = (adminSession.role === 'seller_japan' || adminSession.email === 'veronica.hdz.ms@gmail.com') || previewAsVero;
     if (isSeller) {
       setCrmSubTab('japan');
     }
@@ -4115,6 +4116,27 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </form>
           )}
 
+          {/* ACCESO RÁPIDO PARA REVISIÓN DE SUPER ADMIN */}
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                const demoSession: AdminSession = {
+                  email: 'veronica.hdz.ms@gmail.com',
+                  mustChangePassword: false,
+                  twoFactorVerified: true,
+                  twoFactorEnabled: false,
+                  role: 'seller_japan',
+                };
+                setAdminSession(demoSession);
+                setCrmSubTab('japan');
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+            >
+              <span>👁️ Entrar a ver el sitio de Vero (Modo Revisión)</span>
+            </button>
+          </div>
+
           <div className="border-t border-gray-100 pt-4 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Conexión cifrada TLS & Lista Blanca Activa</span>
@@ -4495,8 +4517,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* Listado de Navegación con Categorías */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-4 text-xs scrollbar-thin">
-          {/* Si el usuario es vendedora de Japón (Veronica), mostrar ÚNICAMENTE el acceso al Catálogo Japón */}
-          {adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com' ? (
+          {/* Si el usuario es vendedora de Japón (Veronica) o Super Admin simulando su vista, mostrar ÚNICAMENTE el acceso al Catálogo Japón */}
+          {(adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com' || previewAsVero) ? (
             <div className="space-y-3">
               <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl">
                 <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">
@@ -4771,7 +4793,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* Sidebar Footer */}
         <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-950/40 space-y-2">
-          {!(adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com') && (
+          {!(adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com' || previewAsVero) && (
             <button
               onClick={() => {
                 setShowPosModal(true);
@@ -4868,6 +4890,28 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Conmutador Modo Vista Vero (Exclusivo Super Admin Mario) */}
+              {(adminSession?.email === 'magc2204@gmail.com' || adminSession?.role === 'super_admin') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !previewAsVero;
+                    setPreviewAsVero(next);
+                    if (next) {
+                      setCrmSubTab('japan');
+                    }
+                  }}
+                  className={`p-1.5 sm:px-3 sm:py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border ${
+                    previewAsVero
+                      ? 'bg-rose-600 text-white border-rose-500 shadow-md animate-pulse'
+                      : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                  }`}
+                  title={previewAsVero ? 'Desactivar vista previa y volver a vista Super Admin' : 'Simular vista exacta de Verónica (Vendedora Japón)'}
+                >
+                  <span>{previewAsVero ? '👁️ Viendo como Vero (Activo)' : '👁️ Ver como Vero'}</span>
+                </button>
+              )}
+
               {/* Selector Rápido Modo Oscuro */}
               <button
                 type="button"
@@ -4960,8 +5004,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {crmSubTab === 'japan' && (
           <AdminJapanTab
             existingProducts={products}
-            currentUserEmail={adminSession?.email}
-            currentUserRole={adminSession?.role}
+            currentUserEmail={previewAsVero ? 'veronica.hdz.ms@gmail.com' : adminSession?.email}
+            currentUserRole={previewAsVero ? 'seller_japan' : adminSession?.role}
             onProductImported={() => {
               getActiveProducts(true).then(dbProds => {
                 if (dbProds) setProducts(dbProds);
