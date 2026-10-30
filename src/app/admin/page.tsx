@@ -5375,8 +5375,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <th className="py-3 px-4 text-center min-w-[130px]">
                         {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
                       </th>
-                      <th className="py-3 px-4 text-center w-[140px] min-w-[140px]">En Tienda</th>
-                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[190px] z-10">Acciones</th>
+                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[210px] z-10">Estado & Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -5670,73 +5669,77 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </span>
                           </td>
 
-                          {/* TOGGLE VISIBILIDAD EN TIENDA */}
-                          <td className="py-3.5 px-3 text-center w-[140px] min-w-[140px]">
-                            <button
-                              onClick={() => handleToggleProductActive(p)}
-                              disabled={togglingActiveId === p.id}
-                              title={p.isActive !== false ? "Artículo encendido en tienda (clic para apagar)" : "Artículo apagado en tienda (clic para encender)"}
-                              className={`w-[96px] py-1 px-2 rounded-lg text-[11px] font-bold transition inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 shadow-2xs ${
-                                p.isActive !== false
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 active:scale-95'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 active:scale-95'
-                              }`}
-                            >
-                              <Power className={`w-3.5 h-3.5 ${p.isActive !== false ? 'text-emerald-600' : 'text-rose-600'}`} />
-                              <span>{p.isActive !== false ? 'Encendido' : 'Apagado'}</span>
-                            </button>
-                          </td>
+                          {/* ESTADO EN TIENDA Y ACCIONES (BOTONES APILADOS VERTICALMENTE) */}
+                          <td className="py-2.5 px-3 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/90 shadow-md z-10 min-w-[210px]">
+                            <div className="flex items-center justify-end gap-2.5">
+                              {/* Botones principales apilados verticalmente (uno arriba del otro) */}
+                              <div className="flex flex-col items-end gap-1">
+                                <button
+                                  onClick={() => handleToggleProductActive(p)}
+                                  disabled={togglingActiveId === p.id}
+                                  title={p.isActive !== false ? "Artículo encendido en tienda (clic para apagar)" : "Artículo apagado en tienda (clic para encender)"}
+                                  className={`w-[94px] py-1 px-2 rounded-lg text-[10px] font-bold transition inline-flex items-center justify-center gap-1 shadow-2xs cursor-pointer ${
+                                    p.isActive !== false
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 active:scale-95'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 active:scale-95'
+                                  }`}
+                                >
+                                  <Power className={`w-3 h-3 ${p.isActive !== false ? 'text-emerald-600' : 'text-rose-600'}`} />
+                                  <span>{p.isActive !== false ? 'Encendido' : 'Apagado'}</span>
+                                </button>
 
-                          {/* ACCIONES */}
-                          <td className="py-3.5 px-4 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/80 z-10">
-                            <div className="flex items-center justify-end gap-1">
-                              {inventoryScope === 'physical' && (
-                                <>
+                                {inventoryScope === 'physical' && (
                                   <button
                                     onClick={() => handleOpenSoldModal(p)}
                                     title="Marcar piezas como ya vendidas en mostrador o fuera de la web"
-                                    className="px-2 py-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] flex items-center gap-1 shadow-2xs"
+                                    className="w-[94px] py-1 px-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition font-bold text-[10px] inline-flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
                                   >
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span className="hidden lg:inline">Ya Vendido</span>
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>Ya Vendido</span>
                                   </button>
+                                )}
+                              </div>
+
+                              {/* Barra de Iconos de Gestión */}
+                              <div className="flex items-center gap-0.5 border-l border-slate-150 pl-2">
+                                {inventoryScope === 'physical' && (
                                   <button
                                     onClick={() => handleOpenBarcodePrintModal([p])}
                                     title="Imprimir etiqueta con código de barras y precio"
-                                    className="p-1.5 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition"
+                                    className="p-1 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition cursor-pointer"
                                   >
-                                    <Printer className="w-4 h-4" />
+                                    <Printer className="w-3.5 h-3.5" />
                                   </button>
-                                </>
-                              )}
-                              <button
-                                onClick={() => handleOpenKardex(p)}
-                                title="Ver Kardex / Historial de movimientos"
-                                className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                              >
-                                <History className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDuplicateProduct(p)}
-                                title="Duplicar / Clonar este producto para dar de alta uno similar"
-                                className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition"
-                              >
-                                <Copy className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenEditProduct(p)}
-                                title="Editar artículo"
-                                className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p.id, p.title)}
-                                title="Eliminar artículo"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                )}
+                                <button
+                                  onClick={() => handleOpenKardex(p)}
+                                  title="Ver Kardex / Historial de movimientos"
+                                  className="p-1 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                                >
+                                  <History className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDuplicateProduct(p)}
+                                  title="Duplicar producto"
+                                  className="p-1 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition cursor-pointer"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenEditProduct(p)}
+                                  title="Editar artículo"
+                                  className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(p.id, p.title)}
+                                  title="Eliminar artículo"
+                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>
