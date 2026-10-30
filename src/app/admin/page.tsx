@@ -5353,7 +5353,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <th className="py-3 px-4 text-center min-w-[130px]">
                         {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
                       </th>
-                      <th className="py-3 px-4 text-center min-w-[95px]">En Tienda</th>
+                      <th className="py-3 px-4 text-center min-w-[115px]">En Tienda</th>
                       <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs min-w-[190px]">Acciones</th>
                     </tr>
                   </thead>
@@ -5654,7 +5654,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               onClick={() => handleToggleProductActive(p)}
                               disabled={togglingActiveId === p.id}
                               title={p.isActive !== false ? "Artículo encendido en tienda (clic para apagar)" : "Artículo apagado en tienda (clic para encender)"}
-                              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 mx-auto shadow-2xs ${
+                              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs ${
                                 p.isActive !== false
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 active:scale-95'
                                   : 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 active:scale-95'
