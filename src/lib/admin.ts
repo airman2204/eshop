@@ -60,7 +60,7 @@ export interface NewProductInput {
   isActive?: boolean;
   updated_at?: string;
   updatedAt?: string;
-  fulfillmentType?: 'stock_local' | 'cj_dropship';
+  fulfillmentType?: 'stock_local' | 'cj_dropship' | 'japan_rakuten';
   cjProductId?: string;
   cjSku?: string;
   variants?: any[];

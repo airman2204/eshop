@@ -7,6 +7,7 @@ import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
 import MobileBarcodeScanner from '@/components/MobileBarcodeScanner';
 import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
 import AdminCjTab from '@/components/AdminCjTab';
+import AdminJapanTab from '@/components/AdminJapanTab';
 import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
 import WeavyStudio from '@/components/WeavyStudio';
 import AdminCampaignsTab from '@/components/AdminCampaignsTab';
@@ -114,7 +115,7 @@ export default function AdminCRM() {
   const [resetLoading, setResetLoading] = useState(false);
 
   // Navegación CRM (Persistente en recarga)
-  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship' | 'campaigns' | 'analytics'>('inventory');
+  const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'whatsapp' | 'cj_dropship' | 'japan' | 'campaigns' | 'analytics'>('inventory');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Leer pestaña persistida al cargar
@@ -123,7 +124,7 @@ export default function AdminCRM() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab') as any;
     const tabFromStorage = localStorage.getItem('foxdrop_admin_active_tab') as any;
-    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp', 'cj_dropship', 'campaigns', 'analytics'];
+    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp', 'cj_dropship', 'japan', 'campaigns', 'analytics'];
 
     const targetTab = validTabs.includes(tabFromUrl) ? tabFromUrl : (validTabs.includes(tabFromStorage) ? tabFromStorage : null);
     if (targetTab) {
@@ -378,7 +379,7 @@ export default function AdminCRM() {
   const [savingSold, setSavingSold] = useState(false);
 
   // Estados de Mejora de Inventario (Filtro por stock, categoría, estado y carga masiva)
-  const [inventoryScope, setInventoryScope] = useState<'physical' | 'cj_international'>(() => {
+  const [inventoryScope, setInventoryScope] = useState<'physical' | 'cj_international' | 'japan_international'>(() => {
     if (typeof window !== 'undefined') {
       const urlScope = new URLSearchParams(window.location.search).get('scope');
       if (urlScope === 'cj_international' || urlScope === 'physical') return urlScope;
@@ -2395,8 +2396,10 @@ export default function AdminCRM() {
   const filteredProducts = products.filter(p => {
     // 0. Separación de Doble Inventario: Stock Físico (Boutique) vs Catálogo Virtual (CJ Dropshipping)
     const isCj = Boolean((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')));
-    if (inventoryScope === 'physical' && isCj) return false;
+    const isJapan = Boolean((p.sku && p.sku.startsWith('JP-')) || (p.brand && p.brand.toLowerCase().includes('rakuten')));
+    if (inventoryScope === 'physical' && (isCj || isJapan)) return false;
     if (inventoryScope === 'cj_international' && !isCj) return false;
+    if (inventoryScope === 'japan_international' && !isJapan) return false;
 
     // 1. Filtro por término de búsqueda
     const q = (searchTerm || '').trim().toLowerCase();
@@ -4485,6 +4488,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
               </button>
 
+              {/* RAKUTEN JAPÓN IMPORTADOR */}
+              <button
+                onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'japan'
+                    ? 'bg-red-950 text-white font-bold border border-red-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-400/30">
+                  Tokio
+                </span>
+              </button>
+
               {/* 1. INVENTARIO (Catálogo + Lotes) */}
               <button
                 onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
@@ -4692,6 +4712,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Configuración de la Tienda'}
                     {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
                     {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
+                    {crmSubTab === 'japan' && 'Catálogo Oficial Japón — Rakuten Ichiba 🎌'}
                     {crmSubTab === 'agent' && 'Marketing'}
                     {crmSubTab === 'weavy' && 'Weavy Studio — Lienzo Creativo de Nodos IA'}
                       {crmSubTab === 'campaigns' && 'Campañas — Cupones QR & Stickers Tabloide'}
@@ -4706,6 +4727,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners principales de la tienda, métodos de entrega y cuentas bancarias SPEI'}
                   {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
                   {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
+                    {crmSubTab === 'japan' && 'Explora e importa figuras originales, cartas coleccionables, dulces y novedades directo desde Japón'}
                   {crmSubTab === 'agent' && 'Dirección de estrategia comercial, embudo en tiempo real y publicación en redes'}
                   {crmSubTab === 'weavy' && 'Diseña flujos visuales conectando productos, fotos externas, prompts, generación de imágenes y videos comerciales'}
                     {crmSubTab === 'campaigns' && 'Genera promociones con QR únicos, controla la vigencia, monitorea escaneos y canjes, e imprime en tabloide'}
@@ -4803,6 +4825,17 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           />
         )}
 
+        {crmSubTab === 'japan' && (
+          <AdminJapanTab
+            existingProducts={products}
+            onProductImported={() => {
+              getActiveProducts(true).then(dbProds => {
+                if (dbProds) setProducts(dbProds);
+              }).catch(() => {});
+            }}
+          />
+        )}
+
         {crmSubTab === 'inventory' && (
           <div className="space-y-5">
             
@@ -4875,18 +4908,36 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="button"
                   onClick={() => setInventoryScope('cj_international')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
                     inventoryScope === 'cj_international'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   <Globe className={`w-3.5 h-3.5 ${inventoryScope === 'cj_international' ? 'text-indigo-200' : 'text-slate-400'}`} />
-                  <span>✈️ Catálogo Virtual (Importación CJ)</span>
+                  <span>✈️ Importación CJ</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                     inventoryScope === 'cj_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {products.filter(p => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))).length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInventoryScope('japan_international')}
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    inventoryScope === 'japan_international'
+                      ? 'bg-red-700 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🎌</span>
+                  <span>Importación Japón</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'japan_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {products.filter(p => (p.sku && p.sku.startsWith('JP-')) || (p.brand && p.brand.toLowerCase().includes('rakuten'))).length}
                   </span>
                 </button>
               </div>

@@ -66,7 +66,7 @@ export interface Product {
    */
   isActive?: boolean;
   /** Origen del producto: 'stock_local' o 'cj_dropship' */
-  fulfillmentType?: 'stock_local' | 'cj_dropship';
+  fulfillmentType?: 'stock_local' | 'cj_dropship' | 'japan_rakuten';
   /** ID de producto en CJ */
   cjProductId?: string;
   /** SKU original en CJ */
