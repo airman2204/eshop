@@ -5189,32 +5189,34 @@ export default function TiendaFoxDrop() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      if (!isPersonalDelivery) {
-                        if (!shippingAddress.street.trim() || !shippingAddress.zip.trim()) {
-                          setAddressError('Debes ingresar tu calle, número y código postal completos para el envío.');
-                          return;
+                  <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => {
+                        if (!isPersonalDelivery) {
+                          if (!shippingAddress.street.trim() || !shippingAddress.zip.trim()) {
+                            setAddressError('Debes ingresar tu calle, número y código postal completos para el envío.');
+                            return;
+                          }
                         }
-                      }
-                      setAddressError(null);
-                      setCheckoutStep('payment');
-                      // Si no es cliente de Puebla y tenía seleccionado SPEI o Efectivo, asegurar que pase a tarjeta
-                      const zipNum = parseInt(String(shippingAddress.zip || '').trim(), 10);
-                      const isZipPuebla = !isNaN(zipNum) && zipNum >= 72000 && zipNum <= 72999;
-                      const cityStr = (shippingAddress.city || '').toLowerCase().trim();
-                      const isCityPuebla = cityStr.includes('puebla') || cityStr.includes('cholula') || cityStr.includes('cuautlancingo');
-                      const isPueblaHere = isPersonalDelivery || selectedShippingId === 'pickup' || selectedShippingId === 'local_puebla' || isZipPuebla || isCityPuebla;
-                      if (!isPueblaHere || cartHasImportItems) {
+                        setAddressError(null);
+                        setCheckoutStep('payment');
                         setPaymentMethod('mercadopago');
-                      }
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="bg-[#0F3E36] hover:bg-[#1A5248] text-white font-extrabold px-8 py-3.5 rounded-2xl text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Continuar al Pago</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="bg-[#009EE3] hover:bg-[#0089C7] active:scale-98 text-white font-black px-8 py-3.5 rounded-2xl text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                    >
+                      <CreditCard className="w-4 h-4 text-white" />
+                      <span>Continuar al Pago con Tarjeta</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-1.5 justify-center sm:justify-end text-[11px] text-gray-500 font-medium">
+                      <span>Aceptamos:</span>
+                      <span className="font-bold text-slate-700">Visa</span> • 
+                      <span className="font-bold text-slate-700">Mastercard</span> • 
+                      <span className="font-bold text-slate-700">AMEX</span> • 
+                      <span className="font-bold text-sky-600">Mercado Pago</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -5554,90 +5556,31 @@ export default function TiendaFoxDrop() {
                   <div className="flex flex-col items-center sm:items-end select-none">
                     <button
                       type="button"
-                      disabled={isSubmittingOrder || holdProgress >= 100}
+                      disabled={isSubmittingOrder}
                       onClick={() => {
                         if (!isSubmittingOrder) {
                           handleFinishOrder();
                         }
                       }}
-                      onMouseDown={() => {
-                        if (isSubmittingOrder) return;
-                        setIsHolding(true);
-                        setHoldProgress(0);
-                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                        const startTime = Date.now();
-                        const duration = 1100;
-                        holdIntervalRef.current = setInterval(() => {
-                          const elapsed = Date.now() - startTime;
-                          const progress = Math.min(100, Math.round((elapsed / duration) * 100));
-                          setHoldProgress(progress);
-                          if (progress >= 100) {
-                            if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                            setIsHolding(false);
-                            handleFinishOrder();
-                          }
-                        }, 25);
-                      }}
-                      onMouseUp={() => {
-                        setIsHolding(false);
-                        setHoldProgress(0);
-                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                      }}
-                      onMouseLeave={() => {
-                        setIsHolding(false);
-                        setHoldProgress(0);
-                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                      }}
-                      onTouchStart={() => {
-                        if (isSubmittingOrder) return;
-                        setIsHolding(true);
-                        setHoldProgress(0);
-                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                        const startTime = Date.now();
-                        const duration = 1100;
-                        holdIntervalRef.current = setInterval(() => {
-                          const elapsed = Date.now() - startTime;
-                          const progress = Math.min(100, Math.round((elapsed / duration) * 100));
-                          setHoldProgress(progress);
-                          if (progress >= 100) {
-                            if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                            setIsHolding(false);
-                            handleFinishOrder();
-                          }
-                        }, 25);
-                      }}
-                      onTouchEnd={() => {
-                        setIsHolding(false);
-                        setHoldProgress(0);
-                        if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
-                      }}
-                      className={`relative overflow-hidden w-full sm:w-auto text-white font-bold px-10 py-3.5 rounded-xl text-sm transition-all duration-150 shadow-md flex items-center justify-center gap-2 select-none tracking-tight ${
-                        isSubmittingOrder || holdProgress >= 100
-                          ? 'bg-[#1F62C7] opacity-90 cursor-wait'
-                          : 'bg-[#3483FA] hover:bg-[#2968C8] cursor-pointer active:scale-98'
+                      className={`relative overflow-hidden w-full sm:w-auto text-white font-extrabold px-10 py-4 rounded-2xl text-sm transition-all duration-150 shadow-lg flex items-center justify-center gap-2 select-none tracking-tight ${
+                        isSubmittingOrder
+                          ? 'bg-[#007EB5] opacity-90 cursor-wait'
+                          : paymentMethod === 'mercadopago'
+                          ? 'bg-[#009EE3] hover:bg-[#0089C7] active:scale-98 cursor-pointer shadow-sky-500/25 ring-2 ring-sky-400/50'
+                          : 'bg-[#0F3E36] hover:bg-[#1A5248] active:scale-98 cursor-pointer'
                       }`}
                     >
-                      {/* Barra de progreso de llenado que crece hacia la derecha */}
-                      <div
-                        className="absolute inset-y-0 left-0 bg-[#1F62C7] transition-all ease-linear"
-                        style={{ width: isSubmittingOrder ? '100%' : `${holdProgress}%` }}
-                      />
-
                       {/* Contenido del botón */}
-                      <span className="relative z-10 flex items-center gap-2 font-bold text-sm">
-                        {isSubmittingOrder || holdProgress >= 100 ? (
+                      <span className="relative z-10 flex items-center gap-2 font-black text-sm">
+                        {isSubmittingOrder ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin text-white" />
                             <span>{paymentMethod === 'mercadopago' ? 'Conectando con Mercado Pago...' : 'Procesando tu pedido...'}</span>
                           </>
-                        ) : isHolding ? (
-                          <>
-                            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                            <span>Confirmando...</span>
-                          </>
                         ) : (
                           <>
-                            <span>{paymentMethod === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Confirmar Pedido'}</span>
+                            {paymentMethod === 'mercadopago' && <CreditCard className="w-4 h-4 text-white" />}
+                            <span>{paymentMethod === 'mercadopago' ? '💳 Pagar con Tarjeta (Mercado Pago)' : 'Confirmar Pedido'}</span>
                             <ArrowRight className="w-4 h-4" />
                           </>
                         )}
@@ -5645,7 +5588,7 @@ export default function TiendaFoxDrop() {
                     </button>
                     {isSubmittingOrder && (
                       <p className="text-[11px] text-slate-500 font-medium mt-1.5 animate-pulse text-center sm:text-right">
-                        Por favor espera un momento, no cierres esta ventana...
+                        Por favor espera un momento, redirigiendo a la pasarela bancaria...
                       </p>
                     )}
                   </div>
