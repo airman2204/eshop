@@ -5338,7 +5338,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               {/* VISTA DESKTOP (TABLA COMPLETA) */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-600 min-w-[980px]">
+                <table className="w-full text-left text-xs text-slate-600 min-w-[1180px]">
                   <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 uppercase text-[10px]">
                     <tr>
                       <th className="py-3 px-3 w-10 text-center">
@@ -5367,7 +5367,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <th className="py-3 px-4 text-center min-w-[130px]">
                         {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
                       </th>
-                      <th className="py-3 px-4 text-center min-w-[115px]">En Tienda</th>
+                      <th className="py-3 px-4 text-center min-w-[125px] w-[125px]">En Tienda</th>
                       <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 shadow-xs min-w-[190px]">Acciones</th>
                     </tr>
                   </thead>
@@ -5663,12 +5663,12 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
 
                           {/* TOGGLE VISIBILIDAD EN TIENDA */}
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3.5 px-2 text-center w-[125px] shrink-0">
                             <button
                               onClick={() => handleToggleProductActive(p)}
                               disabled={togglingActiveId === p.id}
                               title={p.isActive !== false ? "Artículo encendido en tienda (clic para apagar)" : "Artículo apagado en tienda (clic para encender)"}
-                              className={`px-3 py-1 rounded-lg text-[11px] font-bold transition inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs ${
+                              className={`w-full max-w-[100px] py-1 px-2 rounded-lg text-[11px] font-bold transition inline-flex items-center justify-center gap-1 whitespace-nowrap shrink-0 shadow-2xs ${
                                 p.isActive !== false
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 active:scale-95'
                                   : 'bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 active:scale-95'
