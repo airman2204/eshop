@@ -1154,7 +1154,13 @@ export default function TiendaFoxDrop() {
     if (activeTab === 'deals') {
       prods = baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
     } else if (activeTab === 'new') {
-      prods = baseFilteredProducts.slice(0, 8);
+      // Ordenar por frescura: Los productos recién encendidos o actualizados van primero
+      const sortedByFreshness = [...baseFilteredProducts].sort((a, b) => {
+        const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+      prods = sortedByFreshness.slice(0, 10);
     }
 
     // Ordenamiento por precio, descuento y A-Z

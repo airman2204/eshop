@@ -49,6 +49,7 @@ export interface Product {
   daysInStock: number;
   /** ID del lote de importación vinculado */
   createdAt?: string;
+  updatedAt?: string;
   batchId?: string;
   /** Nombre del lote de importación (ej. Lote Primavera 2026) */
   batchName?: string;

@@ -2906,7 +2906,7 @@ export default function AdminCRM() {
     setTogglingActiveId(product.id);
     try {
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newActive } : p));
-      await updateProductInDb(product.id, { isActive: newActive });
+      await updateProductInDb(product.id, { isActive: newActive, updated_at: new Date().toISOString() });
     } catch (err: any) {
       console.error("Error al cambiar estado activo:", err);
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: currentActive } : p));
