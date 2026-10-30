@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
       const tokenCheck = verifyAdminToken(token);
       const headerEmail = (req.headers.get("x-admin-email") || "").trim().toLowerCase();
-      const isWhitelistedHeader = headerEmail && ["magc2204@gmail.com", "nydia.villarce405@gmail.com"].includes(headerEmail);
+      const isWhitelistedHeader = headerEmail && ["magc2204@gmail.com", "nydia.villarce405@gmail.com", "veronica.hdz.ms@gmail.com"].includes(headerEmail);
       if (!tokenCheck.valid && !isWhitelistedHeader) {
         return NextResponse.json(
           { error: "No autorizado para subir archivos. Se requiere token de administrador." },
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : (body.adminToken || null);
       const tokenCheck = verifyAdminToken(token);
       const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
-      const isWhitelisted = adminEmail && ["magc2204@gmail.com", "nydia.villarce405@gmail.com"].includes(adminEmail);
+      const isWhitelisted = adminEmail && ["magc2204@gmail.com", "nydia.villarce405@gmail.com", "veronica.hdz.ms@gmail.com"].includes(adminEmail);
 
       // update_password requiere obligatoriamente o token admin válido o verificación de contraseña actual
       if (!tokenCheck.valid && !isWhitelisted && action !== "update_password") {
@@ -1907,12 +1907,18 @@ export async function POST(req: NextRequest) {
               // Comprobar si tiene 2FA (TOTP) activo
               const hasTwoFactor = Boolean(userCred.twoFactor?.enabled && userCred.twoFactor?.secret);
 
-              // Si no tiene 2FA configurado, obligar a que lo configure antes de entrar
+              const userRole = userCred.role || (normalizedEmail === "magc2204@gmail.com" ? "super_admin" : (normalizedEmail === "veronica.hdz.ms@gmail.com" ? "seller_japan" : "admin"));
+
+              // Si debe cambiar contraseña o no tiene 2FA configurado, obligar antes de entrar
+              const mustChange = Boolean(userCred.mustChangePassword);
+
               if (!hasTwoFactor) {
                 const temp2FaToken = generateAdminToken(normalizedEmail, 600);
                 return NextResponse.json({
                   valid: true,
                   mustSetup2FA: true,
+                  mustChangePassword: mustChange,
+                  role: userRole,
                   tempToken: temp2FaToken,
                   email: normalizedEmail,
                   message: "Por seguridad institucional, debes activar la verificación en dos pasos (2FA) para continuar."
@@ -1930,6 +1936,8 @@ export async function POST(req: NextRequest) {
                   return NextResponse.json({
                     valid: true,
                     requires2FA: true,
+                    mustChangePassword: mustChange,
+                    role: userRole,
                     tempToken: temp2FaToken,
                     email: normalizedEmail,
                     message: "Introduce el código de 6 dígitos de tu app autenticadora."
@@ -1943,7 +1951,8 @@ export async function POST(req: NextRequest) {
                 requires2FA: false,
                 token: adminToken,
                 twoFactorEnabled: hasTwoFactor,
-                mustChangePassword: Boolean(userCred.mustChangePassword),
+                mustChangePassword: mustChange,
+                role: userRole,
               });
             } else {
               // Contraseña incorrecta: registrar fallo de fuerza bruta
@@ -2063,12 +2072,16 @@ export async function POST(req: NextRequest) {
           }).catch(() => {});
         } catch {}
 
+        const userRole = userCred.role || (normalizedEmail === "magc2204@gmail.com" ? "super_admin" : (normalizedEmail === "veronica.hdz.ms@gmail.com" ? "seller_japan" : "admin"));
+
         return NextResponse.json({
           success: true,
           token: finalToken,
           trustedDeviceToken,
           usedBackupCode,
           backupCodesLeft: userCred.twoFactor.backupCodes?.length || 0,
+          role: userRole,
+          mustChangePassword: Boolean(userCred.mustChangePassword),
         });
       } catch (err: any) {
         return NextResponse.json({ success: false, error: err.message || "Error validando 2FA" }, { status: 500 });

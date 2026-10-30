@@ -984,6 +984,12 @@ export default function AdminCRM() {
   useEffect(() => {
     if (!adminSession) return;
 
+    // Si es vendedora de Japón (Veronica), forzar permanentemente la pestaña Japón
+    const isSeller = adminSession.role === 'seller_japan' || adminSession.email === 'veronica.hdz.ms@gmail.com';
+    if (isSeller) {
+      setCrmSubTab('japan');
+    }
+
     async function loadData() {
       // Tipo de cambio USD
       const rate = await getLiveExchangeRate();
@@ -1445,6 +1451,10 @@ export default function AdminCRM() {
       setTwoFactorStep(false);
       setTwoFactorTempToken('');
       setTwoFactorCode('');
+
+      if (result.session.mustChangePassword) {
+        setShowResetModal(true);
+      }
     } catch {
       setLoginError('Ocurrió un error al verificar el código de seguridad.');
     } finally {
@@ -1524,6 +1534,9 @@ export default function AdminCRM() {
           if (loginRes.success && loginRes.session) {
             setAdminSession(loginRes.session);
             localStorage.setItem('foxdrop_admin_session', JSON.stringify(loginRes.session));
+            if (loginRes.session.mustChangePassword) {
+              setShowResetModal(true);
+            }
           }
         }
       } else {
@@ -4482,6 +4495,37 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* Listado de Navegación con Categorías */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-4 text-xs scrollbar-thin">
+          {/* Si el usuario es vendedora de Japón (Veronica), mostrar ÚNICAMENTE el acceso al Catálogo Japón */}
+          {adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com' ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl">
+                <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">
+                  Acceso Especial
+                </span>
+                <p className="text-white font-bold text-xs">
+                  Vendedora Oficial • Catálogo Japón
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Explora y preselecciona novedades importadas de Tokio en tu Wishlist privada.
+                </p>
+              </div>
+
+              <div>
+                <button
+                  onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
+                  className="w-full p-3 rounded-xl font-medium transition flex items-center justify-between border bg-red-950 text-white font-bold border-red-500/50 shadow-md"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-red-500/30 text-red-200 border border-red-400/40">
+                    Tokio
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* BOTÓN DESTACADO: MARKETING & ESTRATEGIA */}
           <div>
             <button
@@ -4721,20 +4765,24 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </button>
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* Sidebar Footer */}
         <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-950/40 space-y-2">
-          <button
-            onClick={() => {
-              setShowPosModal(true);
-              setMobileSidebarOpen(false);
-            }}
-            className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Punto de Venta POS</span>
-          </button>
+          {!(adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com') && (
+            <button
+              onClick={() => {
+                setShowPosModal(true);
+                setMobileSidebarOpen(false);
+              }}
+              className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Punto de Venta POS</span>
+            </button>
+          )}
 
           <div className="flex items-center justify-between pt-1 text-slate-400 text-[11px] px-1">
             <div className="truncate max-w-[170px]">
@@ -4912,6 +4960,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {crmSubTab === 'japan' && (
           <AdminJapanTab
             existingProducts={products}
+            currentUserEmail={adminSession?.email}
+            currentUserRole={adminSession?.role}
             onProductImported={() => {
               getActiveProducts(true).then(dbProds => {
                 if (dbProds) setProducts(dbProds);

@@ -1,7 +1,10 @@
 export const AUTHORIZED_ADMIN_EMAILS = [
   "magc2204@gmail.com",
   "nydia.villarce405@gmail.com",
+  "veronica.hdz.ms@gmail.com",
 ];
+
+export type AdminRole = 'super_admin' | 'admin' | 'seller_japan';
 
 export interface AdminSession {
   email: string;
@@ -9,6 +12,28 @@ export interface AdminSession {
   twoFactorVerified: boolean;
   twoFactorEnabled?: boolean;
   token?: string;
+  role?: AdminRole;
+}
+
+/**
+ * Determina el canal de Wishlist de Japón al que tiene acceso el usuario
+ */
+export function getWishlistChannelForUser(email?: string): 'vero' | 'nydia' | 'both' | null {
+  if (!email) return null;
+  const clean = email.toLowerCase().trim();
+  if (clean === "magc2204@gmail.com") return "both";
+  if (clean === "veronica.hdz.ms@gmail.com") return "vero";
+  if (clean === "nydia.villarce405@gmail.com") return "nydia";
+  return null;
+}
+
+/**
+ * Determina si el usuario es vendedora restringida de Japón
+ */
+export function isSellerJapanUser(email?: string, role?: string): boolean {
+  if (role === 'seller_japan') return true;
+  if (!email) return false;
+  return email.toLowerCase().trim() === 'veronica.hdz.ms@gmail.com';
 }
 
 /**

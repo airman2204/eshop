@@ -274,7 +274,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// POST: Traducir con IA e Importar Producto a Catálogo FoxDrop
+// POST: Traducir con IA, Wishlists Privadas (Vero/Nydia) e Importar
 // ──────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
@@ -282,13 +282,94 @@ export async function POST(req: NextRequest) {
     const token = authHeader?.replace("Bearer ", "");
     const body = await req.json();
     const resolvedToken = token || body.adminToken || null;
-    const adminEmail = (body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
-    const isWhitelisted = adminEmail && ["magc2204@gmail.com", "nydia.villarce405@gmail.com"].includes(adminEmail);
+    const tokenCheck = verifyAdminToken(resolvedToken);
+    const resolvedEmail = (tokenCheck.email || body.adminEmail || req.headers.get("x-admin-email") || "").trim().toLowerCase();
+    const isWhitelisted = resolvedEmail && [
+      "magc2204@gmail.com", 
+      "nydia.villarce405@gmail.com", 
+      "veronica.hdz.ms@gmail.com"
+    ].includes(resolvedEmail);
 
-    if (!verifyAdminToken(resolvedToken).valid && !isWhitelisted) {
+    if (!tokenCheck.valid && !isWhitelisted) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+
     const action = body.action || "import";
+    const supabase = createServerClient() as any;
+
+    // Helper para determinar el archivo de almacenamiento de Wishlist
+    // Vero & Mario -> _system/japan_wishlist_vero.json
+    // Nydia & Mario -> _system/japan_wishlist_nydia.json
+    const resolveWishlistFile = (requestedChannel?: string): { filePath: string; allowed: boolean } => {
+      const isSuperAdmin = resolvedEmail === "magc2204@gmail.com";
+      const isVero = resolvedEmail === "veronica.hdz.ms@gmail.com";
+      const isNydia = resolvedEmail === "nydia.villarce405@gmail.com";
+
+      if (isVero) {
+        return { filePath: "_system/japan_wishlist_vero.json", allowed: true };
+      }
+      if (isNydia) {
+        return { filePath: "_system/japan_wishlist_nydia.json", allowed: true };
+      }
+      if (isSuperAdmin) {
+        const channel = requestedChannel === "nydia" ? "nydia" : "vero";
+        return { filePath: `_system/japan_wishlist_${channel}.json`, allowed: true };
+      }
+      return { filePath: "", allowed: false };
+    };
+
+    // ─── OBTENER WISHLIST PRIVADA DE JAPÓN ──────────────────────────
+    if (action === "get_wishlist" || action === "get_japan_wishlist") {
+      const { filePath, allowed } = resolveWishlistFile(body.channel);
+      if (!allowed || !filePath) {
+        return NextResponse.json({ error: "Acceso no autorizado a este canal de Wishlist" }, { status: 403 });
+      }
+
+      try {
+        const { data: fileData, error } = await supabase.storage
+          .from("product-images")
+          .download(filePath);
+
+        if (error || !fileData) {
+          return NextResponse.json({ success: true, wishlist: [] });
+        }
+
+        const raw = await fileData.text();
+        const parsed = JSON.parse(raw || "[]");
+        return NextResponse.json({ success: true, wishlist: Array.isArray(parsed) ? parsed : [] });
+      } catch (err: any) {
+        console.warn("Aviso leyendo wishlist de Japón:", err);
+        return NextResponse.json({ success: true, wishlist: [] });
+      }
+    }
+
+    // ─── GUARDAR WISHLIST PRIVADA DE JAPÓN ──────────────────────────
+    if (action === "save_wishlist" || action === "save_japan_wishlist") {
+      const { filePath, allowed } = resolveWishlistFile(body.channel);
+      if (!allowed || !filePath) {
+        return NextResponse.json({ error: "Acceso no autorizado a este canal de Wishlist" }, { status: 403 });
+      }
+
+      const wishlistItems = Array.isArray(body.wishlist) ? body.wishlist : [];
+
+      try {
+        const buffer = Buffer.from(JSON.stringify(wishlistItems, null, 2));
+        const { error: uploadErr } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, buffer, {
+            contentType: "application/json",
+            upsert: true,
+          });
+
+        if (uploadErr) {
+          return NextResponse.json({ error: uploadErr.message || "Error al guardar wishlist" }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, count: wishlistItems.length });
+      } catch (err: any) {
+        return NextResponse.json({ error: err.message || "Error al guardar wishlist" }, { status: 500 });
+      }
+    }
 
     // 1. Traducir con Gemini IA antes de guardar
     if (action === "translate") {
@@ -301,6 +382,13 @@ export async function POST(req: NextRequest) {
 
     // 2. Importar a Supabase en la tabla `products`
     if (action === "import") {
+      // Bloquear si el usuario es Veronica (seller_japan)
+      if (resolvedEmail === "veronica.hdz.ms@gmail.com") {
+        return NextResponse.json({ 
+          error: "Los vendedores no tienen permisos para importar productos a la tienda FoxDrop." 
+        }, { status: 403 });
+      }
+
       const { 
         itemCode, 
         title, 
@@ -319,8 +407,6 @@ export async function POST(req: NextRequest) {
       if (!title || !publicPrice) {
         return NextResponse.json({ error: "Faltan datos obligatorios para importar" }, { status: 400 });
       }
-
-      const supabase = createServerClient() as any;
 
       // Generar SKU distintivo de Japón: JP-XXXXXX
       const cleanCode = (itemCode || "").replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase();

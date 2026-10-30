@@ -26,9 +26,15 @@ import {
   Zap,
   Star,
   Award,
-  Globe
+  Globe,
+  ThumbsUp,
+  ThumbsDown,
+  Trash2,
+  Loader2,
+  Lock,
+  MessageSquare
 } from 'lucide-react';
-import { fetchAdminApi } from '@/lib/adminAuth';
+import { fetchAdminApi, getWishlistChannelForUser, isSellerJapanUser } from '@/lib/adminAuth';
 import { Product } from '@/types';
 
 export interface RakutenItem {
@@ -56,8 +62,17 @@ export interface RakutenItem {
   freeJapanShipping?: boolean;
 }
 
+export interface JapanWishlistItem extends RakutenItem {
+  addedBy?: string;
+  addedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  note?: string;
+}
+
 interface Props {
   existingProducts?: Product[];
+  currentUserEmail?: string;
+  currentUserRole?: string;
   onProductImported?: () => void;
 }
 
@@ -102,7 +117,27 @@ const QUICK_JAPAN_TAGS = [
   { label: '💄 Skincare & J-Beauty', query: 'hada labo premium' },
 ];
 
-export default function AdminJapanTab({ existingProducts = [], onProductImported }: Props) {
+export default function AdminJapanTab({ existingProducts = [], currentUserEmail, currentUserRole, onProductImported }: Props) {
+  // Detectar canal de Wishlist y rol de vendedora
+  const isSeller = isSellerJapanUser(currentUserEmail, currentUserRole);
+  const userChannel = getWishlistChannelForUser(currentUserEmail);
+
+  // Conmutador de modo: 'catalog' vs 'wishlist' (Igual que CJ Dropshipping)
+  const [japanViewMode, setJapanViewMode] = useState<'catalog' | 'wishlist'>('catalog');
+
+  // Si es Super Admin (Mario), permite alternar entre el canal de Vero y el canal de Nydia
+  const [selectedChannel, setSelectedChannel] = useState<'vero' | 'nydia'>(() => {
+    if (userChannel === 'nydia') return 'nydia';
+    return 'vero';
+  });
+
+  // Estados de Wishlist compartida
+  const [wishlist, setWishlist] = useState<JapanWishlistItem[]>([]);
+  const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [wishlistFilter, setWishlistFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [editingNoteCode, setEditingNoteCode] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState('');
+
   const [searchQuery, setSearchQuery] = useState('pokemon card box');
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<RakutenItem[]>([]);
@@ -136,6 +171,92 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+
+  // Cargar Wishlist privada desde backend según canal activo
+  const loadWishlist = async (targetChannel?: 'vero' | 'nydia') => {
+    const channelToLoad = targetChannel || (userChannel === 'both' ? selectedChannel : (userChannel || 'vero'));
+    setLoadingWishlist(true);
+    try {
+      const res = await fetchAdminApi({
+        endpoint: '/api/admin/rakuten',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get_wishlist',
+          channel: channelToLoad,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.wishlist)) {
+          setWishlist(data.wishlist);
+        }
+      }
+    } catch (err) {
+      console.warn('Aviso cargando Wishlist de Japón:', err);
+    } finally {
+      setLoadingWishlist(false);
+    }
+  };
+
+  // Guardar Wishlist en backend
+  const persistWishlist = async (updated: JapanWishlistItem[], targetChannel?: 'vero' | 'nydia') => {
+    const channelToSave = targetChannel || (userChannel === 'both' ? selectedChannel : (userChannel || 'vero'));
+    setWishlist(updated);
+    try {
+      await fetchAdminApi({
+        endpoint: '/api/admin/rakuten',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_wishlist',
+          channel: channelToSave,
+          wishlist: updated,
+        }),
+      });
+    } catch (err) {
+      console.warn('Aviso guardando Wishlist de Japón:', err);
+    }
+  };
+
+  // Agregar o retirar de la Wishlist
+  const handleToggleWishlist = async (item: RakutenItem) => {
+    const exists = wishlist.some(w => w.itemCode === item.itemCode);
+    let updated: JapanWishlistItem[];
+    if (exists) {
+      updated = wishlist.filter(w => w.itemCode !== item.itemCode);
+    } else {
+      const newItem: JapanWishlistItem = {
+        ...item,
+        addedBy: currentUserEmail || (isSeller ? 'Veronica' : 'Administración'),
+        addedAt: new Date().toISOString(),
+        status: 'pending',
+      };
+      updated = [newItem, ...wishlist];
+    }
+    await persistWishlist(updated);
+  };
+
+  const handleUpdateWishlistStatus = async (itemCode: string, status: 'approved' | 'rejected' | 'pending') => {
+    const updated = wishlist.map(w => w.itemCode === itemCode ? { ...w, status } : w);
+    await persistWishlist(updated);
+  };
+
+  const handleRemoveFromWishlist = async (itemCode: string) => {
+    const updated = wishlist.filter(w => w.itemCode !== itemCode);
+    await persistWishlist(updated);
+  };
+
+  const handleSaveItemNote = async (itemCode: string) => {
+    const updated = wishlist.map(w => w.itemCode === itemCode ? { ...w, note: noteInput.trim() } : w);
+    await persistWishlist(updated);
+    setEditingNoteCode(null);
+    setNoteInput('');
+  };
+
+  const isItemInWishlist = (itemCode: string): boolean => {
+    return wishlist.some(w => w.itemCode === itemCode);
+  };
 
   // Buscar en Rakuten
   const handleSearch = async (
@@ -179,7 +300,15 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
 
   useEffect(() => {
     handleSearch('pokemon card box', 1);
+    loadWishlist();
   }, []);
+
+  // Recargar wishlist cuando el Super Admin cambia de canal
+  useEffect(() => {
+    if (userChannel === 'both') {
+      loadWishlist(selectedChannel);
+    }
+  }, [selectedChannel]);
 
   // Abrir Vista Previa en Grande estilo CJ
   const handleOpenPreview = (item: RakutenItem) => {
@@ -314,6 +443,353 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
         </div>
       )}
 
+      {/* SELECTOR DE MODO: EXPLORAR CATÁLOGO TOKIO VS WISHLIST COMPARTIDA (IDÉNTICO A CJ) */}
+      <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setJapanViewMode('catalog')}
+          className={`flex-1 py-2.5 px-4 rounded-xl font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer ${
+            japanViewMode === 'catalog'
+              ? 'bg-red-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          <span>Explorar Catálogo Tokio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setJapanViewMode('wishlist');
+            loadWishlist();
+          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 cursor-pointer relative ${
+            japanViewMode === 'wishlist'
+              ? 'bg-rose-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Heart className="w-4 h-4 fill-current" />
+          <span>
+            {isSeller ? '❤️ Mi Wishlist con Mario (Preselección)' : '❤️ Wishlist Preselección Japón'}
+          </span>
+          {wishlist.length > 0 && (
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              japanViewMode === 'wishlist' ? 'bg-white text-rose-600' : 'bg-rose-100 text-rose-700'
+            }`}>
+              {wishlist.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* CONTENIDO CONDICIONAL: VISTA DE WISHLIST COMPARTIDA VS VISTA DE CATÁLOGO */}
+      {japanViewMode === 'wishlist' ? (
+        <div className="space-y-6">
+          {/* HEADER DE WISHLIST & SELECTOR DE CANALES PARA SUPER ADMIN */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                <span>
+                  {isSeller
+                    ? 'Mesa de Trabajo Privada: Vero & Mario'
+                    : userChannel === 'both'
+                    ? (selectedChannel === 'vero' ? 'Mesa Privada: Vero & Mario' : 'Mesa Privada: Nydia & Mario')
+                    : 'Mesa de Trabajo Privada'}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                {isSeller
+                  ? 'Aquí guardas los productos de Japón marcados con corazón para que Mario los revise y los publique.'
+                  : 'Productos preseleccionados de Japón para votar, anotar detalles y decidir qué importar.'}
+              </p>
+            </div>
+
+            {/* CONMUTADOR DE CANALES EXCLUSIVO PARA SUPER ADMIN (MARIO) */}
+            {userChannel === 'both' && (
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannel('vero')}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                    selectedChannel === 'vero'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🦊 Mesa Vero</span>
+                  {selectedChannel === 'vero' && (
+                    <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full">
+                      {wishlist.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedChannel('nydia')}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                    selectedChannel === 'nydia'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  <span>🌸 Mesa Nydia</span>
+                  {selectedChannel === 'nydia' && (
+                    <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full">
+                      {wishlist.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* FILTROS DE ESTADO (TODOS, PENDIENTES, APROBADOS, DESCARTADOS) */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl shrink-0 text-xs font-bold">
+              {[
+                { id: 'all', label: `Todos (${wishlist.length})` },
+                { id: 'pending', label: `Pendientes (${wishlist.filter(w => w.status === 'pending').length})` },
+                { id: 'approved', label: `Aprobados (${wishlist.filter(w => w.status === 'approved').length})` },
+                { id: 'rejected', label: `Descartados (${wishlist.filter(w => w.status === 'rejected').length})` },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setWishlistFilter(f.id as any)}
+                  className={`px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                    wishlistFilter === f.id
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* LISTA DE TARJETAS DE LA WISHLIST */}
+          {loadingWishlist ? (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+              <Loader2 className="w-8 h-8 text-rose-500 animate-spin mx-auto" />
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Cargando Wishlist de Japón...</p>
+            </div>
+          ) : wishlist.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+              <Heart className="w-12 h-12 text-slate-300 mx-auto" />
+              <h4 className="text-base font-bold text-slate-800 dark:text-white">Esta Wishlist está vacía</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Explora el catálogo de Japón y presiona el botón de <strong>Corazón</strong> en cualquier producto para guardarlo aquí y revisarlo juntos.
+              </p>
+              <button
+                type="button"
+                onClick={() => setJapanViewMode('catalog')}
+                className="mt-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition cursor-pointer inline-flex items-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                <span>Explorar Catálogo Tokio</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {wishlist
+                .filter(w => wishlistFilter === 'all' || w.status === wishlistFilter)
+                .map(item => {
+                  const isImported = isAlreadyImported(item.itemCode);
+
+                  return (
+                    <div
+                      key={item.itemCode}
+                      className={`bg-white dark:bg-slate-900 rounded-2xl border p-4 flex flex-col justify-between transition-all shadow-xs hover:shadow-md ${
+                        item.status === 'approved'
+                          ? 'border-emerald-300 ring-2 ring-emerald-100 bg-emerald-50/10'
+                          : item.status === 'rejected'
+                          ? 'border-rose-200 bg-rose-50/10 opacity-75'
+                          : 'border-slate-200 dark:border-slate-800'
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        {/* FOTO, BADGES Y BORRAR */}
+                        <div className="aspect-square w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 relative group">
+                          <img
+                            src={getSafeJapanImageUrl(item.images[0])}
+                            alt={item.itemName}
+                            className="w-full h-full object-contain transition duration-300 group-hover:scale-105 cursor-pointer"
+                            onClick={() => handleOpenPreview(item)}
+                          />
+                          <span className={`absolute top-2 left-2 text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs ${
+                            item.status === 'approved'
+                              ? 'bg-emerald-600 text-white'
+                              : item.status === 'rejected'
+                              ? 'bg-rose-600 text-white'
+                              : 'bg-amber-500 text-white'
+                          }`}>
+                            {item.status === 'approved' ? '✓ Aprobado' : item.status === 'rejected' ? '✕ Descartado' : '⏳ Pendiente'}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFromWishlist(item.itemCode)}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-rose-600 text-white transition cursor-pointer"
+                            title="Quitar de Wishlist"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* TÍTULO */}
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50 border border-red-200/80 text-[10px] font-bold text-red-900">
+                            <span>🎌 {item.shopName}</span>
+                          </div>
+                          <h4
+                            onClick={() => handleOpenPreview(item)}
+                            className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight hover:text-red-600 cursor-pointer"
+                            title={item.itemName}
+                          >
+                            {item.itemNameEs || item.itemName}
+                          </h4>
+                        </div>
+
+                        {/* COSTOS (SEGUN ROL) */}
+                        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 space-y-1 text-[11px] border border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center justify-between text-slate-500">
+                            <span>Costo Japón:</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
+                              ¥{item.priceJpy.toLocaleString()} (~${item.baseCostMxn} MXN)
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-slate-500">
+                            <span>Flete aéreo:</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
+                              +${item.estimatedShippingMxn} MXN
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-red-700 font-bold border-t border-slate-200 dark:border-slate-700 pt-1">
+                            <span>Costo Total:</span>
+                            <span className="font-black">${item.totalCostMxn} MXN</span>
+                          </div>
+
+                          {/* SOLO PARA ADMINS (NO VENDEDORA VERO): PRECIO PÚBLICO Y GANANCIA */}
+                          {!isSeller && (
+                            <>
+                              <div className="flex items-center justify-between text-indigo-700 font-bold">
+                                <span>Venta sugerida:</span>
+                                <span className="font-semibold">${item.suggestedPublicPrice} MXN</span>
+                              </div>
+                              <div className="flex items-center justify-between text-emerald-600 font-black text-[10px] pt-1 border-t border-slate-200/60">
+                                <span>Ganancia libre:</span>
+                                <span>+${Math.max(0, item.suggestedPublicPrice - item.totalCostMxn)} MXN</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* NOTA INTERNA COLABORATIVA */}
+                        <div className="pt-1">
+                          {editingNoteCode === item.itemCode ? (
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={noteInput}
+                                onChange={e => setNoteInput(e.target.value)}
+                                placeholder="Escribe un comentario..."
+                                className="w-full px-2.5 py-1 text-xs border rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                              />
+                              <div className="flex justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingNoteCode(null)}
+                                  className="px-2 py-0.5 text-[10px] text-slate-400"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveItemNote(item.itemCode)}
+                                  className="px-2 py-0.5 text-[10px] bg-red-600 text-white font-bold rounded"
+                                >
+                                  Guardar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              onClick={() => {
+                                setEditingNoteCode(item.itemCode);
+                                setNoteInput(item.note || '');
+                              }}
+                              className="text-[11px] p-2 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 rounded-lg cursor-pointer hover:border-amber-400 text-slate-600 dark:text-slate-300 flex items-center justify-between gap-1"
+                              title="Clic para editar nota"
+                            >
+                              <span className="italic truncate">{item.note || '+ Agregar nota o comentario...'}</span>
+                              <MessageSquare className="w-3 h-3 text-amber-500 shrink-0" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* VOTACIÓN Y ACCIONES */}
+                      <div className="pt-3 space-y-2 border-t border-slate-100 dark:border-slate-800 mt-3">
+                        {/* BOTONES DE APROBACIÓN (DISPONIBLES PARA AMBOS O PRINCIPALMENTE MARIO) */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateWishlistStatus(item.itemCode, 'approved')}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer border ${
+                              item.status === 'approved'
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                            }`}
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                            <span>Aprobar</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateWishlistStatus(item.itemCode, 'rejected')}
+                            className={`py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer border ${
+                              item.status === 'rejected'
+                                ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                                : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                            }`}
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" />
+                            <span>Descartar</span>
+                          </button>
+                        </div>
+
+                        {/* BOTÓN IMPORTAR (SOLO PARA ADMINS, OCULTO PARA VERO) */}
+                        {!isSeller && (
+                          isImported ? (
+                            <div className="w-full py-2 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-emerald-200">
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Ya publicado en FoxDrop</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenImportModal(item)}
+                              className="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Importar a Tienda</span>
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       {/* BARRA DE BÚSQUEDA Y TAGS RÁPIDOS */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
         <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchQuery, 1); }} className="flex gap-2">
@@ -525,6 +1001,23 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                       🇯🇵 ¥{item.priceJpy.toLocaleString()} JPY
                     </span>
 
+                    {/* BOTÓN DE CORAZÓN / WISHLIST RÁPIDO */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleWishlist(item);
+                      }}
+                      className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition z-20 cursor-pointer shadow-xs ${
+                        isItemInWishlist(item.itemCode)
+                          ? 'bg-rose-600 text-white hover:bg-rose-700'
+                          : 'bg-black/50 text-white hover:bg-rose-500 hover:text-white'
+                      }`}
+                      title={isItemInWishlist(item.itemCode) ? 'Quitar de mi Wishlist' : 'Guardar en mi Wishlist'}
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${isItemInWishlist(item.itemCode) ? 'fill-current' : ''}`} />
+                    </button>
+
                     {/* BADGES DE CALIDAD PROVEEDOR */}
                     <div className="absolute bottom-1.5 left-1.5 z-10 flex flex-wrap gap-1">
                       {item.shopOfTheYear && (
@@ -541,8 +1034,8 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                       )}
                     </div>
 
-                    {already && (
-                      <span className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-xs z-10">
+                    {already && !isSeller && (
+                      <span className="absolute bottom-1.5 right-1.5 bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-xs z-10">
                         ✓ En Tienda
                       </span>
                     )}
@@ -572,34 +1065,57 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                       )}
                     </div>
 
-                    {/* COSTEO Y PRECIO FOXDROP */}
+                    {/* COSTEO Y PRECIO (RESTRICTO PARA VENDEDORA) */}
                     <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-0.5">
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="text-slate-400">Costo MXN:</span>
                         <span className="font-bold text-slate-700 dark:text-slate-300 font-mono">${item.baseCostMxn}</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500 font-semibold">Venta Sug:</span>
-                        <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono">${item.suggestedPublicPrice}</span>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Flete Aéreo:</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 font-mono">+${item.estimatedShippingMxn}</span>
                       </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <span className="text-red-700 font-bold">Costo Total:</span>
+                        <span className="font-black text-red-700 font-mono">${item.totalCostMxn}</span>
+                      </div>
+
+                      {/* SOLO PARA ADMIN GENERAL (NO PARA VERO) */}
+                      {!isSeller && (
+                        <div className="flex items-center justify-between text-xs pt-0.5">
+                          <span className="text-slate-500 font-semibold">Venta Sug:</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono">${item.suggestedPublicPrice}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* BOTÓN IMPORTAR */}
+                {/* BOTÓN INFERIOR: IMPORTAR PARA ADMIN / VER DETALLE Y PRESELECCIONAR PARA VERO */}
                 <div className="pt-3">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenImportModal(item)}
-                    className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
-                      already
-                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
-                        : 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{already ? 'Reimportar' : 'Importar a FoxDrop'}</span>
-                  </button>
+                  {isSeller ? (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPreview(item)}
+                      className="w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-slate-100 hover:bg-slate-200 text-slate-800"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Ver Fotos & Detalle</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenImportModal(item)}
+                      className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
+                        already
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                          : 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{already ? 'Reimportar' : 'Importar a FoxDrop'}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -742,7 +1258,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                     </div>
                   </div>
 
-                  {/* DESGLOSE MATEMÁTICO PASO A PASO (IGUAL QUE EN CJ) */}
+                  {/* DESGLOSE MATEMÁTICO PASO A PASO */}
                   {(() => {
                     const priceJpy = previewItem.priceJpy;
                     const costMxn = previewItem.baseCostMxn;
@@ -790,73 +1306,78 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                           <span className="text-red-700 text-sm font-mono font-black">${totalLandedMxn} MXN</span>
                         </div>
 
-                        {/* SELECTOR DE MARGEN PARA COMPARAR EN VIVO */}
-                        <div className="pt-1 space-y-1.5">
-                          <span className="text-[10px] font-bold text-slate-600 block">
-                            <strong>D) Elige el margen para comparar el precio final:</strong>
-                          </span>
-                          <div className="grid grid-cols-3 gap-1.5 text-[10px]">
-                            <button
-                              type="button"
-                              onClick={() => setPreviewMarginMult(1.25)}
-                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                                previewMarginMult === 1.25
-                                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
-                                  : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              🔥 +25% (${launchSale})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewMarginMult(1.35)}
-                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                                previewMarginMult === 1.35
-                                  ? 'bg-red-600 text-white border-red-600 shadow-2xs'
-                                  : 'bg-white hover:bg-red-50 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              ⚖️ +35% (${standardSale})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewMarginMult(1.50)}
-                              className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
-                                previewMarginMult === 1.50
-                                  ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
-                                  : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              💎 +50% (${highSale})
-                            </button>
-                          </div>
-                        </div>
+                        {/* SI ES VENDEDORA (VERO): TODO LO DEMÁS QUEDA OCULTO */}
+                        {!isSeller && (
+                          <>
+                            {/* SELECTOR DE MARGEN PARA COMPARAR EN VIVO */}
+                            <div className="pt-1 space-y-1.5">
+                              <span className="text-[10px] font-bold text-slate-600 block">
+                                <strong>D) Elige el margen para comparar el precio final:</strong>
+                              </span>
+                              <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewMarginMult(1.25)}
+                                  className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                    previewMarginMult === 1.25
+                                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                                      : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200'
+                                  }`}
+                                >
+                                  🔥 +25% (${launchSale})
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewMarginMult(1.35)}
+                                  className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                    previewMarginMult === 1.35
+                                      ? 'bg-red-600 text-white border-red-600 shadow-2xs'
+                                      : 'bg-white hover:bg-red-50 text-slate-700 border-slate-200'
+                                  }`}
+                                >
+                                  ⚖️ +35% (${standardSale})
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewMarginMult(1.50)}
+                                  className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
+                                    previewMarginMult === 1.50
+                                      ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
+                                      : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
+                                  }`}
+                                >
+                                  💎 +50% (${highSale})
+                                </button>
+                              </div>
+                            </div>
 
-                        {/* PRECIO FINAL FOXDROP */}
-                        <div className="flex items-center justify-between text-xs text-red-900 font-bold border-t border-slate-200 pt-2">
-                          <div>
-                            <span className="block text-slate-900 font-black">Precio Final Sugerido en FoxDrop:</span>
-                            <span className="text-[10px] font-medium text-slate-500">
-                              ${totalLandedMxn} Costo Total × {previewMarginMult.toFixed(2)} (+{marginPercent}% margen)
-                            </span>
-                          </div>
-                          <span className="text-xl font-black text-red-700 font-mono">
-                            ${currentSale.toLocaleString('es-MX')} MXN
-                          </span>
-                        </div>
+                            {/* PRECIO FINAL FOXDROP */}
+                            <div className="flex items-center justify-between text-xs text-red-900 font-bold border-t border-slate-200 pt-2">
+                              <div>
+                                <span className="block text-slate-900 font-black">Precio Final Sugerido en FoxDrop:</span>
+                                <span className="text-[10px] font-medium text-slate-500">
+                                  ${totalLandedMxn} Costo Total × {previewMarginMult.toFixed(2)} (+{marginPercent}% margen)
+                                </span>
+                              </div>
+                              <span className="text-xl font-black text-red-700 font-mono">
+                                ${currentSale.toLocaleString('es-MX')} MXN
+                              </span>
+                            </div>
 
-                        {/* UTILIDAD ESTIMADA */}
-                        <div className="text-[11px] text-emerald-900 font-bold flex items-center justify-between bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
-                          <div>
-                            <span className="block">Tu Ganancia Libre Estimada:</span>
-                            <span className="text-[10px] font-semibold text-emerald-700">
-                              ${currentSale} Venta − ${totalLandedMxn} Costo Total
-                            </span>
-                          </div>
-                          <span className="font-black text-sm text-emerald-700 font-mono">
-                            +${netProfit.toLocaleString('es-MX')} MXN
-                          </span>
-                        </div>
+                            {/* UTILIDAD ESTIMADA */}
+                            <div className="text-[11px] text-emerald-900 font-bold flex items-center justify-between bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                              <div>
+                                <span className="block">Tu Ganancia Libre Estimada:</span>
+                                <span className="text-[10px] font-semibold text-emerald-700">
+                                  ${currentSale} Venta − ${totalLandedMxn} Costo Total
+                                </span>
+                              </div>
+                              <span className="font-black text-sm text-emerald-700 font-mono">
+                                +${netProfit.toLocaleString('es-MX')} MXN
+                              </span>
+                            </div>
+                          </>
+                        )}
 
                         <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
                           <span>Tiempo de Entrega al Cliente en México:</span>
@@ -884,7 +1405,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   </div>
                 </div>
 
-                {/* BOTÓN DE ACCIÓN: IMPORTAR CON TRADUCCIÓN IA */}
+                {/* BOTÓN DE ACCIÓN: GUARDAR EN WISHLIST (VERO) O IMPORTAR A TIENDA (ADMIN) */}
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
                     type="button"
@@ -893,18 +1414,36 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   >
                     Cerrar
                   </button>
+
                   <button
                     type="button"
                     onClick={() => {
-                      const item = previewItem;
-                      setPreviewItem(null);
-                      handleOpenImportModal(item);
+                      handleToggleWishlist(previewItem);
                     }}
-                    className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    className={`px-4 py-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer border ${
+                      isItemInWishlist(previewItem.itemCode)
+                        ? 'bg-rose-100 text-rose-700 border-rose-300 hover:bg-rose-200'
+                        : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                    }`}
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Importar este producto a FoxDrop</span>
+                    <Heart className={`w-4 h-4 ${isItemInWishlist(previewItem.itemCode) ? 'fill-current text-rose-600' : ''}`} />
+                    <span>{isItemInWishlist(previewItem.itemCode) ? 'Quitar de Wishlist' : 'Guardar en Wishlist'}</span>
                   </button>
+
+                  {!isSeller && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const item = previewItem;
+                        setPreviewItem(null);
+                        handleOpenImportModal(item);
+                      }}
+                      className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Importar este producto a FoxDrop</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1102,6 +1641,8 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );
