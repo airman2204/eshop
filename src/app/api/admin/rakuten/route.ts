@@ -160,19 +160,35 @@ async function quickTranslateTitles(titles: string[]): Promise<string[]> {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const keyword = searchParams.get("keyword") || searchParams.get("q") || "pokemon";
+    const keyword = searchParams.get("keyword") || searchParams.get("q") || "";
+    const genreId = searchParams.get("genreId");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const hits = parseInt(searchParams.get("hits") || "30", 10);
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
-    const sort = searchParams.get("sort") || "standard";
+    const sort = searchParams.get("sort") || "-reviewCount";
     const shopOfTheYearFlag = searchParams.get("shopOfTheYearFlag");
     const asurakuFlag = searchParams.get("asurakuFlag");
     const postageFlag = searchParams.get("postageFlag");
     const hasReviewFlag = searchParams.get("hasReviewFlag");
+    const imageFlag = searchParams.get("imageFlag") ?? "1"; // Por defecto solo productos con foto real verificada
 
-    let url = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701?applicationId=${RAKUTEN_APP_ID}&accessKey=${RAKUTEN_ACCESS_KEY}&affiliateId=${RAKUTEN_AFFILIATE_ID}&keyword=${encodeURIComponent(keyword)}&page=${page}&hits=${hits}&format=json`;
+    let url = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701?applicationId=${RAKUTEN_APP_ID}&accessKey=${RAKUTEN_ACCESS_KEY}&affiliateId=${RAKUTEN_AFFILIATE_ID}&page=${page}&hits=${hits}&format=json`;
 
+    if (keyword && keyword.trim()) {
+      url += `&keyword=${encodeURIComponent(keyword.trim())}`;
+    } else if (genreId) {
+      url += `&genreId=${encodeURIComponent(genreId.trim())}`;
+    } else {
+      // Si no hay keyword ni genreId, buscar tendencias generales
+      url += `&keyword=${encodeURIComponent("ランキング 人気")}`;
+    }
+
+    if (genreId && keyword && keyword.trim()) {
+      url += `&genreId=${encodeURIComponent(genreId.trim())}`;
+    }
+
+    if (imageFlag === "1") url += `&imageFlag=1`;
     if (minPrice) url += `&minPrice=${minPrice}`;
     if (maxPrice) url += `&maxPrice=${maxPrice}`;
     if (sort) url += `&sort=${encodeURIComponent(sort)}`;

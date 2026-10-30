@@ -118,6 +118,58 @@ const QUICK_JAPAN_TAGS = [
   { label: '💄 Skincare & J-Beauty', query: 'hada labo premium' },
 ];
 
+const JAPAN_MASTER_CATEGORIES: { label: string; subs: { label: string; query: string }[] }[] = [
+  { label: '🔥 Tendencias', subs: [
+    { label: 'Más vendidos Japón', query: 'ランキング 人気' },
+    { label: 'Ranking #1 Rakuten', query: '楽天1位' },
+  ]},
+  { label: '🗾 Figuras & Anime', subs: [
+    { label: 'One Piece', query: 'ワンピース フィギュア' },
+    { label: 'Dragon Ball', query: 'ドラゴンボール フィギュア' },
+    { label: 'Demon Slayer', query: '鬼滅の刃 フィギュア' },
+    { label: 'Nendoroid', query: 'ねんどろいど' },
+    { label: 'Figuras a escala', query: 'スケールフィギュア' },
+    { label: 'Studio Ghibli', query: 'ジブリ グッズ' },
+  ]},
+  { label: '⚡ Pokémon & TCG', subs: [
+    { label: 'Booster Box sellada', query: 'ポケモンカード BOX 未開封' },
+    { label: 'Barajas', query: 'ポケモンカード デッキ' },
+    { label: 'Fundas / Sleeves', query: 'ポケモンカード スリーブ' },
+    { label: 'Peluches Pokémon', query: 'ポケモン ぬいぐるみ' },
+  ]},
+  { label: '🍬 Dulces & Snacks', subs: JAPAN_CANDY_FILTERS },
+  { label: '🌸 Sanrio & Kawaii', subs: [
+    { label: 'Hello Kitty', query: 'ハローキティ グッズ' },
+    { label: 'Kuromi', query: 'クロミ グッズ' },
+    { label: 'Cinnamoroll', query: 'シナモロール グッズ' },
+    { label: 'Chiikawa', query: 'ちいかわ グッズ' },
+  ]},
+  { label: '🎁 Blind Boxes', subs: [
+    { label: 'Sonny Angel', query: 'ソニーエンジェル' },
+    { label: 'Pop Mart', query: 'POPMART' },
+    { label: 'Gachapon', query: 'ガチャガチャ カプセル' },
+    { label: 'Smiski', query: 'スミスキー' },
+  ]},
+  { label: '🎮 Videojuegos & Retro', subs: [
+    { label: 'Nintendo Switch', query: 'Nintendo Switch ソフト' },
+    { label: 'Game Boy / Retro', query: 'ゲームボーイ' },
+    { label: 'Accesorios', query: 'Switch 周辺機器' },
+  ]},
+  { label: '🍵 Matcha & Gourmet', subs: [
+    { label: 'Matcha Uji', query: '宇治抹茶 粉末' },
+    { label: 'Chasen / Batidor', query: '茶筅' },
+  ]},
+  { label: '💄 J-Beauty', subs: [
+    { label: 'Hada Labo', query: '肌ラボ' },
+    { label: 'Bloqueador solar', query: '日焼け止め' },
+    { label: 'Sueros', query: '美容液' },
+  ]},
+  { label: '🔪 Cuchillería & Hogar', subs: [
+    { label: 'Cuchillos Santoku', query: '三徳包丁' },
+    { label: 'Termos Zojirushi', query: '象印 水筒' },
+  ]},
+];
+
 export default function AdminJapanTab({ existingProducts = [], currentUserEmail, currentUserRole, onProductImported }: Props) {
   // Detectar canal de Wishlist y rol de vendedora
   const isSeller = isSellerJapanUser(currentUserEmail, currentUserRole);
@@ -148,7 +200,8 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
 
   // Filtros de Calidad y Proveedores
   const [sortOrder, setSortOrder] = useState<string>('-reviewCount'); // Más vendidos / más populares por default
-  const [verifiedShopOnly, setVerifiedShopOnly] = useState(false); // Shop Of The Year
+  const [verifiedShopOnly, setVerifiedShopOnly] = useState(true); // Shop Of The Year (por defecto: solo tiendas oficiales)
+  const [activeCategory, setActiveCategory] = useState(0);
   const [fastShipOnly, setFastShipOnly] = useState(false); // Asuraku (<24h despacho)
   const [hasReviewsOnly, setHasReviewsOnly] = useState(false); // Calificaciones > 4 estrellas
 
@@ -817,9 +870,26 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
         {/* ETIQUETAS DE ACCESO RÁPIDO */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-bold text-slate-400 mr-1 flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-red-500" /> Tendencias:
+            <Flame className="w-3.5 h-3.5 text-red-500" /> Categorías:
           </span>
-          {QUICK_JAPAN_TAGS.map((tag, idx) => (
+          {JAPAN_MASTER_CATEGORIES.map((cat, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => { setActiveCategory(idx); handleSearch(cat.subs[0].query, 1); }}
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition cursor-pointer border ${
+                activeCategory === idx
+                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200/60 dark:border-slate-700 hover:border-red-400 hover:text-red-500'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap pl-2 border-l-2 border-red-500/40">
+          <span className="text-[11px] font-bold text-slate-400 mr-1">Subcategoría:</span>
+          {JAPAN_MASTER_CATEGORIES[activeCategory].subs.map((tag, idx) => (
             <button
               key={idx}
               type="button"
