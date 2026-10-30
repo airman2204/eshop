@@ -87,6 +87,13 @@ export const CHOLULA_NEAR_POSTAL_CODES = new Set([
   '72775',
   '72776',
   '72777',
+  '72810', // San Andrés Cholula / San Juan Aquiahuac / Concepción Guadalupe / Tonantzintla
+  '72813',
+  '72814',
+  '72815',
+  '72816',
+  '72817',
+  '72820', // Tlaxcalancingo centro
 ]);
 
 /**

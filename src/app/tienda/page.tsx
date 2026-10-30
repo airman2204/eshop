@@ -1043,6 +1043,22 @@ export default function TiendaFoxDrop() {
           state: defaultAddr.state || '',
         });
         setSelectedAddressId(defaultAddr.id);
+
+        // Si el cliente no tiene elegida entrega personal, auto-ajustar su tarifa según su dirección guardada
+        if (defaultAddr.zip && defaultAddr.zip.length === 5 && selectedShippingId !== 'pickup') {
+          const assessed = assessShippingByAddress({
+            zip: defaultAddr.zip,
+            state: defaultAddr.state || '',
+          });
+
+          if (assessed.tier === 'local_near') {
+            setSelectedShippingId('local_cholula_near');
+          } else if (assessed.tier === 'local_metro') {
+            setSelectedShippingId('local_puebla');
+          } else if (assessed.tier === 'national') {
+            setSelectedShippingId('national');
+          }
+        }
       }
     }
   }, [fullProfile]);
@@ -1905,9 +1921,9 @@ export default function TiendaFoxDrop() {
     || checkoutSettings.shippingMethods[0];
   
   // Si contiene productos de importación (o carrito mixto), el envío a domicilio físico es obligatorio
-  const isPersonalDelivery = cartHasImportItems ? false : (activeShippingMethod ? !activeShippingMethod.requiresAddress : true);
-  // En carrito exclusivo internacional el envío es gratis ($0). En carrito mixto o boutique, se cobra el método de entrega de boutique seleccionado
-  const shippingFee = cartHasImportItems && !cartHasBoutiqueItems ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
+  const isPersonalDelivery = cartHasImportItems ? false : (selectedShippingId === 'pickup' || (activeShippingMethod ? !activeShippingMethod.requiresAddress : true));
+  // En carrito exclusivo internacional o en Entrega Personal Oficial el envío es siempre $0 (Gratis)
+  const shippingFee = (cartHasImportItems && !cartHasBoutiqueItems) || isPersonalDelivery ? 0 : (activeShippingMethod ? activeShippingMethod.price : 0);
   
   // Descuento por cupón activo
   const couponDiscountAmount = appliedCoupon ? Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100) : 0;
@@ -5057,7 +5073,7 @@ export default function TiendaFoxDrop() {
                                   <span className="font-extrabold text-sm text-gray-900">{method.name}</span>
                                 </div>
                                 <span className="font-black text-sm text-[#0F3E36]">
-                                  {method.price === 0 ? 'Sin costo' : `${method.price.toFixed(0)} MXN`}
+                                  {method.id === 'pickup' || method.price === 0 ? 'Sin costo' : `${method.price.toFixed(0)} MXN`}
                                 </span>
                               </div>
 
@@ -5159,16 +5175,33 @@ export default function TiendaFoxDrop() {
                           return (
                             <div
                               key={addr.id}
-                                onClick={() => {
+                              onClick={() => {
                                 setSelectedAddressId(addr.id);
-                                setShippingAddress({
+                                const newAddr = {
                                   street: addr.street,
                                   colonia: addr.colonia || '',
                                   zip: addr.zip,
                                   city: addr.city || '',
                                   state: addr.state || '',
-                                });
+                                };
+                                setShippingAddress(newAddr);
                                 setAddressError(null);
+
+                                // Ajuste automático e inteligente según la dirección guardada
+                                if (addr.zip && addr.zip.length === 5 && selectedShippingId !== 'pickup') {
+                                  const assessed = assessShippingByAddress({
+                                    zip: addr.zip,
+                                    state: addr.state || '',
+                                  });
+
+                                  if (assessed.tier === 'local_near') {
+                                    setSelectedShippingId('local_cholula_near');
+                                  } else if (assessed.tier === 'local_metro') {
+                                    setSelectedShippingId('local_puebla');
+                                  } else if (assessed.tier === 'national') {
+                                    setSelectedShippingId('national');
+                                  }
+                                }
                               }}
                               className={`p-3.5 rounded-xl border-2 cursor-pointer transition text-xs ${
                                 isSel ? 'border-[#0F3E36] bg-[#EDF5F7]/40' : 'border-gray-200 hover:border-gray-300 bg-white'
