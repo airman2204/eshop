@@ -58,6 +58,8 @@ export interface NewProductInput {
   comboProductIds?: string[];
   discountPercent?: number;
   isActive?: boolean;
+  updated_at?: string;
+  updatedAt?: string;
   fulfillmentType?: 'stock_local' | 'cj_dropship';
   cjProductId?: string;
   cjSku?: string;
