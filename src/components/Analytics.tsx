@@ -108,7 +108,7 @@ export default function Analytics() {
     }
   }, []);
 
-  const GA_ID = dynamicSettings?.gaMeasurementId || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const GA_ID = dynamicSettings?.gaMeasurementId || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-26KQRL7KYJ';
   const GTM_ID = dynamicSettings?.gtmId || process.env.NEXT_PUBLIC_GTM_ID;
   const META_PIXEL_ID = dynamicSettings?.metaPixelId || process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
