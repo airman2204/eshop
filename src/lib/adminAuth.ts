@@ -338,10 +338,11 @@ export async function verify2FaLogin(
 
     const session: AdminSession = {
       email: email.trim().toLowerCase(),
-      mustChangePassword: false,
+      mustChangePassword: Boolean(data.mustChangePassword),
       twoFactorVerified: true,
       twoFactorEnabled: true,
       token: data.token,
+      role: data.role,
     };
 
     return { success: true, session };

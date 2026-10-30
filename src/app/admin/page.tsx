@@ -4201,6 +4201,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           setTwoFactorData(null);
                           setTwoFactorSetupCode('');
                           setTwoFactorConfirmedCodes(null);
+                          try {
+                            const raw = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_session') : null;
+                            if (raw) {
+                              const parsed = JSON.parse(raw);
+                              if (parsed?.mustChangePassword) {
+                                setShowResetModal(true);
+                              }
+                            }
+                          } catch {}
                         }}
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-xs transition cursor-pointer"
                       >

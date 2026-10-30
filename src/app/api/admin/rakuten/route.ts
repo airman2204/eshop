@@ -117,26 +117,30 @@ async function quickTranslateTitles(titles: string[]): Promise<string[]> {
         }
       }
     } catch (geminiErr) {
-      console.warn("Aviso en traducción por lotes con Gemini, recurriendo a Google:", geminiErr);
+      console.warn("Aviso en traducción con Gemini, usando motor de traducción de respaldo:", geminiErr);
     }
   }
 
-  // 2. Fallback a Google Translate individual
+  // 2. Fallback de traducción ultra-rápida y confiable sin límite de cuota (MyMemory / Libre)
   try {
     const promises = titles.map(async (text) => {
       try {
-        const res = await fetch(
-          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=es&dt=t&q=${encodeURIComponent(text)}`,
-          {
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            cache: 'force-cache',
-          }
-        );
+        const clean = text
+          .replace(/[【】\[\]＼／★・]/g, " ")
+          .replace(/送料無料|即納|正規|公式|大容量|ギフト|ランキング/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 90);
+
+        if (!clean) return text.slice(0, 50);
+
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=ja|es`;
+        const res = await fetch(url, { cache: "force-cache" });
         if (res.ok) {
-          const d = await res.json();
-          if (Array.isArray(d?.[0])) {
-            const translated = d[0].map((s: any) => s[0]).join('').trim();
-            if (translated) return translated;
+          const data = await res.json();
+          const translated = data?.responseData?.translatedText;
+          if (translated && !translated.includes("MYMEMORY WARNING")) {
+            return translated;
           }
         }
       } catch {}
@@ -145,7 +149,7 @@ async function quickTranslateTitles(titles: string[]): Promise<string[]> {
 
     return await Promise.all(promises);
   } catch (e) {
-    console.warn("Fallo traducción rápida de títulos:", e);
+    console.warn("Fallo traducción de títulos:", e);
   }
   return titles;
 }
