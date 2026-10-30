@@ -75,14 +75,28 @@ const getSafeJapanImageUrl = (url: string | undefined): string => {
   return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
 };
 
+const JAPAN_CANDY_FILTERS = [
+  { label: '🍬 Todos los Dulces & Snacks', query: 'お菓子 詰め合わせ' },
+  { label: '🍫 KitKat & Chocolates Japón', query: 'キットカット 日本' },
+  { label: '🍓 Gomitas & Frutales (Gummy)', query: '日本 グミ 果実' },
+  { label: '🍡 Dulces Tradicionales (Wagashi)', query: '和菓子 ギフト' },
+  { label: '📦 Cajas Variadas (Dagashi / Surtido)', query: '駄菓子 詰め合わせ 大量' },
+  { label: '🍘 Senbei & Galletas de Arroz', query: 'せんべい 詰め合わせ' },
+  { label: '🍵 Dulces de Matcha & Té Verde', query: '抹茶 スイーツ お菓子' },
+  { label: '✨ Poki & Palitos Pocky Japón', query: 'ポッキー 日本' },
+];
+
 const QUICK_JAPAN_TAGS = [
   { label: '🔥 Pokémon TCG & Merch', query: 'pokemon card box' },
+  { label: '🍬 Dulces & Snacks Japoneses', query: 'お菓子 詰め合わせ' },
+  { label: '🍫 KitKat Edición Japón', query: 'キットカット 日本' },
+  { label: '🍓 Gomitas Japonesas (Gummy)', query: '日本 グミ 果実' },
+  { label: '🍡 Dulces Tradicionales (Wagashi)', query: '和菓子 ギフト' },
   { label: '🏴‍☠️ One Piece Figuras', query: 'one piece grandista figure' },
   { label: '🌸 Sanrio & Hello Kitty', query: 'sanrio plush' },
   { label: '🍵 Té Matcha Ceremonial', query: 'matcha powder uji' },
   { label: '👼 Sonny Angel', query: 'sonny angel mini figure' },
   { label: '🐉 Dragon Ball Z', query: 'dragon ball figure masterlise' },
-  { label: '🍙 Snacks & KitKat Japón', query: 'kitkat japan limited' },
   { label: '✨ Studio Ghibli', query: 'ghibli totoro' },
   { label: '🎮 Nintendo & Retro', query: 'nintendo switch japan' },
   { label: '💄 Skincare & J-Beauty', query: 'hada labo premium' },
@@ -342,6 +356,35 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
               {tag.label}
             </button>
           ))}
+        </div>
+
+        {/* FILTROS ESPECÍFICOS DE DULCES & SNACKS JAPONESES */}
+        <div className="p-3 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black text-amber-900 dark:text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+              <span>🍬 Especial de Dulces & Confitería Japonesa:</span>
+            </span>
+            <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold">
+              Directo de Tokio, Kioto y Osaka
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {JAPAN_CANDY_FILTERS.map((candy, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSearch(candy.query, 1)}
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer border ${
+                  searchQuery === candy.query
+                    ? 'bg-gradient-to-r from-amber-500 to-[#E65F2B] text-white border-amber-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-amber-200 dark:border-slate-700 hover:border-amber-400 hover:bg-amber-50/50'
+                }`}
+              >
+                {candy.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* FILTROS AVANZADOS DE PROVEEDORES Y CALIDAD DE JAPÓN (IGUAL QUE EN CJ) */}

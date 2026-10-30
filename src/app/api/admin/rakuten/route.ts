@@ -90,6 +90,38 @@ Responde ÚNICAMENTE en JSON con este formato:
 // Helper para traducir rápidamente lote de títulos japoneses a español en la vista previa
 async function quickTranslateTitles(titles: string[]): Promise<string[]> {
   if (!titles || titles.length === 0) return [];
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  // 1. Intentar traducción inteligente y comercial con Gemini 2.5 Flash
+  if (apiKey && apiKey !== "TU_API_KEY_AQUI") {
+    try {
+      const prompt = `Traduce cada uno de los siguientes títulos de productos japoneses a un título comercial atractivo y limpio en español mexicano (máximo 8 palabras por título, sin corchetes tipo 【】 ni texto promocional como "envío gratis" o "entrega inmediata"). Devuelve EXACTAMENTE un JSON array de strings con las traducciones en el mismo orden:\n` + JSON.stringify(titles);
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = JSON.parse(rawText);
+          if (Array.isArray(parsed) && parsed.length === titles.length) {
+            return parsed.map((t: any, i: number) => String(t || titles[i]).trim());
+          }
+        }
+      }
+    } catch (geminiErr) {
+      console.warn("Aviso en traducción por lotes con Gemini, recurriendo a Google:", geminiErr);
+    }
+  }
+
+  // 2. Fallback a Google Translate individual
   try {
     const promises = titles.map(async (text) => {
       try {
