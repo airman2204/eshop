@@ -166,11 +166,22 @@ export async function GET(req: NextRequest) {
       const item = wrapper.Item;
       const priceJpy = Number(item.itemPrice || 0);
       const baseCostMxn = Math.round(priceJpy * JPY_TO_MXN_RATE);
-      // Costo de flete internacional Japón -> México (estimado por peso volumétrico base de $120 a $250 MXN)
-      const estimatedShippingMxn = priceJpy > 5000 ? 180 : 120;
+      
+      // Costo de flete internacional aéreo Tokio -> México (escalonado según categoría, volumen y valor)
+      // Paquete ligero (cartas TCG, llaveros, cosméticos pequeños < 5,000 JPY): $140 MXN
+      // Paquete mediano (figuras estándar, cajas de cartas, ropa 5,000 - 20,000 JPY): $260 MXN
+      // Paquete pesado / consolas / cajas grandes (> 20,000 JPY o consolas): $480 MXN
+      let estimatedShippingMxn = 140;
+      const lowerName = (item.itemName || "").toLowerCase();
+      if (priceJpy > 25000 || lowerName.includes("switch") || lowerName.includes("ps5") || lowerName.includes("console") || lowerName.includes("box set")) {
+        estimatedShippingMxn = 480;
+      } else if (priceJpy > 5000 || lowerName.includes("figure") || lowerName.includes("box") || lowerName.includes("plush")) {
+        estimatedShippingMxn = 260;
+      }
+
       const totalCostMxn = baseCostMxn + estimatedShippingMxn;
-      // Margen comercial sugerido FoxDrop (35% a 45% de utilidad libre)
-      const suggestedPublicPrice = Math.round((totalCostMxn * 1.45) / 10) * 10 - 1; // ej. 399, 449, 599
+      // Margen comercial sugerido FoxDrop (35% de utilidad neta libre)
+      const suggestedPublicPrice = Math.round((totalCostMxn * 1.35) / 10) * 10 - 1; // ej. 399, 449, 599, etc.
 
       // Extraer imágenes en Alta Resolución (removiendo el parámetro de thumbnail)
       const rawImages: string[] = [];

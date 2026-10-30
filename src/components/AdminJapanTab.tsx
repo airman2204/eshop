@@ -599,15 +599,15 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-slate-900 rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 cursor-default"
+            className="bg-white rounded-3xl max-w-5xl w-full max-h-[94vh] overflow-hidden shadow-2xl flex flex-col border border-slate-200 cursor-default"
           >
             {/* CABECERA MODAL */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-800/50">
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/90">
               <div className="min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/60 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-200/60 px-2.5 py-0.5 rounded-full inline-block mb-1">
                   Catálogo Oficial Rakuten Japón 🎌
                 </span>
-                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate" title={previewItem.itemName}>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 truncate" title={previewItem.itemName}>
                   {previewItem.itemNameEs || previewItem.itemName}
                 </h3>
               </div>
@@ -616,7 +616,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   href={previewItem.itemUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-red-500"
+                  className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer border bg-white text-slate-700 border-slate-200 hover:text-red-600 hover:border-red-300"
                   title="Abrir publicación original en Rakuten Tokio"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -625,7 +625,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                 <button
                   type="button"
                   onClick={() => setPreviewItem(null)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -633,10 +633,10 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
             </div>
 
             {/* CONTENIDO PRINCIPAL EN 2 COLUMNAS */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white">
               {/* COLUMNA IZQUIERDA: GALERÍA DE FOTOS EN ALTA RESOLUCIÓN */}
               <div className="space-y-3">
-                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative flex items-center justify-center shadow-inner">
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 relative flex items-center justify-center shadow-inner">
                   <img
                     src={getSafeJapanImageUrl(selectedPreviewImage || previewItem.images[0])}
                     alt={previewItem.itemName}
@@ -657,7 +657,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                           className={`w-14 h-14 rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer bg-white ${
                             isSelected
                               ? 'border-red-600 ring-2 ring-red-200'
-                              : 'border-slate-200 dark:border-slate-700 hover:border-slate-400 opacity-70 hover:opacity-100'
+                              : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'
                           }`}
                         >
                           <img
@@ -676,9 +676,9 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
               <div className="space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   {/* BADGES Y REPUTACIÓN DEL PROVEEDOR EN TOKIO */}
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                      <span className="text-xs font-black text-slate-800">
                         Proveedor Oficial en Japón:
                       </span>
                       {previewItem.shopOfTheYear ? (
@@ -692,7 +692,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                       )}
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">🏪 {previewItem.shopName}</span>
+                      <span className="font-bold text-slate-800">🏪 {previewItem.shopName}</span>
                       <span className="text-amber-500 font-black">
                         ★ {previewItem.reviewAverage > 0 ? previewItem.reviewAverage.toFixed(2) : '5.0'} / 5.0 ({previewItem.reviewCount} opiniones)
                       </span>
@@ -715,41 +715,41 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                     const marginPercent = Math.round((previewMarginMult - 1) * 100);
 
                     return (
-                      <div className="p-4 rounded-2xl border bg-gradient-to-br from-red-50/50 to-slate-50 dark:from-red-950/20 dark:to-slate-900 border-red-200/80 dark:border-red-900/40 space-y-2.5">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-800">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-red-600 block">
+                      <div className="p-4 rounded-2xl border bg-gradient-to-br from-red-50/60 to-slate-50 border-red-200/90 space-y-2.5">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-red-700 block">
                             Cálculo Exacto Paso a Paso (Tipo de Cambio: 1 MXN ≈ 8.35 JPY)
                           </span>
-                          <span className="text-[10px] font-semibold text-slate-500 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <span className="text-[10px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
                             Inventario Original Japón
                           </span>
                         </div>
 
                         {/* PASO A: COSTO EN JAPÓN */}
-                        <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center justify-between text-xs text-slate-700">
                           <span><strong>A)</strong> Costo Tienda Japón:</span>
-                          <span className="font-black text-slate-900 dark:text-white font-mono">
-                            ¥{priceJpy.toLocaleString()} JPY = <span className="text-red-600 font-bold">${costMxn} MXN</span>
+                          <span className="font-black text-slate-900 font-mono">
+                            ¥{priceJpy.toLocaleString()} JPY = <span className="text-red-700 font-bold">${costMxn} MXN</span>
                           </span>
                         </div>
 
                         {/* PASO B: FLETE INTERNACIONAL */}
-                        <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center justify-between text-xs text-slate-700">
                           <span><strong>B)</strong> Flete Aéreo Japón ➔ México (Asegurado):</span>
-                          <span className="font-black text-slate-900 dark:text-white font-mono">
+                          <span className="font-black text-slate-900 font-mono">
                             +${estimatedFreightMxn} MXN
                           </span>
                         </div>
 
                         {/* PASO C: COSTO TOTAL */}
-                        <div className="flex items-center justify-between text-xs text-slate-900 dark:text-white font-black bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs text-slate-900 font-black bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
                           <span><strong>C) Costo Total (A + B):</strong></span>
-                          <span className="text-rose-600 text-sm font-mono">${totalLandedMxn} MXN</span>
+                          <span className="text-red-700 text-sm font-mono font-black">${totalLandedMxn} MXN</span>
                         </div>
 
                         {/* SELECTOR DE MARGEN PARA COMPARAR EN VIVO */}
                         <div className="pt-1 space-y-1.5">
-                          <span className="text-[10px] font-bold text-slate-500 block">
+                          <span className="text-[10px] font-bold text-slate-600 block">
                             <strong>D) Elige el margen para comparar el precio final:</strong>
                           </span>
                           <div className="grid grid-cols-3 gap-1.5 text-[10px]">
@@ -759,7 +759,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                               className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
                                 previewMarginMult === 1.25
                                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
-                                  : 'bg-white dark:bg-slate-800 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  : 'bg-white hover:bg-emerald-50 text-slate-700 border-slate-200'
                               }`}
                             >
                               🔥 +25% (${launchSale})
@@ -770,7 +770,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                               className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
                                 previewMarginMult === 1.35
                                   ? 'bg-red-600 text-white border-red-600 shadow-2xs'
-                                  : 'bg-white dark:bg-slate-800 hover:bg-red-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  : 'bg-white hover:bg-red-50 text-slate-700 border-slate-200'
                               }`}
                             >
                               ⚖️ +35% (${standardSale})
@@ -781,7 +781,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                               className={`py-1.5 px-2 rounded-lg font-bold border transition cursor-pointer ${
                                 previewMarginMult === 1.50
                                   ? 'bg-purple-600 text-white border-purple-600 shadow-2xs'
-                                  : 'bg-white dark:bg-slate-800 hover:bg-purple-50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  : 'bg-white hover:bg-purple-50 text-slate-700 border-slate-200'
                               }`}
                             >
                               💎 +50% (${highSale})
@@ -790,34 +790,34 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                         </div>
 
                         {/* PRECIO FINAL FOXDROP */}
-                        <div className="flex items-center justify-between text-xs text-red-900 dark:text-red-300 font-bold border-t border-slate-200/80 dark:border-slate-800 pt-2">
+                        <div className="flex items-center justify-between text-xs text-red-900 font-bold border-t border-slate-200 pt-2">
                           <div>
-                            <span className="block">Precio Final Sugerido en FoxDrop:</span>
-                            <span className="text-[10px] font-semibold text-slate-500">
+                            <span className="block text-slate-900 font-black">Precio Final Sugerido en FoxDrop:</span>
+                            <span className="text-[10px] font-medium text-slate-500">
                               ${totalLandedMxn} Costo Total × {previewMarginMult.toFixed(2)} (+{marginPercent}% margen)
                             </span>
                           </div>
-                          <span className="text-lg font-black text-red-600 dark:text-red-400 font-mono">
+                          <span className="text-xl font-black text-red-700 font-mono">
                             ${currentSale.toLocaleString('es-MX')} MXN
                           </span>
                         </div>
 
                         {/* UTILIDAD ESTIMADA */}
-                        <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 rounded-xl border border-emerald-200/90 dark:border-emerald-800">
+                        <div className="text-[11px] text-emerald-900 font-bold flex items-center justify-between bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
                           <div>
                             <span className="block">Tu Ganancia Libre Estimada:</span>
-                            <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                            <span className="text-[10px] font-semibold text-emerald-700">
                               ${currentSale} Venta − ${totalLandedMxn} Costo Total
                             </span>
                           </div>
-                          <span className="font-black text-sm text-emerald-700 dark:text-emerald-300 font-mono">
+                          <span className="font-black text-sm text-emerald-700 font-mono">
                             +${netProfit.toLocaleString('es-MX')} MXN
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+                        <div className="flex items-center justify-between text-[11px] text-slate-600 pt-0.5">
                           <span>Tiempo de Entrega al Cliente en México:</span>
-                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                          <span className="font-black text-slate-900">
                             ✈️ 10 a 15 Días Hábiles (Importación Express)
                           </span>
                         </div>
@@ -827,26 +827,26 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
 
                   {/* FICHA TÉCNICA DEL PRODUCTO JAPONÉS */}
                   <div className="space-y-2 text-xs">
-                    <span className="font-bold text-slate-700 dark:text-slate-300 block">Ficha Oficial del Proveedor:</span>
+                    <span className="font-bold text-slate-700 block">Ficha Oficial del Proveedor:</span>
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <span className="text-slate-400 block font-medium">Código Japón:</span>
-                        <span className="font-bold text-slate-800 dark:text-white break-all">{previewItem.itemCode}</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-slate-500 block font-bold">Código Japón:</span>
+                        <span className="font-black text-slate-900 break-all">{previewItem.itemCode}</span>
                       </div>
-                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <span className="text-slate-400 block font-medium">Disponibilidad en Bodega:</span>
-                        <span className="font-bold text-emerald-600">✓ En Existencia Tokio</span>
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-slate-500 block font-bold">Disponibilidad en Bodega:</span>
+                        <span className="font-black text-emerald-700">✓ En Existencia Tokio</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* BOTÓN DE ACCIÓN: IMPORTAR CON TRADUCCIÓN IA */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setPreviewItem(null)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                   >
                     Cerrar
                   </button>
