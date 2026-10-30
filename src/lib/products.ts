@@ -101,6 +101,7 @@ export function mapDbProductToApp(dbProd: any): Product {
     expirationDate: dbProd.expiration_date || dbProd.expirationDate || undefined,
     isCombo: Boolean(dbProd.is_combo ?? dbProd.isCombo),
     comboProductIds: Array.isArray(dbProd.combo_product_ids) ? dbProd.combo_product_ids : (Array.isArray(dbProd.comboProductIds) ? dbProd.comboProductIds : []),
+    createdAt: dbProd.created_at || dbProd.createdAt || undefined,
     discountPercent: Number(dbProd.discount_percent ?? dbProd.discountPercent) || 0,
     isActive: dbProd.is_active ?? dbProd.isActive ?? true,
     brand: detectProductBrand(dbProd.title || '', dbProd.brand),

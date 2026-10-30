@@ -1040,6 +1040,20 @@ export default function AdminCRM() {
           if (matchedByCost) {
             return { ...p, batchId: matchedByCost.id, batchName: matchedByCost.batchName };
           }
+          // Si el producto fue recibido en la fecha del Lote 3 (2026-10-16), vincular a Lote 3
+          if (p.createdAt && p.createdAt.startsWith('2026-10-16')) {
+            const b3 = mappedBatches.find(b => b.batchName.includes('Lote 3') || b.id === '035be417-f02a-4bb5-8958-41d177e21714');
+            if (b3) {
+              return { ...p, batchId: b3.id, batchName: b3.batchName };
+            }
+          }
+          // Si el producto fue recibido en la fecha del Lote 1 (2026-09-28), vincular a Lote 1
+          if (p.createdAt && (p.createdAt.startsWith('2026-09-28') || p.createdAt.startsWith('2026-09-29'))) {
+            const b1 = mappedBatches.find(b => b.batchName.includes('Lote 1'));
+            if (b1) {
+              return { ...p, batchId: b1.id, batchName: b1.batchName };
+            }
+          }
           return p;
         }));
       }
@@ -2397,7 +2411,8 @@ export default function AdminCRM() {
         const matchesBatchId = p.batchId === targetBatch.id;
         const matchesCost = Math.abs(targetBatch.costPerUnit - (Number(p.shippingCostAllocated) || 0)) < 0.05;
         const matchesName = p.batchName && p.batchName === targetBatch.batchName;
-        if (!matchesBatchId && !matchesCost && !matchesName) return false;
+        const matchesDate = targetBatch.batchName.includes('Lote 3') && p.createdAt && p.createdAt.startsWith('2026-10-16');
+        if (!matchesBatchId && !matchesCost && !matchesName && !matchesDate) return false;
       }
     }
 
@@ -5058,7 +5073,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   const countForBatch = scopedProducts.filter(p => 
                     p.batchId === b.id || 
                     Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05 || 
-                    (p.batchName && p.batchName === b.batchName)
+                    (p.batchName && p.batchName === b.batchName) ||
+                    (b.batchName.includes('Lote 3') && p.createdAt && p.createdAt.startsWith('2026-10-16'))
                   ).length;
                   const isSelected = inventoryBatchFilter === b.id;
 
