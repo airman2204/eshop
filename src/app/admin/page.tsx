@@ -2464,11 +2464,19 @@ export default function AdminCRM() {
   const pricedProducts = scopedProducts.filter(p => (Number(p.publicPrice || (p as any).public_price) || 0) > 0);
   const unpricedProducts = scopedProducts.filter(p => (Number(p.publicPrice || (p as any).public_price) || 0) <= 0);
 
-  const totalInvestment = pricedProducts.reduce((acc, p) => {
-    const cost = Number(p.totalCostMxn || p.baseCostMxn || (p as any).base_cost_mxn) || 0;
+  const totalInvestmentBase = pricedProducts.reduce((acc, p) => {
+    const base = Number(p.baseCostMxn || (p as any).base_cost_mxn) || 0;
     const qty = Number(p.stock) || 0;
-    return acc + (cost * qty);
+    return acc + (base * qty);
   }, 0);
+
+  const totalInvestmentShipping = pricedProducts.reduce((acc, p) => {
+    const shipping = Number(p.shippingCostAllocated || (p as any).shipping_cost_allocated) || 0;
+    const qty = Number(p.stock) || 0;
+    return acc + (shipping * qty);
+  }, 0);
+
+  const totalInvestment = totalInvestmentBase + totalInvestmentShipping;
 
   const totalExpectedRevenue = pricedProducts.reduce((acc, p) => {
     const price = Number(p.publicPrice || (p as any).public_price) || 0;
@@ -7229,9 +7237,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
-                  <span className="text-slate-500 text-xs font-medium">Inversión en Stock</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-xs font-medium">Inversión Total</span>
+                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">Mercancía + Flete</span>
+                  </div>
                   <p className="text-xl sm:text-2xl font-bold text-slate-900 font-semibold tracking-tight">${totalInvestment.toFixed(2)}</p>
-                  <span className="text-[11px] text-slate-400 block truncate">Capital activo en bodega</span>
+                  <div className="text-[10px] text-slate-500 font-medium space-y-0.5 pt-0.5">
+                    <div className="flex justify-between"><span>📦 Compra USA:</span> <strong className="text-slate-800">${totalInvestmentBase.toFixed(2)}</strong></div>
+                    <div className="flex justify-between"><span>🚚 Fletes/Envíos:</span> <strong className="text-orange-700">${totalInvestmentShipping.toFixed(2)}</strong></div>
+                  </div>
                 </div>
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-1">
                   <span className="text-slate-500 text-xs font-medium">Ventas Proyectadas</span>
