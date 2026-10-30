@@ -76,11 +76,17 @@ export async function fetchAdminApi(bodyOrOptions: any): Promise<Response> {
     headers["x-admin-email"] = email;
   }
 
-  // Si ya nos pasaron un objeto tipo { method: 'POST', body: '...' }
-  if (bodyOrOptions && typeof bodyOrOptions === "object" && "body" in bodyOrOptions) {
-    const customHeaders = bodyOrOptions.headers || {};
-    return fetch("/api/admin", {
-      ...bodyOrOptions,
+  // Si nos pasaron un endpoint específico (ej: /api/admin/rakuten)
+  const targetUrl = (bodyOrOptions && typeof bodyOrOptions === "object" && bodyOrOptions.endpoint) 
+    ? bodyOrOptions.endpoint 
+    : "/api/admin";
+
+  // Si ya nos pasaron un objeto tipo { method: 'POST', body: '...' } o { endpoint: '...', method: 'GET' }
+  if (bodyOrOptions && typeof bodyOrOptions === "object" && ("body" in bodyOrOptions || "method" in bodyOrOptions || "endpoint" in bodyOrOptions)) {
+    const { endpoint, ...restOptions } = bodyOrOptions;
+    const customHeaders = restOptions.headers || {};
+    return fetch(targetUrl, {
+      ...restOptions,
       headers: { ...headers, ...customHeaders },
     });
   }
