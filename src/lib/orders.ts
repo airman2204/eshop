@@ -193,6 +193,9 @@ export async function createPhysicalSaleOrder(sale: {
   userId?: string;
   items: { product: Product; quantity: number }[];
   total: number;
+  subtotal?: number;
+  discountAmount?: number;
+  couponCode?: string;
   paymentMethod: 'cash' | 'card' | 'spei';
   ticketImageUrl?: string;
 }) {

@@ -1562,9 +1562,19 @@ export async function POST(req: NextRequest) {
       }
 
       // 3. Registrar orden en Supabase
-      const notes = sale.ticketImageUrl 
-        ? `Venta física POS | Ticket: ${sale.ticketImageUrl}` 
-        : "Venta física registrada con Escáner POS Móvil";
+      const notesParts: string[] = [];
+      if (sale.ticketImageUrl) {
+        notesParts.push(`Venta física POS | Ticket: ${sale.ticketImageUrl}`);
+      } else {
+        notesParts.push("Venta física registrada con Escáner POS Móvil");
+      }
+      if (sale.couponCode) {
+        notesParts.push(`[CUPON:${sale.couponCode}${sale.discountAmount ? ` - Descuento: $${sale.discountAmount}` : ''}]`);
+      }
+      const notes = notesParts.join(" | ");
+
+      const saleSubtotal = typeof sale.subtotal === "number" ? sale.subtotal : sale.total;
+      const saleTotal = typeof sale.total === "number" ? sale.total : saleSubtotal;
 
       const { data: order, error: orderErr } = await supabase
         .from("orders")
@@ -1577,8 +1587,8 @@ export async function POST(req: NextRequest) {
             client_email: resolvedClientEmail,
             shipping_type: "agreed_pickup",
             shipping_cost: 0,
-            subtotal: sale.total,
-            total: sale.total,
+            subtotal: saleSubtotal,
+            total: saleTotal,
             payment_method: sale.paymentMethod || "cash",
             payment_status: "paid",
             status: "delivered",
@@ -1646,6 +1656,45 @@ export async function POST(req: NextRequest) {
           }
         } catch (profErr) {
           console.warn("Nota: error acumulando puntos en perfil:", profErr);
+        }
+      }
+
+      // 6. Redención automática de cupón de campaña QR en venta física POS (Un solo uso -> Se desactiva y se vincula a esta orden)
+      if (sale.couponCode) {
+        try {
+          const cleanCoupon = String(sale.couponCode).trim().toUpperCase();
+          const { data: file } = await supabase.storage
+            .from("product-images")
+            .download("_system/marketing_campaigns.json");
+
+          if (file) {
+            const campaigns = JSON.parse((await file.text()) || "[]");
+            let modified = false;
+
+            for (const camp of campaigns) {
+              if (!Array.isArray(camp.coupons)) continue;
+              const targetCoupon = camp.coupons.find((c: any) => c.code === cleanCoupon);
+              if (targetCoupon && !targetCoupon.redeemed) {
+                targetCoupon.redeemed = true;
+                targetCoupon.redeemedAt = new Date().toISOString();
+                targetCoupon.orderNumber = orderNumber;
+                targetCoupon.isActive = false; // Se quema / desactiva inmediatamente
+                camp.updatedAt = new Date().toISOString();
+                modified = true;
+                break;
+              }
+            }
+
+            if (modified) {
+              const buffer = Buffer.from(JSON.stringify(campaigns, null, 2));
+              await supabase.storage.from("product-images").upload("_system/marketing_campaigns.json", buffer, {
+                contentType: "application/json",
+                upsert: true,
+              });
+            }
+          }
+        } catch (couponRedeemErr) {
+          console.warn("Aviso procesando redención de cupón en venta POS:", couponRedeemErr);
         }
       }
 

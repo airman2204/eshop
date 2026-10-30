@@ -11,6 +11,9 @@ export interface TicketRenderData {
     price?: number;
     quantity: number;
   }>;
+  subtotal?: number;
+  discountAmount?: number;
+  couponCode?: string;
   total: number;
   paymentMethod: string;
   clientPhone?: string;
@@ -35,7 +38,8 @@ export async function generateTicketCanvasDataUrl(ticket: TicketRenderData): Pro
       const logicalWidth = 600;
       const items = ticket.items || [];
       const itemsHeight = Math.max(60, items.length * 38);
-      const logicalHeight = 690 + itemsHeight;
+      const discountHeight = ticket.discountAmount && ticket.discountAmount > 0 ? 55 : 0;
+      const logicalHeight = 690 + itemsHeight + discountHeight;
 
       const canvas = document.createElement('canvas');
       canvas.width = logicalWidth * scale;
@@ -215,8 +219,32 @@ export async function generateTicketCanvasDataUrl(ticket: TicketRenderData): Pro
           ctx.lineTo(rightX, currentY);
           ctx.stroke();
 
-          // 10. Método de Pago
-          currentY += 30;
+          // 10. Desglose Económico (Subtotal, Descuento y Método de Pago)
+          if (ticket.discountAmount && ticket.discountAmount > 0) {
+            currentY += 26;
+            ctx.fillStyle = '#64748B';
+            ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            ctx.fillText('SUBTOTAL ARTÍCULOS', leftX, currentY);
+
+            ctx.fillStyle = '#1E293B';
+            ctx.font = "bold 13px 'Courier New', monospace";
+            ctx.textAlign = 'right';
+            ctx.fillText(`$${Number(ticket.subtotal || (ticket.total + ticket.discountAmount)).toFixed(2)}`, rightX, currentY);
+            ctx.textAlign = 'left';
+
+            currentY += 24;
+            ctx.fillStyle = '#EA580C';
+            ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            ctx.fillText(`DESCUENTO QR (${ticket.couponCode || 'PROMO'})`, leftX, currentY);
+
+            ctx.fillStyle = '#EA580C';
+            ctx.font = "bold 13px 'Courier New', monospace";
+            ctx.textAlign = 'right';
+            ctx.fillText(`-$${Number(ticket.discountAmount).toFixed(2)}`, rightX, currentY);
+            ctx.textAlign = 'left';
+          }
+
+          currentY += 26;
           const methodMap: Record<string, string> = {
             cash: 'Efectivo',
             card: 'Tarjeta Débito/Crédito',

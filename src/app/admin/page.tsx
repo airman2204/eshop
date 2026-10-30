@@ -281,7 +281,7 @@ export default function AdminCRM() {
 
   // Escáner de Cámara Móvil (Códigos de barra / QR)
   const [showCameraScanner, setShowCameraScanner] = useState(false);
-  const [scannerContext, setScannerContext] = useState<'sku_input' | 'pos_sale'>('sku_input');
+  const [scannerContext, setScannerContext] = useState<'sku_input' | 'pos_sale' | 'pos_qr_discount'>('sku_input');
 
   // Sistema POS Móvil (Punto de Venta Físico para Celular)
   const [showPosModal, setShowPosModal] = useState(false);
@@ -292,9 +292,23 @@ export default function AdminCRM() {
   const [posProcessing, setPosProcessing] = useState(false);
   const [posSearchTerm, setPosSearchTerm] = useState('');
   const [posCategoryFilter, setPosCategoryFilter] = useState('all');
+
+  // Cupón / QR de Descuento aplicado en POS
+  const [posAppliedCoupon, setPosAppliedCoupon] = useState<{
+    code: string;
+    discountPercent: number;
+    campaignName?: string;
+  } | null>(null);
+  const [posCouponInput, setPosCouponInput] = useState('');
+  const [posCouponValidating, setPosCouponValidating] = useState(false);
+  const [posCouponFeedback, setPosCouponFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   const [posCompletedTicket, setPosCompletedTicket] = useState<{
     orderNumber: string;
     items: { product: Product; quantity: number }[];
+    subtotal?: number;
+    discountAmount?: number;
+    couponCode?: string;
     total: number;
     paymentMethod: 'cash' | 'card' | 'spei';
     clientPhone: string;
@@ -3497,6 +3511,53 @@ export default function AdminCRM() {
     await updateSpecialOrderStatus(id, newStatus);
   };
 
+  // Función para validar y aplicar cupón de campaña QR en el Punto de Venta (POS)
+  const handleValidateAndApplyPosCoupon = async (rawCode: string) => {
+    const cleanCode = (rawCode || '').trim();
+    if (!cleanCode) return;
+
+    setPosCouponValidating(true);
+    setPosCouponFeedback(null);
+
+    try {
+      const res = await fetch('/api/campaigns/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: cleanCode }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.valid) {
+        try { soundManager.triggerHaptic('success'); } catch {}
+        try { soundManager.playOrderCreated(); } catch {}
+        setPosAppliedCoupon({
+          code: data.code,
+          discountPercent: Number(data.discountPercent) || 10,
+          campaignName: data.campaignName || 'Campaña QR',
+        });
+        setPosCouponFeedback({
+          type: 'success',
+          message: `¡Cupón ${data.code} verificado! Se aplicará ${data.discountPercent}% OFF en el total.`,
+        });
+        setPosCouponInput('');
+      } else {
+        try { soundManager.triggerHaptic('heavy'); } catch {}
+        setPosCouponFeedback({
+          type: 'error',
+          message: data.message || `El código "${cleanCode}" no es válido o ya fue redimido.`,
+        });
+      }
+    } catch (err: any) {
+      console.error('Error validando QR en POS:', err);
+      setPosCouponFeedback({
+        type: 'error',
+        message: 'No se pudo conectar para verificar el QR. Revisa la conexión.',
+      });
+    } finally {
+      setPosCouponValidating(false);
+    }
+  };
+
   // Controlador de Escaneo con Cámara
   const handleBarcodeScanSuccess = (decodedText: string) => {
     setShowCameraScanner(false);
@@ -3509,7 +3570,16 @@ export default function AdminCRM() {
       if (matched && !newTitle) {
         setNewTitle(matched.title);
       }
+    } else if (scannerContext === 'pos_qr_discount') {
+      // Escaneo específico de QR de campaña promocional
+      handleValidateAndApplyPosCoupon(code);
     } else if (scannerContext === 'pos_sale') {
+      // Si el código escaneado coincide con un cupón o token promocional (ej. contiene promo=, HAL-, o FOX-)
+      if (code.includes('promo=') || code.startsWith('HAL-') || code.startsWith('FOX-') || code.includes('camp=')) {
+        handleValidateAndApplyPosCoupon(code);
+        return;
+      }
+
       // Buscar producto por SKU o ID o título
       const matched = products.find(
         p => p.sku.toLowerCase() === code.toLowerCase() || p.id === code
@@ -3518,7 +3588,8 @@ export default function AdminCRM() {
       if (matched) {
         handleAddToCartPos(matched);
       } else {
-        alert(`Código "${code}" no encontrado en el catálogo de FoxDrop. Verifica el inventario o agrégalo con el botón correspondiente.`);
+        // Si no coincide con SKU, intentar verificar si es un cupón/QR de descuento
+        handleValidateAndApplyPosCoupon(code);
       }
     }
   };
@@ -3563,7 +3634,11 @@ export default function AdminCRM() {
     });
   };
 
-  const posTotal = posCart.reduce((acc, item) => acc + (item.product.publicPrice * item.quantity), 0);
+  const posSubtotal = posCart.reduce((acc, item) => acc + (item.product.publicPrice * item.quantity), 0);
+  const posDiscountAmount = posAppliedCoupon 
+    ? Math.round((posSubtotal * posAppliedCoupon.discountPercent) / 100) 
+    : 0;
+  const posTotal = Math.max(0, posSubtotal - posDiscountAmount);
   const posPointsEarned = Math.floor(posTotal / (clubSettings.pesosPerPoint || 10));
 
   // Cliente detectado en tiempo real según el teléfono tecleado en el POS
@@ -3593,6 +3668,9 @@ export default function AdminCRM() {
         clientEmail: detectedEmail,
         userId: detectedUserId,
         items: posCart,
+        subtotal: posSubtotal,
+        discountAmount: posDiscountAmount,
+        couponCode: posAppliedCoupon?.code,
         total: posTotal,
         paymentMethod: posPaymentMethod,
       });
@@ -3623,6 +3701,9 @@ export default function AdminCRM() {
       const ticketData = {
         orderNumber: saleResult.orderNumber,
         items: [...posCart],
+        subtotal: posSubtotal,
+        discountAmount: posDiscountAmount,
+        couponCode: posAppliedCoupon?.code,
         total: posTotal,
         paymentMethod: posPaymentMethod,
         clientPhone: cleanPhone,
@@ -3690,10 +3771,13 @@ export default function AdminCRM() {
         }
       })();
 
-      // Limpiar carrito
+      // Limpiar carrito y cupón
       setPosCart([]);
       setPosClientPhone('');
       setPosClientName('');
+      setPosAppliedCoupon(null);
+      setPosCouponInput('');
+      setPosCouponFeedback(null);
       setShowPosModal(false);
     } catch (err) {
       console.error('Error al procesar venta física POS:', err);
@@ -12401,17 +12485,130 @@ ESTÉTICA Y CONCEPTO VISUAL:
                 </div>
               </div>
 
-              {/* Total y Puntos */}
-              <div className="bg-slate-900 text-white rounded-2xl p-4 flex items-center justify-between shadow-md">
-                <div>
-                  <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">
-                    Total a Cobrar
-                  </span>
-                  <span className="text-2xl font-black">${posTotal.toFixed(2)} MXN</span>
+              {/* Sección Cupón / QR Promocional */}
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-extrabold text-slate-900 text-[11px] flex items-center gap-1.5">
+                    <QrCode className="w-3.5 h-3.5 text-[#E65F2B]" />
+                    <span>¿El cliente tiene un QR o Código de Descuento?</span>
+                  </label>
+                  {posAppliedCoupon && (
+                    <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">
+                      ✓ {posAppliedCoupon.discountPercent}% OFF Aplicado
+                    </span>
+                  )}
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-orange-400 font-bold block">🦊 Puntos Club</span>
-                  <span className="text-base font-black text-white">+{posPointsEarned} pts</span>
+
+                {posAppliedCoupon ? (
+                  <div className="flex items-center justify-between bg-white border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        🎁
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-black text-xs text-slate-900">{posAppliedCoupon.code}</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+                            -{posAppliedCoupon.discountPercent}% OFF
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Descuento aplicado: <strong>-${posDiscountAmount.toFixed(2)} MXN</strong> ({posAppliedCoupon.campaignName})
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPosAppliedCoupon(null);
+                        setPosCouponFeedback(null);
+                      }}
+                      className="text-xs text-rose-600 hover:text-rose-800 font-bold underline px-2 py-1"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Ej. HAL-FOX-XXXX o pega URL de sticker"
+                        value={posCouponInput}
+                        onChange={e => setPosCouponInput(e.target.value.toUpperCase())}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleValidateAndApplyPosCoupon(posCouponInput);
+                          }
+                        }}
+                        className="flex-1 bg-white border border-amber-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:border-[#E65F2B]"
+                      />
+                      <button
+                        type="button"
+                        disabled={posCouponValidating || !posCouponInput.trim()}
+                        onClick={() => handleValidateAndApplyPosCoupon(posCouponInput)}
+                        className="bg-[#E65F2B] hover:bg-[#d44e1d] disabled:bg-slate-300 text-white font-bold px-3 py-2 rounded-xl text-xs transition cursor-pointer flex items-center gap-1 shrink-0"
+                      >
+                        {posCouponValidating ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <span>Aplicar</span>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setScannerContext('pos_qr_discount');
+                          setShowCameraScanner(true);
+                        }}
+                        className="bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0"
+                        title="Escanear QR de Descuento con Cámara"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-amber-300" />
+                        <span className="hidden xxs:inline">Escanear</span>
+                      </button>
+                    </div>
+
+                    {posCouponFeedback && (
+                      <p className={`text-[11px] font-bold p-2 rounded-xl flex items-center gap-1.5 ${
+                        posCouponFeedback.type === 'success' 
+                          ? 'bg-emerald-100/90 text-emerald-900 border border-emerald-300' 
+                          : 'bg-rose-100/90 text-rose-900 border border-rose-300'
+                      }`}>
+                        <span>{posCouponFeedback.type === 'success' ? '✓' : '⚠️'}</span>
+                        <span>{posCouponFeedback.message}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Total y Puntos */}
+              <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md space-y-2">
+                {posDiscountAmount > 0 && (
+                  <div className="flex justify-between items-center text-xs pb-2 border-b border-white/10 text-slate-300 font-medium">
+                    <span>Subtotal Artículos:</span>
+                    <span className="font-mono">${posSubtotal.toFixed(2)} MXN</span>
+                  </div>
+                )}
+                {posDiscountAmount > 0 && (
+                  <div className="flex justify-between items-center text-xs pb-2 border-b border-white/10 text-amber-300 font-bold">
+                    <span>Descuento QR ({posAppliedCoupon?.code}):</span>
+                    <span className="font-mono">-${posDiscountAmount.toFixed(2)} MXN</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">
+                      Total a Cobrar
+                    </span>
+                    <span className="text-2xl font-black text-amber-400 font-mono">${posTotal.toFixed(2)} MXN</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-orange-400 font-bold block">🦊 Puntos Club</span>
+                    <span className="text-base font-black text-white">+{posPointsEarned} pts</span>
+                  </div>
                 </div>
               </div>
 
@@ -12526,6 +12723,20 @@ ESTÉTICA Y CONCEPTO VISUAL:
 
                   {/* Subtotales y Total */}
                   <div className="border-t-2 border-slate-200 pt-2 space-y-1">
+                    {posCompletedTicket.discountAmount && posCompletedTicket.discountAmount > 0 && (
+                      <>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-500 font-medium">Subtotal:</span>
+                          <span className="font-semibold text-slate-800">
+                            ${(posCompletedTicket.subtotal || (posCompletedTicket.total + posCompletedTicket.discountAmount)).toFixed(2)} MXN
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-[#E65F2B] font-bold">
+                          <span>Descuento QR ({posCompletedTicket.couponCode}):</span>
+                          <span>-${posCompletedTicket.discountAmount.toFixed(2)} MXN</span>
+                        </div>
+                      </>
+                    )}
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-medium">Método de pago:</span>
                       <span className="font-bold text-slate-800 capitalize">
