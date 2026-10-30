@@ -5372,10 +5372,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </th>
                       <th className="py-3 px-4 text-emerald-600 font-black min-w-[110px]">Precio Venta</th>
                       <th className="py-3 px-4 text-emerald-700 min-w-[90px]">Utilidad</th>
-                      <th className="py-3 px-4 text-center min-w-[130px]">
+                      <th className="py-3 px-2 text-center w-[145px] min-w-[145px]">
                         {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
                       </th>
-                      <th className="py-3 px-4 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[210px] z-10">Estado & Acciones</th>
+                      <th className="py-3 px-3 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[215px] w-[215px] z-20">Estado & Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -5632,7 +5632,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
                           
                           {/* CONTROL RÁPIDO DE STOCK (+ / -) */}
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3 px-2 text-center w-[145px] min-w-[145px]">
                             <div className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 shadow-2xs">
                               <button
                                 onClick={() => handleQuickStockAdjust(p, -1)}
@@ -5670,7 +5670,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           </td>
 
                           {/* ESTADO EN TIENDA Y ACCIONES (BOTONES APILADOS VERTICALMENTE) */}
-                          <td className="py-2.5 px-3 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/90 shadow-md z-10 min-w-[210px]">
+                          <td className="py-2 px-3 text-right sticky right-0 bg-white group-hover:bg-slate-50 border-l border-slate-200/90 shadow-md z-20 min-w-[215px] w-[215px]">
                             <div className="flex items-center justify-end gap-2.5">
                               {/* Botones principales apilados verticalmente (uno arriba del otro) */}
                               <div className="flex flex-col items-end gap-1">
