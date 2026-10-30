@@ -87,6 +87,29 @@ Responde ÚNICAMENTE en JSON con este formato:
   };
 }
 
+// Helper para traducir rápidamente lote de títulos japoneses a español en la vista previa
+async function quickTranslateTitles(titles: string[]): Promise<string[]> {
+  if (!titles || titles.length === 0) return [];
+  try {
+    const joined = titles.join(' ===###=== ');
+    const res = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=es&dt=t&q=' + encodeURIComponent(joined), {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      cache: 'force-cache'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const full = data[0].map((s: any) => s[0]).join('');
+      const splitted = full.split(' ===###=== ').map((s: string) => s.trim());
+      if (splitted.length === titles.length) {
+        return splitted;
+      }
+    }
+  } catch (e) {
+    console.warn("Fallo traducción rápida de títulos:", e);
+  }
+  return titles;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // GET: Buscar productos en Rakuten Ichiba Japón en vivo
 // ──────────────────────────────────────────────────────────────────────────────
@@ -146,6 +169,7 @@ export async function GET(req: NextRequest) {
       return {
         itemCode: item.itemCode,
         itemName: item.itemName,
+        itemNameEs: item.itemName, // Se llenará con la traducción rápida
         catchcopy: item.catchcopy || "",
         caption: item.itemCaption || "",
         priceJpy,
@@ -162,6 +186,13 @@ export async function GET(req: NextRequest) {
         reviewAverage: item.reviewAverage || 0,
         reviewCount: item.reviewCount || 0,
       };
+    });
+
+    // Traducir títulos automáticamente a español para la vista del catálogo
+    const titlesToTranslate = items.map((it: any) => it.itemName);
+    const translatedTitles = await quickTranslateTitles(titlesToTranslate);
+    items.forEach((it: any, idx: number) => {
+      it.itemNameEs = translatedTitles[idx] || it.itemName;
     });
 
     return NextResponse.json({

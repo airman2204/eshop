@@ -26,6 +26,7 @@ import { Product } from '@/types';
 interface RakutenItem {
   itemCode: string;
   itemName: string;
+  itemNameEs?: string;
   catchcopy: string;
   caption: string;
   priceJpy: number;
@@ -47,6 +48,20 @@ interface Props {
   existingProducts?: Product[];
   onProductImported?: () => void;
 }
+
+const getSafeJapanImageUrl = (url: string | undefined): string => {
+  if (!url || typeof url !== 'string' || !url.trim()) return '/no-image.svg';
+  let clean = url.trim();
+  if (clean.startsWith('/api/whatsapp/image-proxy') || clean.startsWith('data:') || clean.startsWith('/')) return clean;
+  if (clean.startsWith('//')) clean = 'https:' + clean;
+  if (!clean.startsWith('http')) return '/no-image.svg';
+  // Redimensionar imagen de Rakuten a 500x500 si tiene _ex=
+  if (clean.includes('_ex=')) {
+    clean = clean.replace(/_ex=\d+x\d+/, '_ex=500x500');
+  }
+  // Pasar por proxy para garantizar que ningún navegador ni política de referer la bloquee
+  return `/api/whatsapp/image-proxy?url=${encodeURIComponent(clean)}`;
+};
 
 const QUICK_JAPAN_TAGS = [
   { label: '🔥 Pokémon TCG & Merch', query: 'pokemon card box' },
@@ -323,8 +338,8 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   {/* FOTO DEL PRODUCTO */}
                   <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 p-2 overflow-hidden flex items-center justify-center">
                     <img
-                      src={item.images[0] || '/no-image.svg'}
-                      alt={item.itemName}
+                      src={getSafeJapanImageUrl(item.images[0])}
+                      alt={item.itemNameEs || item.itemName}
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
                     />
@@ -341,7 +356,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                   {/* INFO */}
                   <div className="p-3">
                     <h3 className="font-bold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-red-500 transition" title={item.itemName}>
-                      {item.itemName}
+                      {item.itemNameEs || item.itemName}
                     </h3>
                     <p className="text-[10px] text-slate-400 mt-1 truncate">
                       🏪 {item.shopName}
@@ -466,7 +481,7 @@ export default function AdminJapanTab({ existingProducts = [], onProductImported
                               isSel ? 'border-red-500 shadow-md' : 'border-transparent opacity-50'
                             }`}
                           >
-                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <img src={getSafeJapanImageUrl(img)} alt="" className="w-full h-full object-cover" />
                             {isSel && (
                               <div className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5">
                                 <Check className="w-2.5 h-2.5" />
