@@ -2359,8 +2359,15 @@ export default function AdminCRM() {
 
   const costMxn = costInputMode === 'mxn' ? newCostMxnDirect : (newCostUsd * usdRate);
   const calculatedCostUsd = costInputMode === 'mxn' ? (usdRate > 0 ? (newCostMxnDirect / usdRate) : 0) : newCostUsd;
-  const shippingPerUnit = isEditingCjProduct ? 0 : (currentBatch.costPerUnit || 20.0);
+  const isLote3Modal = Boolean(currentBatch.batchName && currentBatch.batchName.includes('Lote 3'));
+  const autoDetectedFreightRule = isLote3Modal ? detectFreightCategory(newTitle, newDescription) : null;
+  const activeFreightRule = isLote3Modal
+    ? (selectedFreightRuleKey === 'auto' ? autoDetectedFreightRule : LOTE3_FREIGHT_RULES.find(r => r.key === selectedFreightRuleKey) || null)
+    : null;
+  const dynamicLote3Freight = activeFreightRule ? activeFreightRule.allocatedFreightMxn : currentBatch.costPerUnit;
+  const shippingPerUnit = isEditingCjProduct ? 0 : (isLote3Modal ? dynamicLote3Freight : (currentBatch.costPerUnit || 20.0));
   const totalCostUnitMxn = costMxn + shippingPerUnit;
+  const smartPricing = calculateSmartPrices(costMxn, activeFreightRule, currentBatch.costPerUnit);
   const profitUnit = newPublicPrice - totalCostUnitMxn;
   const marginPercent = newPublicPrice > 0 ? (profitUnit / newPublicPrice) * 100 : 0;
 
@@ -2595,6 +2602,12 @@ export default function AdminCRM() {
       if (prod.batchId) {
         setSelectedBatchId(prod.batchId);
         assignedBatch = batches.find(b => b.id === prod.batchId);
+      } else if (prod.createdAt && prod.createdAt.startsWith('2026-10-16')) {
+        const b3 = batches.find(b => b.batchName.includes('Lote 3') || b.id === '035be417-f02a-4bb5-8958-41d177e21714');
+        if (b3) {
+          setSelectedBatchId(b3.id);
+          assignedBatch = b3;
+        }
       } else {
         const matchedBatch = batches.find(b => Math.abs(b.costPerUnit - (prod.shippingCostAllocated || 0)) < 0.05);
         if (matchedBatch) {
@@ -2602,6 +2615,7 @@ export default function AdminCRM() {
           assignedBatch = matchedBatch;
         }
       }
+      setSelectedFreightRuleKey('auto');
     }
 
     // Calcular qué porcentaje de incremento tiene ya aplicado este producto existente
@@ -10926,6 +10940,25 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       </div>
                     </div>
                   </div>
+                )}
+
+                {/* ASISTENTE INTELIGENTE DE PRECIOS Y COMPARATIVA DE MERCADO EN MÉXICO (LOTE 3 Y BOUTIQUE) */}
+                {!isEditingCjProduct && (
+                  <SmartPricingHelper
+                    isLote3Selected={isLote3Modal}
+                    activeFreightRule={activeFreightRule}
+                    autoDetectedRule={autoDetectedFreightRule}
+                    selectedFreightRuleKey={selectedFreightRuleKey}
+                    onSelectFreightRuleKey={(k) => setSelectedFreightRuleKey(k)}
+                    smartPricing={smartPricing}
+                    newPublicPrice={newPublicPrice}
+                    onApplyPrice={(price, markupPct) => {
+                      setNewPublicPrice(price);
+                      setPriceMarkupPercent(markupPct);
+                    }}
+                    shippingPerUnit={shippingPerUnit}
+                    currentBatchCostPerUnit={currentBatch.costPerUnit}
+                  />
                 )}
 
                 {/* 4. Costo y Precio de Venta: Diferenciado entre Catálogo Internacional CJ (3 Niveles) vs Boutique (Slider 100%-190%) */}
