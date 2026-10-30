@@ -1090,14 +1090,33 @@ ${storeContext}`;
 
     // ── 7. CAMBIAR MODO DEL AGENTE EN UN CHAT (HÍBRIDO / MANUAL) ──
     if (action === "toggle_chat_agent_mode") {
-      const { chatId, agentMode } = body; // 'agent' | 'manual'
-      if (!chatId) return NextResponse.json({ error: "chatId requerido" }, { status: 400 });
+      const { chatId, phone, agentMode } = body; // 'agent' | 'manual'
+      if (!chatId && !phone) return NextResponse.json({ error: "chatId o phone requerido" }, { status: 400 });
 
-      const { data: chatRow } = await supabase
-        .from("whatsapp_chats")
-        .select("notes")
-        .eq("id", chatId)
-        .maybeSingle();
+      let targetId = chatId;
+      let chatRow: any = null;
+
+      if (targetId && !targetId.startsWith("temp-")) {
+        const { data } = await supabase
+          .from("whatsapp_chats")
+          .select("id, notes")
+          .eq("id", targetId)
+          .maybeSingle();
+        chatRow = data;
+      }
+
+      if (!chatRow && phone) {
+        const cleanPhone = phone.replace(/\D/g, "");
+        const { data } = await supabase
+          .from("whatsapp_chats")
+          .select("id, notes")
+          .or(`phone.eq.${cleanPhone},phone.eq.+${cleanPhone}`)
+          .maybeSingle();
+        chatRow = data;
+        if (chatRow) {
+          targetId = chatRow.id;
+        }
+      }
 
       let notesObj: any = {};
       try {
@@ -1109,15 +1128,29 @@ ${storeContext}`;
       // a menos que el usuario vuelva a presionar 'Agente'
       delete notesObj.manualUntil;
 
-      await supabase
-        .from("whatsapp_chats")
-        .update({
-          notes: JSON.stringify(notesObj),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", chatId);
+      if (chatRow?.id) {
+        await supabase
+          .from("whatsapp_chats")
+          .update({
+            notes: JSON.stringify(notesObj),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", chatRow.id);
+      } else if (phone) {
+        // Si no existía el registro de chat todavía, lo insertamos con el modo deseado
+        const cleanPhone = phone.replace(/\D/g, "");
+        await supabase
+          .from("whatsapp_chats")
+          .insert({
+            phone: cleanPhone,
+            notes: JSON.stringify(notesObj),
+            status: "active",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+      }
 
-      return NextResponse.json({ success: true, agentMode });
+      return NextResponse.json({ success: true, agentMode, targetId });
     }
 
     // ── 8. HISTORIAL CENTRALIZADO DE CONVERSACIÓN FOXBOT (SINCRONIZADO EN LA NUBE) ──

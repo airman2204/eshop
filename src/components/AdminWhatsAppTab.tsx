@@ -16,6 +16,7 @@ import {
   getWhatsAppChats, getWhatsAppMessages, sendWhatsAppMessageFromAdmin, 
   markChatAsRead 
 } from '@/lib/whatsappChat';
+import { fetchAgentApi } from '@/lib/adminAuth';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { soundManager } from '@/lib/sounds';
 import { FOX_LOGO_BASE64 } from '@/data/foxLogoBase64';
@@ -386,13 +387,10 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     setShowImportRadarModal(true);
     setLoadingImportRadar(true);
     try {
-      const res = await fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'extract_chat_import_requests',
-          chatId: activeChat.id,
-        }),
+      const res = await fetchAgentApi({
+        action: 'extract_chat_import_requests',
+        chatId: activeChat.id,
+        phone: activeChat.phone,
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.items)) {
@@ -444,15 +442,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     // Cargar sugerencias de respuesta rápida del Agente si hay un último mensaje
     if (chat.lastMessage) {
       setLoadingSuggestions(true);
-      fetch('/api/admin/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'quick_reply_suggestions',
-          phone: chat.phone,
-          clientName: chat.clientName,
-          lastMessage: chat.lastMessage,
-        }),
+      fetchAgentApi({
+        action: 'quick_reply_suggestions',
+        phone: chat.phone,
+        clientName: chat.clientName,
+        lastMessage: chat.lastMessage,
       })
         .then(r => r.json())
         .then(d => {
@@ -1260,14 +1254,11 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                   const newMode = chatAgentMode === 'agent' ? 'manual' : 'agent';
                   setTogglingAgent(true);
                   try {
-                    const res = await fetch('/api/admin/agent', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        action: 'toggle_chat_agent_mode',
-                        chatId: activeChat.id,
-                        agentMode: newMode,
-                      }),
+                    const res = await fetchAgentApi({
+                      action: 'toggle_chat_agent_mode',
+                      chatId: activeChat.id,
+                      phone: activeChat.phone,
+                      agentMode: newMode,
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -1281,9 +1272,13 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
                         } catch {}
                       }
                       try { soundManager.triggerHaptic('light'); } catch {}
+                    } else {
+                      console.error('Error al cambiar modo:', data.error);
+                      alert(data.error || 'No se pudo cambiar el modo');
                     }
-                  } catch (err) {
+                  } catch (err: any) {
                     console.error('Error:', err);
+                    alert('Error de conexión al cambiar el modo: ' + (err.message || 'Error'));
                   } finally {
                     setTogglingAgent(false);
                   }
