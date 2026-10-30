@@ -4,16 +4,24 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
   shippingMethods: [
     {
       id: 'pickup',
-      name: 'Acordar con el vendedor (Entrega Personal)',
-      description: 'Punto de encuentro personal o coordinar por WhatsApp (Sin costo)',
+      name: 'Entrega Personal en Punto de Encuentro (Sin costo)',
+      description: 'Zerezotla, Plaza San Diego, Centro San Pedro o Centro San Andrés Cholula',
       price: 0,
       requiresAddress: false,
       enabled: true,
     },
     {
+      id: 'local_cholula_near',
+      name: 'Envío Local Express Cholula & Alrededores',
+      description: 'Entrega directa a domicilio en zona Cholula y cercanías',
+      price: 30,
+      requiresAddress: true,
+      enabled: true,
+    },
+    {
       id: 'local_puebla',
-      name: 'Envío Local Directo',
-      description: 'Entrega por mensajería local express a domicilio',
+      name: 'Envío Local Puebla Metropolitana',
+      description: 'Entrega por mensajería local express a domicilio en área urbana de Puebla',
       price: 50,
       requiresAddress: true,
       enabled: true,
@@ -21,7 +29,7 @@ export const DEFAULT_CHECKOUT_SETTINGS: CheckoutSettings = {
     {
       id: 'national',
       name: 'Envío Nacional por Paquetería',
-      description: 'Guía de rastreo nacional a cualquier estado de la República (FedEx/Estafeta/DHL)',
+      description: 'Guía de rastreo nacional FedEx / Paquetexpress / Estafeta con Skydropx',
       price: 140,
       requiresAddress: true,
       enabled: true,

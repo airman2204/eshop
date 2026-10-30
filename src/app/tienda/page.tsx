@@ -15,6 +15,7 @@ import {
 import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig } from '@/types';
 import GoogleAddressInput from '@/components/GoogleAddressInput';
 import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
+import { OFFICIAL_PICKUP_POINTS, PickupPoint, assessShippingByAddress } from '@/lib/shippingRules';
 import { getActiveProducts, getClientBootstrap, subscribeToProductsChange } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
@@ -956,6 +957,7 @@ export default function TiendaFoxDrop() {
   const [checkoutStep, setCheckoutStep] = useState<'cart' | 'shipping' | 'payment' | 'success'>('cart');
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(DEFAULT_CHECKOUT_SETTINGS);
   const [selectedShippingId, setSelectedShippingId] = useState<string>('pickup');
+  const [selectedPickupPointId, setSelectedPickupPointId] = useState<string>('plaza_san_diego');
   const [shippingAddress, setShippingAddress] = useState({ street: '', zip: '', city: '', colonia: '', state: '' });
   const [selectedAddressId, setSelectedAddressId] = useState<string>('default');
   const [useNewAddress, setUseNewAddress] = useState(false);
@@ -1932,9 +1934,9 @@ export default function TiendaFoxDrop() {
         total: cartTotal,
         paymentMethod: paymentMethod === 'cash' ? 'cash' : (paymentMethod === 'mercadopago' ? 'mercadopago' : 'spei'),
         shippingAddress: isPersonalDelivery ? {
-          street: 'Entrega personal / Acordar con vendedor',
-          zip: shippingAddress.zip || '',
-          city: shippingAddress.city || '',
+          street: `Entrega personal en: ${OFFICIAL_PICKUP_POINTS.find(p => p.id === selectedPickupPointId)?.name || 'Punto Oficial Cholula'}`,
+          zip: shippingAddress.zip || '72760',
+          city: 'San Pedro Cholula',
         } : {
           street: `${shippingAddress.street}${shippingAddress.colonia ? ', ' + shippingAddress.colonia : ''}`,
           zip: shippingAddress.zip,
@@ -1974,8 +1976,9 @@ export default function TiendaFoxDrop() {
               clientName: user?.name || "Cliente",
               clientPhone: user?.phone,
               total: cartTotal,
-              shippingType: isPersonalDelivery ? "agreed_pickup" : (cartHasImportItems ? "international_shipping" : "puebla_local"),
-              pickupPoint: isPersonalDelivery ? "Entrega personal / Acordar punto" : `${shippingAddress.street}, ${shippingAddress.city}`,
+              shippingType: isPersonalDelivery ? "agreed_pickup" : (cartHasImportItems ? "international_shipping" : (selectedShippingId === 'national' ? 'national_shipping' : "puebla_local")),
+              pickupPoint: isPersonalDelivery ? (OFFICIAL_PICKUP_POINTS.find(p => p.id === selectedPickupPointId)?.name || "Punto Oficial Cholula") : `${shippingAddress.street}, ${shippingAddress.city}`,
+              pickupUrl: isPersonalDelivery ? (OFFICIAL_PICKUP_POINTS.find(p => p.id === selectedPickupPointId)?.googleMapsUrl) : undefined,
             }),
           }).catch(err => console.warn("WhatsApp notification error:", err));
         }
@@ -5078,14 +5081,58 @@ export default function TiendaFoxDrop() {
 
                 {/* Formulario de Dirección Física (Siempre obligatorio para Importación Directa, opcional para boutique según método) */}
                 {(!cartHasImportItems && isPersonalDelivery) ? (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-emerald-900 space-y-1.5">
-                    <div className="flex items-center gap-2 font-black text-sm text-emerald-800">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      <span>Entrega personal o a acordar seleccionada</span>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5 text-emerald-900 space-y-4">
+                    <div className="flex items-center gap-2 font-black text-sm text-emerald-900">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span>Selecciona tu Punto Oficial de Entrega Gratuita</span>
                     </div>
-                    <p className="text-xs text-emerald-700 leading-relaxed">
-                      No es necesario ingresar dirección física en este momento. Al confirmar la compra, coordinaremos el punto de encuentro o detalles de entrega directamente por WhatsApp con el equipo FoxDrop.
+                    <p className="text-xs text-emerald-800 leading-relaxed">
+                      Elige el lugar de encuentro que más te convenga. Al confirmar tu compra, te enviaremos por WhatsApp la ubicación de Google Maps y confirmaremos el horario exacto:
                     </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      {OFFICIAL_PICKUP_POINTS.map((pt) => {
+                        const isPicked = selectedPickupPointId === pt.id;
+                        return (
+                          <div
+                            key={pt.id}
+                            onClick={() => setSelectedPickupPointId(pt.id)}
+                            className={`p-3.5 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                              isPicked
+                                ? 'bg-white border-emerald-600 shadow-sm ring-2 ring-emerald-200'
+                                : 'bg-emerald-50/60 border-emerald-200 hover:bg-white hover:border-emerald-400'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                  isPicked ? 'border-emerald-600 bg-emerald-600' : 'border-emerald-400'
+                                }`}>
+                                  {isPicked && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                                </div>
+                                <span className="font-extrabold text-xs text-slate-900">{pt.shortName}</span>
+                              </div>
+                              <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                ¡Sin Costo!
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-2 pl-6">
+                              📍 {pt.reference}
+                            </p>
+                            <a
+                              href={pt.googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline mt-2 pl-6 self-start"
+                            >
+                              <span>Ver en Google Maps</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4 pt-2 border-t border-gray-100">
@@ -5160,6 +5207,22 @@ export default function TiendaFoxDrop() {
                             });
                             if (parsed.street && parsed.zip) {
                               setAddressError(null);
+                            }
+
+                            // Ajuste reactivo e inteligente de método de envío según Código Postal y Estado
+                            if (parsed.zip && parsed.zip.length === 5 && selectedShippingId !== 'pickup') {
+                              const assessed = assessShippingByAddress({
+                                zip: parsed.zip,
+                                state: parsed.state,
+                              });
+
+                              if (assessed.tier === 'local_near') {
+                                setSelectedShippingId('local_cholula_near');
+                              } else if (assessed.tier === 'local_metro') {
+                                setSelectedShippingId('local_puebla');
+                              } else if (assessed.tier === 'national') {
+                                setSelectedShippingId('national');
+                              }
                             }
                           }}
                         />
