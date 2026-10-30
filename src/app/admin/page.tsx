@@ -5383,7 +5383,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           )}
                         </button>
                       </th>
-                      <th className="py-3 px-4 min-w-[220px]">Artículo</th>
+                      <th className="py-3 px-4 min-w-[320px]">Artículo</th>
                       <th className="py-3 px-4 min-w-[130px]">
                         {inventoryScope === 'cj_international' ? 'Origen / Opciones' : 'Lote / Flete'}
                       </th>
@@ -5451,7 +5451,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-bold text-slate-900 truncate max-w-[200px]">{p.title}</span>
+                                  <span className="font-bold text-slate-900 leading-snug break-words max-w-[340px]" title={p.title}>{p.title}</span>
                                   {p.isCombo && (
                                     <span className="bg-purple-100 text-purple-800 text-[9px] font-black px-1.5 py-0.2 rounded-full border border-purple-200">
                                       COMBO
