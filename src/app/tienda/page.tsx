@@ -3355,13 +3355,13 @@ export default function TiendaFoxDrop() {
                   className="text-xs font-bold text-[#E65F2B] hover:text-[#c44a1b] flex items-center gap-1 cursor-pointer w-fit"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span>Mostrar todo ({visibleProducts.filter(p => (p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')).length})</span>
+                  <span>Mostrar todo</span>
                 </button>
               )}
             </div>
 
             {/* Píldoras de colecciones estilo TJ Maxx / Sephora */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 overscroll-x-contain touch-pan-x">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               {[
                 { id: 'all', label: 'Todo el Catálogo', icon: '✨' },
                 { id: 'holiday', label: 'Especial Navideño', icon: '🎄', special: true },
