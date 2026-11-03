@@ -135,7 +135,7 @@ export default function TiendaFoxDrop() {
     }
   }, [searchTerm]);
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [selectedBrand, setSelectedBrand] = useState('Todas');
+  const [selectedBrand, setSelectedBrand] = useState('Bath & Body Works');
   const [bbwCollection, setBbwCollection] = useState<'all' | 'holiday' | 'car' | 'candles_home' | 'bodycare' | 'pocketbac' | 'fall'>('all');
   const [storeBrands, setStoreBrands] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -1178,10 +1178,12 @@ export default function TiendaFoxDrop() {
     const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
 
-    // Filtro especial para categoría 'Internacional'
+    // Aislamiento de productos internacionales: solo visibles si se entra a la sección 'Internacional'
+    const isImport = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
     if (selectedCategory === 'Internacional') {
-      const isImport = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
       if (!isImport) return false;
+    } else {
+      if (isImport) return false;
     }
 
     // Filtro por Sub-Colecciones de Bath & Body Works
@@ -2769,28 +2771,29 @@ export default function TiendaFoxDrop() {
         <div className="border-t border-white/10 bg-[#0B332C]/40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start md:justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
             
-            {/* CATÁLOGO COMPLETO */}
+            {/* BOTÓN DESTACADO BATH & BODY WORKS (BODEGA DISPONIBLE) */}
             <button
               type="button"
               onClick={() => {
-                setActiveTab('all');
+                setSelectedBrand('Bath & Body Works');
                 setSelectedCategory('Todas');
-                setSelectedBrand('Todas');
                 setBbwCollection('all');
+                setActiveTab('all');
                 if (currentView === 'account') setCurrentView('store');
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition shrink-0 cursor-pointer font-black ${
-                activeTab === 'all' && selectedCategory === 'Todas' && selectedBrand === 'Todas'
-                  ? 'text-white underline underline-offset-4 decoration-2 decoration-[#DF7F2D]'
-                  : 'text-white/80 hover:text-white'
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
+                selectedBrand === 'Bath & Body Works' && bbwCollection === 'all'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#0F3E36] shadow-md ring-2 ring-amber-300'
+                  : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
               }`}
             >
-              Catálogo Completo
+              <span>🌸</span>
+              <span>Bath & Body Works</span>
             </button>
 
-            {/* MÁS VENDIDOS & NAVIDAD */}
+            {/* ESPECIAL NAVIDEÑO */}
             <button
               type="button"
               onClick={() => {
@@ -2802,7 +2805,7 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition shrink-0 cursor-pointer flex items-center gap-1 px-3 py-1 rounded-full font-black text-xs sm:text-[13px] ${
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                 selectedBrand === 'Bath & Body Works' && bbwCollection === 'holiday'
                   ? 'bg-gradient-to-r from-red-600 via-emerald-700 to-red-600 text-white shadow-md ring-2 ring-amber-300'
                   : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
@@ -2812,29 +2815,7 @@ export default function TiendaFoxDrop() {
               <span>Especial Navideño</span>
             </button>
 
-            {/* BOTÓN DESTACADO BATH & BODY WORKS */}
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedBrand('Bath & Body Works');
-                setSelectedCategory('Todas');
-                setBbwCollection('all');
-                setActiveTab('all');
-                if (currentView === 'account') setCurrentView('store');
-                const el = document.getElementById('catalog-section');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs sm:text-[13px] ${
-                selectedBrand === 'Bath & Body Works'
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#0F3E36] shadow-md ring-2 ring-amber-300'
-                  : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
-              }`}
-            >
-              <span>🌸</span>
-              <span>Bath & Body Works</span>
-            </button>
-
-            {/* BOTÓN CATÁLOGO INTERNACIONAL */}
+            {/* CATÁLOGO INTERNACIONAL */}
             <button
               type="button"
               onClick={() => {
@@ -2846,14 +2827,14 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs sm:text-[13px] ${
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                 selectedCategory === 'Internacional' && selectedBrand === 'Todas'
                   ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-300'
                   : 'bg-white/10 text-indigo-200 hover:bg-white/20 hover:text-white border border-indigo-300/30'
               }`}
             >
               <span>✈️</span>
-              <span>Internacional</span>
+              <span>FoxDrop Internacional</span>
             </button>
 
             {/* SECCIÓN TRENDING / MÁS VENDIDO */}
@@ -3235,40 +3216,35 @@ export default function TiendaFoxDrop() {
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
               <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
-                {selectedBrand === 'Bath & Body Works'
-                  ? (bbwCollection === 'holiday' ? '🎄 Especial Navideño Bath & Body Works' : 'Colecciones Bath & Body Works')
-                  : selectedCategory === 'Internacional'
-                  ? '✈️ Catálogo FoxDrop Internacional (Directo a Domicilio)'
-                  : activeTab === 'deals'
-                  ? 'Ofertas & Descuentos Activos 🔥'
-                  : '🔥 Favoritos de Temporada & Piezas Únicas en Bodega'
+                {selectedCategory === 'Internacional'
+                  ? 'FoxDrop Internacional • Envíos de Fábrica a Domicilio'
+                  : bbwCollection === 'holiday'
+                  ? 'Especial Navideño • Bath & Body Works'
+                  : bbwCollection === 'car'
+                  ? 'Auto & Difusores • Bath & Body Works'
+                  : bbwCollection === 'candles_home'
+                  ? 'Velas Aromáticas & Wallflowers • Bath & Body Works'
+                  : bbwCollection === 'bodycare'
+                  ? 'Cuidado Corporal & Jabones • Bath & Body Works'
+                  : bbwCollection === 'pocketbac'
+                  ? 'Geles PocketBac & Accesorios • Bath & Body Works'
+                  : bbwCollection === 'fall'
+                  ? 'Cosecha de Otoño • Bath & Body Works'
+                  : 'Catálogo Bath & Body Works'
                 }
               </h3>
             </div>
             <p className="text-xs text-gray-500 font-medium">
-              {selectedBrand === 'Bath & Body Works'
-                ? 'Aromas y piezas de edición especial para entrega hoy o mañana en Puebla y envíos a todo México.'
-                : 'Disponibilidad inmediata para entrega hoy o mañana en Puebla y envíos rápidos a todo México. ¡Piezas únicas limitadas!'}
+              {selectedCategory === 'Internacional'
+                ? 'Artículos exclusivos de importación con envío asegurado directo a tu domicilio.'
+                : 'Fragancias originales con garantía FoxDrop y envíos asegurados a toda la República Mexicana.'}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
             <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('all');
-                  setSelectedBrand('Todas');
-                  setSelectedCategory('Todas');
-                  setBbwCollection('all');
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'all' && selectedBrand === 'Todas' && selectedCategory === 'Todas' ? 'bg-[#0F3E36] text-white shadow-xs font-black' : 'hover:text-[#0F3E36]'
-                }`}
-              >
-                Todo el Catálogo
-              </button>
+              
               {dealsProducts.length > 0 && (
                 <button
                   type="button"
@@ -3329,18 +3305,7 @@ export default function TiendaFoxDrop() {
               </button>
             )}
 
-            {selectedBrand !== 'Todas' && (
-              <button
-                onClick={() => {
-                  setSelectedBrand('Todas');
-                  setBbwCollection('all');
-                }}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-lg transition border border-rose-200 flex items-center gap-1 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Ver todo el catálogo</span>
-              </button>
-            )}
+
           </div>
         </div>
 
