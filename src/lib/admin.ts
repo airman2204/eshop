@@ -532,7 +532,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   clearanceSubtitle: "En comparación con precios de tiendas departamentales y marketplaces",
   carouselIntervalSeconds: 8,
   adminDarkMode: false,
-  halloweenThemeEnabled: true,
+  halloweenThemeEnabled: false,
 };
 
 export async function getStoreSettings(): Promise<StoreSettings> {

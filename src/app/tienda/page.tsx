@@ -1178,6 +1178,12 @@ export default function TiendaFoxDrop() {
     const matchBrand = selectedBrand === 'Todas' || (p.brand || 'FoxDrop Oficial') === selectedBrand;
     const matchCat = selectedCategory === 'Todas' || normalizeSearchText(p.category || '') === normalizeSearchText(selectedCategory);
 
+    // Filtro especial para categoría 'Internacional'
+    if (selectedCategory === 'Internacional') {
+      const isImport = (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'));
+      if (!isImport) return false;
+    }
+
     // Filtro por Sub-Colecciones de Bath & Body Works
     let matchBbwCollection = true;
     if (selectedBrand === 'Bath & Body Works' && bbwCollection !== 'all') {
@@ -2782,77 +2788,6 @@ export default function TiendaFoxDrop() {
               Lo Nuevo
             </button>
 
-            {/* CATEGORÍAS POPULARES DE FOXDROP */}
-            {popularCategories.map((cat) => {
-              const isSelected = selectedCategory.trim().toLowerCase() === cat.name.trim().toLowerCase();
-              const isNavidad = cat.name.trim().toLowerCase() === 'navidad';
-
-              if (isNavidad) {
-                return (
-                  <button
-                    key={cat.name}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(cat.name);
-                      setActiveTab('all');
-                      if (currentView === 'account') setCurrentView('store');
-                      const el = document.getElementById('catalog-section');
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className={`relative shrink-0 cursor-pointer group px-3.5 py-1 rounded-full transition-all duration-300 flex items-center gap-2 ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-[#991B1B] via-[#14532D] to-[#991B1B] text-white ring-2 ring-amber-300 shadow-[0_0_16px_rgba(255,215,0,0.55)] scale-105'
-                        : 'bg-gradient-to-r from-[#7F1D1D]/90 via-[#0F3E36] to-[#7F1D1D]/90 text-amber-100 hover:text-white border border-amber-300/50 shadow-[0_0_12px_rgba(220,38,38,0.4)] hover:scale-105'
-                    }`}
-                  >
-                    {/* Guirnalda superior de foquitos navideños que prenden y apagan */}
-                    <span className="absolute -top-1.5 left-2 right-2 flex items-center justify-between pointer-events-none">
-                      <span className="w-2 h-2 rounded-full xmas-bulb-red" />
-                      <span className="w-2 h-2 rounded-full xmas-bulb-gold" />
-                      <span className="w-2 h-2 rounded-full xmas-bulb-green" />
-                      <span className="w-2 h-2 rounded-full xmas-bulb-blue" />
-                      <span className="w-2 h-2 rounded-full xmas-bulb-warm" />
-                      <span className="w-2 h-2 rounded-full xmas-bulb-red" />
-                    </span>
-                    {/* Guirnalda inferior de foquitos navideños */}
-                    <span className="absolute -bottom-1.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-green" />
-                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-warm" />
-                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-red" />
-                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-gold" />
-                      <span className="w-1.5 h-1.5 rounded-full xmas-bulb-blue" />
-                    </span>
-                    <span className="text-sm leading-none">🎄</span>
-                    <span className="font-black tracking-wide text-amber-200 group-hover:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] capitalize">
-                      {cat.name}
-                    </span>
-                    <span className="w-2 h-2 rounded-full xmas-bulb-gold" />
-                  </button>
-                );
-              }
-
-              return (
-                <button
-                  key={cat.name}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(cat.name);
-                    setActiveTab('all');
-                    if (currentView === 'account') setCurrentView('store');
-                    const el = document.getElementById('catalog-section');
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className={`transition shrink-0 cursor-pointer capitalize ${
-                    isSelected
-                      ? 'text-white underline underline-offset-4 decoration-2 decoration-[#DF7F2D] font-black'
-                      : 'text-white/80 hover:text-white'
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              );
-            })}
-
             {/* BOTÓN DESTACADO BATH & BODY WORKS */}
             <button
               type="button"
@@ -2873,7 +2808,28 @@ export default function TiendaFoxDrop() {
             >
               <span>🌸</span>
               <span>Bath & Body Works</span>
-              <span className="text-[10px] bg-[#0F3E36]/80 text-amber-300 px-1.5 py-0.2 rounded-full font-bold">148</span>
+            </button>
+
+            {/* BOTÓN CATÁLOGO INTERNACIONAL */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrand('Todas');
+                setSelectedCategory('Internacional');
+                setBbwCollection('all');
+                setActiveTab('all');
+                if (currentView === 'account') setCurrentView('store');
+                const el = document.getElementById('catalog-section');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-xs sm:text-[13px] ${
+                selectedCategory === 'Internacional' && selectedBrand === 'Todas'
+                  ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-300'
+                  : 'bg-white/10 text-indigo-200 hover:bg-white/20 hover:text-white border border-indigo-300/30'
+              }`}
+            >
+              <span>✈️</span>
+              <span>Internacional</span>
             </button>
 
             {/* SECCIÓN TRENDING / MÁS VENDIDO */}
@@ -3257,6 +3213,8 @@ export default function TiendaFoxDrop() {
               <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
                 {selectedBrand === 'Bath & Body Works'
                   ? 'Colecciones Bath & Body Works'
+                  : selectedCategory === 'Internacional'
+                  ? 'Catálogo FoxDrop Internacional (Directo a Domicilio)'
                   : activeTab === 'new' 
                   ? (selectedCategory === 'Todas' ? 'Lo Más Nuevo en FoxDrop' : `Lo Nuevo en ${selectedCategory}`)
                   : activeTab === 'deals'
@@ -3367,7 +3325,7 @@ export default function TiendaFoxDrop() {
                 className="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-lg transition border border-rose-200 flex items-center gap-1 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
-                <span>Ver todas las marcas ({selectedBrand})</span>
+                <span>Ver todo el catálogo</span>
               </button>
             )}
           </div>
@@ -3420,11 +3378,7 @@ export default function TiendaFoxDrop() {
                   >
                     <span>{col.icon}</span>
                     <span>{col.label}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive ? 'bg-amber-400 text-[#0F3E36]' : 'bg-gray-100 text-gray-600'
-                    }`}>
-                      {col.count}
-                    </span>
+                    
                   </button>
                 );
               })}
