@@ -4642,6 +4642,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
               </button>
 
+              {/* RAKUTEN JAPÓN IMPORTADOR */}
+              <button
+                onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'japan'
+                    ? 'bg-red-950 text-white font-bold border border-red-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-400/30">
+                  Tokio
+                </span>
+              </button>
+
               {/* 1. INVENTARIO (Catálogo + Lotes) */}
               <button
                 onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
@@ -4854,6 +4871,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
                     {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
                     {crmSubTab === 'japan' && 'Catálogo Oficial Japón — Rakuten Ichiba 🎌'}
+                    {crmSubTab === 'japan' && 'Catálogo Oficial Japón — Rakuten Ichiba 🎌'}
                     {crmSubTab === 'agent' && 'Marketing'}
                     {crmSubTab === 'weavy' && 'Weavy Studio — Lienzo Creativo de Nodos IA'}
                       {crmSubTab === 'campaigns' && 'Campañas — Cupones QR & Stickers Tabloide'}
@@ -4868,6 +4886,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners principales de la tienda, métodos de entrega y cuentas bancarias SPEI'}
                   {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
                   {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
+                    {crmSubTab === 'japan' && 'Explora e importa figuras originales, cartas coleccionables, dulces y novedades directo desde Japón'}
                     {crmSubTab === 'japan' && 'Explora e importa figuras originales, cartas coleccionables, dulces y novedades directo desde Japón'}
                   {crmSubTab === 'agent' && 'Dirección de estrategia comercial, embudo en tiempo real y publicación en redes'}
                   {crmSubTab === 'weavy' && 'Diseña flujos visuales conectando productos, fotos externas, prompts, generación de imágenes y videos comerciales'}
@@ -4966,7 +4985,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           />
         )}
 
-        {crmSubTab === 'japan' && (
+{crmSubTab === 'japan' && (
           <AdminJapanTab
             existingProducts={products}
             currentUserEmail={adminSession?.email}

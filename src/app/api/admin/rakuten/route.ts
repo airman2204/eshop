@@ -175,8 +175,20 @@ export async function GET(req: NextRequest) {
 
     let url = `https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701?applicationId=${RAKUTEN_APP_ID}&accessKey=${RAKUTEN_ACCESS_KEY}&affiliateId=${RAKUTEN_AFFILIATE_ID}&page=${page}&hits=${hits}&format=json`;
 
-    if (keyword && keyword.trim()) {
-      url += `&keyword=${encodeURIComponent(keyword.trim())}`;
+    // Sanitizar keyword para la API de Rakuten Japón:
+    // La API de Rakuten rechaza consultas con palabras de 1 solo dígito o letra suelta (ej. "Nintendo Switch 2" o "Playstation 5")
+    // causando un error 400 "keyword is not valid".
+    let cleanKeyword = (keyword || "").trim();
+    if (cleanKeyword) {
+      const tokens = cleanKeyword.split(/\s+/);
+      const validTokens = tokens.filter(t => t.length >= 2);
+      if (validTokens.length > 0) {
+        cleanKeyword = validTokens.join(" ");
+      }
+    }
+
+    if (cleanKeyword) {
+      url += `&keyword=${encodeURIComponent(cleanKeyword)}`;
     } else if (genreId) {
       url += `&genreId=${encodeURIComponent(genreId.trim())}`;
     } else {
@@ -214,7 +226,23 @@ export async function GET(req: NextRequest) {
     // Tasa aproximada de conversión JPY a MXN (aprox 1 JPY = 0.119 MXN o 1 MXN = 8.4 JPY)
     const JPY_TO_MXN_RATE = 0.12; 
 
-    const items = (data.Items || []).map((wrapper: any) => {
+    // Tiendas no elegibles en Rakuten (revendedores extranjeros de EE.UU. que prohíben casilleros como ZenMarket)
+    const BLOCKED_SHOPS = ['glomarket', 'americankitchen', 'alpha-espace'];
+
+    const eligibleItems = (data.Items || []).filter((wrapper: any) => {
+      const item = wrapper.Item;
+      const shopCode = (item.shopCode || '').toLowerCase();
+      const shopName = (item.shopName || '').toLowerCase();
+      const caption = (item.itemCaption || '').toLowerCase();
+
+      // Bloquear tiendas conocidas de EE.UU. o publicaciones que prohíban empresas de reenvío (転送サービス)
+      if (BLOCKED_SHOPS.some(b => shopCode.includes(b) || shopName.includes(b))) return false;
+      if (caption.includes('転送サービス会社') || caption.includes('アメリカから直送')) return false;
+
+      return true;
+    });
+
+    const items = eligibleItems.map((wrapper: any) => {
       const item = wrapper.Item;
       const priceJpy = Number(item.itemPrice || 0);
       const baseCostMxn = Math.round(priceJpy * JPY_TO_MXN_RATE);
