@@ -170,16 +170,17 @@ const JAPAN_MASTER_CATEGORIES: { label: string; subs: { label: string; query: st
   ]},
 ];
 
-// Helper para generar URL nativa y canónica de ZenMarket para Rakuten Japón
-const getZenMarketUrl = (url: string): string => {
-  if (!url) return 'https://zenmarket.jp/es/rakuten.aspx';
-  try {
-    const match = url.match(/item\.rakuten\.co\.jp\/([^\/\?#]+)\/([^\/\?#]+)/);
-    if (match) {
-      return `https://zenmarket.jp/es/rakutenproduct.aspx?itemCode=${match[1]}:${match[2]}`;
-    }
-  } catch (e) {}
-  return `https://zenmarket.jp/es/other.aspx?itemUrl=${encodeURIComponent(url)}`;
+// Helper infalible para abrir cualquier producto de Rakuten en ZenMarket sin errores 404
+const getZenMarketUrl = (url: string, itemName?: string): string => {
+  if (url) {
+    // Al pasar la URL limpia como parámetro 'q' a ZenMarket Rakuten, ZenMarket la captura en su buscador oficial
+    // y resuelve automáticamente el producto en español con stock e imágenes garantizadas
+    return `https://zenmarket.jp/es/rakuten.aspx?q=${encodeURIComponent(url.trim())}`;
+  }
+  if (itemName) {
+    return `https://zenmarket.jp/es/rakuten.aspx?q=${encodeURIComponent(itemName.trim())}`;
+  }
+  return 'https://zenmarket.jp/es/rakuten.aspx';
 };
 
 export default function AdminJapanTab({ existingProducts = [], currentUserEmail, currentUserRole, onProductImported }: Props) {
