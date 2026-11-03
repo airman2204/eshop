@@ -170,6 +170,18 @@ const JAPAN_MASTER_CATEGORIES: { label: string; subs: { label: string; query: st
   ]},
 ];
 
+// Helper para generar URL nativa y canónica de ZenMarket para Rakuten Japón
+const getZenMarketUrl = (url: string): string => {
+  if (!url) return 'https://zenmarket.jp/es/rakuten.aspx';
+  try {
+    const match = url.match(/item\.rakuten\.co\.jp\/([^\/\?#]+)\/([^\/\?#]+)/);
+    if (match) {
+      return `https://zenmarket.jp/es/rakutenproduct.aspx?itemCode=${match[1]}:${match[2]}`;
+    }
+  } catch (e) {}
+  return `https://zenmarket.jp/es/other.aspx?itemUrl=${encodeURIComponent(url)}`;
+};
+
 export default function AdminJapanTab({ existingProducts = [], currentUserEmail, currentUserRole, onProductImported }: Props) {
   // Detectar canal de Wishlist y rol de vendedora
   const isSeller = isSellerJapanUser(currentUserEmail, currentUserRole);
@@ -788,6 +800,31 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
 
                       {/* VOTACIÓN Y ACCIONES */}
                       <div className="pt-3 space-y-2 border-t border-slate-100 dark:border-slate-800 mt-3">
+                        {/* ENLACES DIRECTOS COMPRA / ZENMARKET */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <a
+                            href={getZenMarketUrl(item.itemUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                            title="Cotizar o comprar directamente en ZenMarket"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>🛒 ZenMarket</span>
+                          </a>
+
+                          <a
+                            href={item.itemUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-1.5 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-red-600"
+                            title="Ver publicación original en Rakuten"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Rakuten</span>
+                          </a>
+                        </div>
+
                         {/* BOTONES DE APROBACIÓN (DISPONIBLES PARA AMBOS O PRINCIPALMENTE MARIO) */}
                         <div className="grid grid-cols-2 gap-1.5">
                           <button
@@ -1048,22 +1085,34 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
                       🇯🇵 ¥{item.priceJpy.toLocaleString()} JPY
                     </span>
 
-                    {/* BOTÓN DE CORAZÓN / WISHLIST RÁPIDO */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleWishlist(item);
-                      }}
-                      className={`absolute top-1.5 right-1.5 p-1.5 rounded-full backdrop-blur-md transition z-20 cursor-pointer shadow-xs ${
-                        isItemInWishlist(item.itemCode)
-                          ? 'bg-rose-600 text-white hover:bg-rose-700'
-                          : 'bg-black/50 text-white hover:bg-rose-500 hover:text-white'
-                      }`}
-                      title={isItemInWishlist(item.itemCode) ? 'Quitar de mi Wishlist' : 'Guardar en mi Wishlist'}
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${isItemInWishlist(item.itemCode) ? 'fill-current' : ''}`} />
-                    </button>
+                    {/* BOTONES ACCION RAPIDA (ZENMARKET Y WISHLIST) */}
+                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1">
+                      <a
+                        href={getZenMarketUrl(item.itemUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white backdrop-blur-md transition cursor-pointer shadow-xs"
+                        title="Abrir directamente en ZenMarket"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleWishlist(item);
+                        }}
+                        className={`p-1.5 rounded-full backdrop-blur-md transition cursor-pointer shadow-xs ${
+                          isItemInWishlist(item.itemCode)
+                            ? 'bg-rose-600 text-white hover:bg-rose-700'
+                            : 'bg-black/50 text-white hover:bg-rose-500 hover:text-white'
+                        }`}
+                        title={isItemInWishlist(item.itemCode) ? 'Quitar de mi Wishlist' : 'Guardar en mi Wishlist'}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${isItemInWishlist(item.itemCode) ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
 
                     {/* BADGES DE CALIDAD PROVEEDOR */}
                     <div className="absolute bottom-1.5 left-1.5 z-10 flex flex-wrap gap-1">
@@ -1219,7 +1268,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <a
-                  href={`https://zenmarket.jp/es/other.aspx?itemUrl=${encodeURIComponent(previewItem.itemUrl)}`}
+                  href={getZenMarketUrl(previewItem.itemUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
@@ -1715,7 +1764,7 @@ export default function AdminJapanTab({ existingProducts = [], currentUserEmail,
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
               <div className="flex items-center gap-3">
                 <a
-                  href={`https://zenmarket.jp/es/other.aspx?itemUrl=${encodeURIComponent(selectedItem.itemUrl)}`}
+                  href={getZenMarketUrl(selectedItem.itemUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 shadow-xs"

@@ -4642,23 +4642,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </span>
               </button>
 
-              {/* RAKUTEN JAPÓN IMPORTADOR */}
-              <button
-                onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
-                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
-                  crmSubTab === 'japan'
-                    ? 'bg-red-950 text-white font-bold border border-red-500/40 shadow-xs' 
-                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
-                </span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-400/30">
-                  Tokio
-                </span>
-              </button>
-
               {/* 1. INVENTARIO (Catálogo + Lotes) */}
               <button
                 onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
