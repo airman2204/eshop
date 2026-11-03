@@ -3331,38 +3331,45 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {/* BARRA DE SUB-COLECCIONES BATH & BODY WORKS */}
+        {/* BARRA DE SUB-COLECCIONES BATH & BODY WORKS — REDISEÑO ELEGANTE Y LIMPIO */}
         {selectedBrand === 'Bath & Body Works' && (
-          <div className="bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-pink-50/80 border border-amber-200/90 rounded-2xl p-3.5 shadow-2xs space-y-2.5 animate-in fade-in slide-in-from-top duration-300">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🌸</span>
+          <div className="bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5 animate-in fade-in slide-in-from-top duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-base shadow-2xs border border-pink-100">
+                  🌸
+                </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-extrabold text-[#0F3E36]">Colecciones Bath & Body Works</h4>
-                  <p className="text-[11px] text-gray-500">Selecciona una categoría o temporada para explorar los aromas</p>
+                  <h4 className="text-sm sm:text-base font-black text-[#0F3E36] tracking-tight">
+                    Colecciones Bath & Body Works
+                  </h4>
+                  <p className="text-xs text-gray-500 font-medium">
+                    Explora por temporada o tipo de fragancia
+                  </p>
                 </div>
               </div>
               {bbwCollection !== 'all' && (
                 <button
                   type="button"
                   onClick={() => setBbwCollection('all')}
-                  className="text-[11px] font-bold text-[#E65F2B] hover:underline flex items-center gap-0.5 cursor-pointer"
+                  className="text-xs font-bold text-[#E65F2B] hover:text-[#c44a1b] flex items-center gap-1 cursor-pointer w-fit"
                 >
-                  <X className="w-3 h-3" />
-                  <span>Ver todas</span>
+                  <X className="w-3.5 h-3.5" />
+                  <span>Mostrar todo ({visibleProducts.filter(p => (p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')).length})</span>
                 </button>
               )}
             </div>
 
+            {/* Píldoras de colecciones estilo TJ Maxx / Sephora */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 overscroll-x-contain touch-pan-x">
               {[
-                { id: 'all', label: 'Todo el Catálogo', icon: '✨', count: visibleProducts.filter(p => (p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')).length },
-                { id: 'holiday', label: 'Especial Navideño', icon: '🎄', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ['winter', 'season', 'snow', 'pine', 'balsam', 'noel', 'peppermint', 'cashmere', 'cinnamon pinecone', 'frosted', 'holiday', 'navidad'].some(k => (p.title || '').toLowerCase().includes(k))).length },
-                { id: 'car', label: 'Auto & Difusores', icon: '🚗', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ((p.title || '').toLowerCase().includes('para auto') || (p.title || '').toLowerCase().includes('difusor para auto') || (p.title || '').toLowerCase().includes('accesorio difusor para auto') || (p.title || '').toLowerCase().includes('aromatizante para auto'))).length },
-                { id: 'candles_home', label: 'Velas & Wallflower', icon: '🕯️', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ((p.title || '').toLowerCase().includes('vela ') || (p.title || '').toLowerCase().includes('fragancia para pared') || (p.title || '').toLowerCase().includes('difusor de fragancia para pared') || (p.title || '').toLowerCase().includes('wallflower'))).length },
-                { id: 'bodycare', label: 'Cuidado Corporal & Jabones', icon: '🧴', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ((p.title || '').toLowerCase().includes('crema') || (p.title || '').toLowerCase().includes('bruma') || (p.title || '').toLowerCase().includes('mist') || (p.title || '').toLowerCase().includes('jabón') || (p.title || '').toLowerCase().includes('jabon') || (p.title || '').toLowerCase().includes('loción') || (p.title || '').toLowerCase().includes('locion') || (p.title || '').toLowerCase().includes('gel de ducha') || (p.title || '').toLowerCase().includes('exfoliante'))).length },
-                { id: 'pocketbac', label: 'Geles PocketBac & Porta Geles', icon: '🧼', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ((p.title || '').toLowerCase().includes('gel antibacterial') || (p.title || '').toLowerCase().includes('porta gel') || (p.title || '').toLowerCase().includes('pocketbac'))).length },
-                { id: 'fall', label: 'Cosecha de Otoño', icon: '🍂', count: visibleProducts.filter(p => ((p.brand || '').toLowerCase().includes('bath & body') || (p.title || '').toLowerCase().includes('bath & body')) && ['pumpkin', 'apple', 'leaves', 'autumn', 'pecan', 'harvest', 'flannel', 'spiced', 'salted butterscotch'].some(k => (p.title || '').toLowerCase().includes(k))).length },
+                { id: 'all', label: 'Todo el Catálogo', icon: '✨' },
+                { id: 'holiday', label: 'Especial Navideño', icon: '🎄', special: true },
+                { id: 'car', label: 'Auto & Difusores', icon: '🚗' },
+                { id: 'candles_home', label: 'Velas & Wallflower', icon: '🕯️' },
+                { id: 'bodycare', label: 'Cuidado Corporal & Jabones', icon: '🧴' },
+                { id: 'pocketbac', label: 'Geles PocketBac', icon: '🧼' },
+                { id: 'fall', label: 'Cosecha de Otoño', icon: '🍂' },
               ].map(col => {
                 const isActive = bbwCollection === col.id;
                 return (
@@ -3370,15 +3377,16 @@ export default function TiendaFoxDrop() {
                     key={col.id}
                     type="button"
                     onClick={() => setBbwCollection(col.id as any)}
-                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                       isActive
-                        ? 'bg-[#0F3E36] text-white shadow-xs scale-102 ring-2 ring-amber-300/70'
-                        : 'bg-white hover:bg-amber-100/60 text-gray-700 border border-amber-200/70'
+                        ? 'bg-[#0F3E36] text-white shadow-sm ring-2 ring-[#0F3E36]/20'
+                        : col.special
+                        ? 'bg-gradient-to-r from-red-50 to-emerald-50 text-emerald-950 border border-emerald-200/80 hover:border-emerald-300'
+                        : 'bg-gray-50/80 hover:bg-gray-100 text-gray-700 border border-gray-200/80 hover:border-gray-300'
                     }`}
                   >
-                    <span>{col.icon}</span>
+                    <span className="text-sm">{col.icon}</span>
                     <span>{col.label}</span>
-                    
                   </button>
                 );
               })}
