@@ -2704,6 +2704,22 @@ export default function AdminCRM() {
   // Guardar Alta o Edición de Producto
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // VALIDACIÓN PREVENTIVA DE SKU DUPLICADO:
+    const trimmedSku = newSku.trim();
+    if (trimmedSku && !editingProductId) {
+      const duplicateProduct = products.find(p => p.sku && p.sku.trim().toLowerCase() === trimmedSku.toLowerCase());
+      if (duplicateProduct) {
+        const wantOpen = window.confirm(
+          `⚠️ ¡Código de barras duplicado!\n\nEl SKU "${trimmedSku}" ya está registrado en tu tienda con el producto:\n"${duplicateProduct.title}" (Stock actual: ${duplicateProduct.stock} pzas).\n\n¿Deseas abrir ese producto para agregarle más stock en lugar de crear un duplicado?\n\n• [Aceptar]: Abrir para sumarle stock\n• [Cancelar]: Modificar el SKU para que sea diferente`
+        );
+        if (wantOpen) {
+          handleOpenEditProduct(duplicateProduct);
+        }
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     try {
@@ -2801,7 +2817,13 @@ export default function AdminCRM() {
       }
     } catch (err: any) {
       console.error("Fallo al guardar en base de datos:", err);
-      alert(`Error al guardar en la base de datos: ${err.message || 'Intenta de nuevo'}`);
+      if (err.message && (err.message.includes('products_sku_key') || err.message.includes('duplicate key value'))) {
+        alert(
+          `⚠️ No se pudo guardar porque el código de barras (SKU) ya está en uso por otro producto.\n\nPor favor escribe un SKU diferente (o presiona el botón "Generar" junto al campo SKU) para guardar este producto.`
+        );
+      } else {
+        alert(`Error al guardar en la base de datos: ${err.message || 'Intenta de nuevo'}`);
+      }
       return;
     } finally {
       setIsSaving(false);
@@ -3578,10 +3600,22 @@ export default function AdminCRM() {
 
     if (scannerContext === 'sku_input') {
       setNewSku(code);
-      // Si el código ya coincide con algún producto existente, sugerir autocompletar título
-      const matched = products.find(p => p.sku === code || p.id === code);
-      if (matched && !newTitle) {
-        setNewTitle(matched.title);
+      // Si el código ya coincide con algún producto existente en la tienda
+      const matched = products.find(p => (p.sku && p.sku.trim().toLowerCase() === code.toLowerCase()) || p.id === code);
+      if (matched) {
+        if (!editingProductId) {
+          // Si estamos creando un producto NUEVO y escaneamos uno que YA existe:
+          const wantEdit = window.confirm(
+            `⚠️ El código de barras escaneado (${code}) ya pertenece al producto:\n\n"${matched.title}"\n(Stock actual: ${matched.stock} piezas)\n\n¿Deseas ABRIR este producto existente para sumarle más piezas de stock o actualizar su precio?\n\n• [Aceptar]: Abrir y sumar stock al producto existente\n• [Cancelar]: Mantener código para asignarle un sufijo o crear variante`
+          );
+          if (wantEdit) {
+            handleOpenEditProduct(matched);
+            return;
+          }
+        }
+        if (!newTitle) {
+          setNewTitle(matched.title);
+        }
       }
     } else if (scannerContext === 'pos_qr_discount') {
       // Escaneo específico de QR de campaña promocional
