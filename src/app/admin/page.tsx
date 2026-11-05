@@ -3583,9 +3583,27 @@ export default function AdminCRM() {
     await updateSpecialOrderStatus(id, newStatus);
   };
 
+  // Extraer código de cupón si el escáner capturó la URL completa
+  const extractCleanPosCode = (input: string): string => {
+    if (!input) return '';
+    let clean = input.trim();
+    try {
+      if (clean.includes('http://') || clean.includes('https://') || clean.includes('?promo=') || clean.includes('?cupon=')) {
+        const url = new URL(clean.startsWith('http') ? clean : `https://foxdrop.mx/${clean}`);
+        const param = url.searchParams.get('promo') || url.searchParams.get('cupon') || url.searchParams.get('code');
+        if (param) return param.trim();
+      }
+    } catch {}
+    const paramMatch = clean.match(/(?:promo|cupon|code)=([A-Za-z0-9\-_]+)/i);
+    if (paramMatch) return paramMatch[1].trim();
+    const prefixMatch = clean.match(/((?:HAL|FOX)-[A-Za-z0-9\-]+)/i);
+    if (prefixMatch) return prefixMatch[1].trim();
+    return clean;
+  };
+
   // Función para validar y aplicar cupón de campaña QR en el Punto de Venta (POS)
   const handleValidateAndApplyPosCoupon = async (rawCode: string) => {
-    const cleanCode = (rawCode || '').trim();
+    const cleanCode = extractCleanPosCode(rawCode);
     if (!cleanCode) return;
 
     setPosCouponValidating(true);

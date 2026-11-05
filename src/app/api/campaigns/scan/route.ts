@@ -6,6 +6,31 @@ import { decryptPromoToken } from "@/lib/campaignTokens";
 
 const CAMPAIGNS_FILE = "_system/marketing_campaigns.json";
 
+// Extrae el código limpio de cupón si el escáner leyó la URL completa o un parámetro
+function extractCleanCouponCode(input: string): string {
+  if (!input) return "";
+  let clean = input.trim();
+
+  // 1. Si es una URL completa (ej: https://foxdrop.mx/?promo=HAL-FOX-001)
+  try {
+    if (clean.includes("http://") || clean.includes("https://") || clean.includes("?promo=") || clean.includes("?cupon=")) {
+      const url = new URL(clean.startsWith("http") ? clean : `https://foxdrop.mx/${clean}`);
+      const param = url.searchParams.get("promo") || url.searchParams.get("cupon") || url.searchParams.get("code");
+      if (param) return param.trim();
+    }
+  } catch {}
+
+  // 2. Extraer mediante regex si viene formato promo=CODIGO o cupon=CODIGO
+  const paramMatch = clean.match(/(?:promo|cupon|code)=([A-Za-z0-9\-_]+)/i);
+  if (paramMatch) return paramMatch[1].trim();
+
+  // 3. Extraer si contiene el patrón de prefijo (ej: HAL-FOX-001 o FOX-...)
+  const prefixMatch = clean.match(/((?:HAL|FOX)-[A-Za-z0-9\-]+)/i);
+  if (prefixMatch) return prefixMatch[1].trim();
+
+  return clean;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown-ip";
@@ -20,12 +45,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Código de cupón requerido" }, { status: 400 });
     }
 
-    // Intentar desencriptar en caso de que sea un token cifrado de URL, o tomar como código en texto plano
-    const decryptedCode = decryptPromoToken(rawInput);
-    const candidateCodes = [rawInput.toUpperCase()];
-    if (decryptedCode && !candidateCodes.includes(decryptedCode)) {
-      candidateCodes.unshift(decryptedCode); // Prioridad al código descifrado
-    }
+    // Extraer código limpio de cupón (incluso si la cámara escaneó la URL completa)
+    const cleanInput = extractCleanCouponCode(rawInput);
+
+    // Intentar desencriptar en caso de que sea un token cifrado de URL
+    const decryptedCode = decryptPromoToken(cleanInput);
+
+    // Lista de candidatos para buscar coincidencia
+    const candidateCodes = Array.from(
+      new Set(
+        [
+          decryptedCode,
+          cleanInput.toUpperCase(),
+          rawInput.toUpperCase(),
+        ].filter(Boolean) as string[]
+      )
+    );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createServerClient() as any;
