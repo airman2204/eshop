@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://*.facebook.com https://*.rakuten.co.jp https://thumbnail.image.rakuten.co.jp",
               "media-src 'self' data: blob: https://*.cjdropshipping.com https://*.cjdot.com https://*.supabase.co",
               "font-src 'self' https://fonts.gstatic.com data:",
-              "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://stats.g.doubleclick.net https://www.facebook.com https://*.facebook.com https://generativelanguage.googleapis.com",
+              "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://www.facebook.com https://*.facebook.com https://generativelanguage.googleapis.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

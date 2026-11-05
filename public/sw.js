@@ -1,4 +1,4 @@
-const CACHE_NAME = 'foxdrop-cache-v1';
+const CACHE_NAME = 'foxdrop-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/tienda',
@@ -33,12 +33,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Solo aplicar cache para navegación y recursos estáticos GET
+  // Solo aplicar interceptación para peticiones GET
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+
+  // 1. No interceptar peticiones hacia el panel de administración ni APIs
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 2. No interceptar dominios externos (Google Tag Manager, Analytics, WhatsApp Bridge, Supabase, etc.)
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      // Si la navegación a una página falla sin conexión, intentar devolver la tienda offline si existe
+      if (event.request.mode === 'navigate') {
+        const fallback = await caches.match('/tienda');
+        if (fallback) return fallback;
+      }
+      return new Response('Sin conexión', { status: 503, statusText: 'Offline' });
     })
   );
 });
