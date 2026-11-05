@@ -920,7 +920,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
     <div className={`bg-[#111B21] text-[#E9EDEF] transition-all duration-300 flex flex-col md:flex-row relative w-full overflow-hidden select-none font-sans ${
       isFullscreen 
         ? 'fixed inset-0 z-50 rounded-none w-screen h-screen' 
-        : 'rounded-none md:rounded-3xl border-0 md:border border-[#222E35] shadow-2xl overflow-hidden h-[100dvh] md:h-[calc(100vh-130px)] md:min-h-[640px]'
+        : 'rounded-none md:rounded-3xl border-0 md:border border-[#222E35] shadow-2xl overflow-hidden h-[calc(100dvh-57px)] md:h-[calc(100vh-130px)] md:min-h-[640px]'
     }`}>
       
       {/* ======================================================== */}
@@ -1653,7 +1653,7 @@ export default function AdminWhatsAppTab({ orders, clients, adminSessionName, in
             </div>
           )}
 
-          <form onSubmit={handleSendMessage} className="p-2 sm:p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-1.5 sm:gap-2 safe-area-bottom w-full min-w-0">
+          <form onSubmit={handleSendMessage} className="p-2 sm:p-2.5 bg-[#202C33] border-t border-[#222E35] flex items-center gap-1.5 sm:gap-2 safe-area-bottom w-full min-w-0 shrink-0 sticky bottom-0 z-20">
             {/* Botón Emojis */}
             <button
               type="button"

@@ -10626,7 +10626,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
           const currentPartner = emailLower.includes('nydia') ? 'Nydia' : 'Mario';
 
           return (
-            <div className="w-full h-full min-h-screen md:min-h-0">
+            <div className="w-full h-[calc(100dvh-57px)] md:h-full md:min-h-0">
               <AdminWhatsAppTab
                 orders={orders}
                 clients={clients}
