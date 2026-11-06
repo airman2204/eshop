@@ -97,6 +97,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
   const [customBadge, setCustomBadge] = useState('');
   const [customPrice, setCustomPrice] = useState<number | null>(null);
   const [activeBackground, setActiveBackground] = useState<string>('luxury_marble');
+  const [showOverlays, setShowOverlays] = useState(false); // Por defecto: FOTOGRAFÍA PURA (Limpia)
 
   // ETAPA 2: CONFIGURACIÓN Y LANZAMIENTO DE CAMPAÑA
   const [launchPlatform, setLaunchPlatform] = useState<'meta' | 'tiktok'>('meta');
@@ -781,6 +782,32 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
               </button>
             </div>
 
+            {/* SELECTOR DE MODO: FOTO PURA VS BANNER */}
+            <div className="flex items-center justify-between p-1.5 bg-stone-100 rounded-2xl border border-stone-200">
+              <button
+                type="button"
+                onClick={() => setShowOverlays(false)}
+                className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  !showOverlays
+                    ? 'bg-white text-stone-900 shadow-sm'
+                    : 'text-stone-500 hover:text-stone-700'
+                }`}
+              >
+                ✨ Fotografía Pura (Limpia)
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowOverlays(true)}
+                className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  showOverlays
+                    ? 'bg-white text-[#E65F2B] shadow-sm'
+                    : 'text-stone-500 hover:text-stone-700'
+                }`}
+              >
+                🏷️ Modo Banner (Con Textos/Precio)
+              </button>
+            </div>
+
             {/* SELECTOR DE ESTILOS DE FONDO */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold">
               {Object.keys(backgroundThemes).map((bgKey) => (
@@ -815,21 +842,25 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                       className="absolute inset-0 w-full h-full object-cover z-0"
                       crossOrigin="anonymous"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none z-1" />
+                    {showOverlays && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none z-1" />
+                    )}
                   </>
                 )}
 
-                {/* 1. Header del Anuncio: Badge & Urgencia */}
-                <div className="relative z-10 flex items-center justify-between gap-2">
-                  <span className="bg-[#E65F2B] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
-                    {customBadge || 'EDICIÓN ESPECIAL'}
-                  </span>
-                  <span className={`text-[9px] font-bold tracking-tight shadow-xs ${adResult?.generatedImageUrl ? 'text-white/90 drop-shadow' : isLightBackground ? 'text-stone-700' : 'text-stone-300'}`}>
-                    {adResult?.urgencyText || 'Stock Físico en Puebla'}
-                  </span>
-                </div>
+                {/* 1. Header del Anuncio: Badge & Urgencia (Solo si showOverlays está activo o si no hay imagen de FLUX) */}
+                {(!adResult?.generatedImageUrl || showOverlays) && (
+                  <div className="relative z-10 flex items-center justify-between gap-2 animate-in fade-in">
+                    <span className="bg-[#E65F2B] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
+                      {customBadge || 'EDICIÓN ESPECIAL'}
+                    </span>
+                    <span className={`text-[9px] font-bold tracking-tight shadow-xs ${adResult?.generatedImageUrl ? 'text-white/90 drop-shadow' : isLightBackground ? 'text-stone-700' : 'text-stone-300'}`}>
+                      {adResult?.urgencyText || 'Stock Físico en Puebla'}
+                    </span>
+                  </div>
+                )}
 
-                {/* 2. Cuerpo Central: Si hay foto completa de FLUX es el fondo, si no, foto flotante */}
+                {/* 2. Cuerpo Central */}
                 {!adResult?.generatedImageUrl ? (
                   <div className="relative z-10 my-auto flex flex-col items-center justify-center">
                     <div className="relative group">
@@ -848,48 +879,50 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                     </div>
                   </div>
                 ) : (
-                  <div className="relative z-10 my-auto flex justify-end">
-                    {/* Badge flotante de precio de estudio en la esquina */}
-                    <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/25 shadow-2xl">
-                      <span className="text-[10px] text-orange-400 font-bold block leading-none">PRECIO OFERTA</span>
-                      <span className="text-sm font-black text-white">${customPrice || getProductPrice(selectedProduct)} MXN</span>
+                  showOverlays && (
+                    <div className="relative z-10 my-auto flex justify-end animate-in fade-in">
+                      <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/25 shadow-2xl">
+                        <span className="text-[10px] text-orange-400 font-bold block leading-none">PRECIO OFERTA</span>
+                        <span className="text-sm font-black text-white">${customPrice || getProductPrice(selectedProduct)} MXN</span>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* 3. Footer del Anuncio: Titular + CTA (Solo si showOverlays está activo o si no hay imagen de FLUX) */}
+                {(!adResult?.generatedImageUrl || showOverlays) && (
+                  <div className="relative z-10 space-y-2 text-center animate-in fade-in">
+                    <div>
+                      <h3 className={`text-base font-black leading-tight tracking-tight drop-shadow-md ${adResult?.generatedImageUrl ? 'text-white' : isLightBackground ? 'text-stone-900' : 'text-white'}`}>
+                        {customHeadline || selectedProduct?.title || 'Fragancia Original'}
+                      </h3>
+                      {adResult?.subheadline && (
+                        <p className={`text-[10px] mt-0.5 line-clamp-1 opacity-90 drop-shadow ${adResult?.generatedImageUrl ? 'text-stone-200' : isLightBackground ? 'text-stone-600' : 'text-stone-300'}`}>
+                          {adResult.subheadline}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="w-full py-2 px-4 rounded-xl bg-white text-stone-950 font-black text-xs shadow-xl flex items-center justify-center gap-1.5 uppercase tracking-wider hover:bg-stone-100 transition">
+                      {targetGoal === 'whatsapp' ? (
+                        <>
+                          <Send className="w-3.5 h-3.5 text-emerald-600" />
+                          {adResult?.callToAction || 'Pedir por WhatsApp'}
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="w-3.5 h-3.5 text-[#E65F2B]" />
+                          {adResult?.callToAction || 'Comprar en Tienda'}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* 3. Footer del Anuncio: Titular + CTA */}
-                <div className="relative z-10 space-y-2 text-center">
-                  <div>
-                    <h3 className={`text-base font-black leading-tight tracking-tight drop-shadow-md ${adResult?.generatedImageUrl ? 'text-white' : isLightBackground ? 'text-stone-900' : 'text-white'}`}>
-                      {customHeadline || selectedProduct?.title || 'Fragancia Original'}
-                    </h3>
-                    {adResult?.subheadline && (
-                      <p className={`text-[10px] mt-0.5 line-clamp-1 opacity-90 drop-shadow ${adResult?.generatedImageUrl ? 'text-stone-200' : isLightBackground ? 'text-stone-600' : 'text-stone-300'}`}>
-                        {adResult.subheadline}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Botón CTA Visual */}
-                  <div className="w-full py-2 px-4 rounded-xl bg-white text-stone-950 font-black text-xs shadow-xl flex items-center justify-center gap-1.5 uppercase tracking-wider hover:bg-stone-100 transition">
-                    {targetGoal === 'whatsapp' ? (
-                      <>
-                        <Send className="w-3.5 h-3.5 text-emerald-600" />
-                        {adResult?.callToAction || 'Pedir por WhatsApp'}
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="w-3.5 h-3.5 text-[#E65F2B]" />
-                        {adResult?.callToAction || 'Comprar en Tienda'}
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Textura o Marca de Agua Discreta */}
-                <div className="absolute bottom-2 right-3 z-0 opacity-25 text-[9px] font-black uppercase tracking-widest text-white drop-shadow">
-                  FoxDrop.mx
-                </div>
+                {/* Si está en modo limpio y no hay overlays, un espacio vacío para mantener estructura */}
+                {adResult?.generatedImageUrl && !showOverlays && (
+                  <div className="flex-1 pointer-events-none" />
+                )}
               </div>
             </div>
 

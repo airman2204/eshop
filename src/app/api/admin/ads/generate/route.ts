@@ -53,7 +53,8 @@ REGLAS DE DISEÑO Y ESTRATEGIA:
    - Variación 2: Ángulo Regalo / Detalle accesible.
    - Variación 3: Ángulo Urgencia / Stock Físico Inmediato.
 5. Formula un prompt en inglés hiper-detallado ("imagePrompt") para generar una fotografía publicitaria de producto fotorrealista con FLUX.1.
-   El prompt debe describir una escena comercial de catálogo de lujo donde el producto sea el héroe central, con iluminación cinematográfica de estudio, sombras de contacto suaves, texturas reales (mármol, madera o lino) y composición publicitaria sin personas feas ni textos deformados.`;
+   El prompt debe describir una escena comercial de catálogo de lujo donde el producto sea el héroe central, con iluminación cinematográfica de estudio, sombras de contacto suaves, texturas reales (mármol, madera o lino) y composición publicitaria.
+   REGLA CRUCIAL PARA LA IMAGEN: Prohibido incluir letras, tipografías, logotipos escritos, precios ni texto falso dentro de la imagen. La fotografía debe ser 100% limpia y cinematográfica (solo el producto y su entorno estético).`;
 
     const userPrompt = `PRODUCTO:
 - Título: ${product.title}
