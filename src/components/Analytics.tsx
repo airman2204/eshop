@@ -48,7 +48,7 @@ export function trackEcommerceEvent(eventName: string, params?: Record<string, u
   }
 
   // 2. Google Analytics 4
-  const win = window as unknown as { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void };
+  const win = window as unknown as { gtag?: (...args: unknown[]) => void; fbq?: (...args: unknown[]) => void; ttq?: { track: (event: string, params?: Record<string, unknown>) => void } };
   if (win.gtag) {
     win.gtag('event', eventName, params || {});
   }
@@ -64,6 +64,33 @@ export function trackEcommerceEvent(eventName: string, params?: Record<string, u
     };
     const metaEvent = metaEventMap[eventName] || 'Custom';
     win.fbq('track', metaEvent, params || {});
+  }
+
+  // 4. TikTok Pixel
+  if (win.ttq) {
+    const ttEventMap: Record<string, string> = {
+      'view_item': 'ViewContent',
+      'add_to_cart': 'AddToCart',
+      'begin_checkout': 'InitiateCheckout',
+      'purchase': 'CompletePayment',
+      'search': 'Search',
+    };
+    const ttEvent = ttEventMap[eventName] || eventName;
+    try {
+      win.ttq.track(ttEvent, {
+        contents: ((params?.items as any[]) || []).map((it: any) => ({
+          content_id: it.item_id,
+          content_name: it.item_name,
+          price: Number(it.price || 0),
+          quantity: Number(it.quantity || 1),
+        })),
+        value: Number(params?.value || 0),
+        currency: 'MXN',
+      });
+    } catch {
+      // Fallback
+      win.ttq.track(ttEvent, params || {});
+    }
   }
 }
 
@@ -111,6 +138,7 @@ export default function Analytics() {
   const GA_ID = dynamicSettings?.gaMeasurementId || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-26KQRL7KYJ';
   const GTM_ID = dynamicSettings?.gtmId || process.env.NEXT_PUBLIC_GTM_ID;
   const META_PIXEL_ID = dynamicSettings?.metaPixelId || process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const TIKTOK_PIXEL_ID = dynamicSettings?.tiktokPixelId || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || 'DBN4APJC77UF91065TB0';
 
   return (
     <>
@@ -172,6 +200,26 @@ export default function Analytics() {
               'https://connect.facebook.net/en_US/fbevents.js');
               fbq('init', '${META_PIXEL_ID}');
               fbq('track', 'PageView');
+            `,
+          }}
+        />
+      )}
+
+      {/* TIKTOK PIXEL */}
+      {TIKTOK_PIXEL_ID && (
+        <Script
+          id="tiktok-pixel"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function (w, d, t) {
+                w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+                var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+                ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+
+                ttq.load('${TIKTOK_PIXEL_ID}');
+                ttq.page();
+              }(window, document, 'ttq');
             `,
           }}
         />
