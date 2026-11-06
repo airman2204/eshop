@@ -805,19 +805,18 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 className={`relative overflow-hidden transition-all duration-300 flex flex-col justify-between p-6 shadow-2xl border ${
                   formatRatio === '1:1' ? 'w-[340px] h-[340px] rounded-3xl' : 'w-[280px] h-[497px] rounded-3xl'
                 } ${!adResult?.generatedImageUrl ? (backgroundThemes[activeBackground] || backgroundThemes.luxury_marble) : 'bg-black text-white'}`}
-                style={
-                  adResult?.generatedImageUrl
-                    ? {
-                        backgroundImage: `url(${adResult.generatedImageUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                      }
-                    : undefined
-                }
               >
-                {/* Overlay degradado cinematográfico para legibilidad si hay foto generada por FLUX */}
+                {/* Imagen fotorrealista de fondo generada por FLUX */}
                 {adResult?.generatedImageUrl && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none z-0" />
+                  <>
+                    <img
+                      src={adResult.generatedImageUrl}
+                      alt="Fondo publicitario AI"
+                      className="absolute inset-0 w-full h-full object-cover z-0"
+                      crossOrigin="anonymous"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none z-1" />
+                  </>
                 )}
 
                 {/* 1. Header del Anuncio: Badge & Urgencia */}

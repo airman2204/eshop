@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.cjdot.com",
       },
+      {
+        protocol: "https",
+        hostname: "**.fal.media",
+      },
     ],
   },
   async headers() {
@@ -74,7 +78,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://*.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://connect.facebook.net https://*.facebook.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://*.facebook.com https://*.rakuten.co.jp https://thumbnail.image.rakuten.co.jp",
+              "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.whatsapp.net https://*.fbcdn.net https://*.cjdropshipping.com https://*.cjdot.com https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://*.facebook.com https://*.rakuten.co.jp https://thumbnail.image.rakuten.co.jp https://*.fal.media https://v3b.fal.media",
               "media-src 'self' data: blob: https://*.cjdropshipping.com https://*.cjdot.com https://*.supabase.co",
               "font-src 'self' https://fonts.gstatic.com data:",
               "connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com wss://*.supabase.co https://foxdrop-whatsapp-bridge.onrender.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://www.facebook.com https://*.facebook.com https://generativelanguage.googleapis.com",
