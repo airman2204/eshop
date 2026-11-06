@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Camera, X, Volume2, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface MobileBarcodeScannerProps {
@@ -48,12 +48,29 @@ export default function MobileBarcodeScanner({
       setScannerError(null);
 
       try {
-        const scanner = new Html5Qrcode(scannerRegionId);
+        const scanner = new Html5Qrcode(scannerRegionId, {
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE,
+          ],
+          verbose: false,
+        });
         html5QrCodeRef.current = scanner;
 
         const config = {
-          fps: 15,
-          qrbox: { width: 260, height: 260 },
+          fps: 20,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            return {
+              width: Math.floor(minEdge * 0.85),
+              height: Math.floor(minEdge * 0.55), // Ventana apaisada ideal para códigos de barras alargados tipo UPC/EAN
+            };
+          },
           aspectRatio: 1.0,
         };
 

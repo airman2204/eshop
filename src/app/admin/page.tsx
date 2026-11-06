@@ -3691,10 +3691,16 @@ export default function AdminCRM() {
         return;
       }
 
-      // Buscar producto por SKU o ID o título
-      const matched = products.find(
-        p => p.sku.toLowerCase() === code.toLowerCase() || p.id === code
-      );
+      // Buscar producto por SKU, ID o código de barras (tolerante a ceros iniciales como 0667659... vs 667659...)
+      const cleanScanned = code.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const matched = products.find(p => {
+        const prodSku = (p.sku || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        if (prodSku && (prodSku === cleanScanned || prodSku.endsWith(cleanScanned) || cleanScanned.endsWith(prodSku))) {
+          return true;
+        }
+        if (p.id === code) return true;
+        return false;
+      });
 
       if (matched) {
         handleAddToCartPos(matched);
