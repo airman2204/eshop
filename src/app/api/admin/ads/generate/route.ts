@@ -161,7 +161,21 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
         if (falRes.ok) {
           const falData = await falRes.json();
           if (falData.images && falData.images[0]?.url) {
-            parsed.generatedImageUrl = falData.images[0].url;
+            const rawUrl = falData.images[0].url;
+            try {
+              // Convertir a Base64 data-URI para evitar bloqueos CORS y permitir descarga inmediata
+              const imgFetch = await fetch(rawUrl);
+              if (imgFetch.ok) {
+                const arrayBuf = await imgFetch.arrayBuffer();
+                const base64 = Buffer.from(arrayBuf).toString("base64");
+                const mime = imgFetch.headers.get("content-type") || "image/jpeg";
+                parsed.generatedImageUrl = `data:${mime};base64,${base64}`;
+              } else {
+                parsed.generatedImageUrl = rawUrl;
+              }
+            } catch {
+              parsed.generatedImageUrl = rawUrl;
+            }
           }
         } else {
           console.warn("FAL.AI generation returned non-OK:", await falRes.text());

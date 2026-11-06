@@ -112,7 +112,15 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
     error?: string;
   } | null>(null);
 
-  // Credenciales Meta & TikTok guardadas en localStorage
+  // Notificaciones Toast Propias de la Interfaz (Cero alert() nativo)
+  const [toastNotice, setToastNotice] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToastNotice({ message, type });
+    setTimeout(() => {
+      setToastNotice(prev => (prev?.message === message ? null : prev));
+    }, 4000);
+  };
   const [metaToken, setMetaToken] = useState('');
   const [metaAdAccountId, setMetaAdAccountId] = useState('');
   const [tiktokToken, setTiktokToken] = useState('');
@@ -134,7 +142,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
     localStorage.setItem('foxads_meta_ad_acc', metaAdAccountId.trim());
     localStorage.setItem('foxads_tiktok_token', tiktokToken.trim());
     localStorage.setItem('foxads_tiktok_adv_id', tiktokAdvId.trim());
-    alert('Credenciales de pauta guardadas exitosamente.');
+    showToast('Credenciales de pauta guardadas exitosamente.', 'success');
     setShowConnectModal(false);
   };
 
@@ -201,11 +209,11 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
         setActiveBackground(data.ad.aestheticScene.backgroundStyle || 'luxury_marble');
         setSelectedCopyIndex(0);
       } else {
-        alert(data.error || 'Error al generar la campaña');
+        showToast(data.error || 'Error al generar la campaña', 'error');
       }
     } catch (err: any) {
       console.error(err);
-      alert('Error de conexión al generar el anuncio');
+      showToast('Error de conexión al generar el anuncio', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -215,17 +223,26 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
     if (!adCardRef.current) return;
     setDownloadingImg(true);
     try {
-      const dataUrl = await toJpeg(adCardRef.current, {
-        quality: 0.95,
-        pixelRatio: 2, // Ultra HD
-      });
+      let downloadUrl = '';
+      if (adResult?.generatedImageUrl && !showOverlays) {
+        // En modo foto pura, descargar directamente la imagen sin pasar por renderizado HTML
+        downloadUrl = adResult.generatedImageUrl;
+      } else {
+        downloadUrl = await toJpeg(adCardRef.current, {
+          quality: 0.95,
+          pixelRatio: 2, // Ultra HD
+          cacheBust: true,
+        });
+      }
+
       const link = document.createElement('a');
       link.download = `FoxAds_${selectedProduct?.title.slice(0, 15).replace(/\s+/g, '_')}_${Date.now()}.jpg`;
-      link.href = dataUrl;
+      link.href = downloadUrl;
       link.click();
+      showToast('¡Imagen descargada en alta resolución!', 'success');
     } catch (err) {
       console.error('Error exportando creativo:', err);
-      alert('No se pudo descargar la imagen');
+      showToast('No se pudo descargar la imagen. Intenta nuevamente.', 'error');
     } finally {
       setDownloadingImg(false);
     }
@@ -1065,6 +1082,24 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 Cancelar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NOTIFICACIÓN TOAST NATIVA DE FOXDROP (REEMPLAZA ALERT() DEL NAVEGADOR) */}
+      {toastNotice && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl border flex items-center gap-3 max-w-sm ${
+            toastNotice.type === 'success'
+              ? 'bg-emerald-950 text-emerald-100 border-emerald-500/40'
+              : toastNotice.type === 'error'
+              ? 'bg-rose-950 text-rose-100 border-rose-500/40'
+              : 'bg-slate-900 text-slate-100 border-slate-700'
+          }`}>
+            {toastNotice.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
+            {toastNotice.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
+            {toastNotice.type === 'info' && <Sparkles className="w-5 h-5 text-orange-400 shrink-0" />}
+            <span className="text-xs font-bold leading-tight">{toastNotice.message}</span>
           </div>
         </div>
       )}
