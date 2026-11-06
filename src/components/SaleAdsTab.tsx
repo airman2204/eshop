@@ -1,17 +1,15 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Sparkles, 
   Download, 
   Copy, 
   Check, 
-  Share2, 
   Send, 
   Flame, 
   ExternalLink, 
   RefreshCw, 
-  Layers, 
   Smartphone, 
   Square, 
   Megaphone, 
@@ -20,11 +18,14 @@ import {
   ShoppingBag,
   TrendingUp,
   Tag,
-  Sliders,
+  Palette,
+  Rocket,
+  Settings,
   DollarSign,
-  Palette
+  MapPin,
+  Clock
 } from 'lucide-react';
-import { toJpeg, toPng } from 'html-to-image';
+import { toJpeg } from 'html-to-image';
 
 interface ProductItem {
   id: string;
@@ -96,15 +97,54 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
   const [customPrice, setCustomPrice] = useState<number | null>(null);
   const [activeBackground, setActiveBackground] = useState<string>('luxury_marble');
 
-  // Conexiones Meta & TikTok
-  const [metaConnected, setMetaConnected] = useState(false);
-  const [tiktokConnected, setTiktokConnected] = useState(false);
+  // ETAPA 2: CONFIGURACIÓN Y LANZAMIENTO DE CAMPAÑA
+  const [launchPlatform, setLaunchPlatform] = useState<'meta' | 'tiktok'>('meta');
+  const [dailyBudget, setDailyBudget] = useState<number>(50); // $50 MXN por defecto
+  const [targetLocation, setTargetLocation] = useState<string>('Puebla, México (Radio 25 km)');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<{
+    success: boolean;
+    mode?: string;
+    message?: string;
+    campaignDetails?: any;
+    error?: string;
+  } | null>(null);
+
+  // Credenciales Meta & TikTok guardadas en localStorage
+  const [metaToken, setMetaToken] = useState('');
+  const [metaAdAccountId, setMetaAdAccountId] = useState('');
+  const [tiktokToken, setTiktokToken] = useState('');
+  const [tiktokAdvId, setTiktokAdvId] = useState('');
   const [showConnectModal, setShowConnectModal] = useState(false);
+
+  // Cargar credenciales guardadas en cliente
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setMetaToken(localStorage.getItem('foxads_meta_token') || '');
+    setMetaAdAccountId(localStorage.getItem('foxads_meta_ad_acc') || '');
+    setTiktokToken(localStorage.getItem('foxads_tiktok_token') || '');
+    setTiktokAdvId(localStorage.getItem('foxads_tiktok_adv_id') || '');
+  }, []);
+
+  const handleSaveCredentials = () => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('foxads_meta_token', metaToken.trim());
+    localStorage.setItem('foxads_meta_ad_acc', metaAdAccountId.trim());
+    localStorage.setItem('foxads_tiktok_token', tiktokToken.trim());
+    localStorage.setItem('foxads_tiktok_adv_id', tiktokAdvId.trim());
+    alert('Credenciales de pauta guardadas exitosamente.');
+    setShowConnectModal(false);
+  };
 
   // Referencia para exportar la imagen
   const adCardRef = useRef<HTMLDivElement>(null);
 
   const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
+
+  const getProductPrice = (p?: ProductItem | null) => {
+    if (!p) return 0;
+    return p.publicPrice !== undefined ? p.publicPrice : (p.price || 0);
+  };
 
   // Presets de ideas de venta rápida
   const presetAngles = [
@@ -124,15 +164,11 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
     setUserIdea(ideaText);
   };
 
-  const getProductPrice = (p?: ProductItem | null) => {
-    if (!p) return 0;
-    return p.publicPrice !== undefined ? p.publicPrice : (p.price || 0);
-  };
-
   const handleGenerateAd = async () => {
     if (!selectedProduct) return;
     setIsGenerating(true);
     setAdResult(null);
+    setPublishResult(null);
 
     const price = getProductPrice(selectedProduct);
 
@@ -206,6 +242,65 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
     setTimeout(() => setCopiedText(false), 2500);
   };
 
+  // ETAPA 2: LANZAMIENTO DIRECTO VÍA API
+  const handleLaunchCampaign = async () => {
+    if (!adResult || !selectedProduct) return;
+    setIsPublishing(true);
+    setPublishResult(null);
+
+    const currentCopy = adResult.copyVariations[selectedCopyIndex] || adResult.copyVariations[0];
+    const targetUrl = targetGoal === 'whatsapp'
+      ? `https://wa.me/${adminWhatsAppPhone}?text=${encodeURIComponent(currentCopy.whatsappMessage)}`
+      : `https://foxdrop.mx/producto/${selectedProduct.id}`;
+
+    try {
+      const res = await fetch('/api/admin/ads/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: launchPlatform,
+          campaignName: `FoxAds - ${selectedProduct.title.slice(0, 20)} [${new Date().toLocaleDateString('es-MX')}]`,
+          dailyBudgetMxn: dailyBudget,
+          product: {
+            id: selectedProduct.id,
+            title: selectedProduct.title,
+            price: getProductPrice(selectedProduct),
+          },
+          adCreative: {
+            headline: customHeadline || adResult.headline,
+            subheadline: adResult.subheadline,
+            bodyText: `${currentCopy.hook}\n\n${currentCopy.body}`,
+            badge: customBadge || adResult.badge,
+          },
+          targeting: {
+            locations: ['Puebla', 'México'],
+            ageMin: 18,
+            ageMax: 45,
+            interests: ['Bath & Body Works', 'Cuidado Personal', 'Regalos'],
+          },
+          destination: targetGoal,
+          targetUrl,
+          credentials: {
+            metaAccessToken: metaToken || undefined,
+            metaAdAccountId: metaAdAccountId || undefined,
+            tiktokAccessToken: tiktokToken || undefined,
+            tiktokAdvertiserId: tiktokAdvId || undefined,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      setPublishResult(data);
+    } catch (err: any) {
+      setPublishResult({
+        success: false,
+        error: err.message || 'Error al conectar con el servidor de publicación.',
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   // Fondos publicitarios dinámicos
   const backgroundThemes: Record<string, string> = {
     luxury_marble: 'bg-gradient-to-br from-stone-900 via-stone-800 to-black text-white border-amber-500/20',
@@ -217,6 +312,8 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
   };
 
   const isLightBackground = activeBackground === 'minimal_pastel' || activeBackground === 'clean_studio';
+  const isMetaActive = Boolean(metaToken && metaAdAccountId);
+  const isTikTokActive = Boolean(tiktokToken && tiktokAdvId);
 
   return (
     <div className="space-y-6 pb-20">
@@ -230,39 +327,47 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black tracking-tight">FoxAds AI</h2>
               <span className="bg-gradient-to-r from-orange-500 to-pink-500 text-[10px] font-bold px-2 py-0.5 rounded-full text-white uppercase tracking-wider">
-                SaleADS Engine
+                SaleADS Engine 2.0
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Generador autónomo de creativos publicitarios, copys de alta conversión y campañas multicanal.
+              Generador autónomo de creativos, copys de alta conversión y lanzador directo de campañas en Meta & TikTok.
             </p>
           </div>
         </div>
 
-        {/* Canales Conectados */}
+        {/* Canales y Ajustes */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowConnectModal(true)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition ${
-              metaConnected 
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition cursor-pointer ${
+              isMetaActive 
                 ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' 
                 : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-500/50'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${metaConnected ? 'bg-blue-400 animate-pulse' : 'bg-slate-500'}`} />
-            Meta Ads (IG & FB)
+            <div className={`w-2 h-2 rounded-full ${isMetaActive ? 'bg-blue-400 animate-pulse' : 'bg-slate-500'}`} />
+            Meta Ads {isMetaActive ? '(Conectado)' : '(Configurar)'}
           </button>
 
           <button
             onClick={() => setShowConnectModal(true)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition ${
-              tiktokConnected 
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition cursor-pointer ${
+              isTikTokActive 
                 ? 'bg-pink-600/20 text-pink-400 border-pink-500/40' 
                 : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-pink-500/50'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${tiktokConnected ? 'bg-pink-400 animate-pulse' : 'bg-slate-500'}`} />
-            TikTok Ads
+            <div className={`w-2 h-2 rounded-full ${isTikTokActive ? 'bg-pink-400 animate-pulse' : 'bg-slate-500'}`} />
+            TikTok Ads {isTikTokActive ? '(Conectado)' : '(Configurar)'}
+          </button>
+
+          <button
+            onClick={() => setShowConnectModal(true)}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition cursor-pointer"
+            title="Ajustes de API"
+          >
+            <Settings className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -340,7 +445,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 <button
                   key={angle.id}
                   onClick={() => handleApplyPreset(angle.id, angle.idea)}
-                  className={`p-2 rounded-xl text-left border text-[11px] font-bold transition ${
+                  className={`p-2 rounded-xl text-left border text-[11px] font-bold transition cursor-pointer ${
                     selectedPresetAngle === angle.id
                       ? 'border-[#E65F2B] bg-orange-50 text-[#E65F2B]'
                       : 'border-stone-200 text-stone-600 hover:bg-stone-50'
@@ -369,7 +474,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setFormatRatio('1:1')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       formatRatio === '1:1'
                         ? 'border-[#E65F2B] bg-orange-50 text-[#E65F2B]'
                         : 'border-stone-200 text-stone-600'
@@ -379,7 +484,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                   </button>
                   <button
                     onClick={() => setFormatRatio('9:16')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       formatRatio === '9:16'
                         ? 'border-[#E65F2B] bg-orange-50 text-[#E65F2B]'
                         : 'border-stone-200 text-stone-600'
@@ -395,7 +500,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setTargetGoal('whatsapp')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       targetGoal === 'whatsapp'
                         ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
                         : 'border-stone-200 text-stone-600'
@@ -405,7 +510,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                   </button>
                   <button
                     onClick={() => setTargetGoal('store')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
                       targetGoal === 'store'
                         ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : 'border-stone-200 text-stone-600'
@@ -466,7 +571,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                   <button
                     key={idx}
                     onClick={() => setSelectedCopyIndex(idx)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                       selectedCopyIndex === idx
                         ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : 'border-stone-200 text-stone-500 hover:bg-stone-50'
@@ -511,6 +616,144 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
             </div>
           )}
 
+          {/* PASO 4 (ETAPA 2): LANZADOR DE CAMPAÑA AUTOMÁTICA */}
+          {adResult && (
+            <div className="bg-gradient-to-br from-slate-900 to-stone-900 rounded-3xl p-6 text-white border border-slate-800 shadow-xl space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                    <Rocket className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black tracking-tight">Etapa 2: Lanzar Campaña Directa</h3>
+                    <p className="text-[11px] text-slate-400">Pauta con 1 clic en Facebook, Instagram o TikTok</p>
+                  </div>
+                </div>
+                <span className="bg-orange-500/20 text-orange-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-500/30">
+                  Auto-Publisher
+                </span>
+              </div>
+
+              {/* Selector de Red y Presupuesto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-300 block mb-1.5">Red Publicitaria</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setLaunchPlatform('meta')}
+                      className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition cursor-pointer ${
+                        launchPlatform === 'meta'
+                          ? 'border-blue-500 bg-blue-600/30 text-blue-300'
+                          : 'border-slate-800 bg-slate-950/40 text-slate-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-blue-400" />
+                      Meta (IG & FB)
+                    </button>
+                    <button
+                      onClick={() => setLaunchPlatform('tiktok')}
+                      className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition cursor-pointer ${
+                        launchPlatform === 'tiktok'
+                          ? 'border-pink-500 bg-pink-600/30 text-pink-300'
+                          : 'border-slate-800 bg-slate-950/40 text-slate-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-pink-400" />
+                      TikTok Ads
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-bold text-slate-300">Presupuesto Diario</label>
+                    <span className="text-xs font-black text-orange-400">${dailyBudget} MXN/día</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {[50, 100, 200].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setDailyBudget(amount)}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                          dailyBudget === amount
+                            ? 'bg-orange-500 text-white border-orange-400'
+                            : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        ${amount}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Segmentación Inteligente */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-[11px] space-y-1.5">
+                <div className="flex items-center justify-between text-slate-300">
+                  <span className="flex items-center gap-1 font-bold text-slate-400">
+                    <MapPin className="w-3.5 h-3.5 text-orange-400" /> Zona Geográfica:
+                  </span>
+                  <span className="font-bold">{targetLocation}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-300">
+                  <span className="flex items-center gap-1 font-bold text-slate-400">
+                    <Clock className="w-3.5 h-3.5 text-blue-400" /> Optimización:
+                  </span>
+                  <span className="font-bold text-emerald-400">
+                    {targetGoal === 'whatsapp' ? 'Cierre de Chats en WhatsApp' : 'Visitas con Intención de Compra'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Botón de Lanzamiento */}
+              <button
+                onClick={handleLaunchCampaign}
+                disabled={isPublishing}
+                className="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-sm shadow-xl shadow-orange-500/20 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isPublishing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Conectando con la API y Publicando Anuncio...
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="w-4 h-4" />
+                    Lanzar Campaña Automática con ${dailyBudget} MXN/día
+                  </>
+                )}
+              </button>
+
+              {/* Resultado del Lanzamiento */}
+              {publishResult && (
+                <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
+                  publishResult.success 
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200' 
+                    : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+                }`}>
+                  <div className="flex items-center gap-2 font-bold">
+                    {publishResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
+                    <span>{publishResult.success ? '¡Anuncio Estructurado y Procesado!' : 'Atención al Publicar'}</span>
+                  </div>
+                  <p className="leading-relaxed opacity-90">{publishResult.message || publishResult.error}</p>
+
+                  {publishResult.campaignDetails && (
+                    <div className="pt-2 border-t border-emerald-500/20 text-[11px] grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-slate-400 block">Campaña:</span>
+                        <strong className="text-white">{publishResult.campaignDetails.name}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">Destino:</span>
+                        <strong className="text-white">{publishResult.campaignDetails.destination}</strong>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* COLUMNA DERECHA: PREVIEW EN VIVO Y RENDER (5 COLS) */}
@@ -542,7 +785,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 <button
                   key={bgKey}
                   onClick={() => setActiveBackground(bgKey)}
-                  className={`px-2.5 py-1 rounded-lg border capitalize whitespace-nowrap transition ${
+                  className={`px-2.5 py-1 rounded-lg border capitalize whitespace-nowrap transition cursor-pointer ${
                     activeBackground === bgKey
                       ? 'border-[#E65F2B] bg-orange-50 text-[#E65F2B]'
                       : 'border-stone-200 text-stone-500 hover:bg-stone-50'
@@ -660,80 +903,111 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
 
       </div>
 
-      {/* MODAL DE CONEXIÓN A META ADS Y TIKTOK ADS */}
+      {/* MODAL DE CONEXIÓN A META ADS Y TIKTOK ADS (ETAPA 2 CONFIGURACIÓN) */}
       {showConnectModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-stone-200 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-stone-200 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
-                <Megaphone className="w-5 h-5 text-[#E65F2B]" /> Conectar Canales de Pauta
+                <Settings className="w-5 h-5 text-[#E65F2B]" /> Credenciales de Pauta (Etapa 2)
               </h3>
               <button 
                 onClick={() => setShowConnectModal(false)}
-                className="text-stone-400 hover:text-stone-600 text-xs font-bold"
+                className="text-stone-400 hover:text-stone-600 text-xs font-bold cursor-pointer"
               >
-                Cerrar
+                ✕
               </button>
             </div>
 
             <p className="text-xs text-stone-600">
-              Conecta tus cuentas oficiales para lanzar tus anuncios y campañas directamente desde FoxDrop con 1 clic sin entrar al Administrador de Anuncios:
+              Ingresa tus credenciales de las APIs oficiales para que FoxDrop publique y encienda campañas con tu presupuesto sin que tengas que usar el Ads Manager de Zuckerberg:
             </p>
 
-            <div className="space-y-3">
-              {/* META ADS */}
-              <div className="p-3.5 rounded-2xl border border-stone-200 flex items-center justify-between bg-stone-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black">
-                    f
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-stone-900">Meta Ads (Instagram & Facebook)</h4>
-                    <p className="text-[10px] text-stone-500">Páginas, Catálogo & WhatsApp Ads</p>
-                  </div>
+            {/* SECCIÓN META ADS */}
+            <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50/50 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-xs">
+                  f
                 </div>
-                <button
-                  onClick={() => {
-                    setMetaConnected(!metaConnected);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    metaConnected
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {metaConnected ? 'Conectado ✓' : 'Conectar'}
-                </button>
+                <div>
+                  <h4 className="text-xs font-bold text-stone-900">Meta Marketing API (Facebook & Instagram)</h4>
+                  <p className="text-[10px] text-stone-500">De developers.facebook.com</p>
+                </div>
               </div>
 
-              {/* TIKTOK ADS */}
-              <div className="p-3.5 rounded-2xl border border-stone-200 flex items-center justify-between bg-stone-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-black">
-                    ♪
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-stone-900">TikTok for Business</h4>
-                    <p className="text-[10px] text-stone-500">TikTok Feed & Spark Ads</p>
-                  </div>
+              <div className="space-y-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-bold text-stone-600 block mb-0.5">ID Cuenta Publicitaria (Ad Account ID)</label>
+                  <input
+                    type="text"
+                    placeholder="ej: act_1234567890 o 1234567890"
+                    value={metaAdAccountId}
+                    onChange={(e) => setMetaAdAccountId(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-white font-mono text-[11px]"
+                  />
                 </div>
-                <button
-                  onClick={() => {
-                    setTiktokConnected(!tiktokConnected);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    tiktokConnected
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-black text-white hover:bg-stone-800'
-                  }`}
-                >
-                  {tiktokConnected ? 'Conectado ✓' : 'Conectar'}
-                </button>
+                <div>
+                  <label className="text-[10px] font-bold text-stone-600 block mb-0.5">Meta Access Token (System User / User Token)</label>
+                  <input
+                    type="password"
+                    placeholder="EAAB..."
+                    value={metaToken}
+                    onChange={(e) => setMetaToken(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-white font-mono text-[11px]"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
-              💡 <strong>Modo Asistido Activo:</strong> Puedes descargar los creativos en alta resolución y copiar los textos hoy mismo para publicar en Instagram Reels, Historias, Marketplace o tus estados de WhatsApp sin costo alguno.
+            {/* SECCIÓN TIKTOK ADS */}
+            <div className="p-4 rounded-2xl border border-stone-200 bg-stone-50 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center font-black text-xs">
+                  ♪
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-stone-900">TikTok Marketing API</h4>
+                  <p className="text-[10px] text-stone-500">De business-api.tiktok.com</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-bold text-stone-600 block mb-0.5">Advertiser ID</label>
+                  <input
+                    type="text"
+                    placeholder="ej: 701234567890..."
+                    value={tiktokAdvId}
+                    onChange={(e) => setTiktokAdvId(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-white font-mono text-[11px]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-stone-600 block mb-0.5">TikTok Access Token</label>
+                  <input
+                    type="password"
+                    placeholder="Token de acceso..."
+                    value={tiktokToken}
+                    onChange={(e) => setTiktokToken(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-xl border border-stone-200 bg-white font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={handleSaveCredentials}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-[#E65F2B] hover:bg-[#D45321] text-white font-bold text-xs shadow-md transition cursor-pointer"
+              >
+                Guardar Credenciales
+              </button>
+              <button
+                onClick={() => setShowConnectModal(false)}
+                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
