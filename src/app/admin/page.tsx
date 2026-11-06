@@ -3800,13 +3800,37 @@ export default function AdminCRM() {
         });
       });
 
-      // Recargar clientes y pedidos
+      // Recargar clientes y pedidos mapeando correctamente la estructura de Order
       const [updatedOrders, updatedClients] = await Promise.all([
         getAdminOrders(),
         getClientsWithMetrics(),
       ]);
-      if (updatedOrders.length > 0) setOrders(updatedOrders);
-      if (updatedClients.length > 0) setClients(updatedClients);
+      if (updatedOrders && updatedOrders.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappedOrders: Order[] = updatedOrders.map((o: any) => ({
+          id: o.order_number || o.id,
+          dbId: o.id,
+          orderNumber: o.order_number || o.id,
+          clientName: o.client_name,
+          clientPhone: o.client_phone,
+          clientEmail: o.client_email,
+          status: o.status || 'pending',
+          shippingType: o.shipping_type || 'puebla_local',
+          pickupPoint: o.pickup_point,
+          subtotal: Number(o.subtotal) || 0,
+          shippingCost: Number(o.shipping_cost) || 0,
+          total: Number(o.total) || 0,
+          trackingNumber: o.tracking_number,
+          createdAt: o.created_at,
+          itemsCount: o.order_items?.length || 1,
+          notes: o.notes || undefined,
+          paymentMethod: o.payment_method || (o.order_number?.startsWith('FX-POS') ? 'cash' : undefined),
+          paymentStatus: o.payment_status || 'pending',
+          order_items: o.order_items || [],
+        }));
+        setOrders(mappedOrders);
+      }
+      if (updatedClients && updatedClients.length > 0) setClients(updatedClients);
 
       // Objeto base del ticket
       const ticketData = {
@@ -4040,9 +4064,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
   // Si el método es Mercado Pago, solo aparece en Activos cuando el pago ha sido acreditado ('paid') o ya pasó a preparación ('processing'/'shipped').
   // Las ventas en físico (POS) se entregan en el acto y los pedidos entregados/cancelados pasan automáticamente al Historial).
   const activeOrders = orders.filter(o => 
+    o && 
     o.status !== 'cancelled' && 
     o.status !== 'delivered' && 
-    !o.id.startsWith('FX-POS') &&
+    (!o.id || !String(o.id).startsWith('FX-POS')) &&
     !(o.paymentMethod === 'mercadopago' && o.paymentStatus !== 'paid' && o.status === 'pending')
   );
   // Pedidos cancelados (historial separado de bajas)
@@ -6623,7 +6648,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                       <div className="text-right">
                         <span className="text-slate-400 text-[10px] block font-medium">Total</span>
-                        <span className="text-base font-bold text-slate-900 font-semibold">${order.total.toFixed(2)} MXN</span>
+                        <span className="text-base font-bold text-slate-900 font-semibold">${Number(order.total || 0).toFixed(2)} MXN</span>
                       </div>
 
                       <select
@@ -6686,7 +6711,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       </button>
 
                       {/* Si es venta física o tiene ticket registrado, botón para ver y compartir ticket */}
-                      {(order.id.startsWith("FX-POS") || (order.notes && order.notes.includes("Ticket:"))) && (
+                      {((order?.id && String(order.id).startsWith("FX-POS")) || (order?.notes && order.notes.includes("Ticket:"))) && (
                         <button
                           onClick={() => setViewingTicketOrder(order)}
                           title="Ver ticket de compra"
@@ -6700,7 +6725,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <button
                         onClick={() => sendWhatsAppNotification(
                           order.clientPhone, 
-                          `Hola ${order.clientName}, te informamos que tu pedido ${order.id} se encuentra: ${order.status.toUpperCase()}. Si deseas acordar los detalles de entrega, estamos a tu disposición.`
+                          `Hola ${order.clientName || ''}, te informamos que tu pedido ${order.id} se encuentra: ${(order.status || 'procesado').toUpperCase()}. Si deseas acordar los detalles de entrega, estamos a tu disposición.`
                         )}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition text-xs shadow-xs"
                       >
@@ -6720,7 +6745,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         {crmSubTab === 'order_history' && (() => {
           // Filtrado del historial según canal, estado y término de búsqueda
           const filteredHistory = orders.filter(order => {
-            const isPos = order.id.startsWith('FX-POS');
+            const isPos = Boolean(order?.id && String(order.id).startsWith('FX-POS'));
             
             // Filtro por canal
             if (orderHistoryChannelFilter === 'pos' && !isPos) return false;
@@ -6732,10 +6757,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             // Filtro por búsqueda
             if (orderHistorySearchTerm.trim()) {
               const query = orderHistorySearchTerm.toLowerCase();
-              const matchId = order.id.toLowerCase().includes(query);
-              const matchClient = order.clientName?.toLowerCase().includes(query);
-              const matchPhone = order.clientPhone?.toLowerCase().includes(query);
-              const matchProduct = order.order_items?.some(it => it.product_title?.toLowerCase().includes(query));
+              const matchId = (order.id || '').toLowerCase().includes(query);
+              const matchClient = (order.clientName || '').toLowerCase().includes(query);
+              const matchPhone = (order.clientPhone || '').toLowerCase().includes(query);
+              const matchProduct = Array.isArray(order.order_items) && order.order_items.some(it => (it.product_title || '').toLowerCase().includes(query));
               if (!matchId && !matchClient && !matchPhone && !matchProduct) return false;
             }
 
@@ -6747,8 +6772,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             .filter(o => o.status !== 'cancelled')
             .reduce((sum, o) => sum + (o.total || 0), 0);
 
-          const posCount = orders.filter(o => o.id.startsWith('FX-POS')).length;
-          const onlineCount = orders.filter(o => !o.id.startsWith('FX-POS')).length;
+          const posCount = orders.filter(o => o?.id && String(o.id).startsWith('FX-POS')).length;
+          const onlineCount = orders.filter(o => !o?.id || !String(o.id).startsWith('FX-POS')).length;
           const deliveredCount = orders.filter(o => o.status === 'delivered').length;
           const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
 
@@ -6963,7 +6988,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {filteredHistory.map(order => {
-                    const isPos = order.id.startsWith('FX-POS');
+                    const isPos = Boolean(order?.id && String(order.id).startsWith('FX-POS'));
                     const isCancelled = order.status === 'cancelled';
                     const isDelivered = order.status === 'delivered';
 
@@ -7029,7 +7054,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </span>
 
                             <span className="text-slate-400 text-[11px]">
-                              {new Date(order.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Reciente'}
                             </span>
                           </div>
 
@@ -7070,7 +7095,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                           <div className="text-right">
                             <span className="text-slate-400 text-[10px] block">Total Pagado</span>
                             <span className={`text-base font-black ${isCancelled ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                              ${order.total.toFixed(2)} MXN
+                              ${Number(order.total || 0).toFixed(2)} MXN
                             </span>
                           </div>
 
@@ -7199,7 +7224,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         </span>
                       </div>
                       <p className="text-slate-800 font-medium">{order.clientName} • <span className="text-slate-500">{order.clientPhone}</span></p>
-                      <p className="text-slate-400 text-[11px]">Fecha original: {new Date(order.createdAt).toLocaleDateString()}</p>
+                      <p className="text-slate-400 text-[11px]">Fecha original: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Reciente'}</p>
                       
                       {/* Motivo de Cancelación */}
                       <div className="bg-red-50/70 border border-red-100 rounded-xl p-2.5 text-xs text-red-900 mt-2">
@@ -7215,7 +7240,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                       <div className="text-right">
                         <span className="text-slate-400 text-[10px] block">Monto Cancelado</span>
-                        <span className="text-base font-black text-gray-500 line-through">${order.total.toFixed(2)} MXN</span>
+                        <span className="text-base font-black text-gray-500 line-through">${Number(order.total || 0).toFixed(2)} MXN</span>
                       </div>
 
                       <button
@@ -13058,7 +13083,7 @@ ESTÉTICA Y CONCEPTO VISUAL:
                       </div>
                       <div className="flex justify-between border-b pb-1.5">
                         <span className="text-slate-500">Total:</span>
-                        <span className="font-bold text-[#0F3E36]">${viewingTicketOrder.total.toFixed(2)} MXN</span>
+                        <span className="font-bold text-[#0F3E36]">${Number(viewingTicketOrder.total || 0).toFixed(2)} MXN</span>
                       </div>
                       <div className="text-[11px] text-slate-500 pt-1">
                         {viewingTicketOrder.notes || "Venta de mostrador registrada."}
@@ -14398,7 +14423,7 @@ ${ticketImg}
                               key={o.id}
                               type="button"
                               onClick={() => {
-                                setCrmSubTab(o.status === 'delivered' || o.id.startsWith('FX-POS') ? 'order_history' : 'orders');
+                                setCrmSubTab(o?.status === 'delivered' || (o?.id && String(o.id).startsWith('FX-POS')) ? 'order_history' : 'orders');
                                 setShowCommandPalette(false);
                               }}
                               className="w-full p-2.5 rounded-xl hover:bg-slate-50 transition flex items-center justify-between text-left group"
@@ -14609,7 +14634,7 @@ ${ticketImg}
                   <tfoot>
                     <tr className="bg-slate-50 font-bold">
                       <td colSpan={3} className="py-2.5 px-3 text-right font-sans">Total del Pedido:</td>
-                      <td className="py-2.5 px-3 text-right font-semibold text-sm text-[#E65F2B]">${shippingLabelOrder.total.toFixed(2)} MXN</td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-sm text-[#E65F2B]">${Number(shippingLabelOrder.total || 0).toFixed(2)} MXN</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -14656,8 +14681,8 @@ ${ticketImg}
           return orderDate === zReportDate;
         });
 
-        const posOrders = selectedDateOrders.filter(o => o.id.startsWith('FX-POS'));
-        const onlineOrders = selectedDateOrders.filter(o => !o.id.startsWith('FX-POS'));
+        const posOrders = selectedDateOrders.filter(o => o?.id && String(o.id).startsWith('FX-POS'));
+        const onlineOrders = selectedDateOrders.filter(o => !o?.id || !String(o.id).startsWith('FX-POS'));
 
         const totalCash = posOrders.filter(o => o.paymentMethod === 'cash').reduce((acc, o) => acc + o.total, 0);
         const totalCard = posOrders.filter(o => o.paymentMethod === 'card').reduce((acc, o) => acc + o.total, 0);
