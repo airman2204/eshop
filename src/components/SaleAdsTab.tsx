@@ -64,6 +64,7 @@ interface AdConcept {
     ageRange: string;
     locations: string[];
   };
+  generatedImageUrl?: string;
 }
 
 interface SaleAdsTabProps {
@@ -186,6 +187,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
           },
           userIdea: userIdea.trim(),
           targetGoal,
+          formatRatio,
         }),
       });
 
@@ -802,53 +804,75 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 ref={adCardRef}
                 className={`relative overflow-hidden transition-all duration-300 flex flex-col justify-between p-6 shadow-2xl border ${
                   formatRatio === '1:1' ? 'w-[340px] h-[340px] rounded-3xl' : 'w-[280px] h-[497px] rounded-3xl'
-                } ${backgroundThemes[activeBackground] || backgroundThemes.luxury_marble}`}
+                } ${!adResult?.generatedImageUrl ? (backgroundThemes[activeBackground] || backgroundThemes.luxury_marble) : 'bg-black text-white'}`}
+                style={
+                  adResult?.generatedImageUrl
+                    ? {
+                        backgroundImage: `url(${adResult.generatedImageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }
+                    : undefined
+                }
               >
+                {/* Overlay degradado cinematográfico para legibilidad si hay foto generada por FLUX */}
+                {adResult?.generatedImageUrl && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/60 pointer-events-none z-0" />
+                )}
+
                 {/* 1. Header del Anuncio: Badge & Urgencia */}
                 <div className="relative z-10 flex items-center justify-between gap-2">
                   <span className="bg-[#E65F2B] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
                     {customBadge || 'EDICIÓN ESPECIAL'}
                   </span>
-                  <span className={`text-[9px] font-bold tracking-tight opacity-90 ${isLightBackground ? 'text-stone-700' : 'text-stone-300'}`}>
+                  <span className={`text-[9px] font-bold tracking-tight shadow-xs ${adResult?.generatedImageUrl ? 'text-white/90 drop-shadow' : isLightBackground ? 'text-stone-700' : 'text-stone-300'}`}>
                     {adResult?.urgencyText || 'Stock Físico en Puebla'}
                   </span>
                 </div>
 
-                {/* 2. Cuerpo Central: Foto Flotante del Producto con Efectos */}
-                <div className="relative z-10 my-auto flex flex-col items-center justify-center">
-                  <div className="relative group">
-                    {/* Resplandor de fondo */}
-                    <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-90" />
-                    <img
-                      src={selectedProduct?.image || selectedProduct?.images?.[0] || '/logo.png'}
-                      alt={selectedProduct?.title}
-                      className="relative z-10 max-h-36 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transform hover:scale-105 transition duration-300"
-                    />
-                  </div>
+                {/* 2. Cuerpo Central: Si hay foto completa de FLUX es el fondo, si no, foto flotante */}
+                {!adResult?.generatedImageUrl ? (
+                  <div className="relative z-10 my-auto flex flex-col items-center justify-center">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-90" />
+                      <img
+                        src={selectedProduct?.image || selectedProduct?.images?.[0] || '/logo.png'}
+                        alt={selectedProduct?.title}
+                        className="relative z-10 max-h-36 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transform hover:scale-105 transition duration-300"
+                      />
+                    </div>
 
-                  {/* Sello de Precio Gigante */}
-                  <div className="mt-2 text-center">
-                    <span className="inline-block bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl border border-white/20 text-white font-black text-sm shadow-xl">
-                      ${customPrice || getProductPrice(selectedProduct)} MXN
-                    </span>
+                    <div className="mt-2 text-center">
+                      <span className="inline-block bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl border border-white/20 text-white font-black text-sm shadow-xl">
+                        ${customPrice || getProductPrice(selectedProduct)} MXN
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="relative z-10 my-auto flex justify-end">
+                    {/* Badge flotante de precio de estudio en la esquina */}
+                    <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/25 shadow-2xl">
+                      <span className="text-[10px] text-orange-400 font-bold block leading-none">PRECIO OFERTA</span>
+                      <span className="text-sm font-black text-white">${customPrice || getProductPrice(selectedProduct)} MXN</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* 3. Footer del Anuncio: Titular + CTA */}
                 <div className="relative z-10 space-y-2 text-center">
                   <div>
-                    <h3 className={`text-base font-black leading-tight tracking-tight ${isLightBackground ? 'text-stone-900' : 'text-white'}`}>
+                    <h3 className={`text-base font-black leading-tight tracking-tight drop-shadow-md ${adResult?.generatedImageUrl ? 'text-white' : isLightBackground ? 'text-stone-900' : 'text-white'}`}>
                       {customHeadline || selectedProduct?.title || 'Fragancia Original'}
                     </h3>
                     {adResult?.subheadline && (
-                      <p className={`text-[10px] mt-0.5 line-clamp-1 opacity-80 ${isLightBackground ? 'text-stone-600' : 'text-stone-300'}`}>
+                      <p className={`text-[10px] mt-0.5 line-clamp-1 opacity-90 drop-shadow ${adResult?.generatedImageUrl ? 'text-stone-200' : isLightBackground ? 'text-stone-600' : 'text-stone-300'}`}>
                         {adResult.subheadline}
                       </p>
                     )}
                   </div>
 
                   {/* Botón CTA Visual */}
-                  <div className="w-full py-2 px-4 rounded-xl bg-white text-stone-950 font-black text-xs shadow-lg flex items-center justify-center gap-1.5 uppercase tracking-wider">
+                  <div className="w-full py-2 px-4 rounded-xl bg-white text-stone-950 font-black text-xs shadow-xl flex items-center justify-center gap-1.5 uppercase tracking-wider hover:bg-stone-100 transition">
                     {targetGoal === 'whatsapp' ? (
                       <>
                         <Send className="w-3.5 h-3.5 text-emerald-600" />
@@ -864,7 +888,7 @@ export default function SaleAdsTab({ products, adminWhatsAppPhone = '52221234567
                 </div>
 
                 {/* Textura o Marca de Agua Discreta */}
-                <div className="absolute bottom-2 right-3 z-0 opacity-20 text-[9px] font-black uppercase tracking-widest text-white">
+                <div className="absolute bottom-2 right-3 z-0 opacity-25 text-[9px] font-black uppercase tracking-widest text-white drop-shadow">
                   FoxDrop.mx
                 </div>
               </div>

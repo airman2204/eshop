@@ -24,12 +24,13 @@ interface AdConceptResponse {
     ageRange: string;
     locations: string[];
   };
+  generatedImageUrl?: string;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { product, userIdea, targetGoal = "whatsapp" } = body;
+    const { product, userIdea, targetGoal = "whatsapp", formatRatio = "1:1" } = body;
 
     if (!product || !product.title) {
       return NextResponse.json({ error: "Producto no proporcionado o inválido." }, { status: 400 });
@@ -40,18 +41,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "GEMINI_API_KEY no configurada." }, { status: 500 });
     }
 
-    const systemPrompt = `Eres el Director Creativo y Estratega de Publicidad Digital de FoxDrop (estilo SaleADS.ai y agencias D2C de alto rendimiento para TikTok, Instagram y Facebook Ads).
+    const systemPrompt = `Eres el Director Creativo de Publicidad Digital de FoxDrop (estilo SaleADS.ai y agencias D2C virales en Instagram, TikTok y Meta Ads).
 Tu objetivo es transformar un producto real y una idea en un ANUNCIO PUBLICITARIO VISUALMENTE HIPNÓTICO Y COMERCIALMENTE IRRESISTIBLE que detenga el scroll y genere ventas o mensajes inmediatos a WhatsApp.
 
 REGLAS DE DISEÑO Y ESTRATEGIA:
-1. NUNCA propongas diseños genéricos ni textos aburridos como "compra ya" o "nuevo producto".
+1. NUNCA propongas diseños genéricos ni textos aburridos.
 2. Identifica el DESEO EMOCIONAL o el DOLOR real del comprador (ej: oler delicioso todo el día, tener un detalle elegante sin gastar de más, frescura al instante).
 3. Selecciona una atmósfera estética de fondo (backgroundStyle) entre: 'luxury_marble', 'tropical_fresh', 'neon_night', 'minimal_pastel', 'warm_cozy', 'clean_studio'.
-4. Formula 3 variaciones de copy:
-   - Variación 1: Ángulo Deseo / Placer sensorial ("Huele a perfume caro todo el día").
-   - Variación 2: Ángulo Regalo / Detalle accesible ("El detalle perfecto por menos de $100").
-   - Variación 3: Ángulo Urgencia / Stock Físico Inmediato ("Llega hoy mismo en Puebla antes de que se agote").
-5. El mensaje de WhatsApp debe ser hiper-natural y listo para enviar por el cliente con 1 toque.`;
+4. Formula 3 variaciones de copy con la técnica AIDA (Atención, Interés, Deseo, Acción):
+   - Variación 1: Ángulo Deseo / Sensorial.
+   - Variación 2: Ángulo Regalo / Detalle accesible.
+   - Variación 3: Ángulo Urgencia / Stock Físico Inmediato.
+5. Formula un prompt en inglés hiper-detallado ("imagePrompt") para generar una fotografía publicitaria de producto fotorrealista con FLUX.1.
+   El prompt debe describir una escena comercial de catálogo de lujo donde el producto sea el héroe central, con iluminación cinematográfica de estudio, sombras de contacto suaves, texturas reales (mármol, madera o lino) y composición publicitaria sin personas feas ni textos deformados.`;
 
     const userPrompt = `PRODUCTO:
 - Título: ${product.title}
@@ -67,11 +69,12 @@ OBJETIVO PRINCIPAL: ${targetGoal === "whatsapp" ? "Mensajes directos a WhatsApp 
 
 Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
 {
-  "headline": "Titular corto, contundente y llamativo (máx 6 palabras)",
+  "headline": "Titular corto y llamativo (máx 6 palabras)",
   "subheadline": "Subtítulo que refuerza el beneficio clave (máx 10 palabras)",
   "badge": "Sello de impacto (ej: ORIGINAL IMPORTADO, ENTREGA HOY, AROMA TOP)",
   "urgencyText": "Texto de escasez o garantía (ej: Pocas piezas en stock físico)",
   "callToAction": "Texto del botón (ej: Pedir por WhatsApp)",
+  "imagePrompt": "Detailed commercial product advertisement photograph of [the specific product], luxury studio setting, soft cinematic lighting, elegant props matching the scent or style, depth of field, 8k, hyper-realistic commercial catalogue photography",
   "aestheticScene": {
     "backgroundStyle": "luxury_marble",
     "lighting": "Descripción de iluminación",
@@ -129,7 +132,44 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta:
       return NextResponse.json({ error: "No se pudo generar la estrategia de anuncio con la IA." }, { status: 502 });
     }
 
-    const parsed: AdConceptResponse = JSON.parse(rawText);
+    const parsed: AdConceptResponse & { imagePrompt?: string } = JSON.parse(rawText);
+
+    // =========================================================================
+    // GENERAR FOTOGRAFÍA PUBLICITARIA FOTORREALISTA CON FAL.AI (FLUX.1 SCHNELL)
+    // =========================================================================
+    const falKey = process.env.FAL_KEY || "fal_sk_e0a6882ce81147e082a218a95380f4c5:8753267f98da4b14ec5124a872fe147f";
+    if (falKey) {
+      try {
+        const promptToUse = parsed.imagePrompt || `Commercial high-end studio product advertisement photograph of ${product.title}, luxury aesthetic lighting, elegant background, 8k professional e-commerce`;
+        const imageSize = formatRatio === "9:16" ? "portrait_16_9" : "square_hd";
+
+        const falRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
+          method: "POST",
+          headers: {
+            Authorization: `Key ${falKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: promptToUse,
+            image_size: imageSize,
+            num_inference_steps: 4,
+            enable_safety_checker: true,
+          }),
+        });
+
+        if (falRes.ok) {
+          const falData = await falRes.json();
+          if (falData.images && falData.images[0]?.url) {
+            parsed.generatedImageUrl = falData.images[0].url;
+          }
+        } else {
+          console.warn("FAL.AI generation returned non-OK:", await falRes.text());
+        }
+      } catch (falErr) {
+        console.error("Error llamando a fal.ai:", falErr);
+      }
+    }
+
     return NextResponse.json({ success: true, ad: parsed });
   } catch (error: any) {
     console.error("Error en /api/admin/ads/generate:", error);
