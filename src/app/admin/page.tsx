@@ -9393,7 +9393,6 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               <SocialCommerceFlowTab />
             </div>
           )}
-          )}
 
           {/* 12.3 SECCIÓN ANALÍTICAS, SEO & TRAZABILIDAD */}
           {crmSubTab === 'analytics' && (
