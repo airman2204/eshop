@@ -151,11 +151,11 @@ export async function POST(req: NextRequest) {
             body.messageId || body.data?.key?.id
           );
           const dmReply = await generateHumanReply({
-            userMessage: `Acabo de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). Confírmame el apartado con su nombre y precio, pregúntame mi nombre si no lo sabes y dime las 3 opciones de pago (Mercado Pago tarjeta, SPEI o Contra entrega Puebla/Cholula).`,
+            userMessage: `Acabo de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). Confírmame el apartado de forma muy educada, cálida y fluida (sin usar listas numeradas 1) 2) 3) ni preguntar seco "¿Cómo te llamas?", usa "¿Con quién tengo el gusto?" si no sabes mi nombre, y menciona las opciones de pago de corrido en un párrafo natural).`,
             productName: res.product.name,
             sku: res.product.sku,
             price: res.product.price,
-            nodeTemplate: `¡Qué padre! Ya te echamos a tu bolsita *${res.product.name}* en $${res.product.price} MXN (envío incluido) 🦊✨ ¿Con quién tengo el gusto? Cuando gustes cerrar tu compra puedes pagar con Tarjeta (Mercado Pago), Transferencia SPEI o Contra entrega (Puebla / San Andrés Cholula).`,
+            nodeTemplate: `¡Qué gusto saludarte! Ya te aparté con mucho cariño tu *${res.product.name}* en $${res.product.price} MXN con envío incluido 🦊✨ ¿Con quién tengo el gusto? Cuando gustes cerrar tu pedido puedes pagar con tarjeta por Mercado Pago, transferencia SPEI o contra entrega si estás en Puebla o Cholula.`,
           });
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
