@@ -134,6 +134,31 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     setToast({ type: 'ok', msg: 'Pago aprobado y stock descontado 🦊✅' });
   };
 
+  const handleRelanzarProducto = async (productId: string) => {
+    if (!groupJid.trim()) {
+      setToast({ type: 'err', msg: 'Selecciona primero un grupo de WhatsApp arriba.' });
+      return;
+    }
+    setBroadcasting(true);
+    try {
+      const res = await fetch('/api/admin/social-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productIds: [productId],
+          groupJid: groupJid.trim(),
+          useFlux: false,
+        }),
+      });
+      if (!res.ok) throw new Error('Error re-lanzando al grupo');
+      setToast({ type: 'ok', msg: '¡Sofía re-lanzó el producto al grupo con un nuevo copy vendedor! 🔥' });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Error al re-lanzar' });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
   const handleLoadGroups = async () => {
     setLoadingGroups(true);
     try {
@@ -572,7 +597,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                           )}
                         </td>
                         <td className="px-3 py-2 text-right space-x-1.5">
-                          {isActive && (
+                          {isActive ? (
                             <>
                               <button
                                 type="button"
@@ -589,6 +614,15 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                                 Liberar
                               </button>
                             </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRelanzarProducto(r.product_id)}
+                              disabled={broadcasting}
+                              className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold transition disabled:opacity-50"
+                            >
+                              🔥 Re-lanzar
+                            </button>
                           )}
                         </td>
                       </tr>
