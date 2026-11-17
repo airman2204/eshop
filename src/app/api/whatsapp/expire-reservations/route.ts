@@ -11,6 +11,33 @@ export async function GET() {
   try {
     const supabase = createServerClient();
     const nowIso = new Date().toISOString();
+    const fiveMinsFromNow = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    // 1. Recordatorio amable 5 minutos antes de que expire
+    const { data: soonList } = await (supabase as any)
+      .from("inventory_reservations")
+      .select("id, product_id, sku, phone, spei_validation")
+      .eq("status", "active")
+      .gt("expires_at", nowIso)
+      .lte("expires_at", fiveMinsFromNow);
+
+    for (const item of soonList || []) {
+      if (item.spei_validation?.reminded) continue;
+      const { data: prod } = await (supabase as any)
+        .from("products")
+        .select("title")
+        .eq("id", item.product_id)
+        .maybeSingle();
+      const prodName = prod?.title || item.sku;
+      await sendViaWhatsAppBridge(
+        item.phone,
+        `Oye, ¿sí cerramos tu *${prodName}* o lo soltamos para el grupo? 😊`
+      );
+      await (supabase as any)
+        .from("inventory_reservations")
+        .update({ spei_validation: { ...(item.spei_validation || {}), reminded: true } })
+        .eq("id", item.id);
+    }
 
     const { data: expiredList } = await (supabase as any)
       .from("inventory_reservations")

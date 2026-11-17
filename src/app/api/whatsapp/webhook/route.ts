@@ -234,6 +234,21 @@ export async function POST(req: NextRequest) {
       }
 
       if (activeRes) {
+        // Si el cliente mandó foto/comprobante SPEI en DM
+        const incomingMedia = body.mediaUrl || body.imageUrl || "";
+        if (incomingMedia) {
+          await (supabase as any)
+            .from("inventory_reservations")
+            .update({ spei_receipt_url: incomingMedia, payment_method: "spei" })
+            .eq("id", activeRes.id);
+
+          await sendViaWhatsAppBridge(
+            String(rawPhone || cleanPhone),
+            "¡Recibido! Ya pasé tu comprobante a validación y en un momento te confirmo tu ticket 🦊✨"
+          );
+          return NextResponse.json({ success: true, event: "spei_receipt_received" });
+        }
+
         const cancelRegex = /\b(mejor\s+no|no\s+lo\s+quiero|ya\s+no|cancela|cancelar|cancelalo|cancélalo|no\s+gracias)\b/i;
         if (cancelRegex.test(text)) {
           await (supabase as any)
@@ -313,7 +328,7 @@ export async function POST(req: NextRequest) {
       // Si no tiene apartado activo pero pregunta en DM, pasarle el inventario real en vivo
       const { data: liveStock } = await (supabase as any)
         .from("products")
-        .select("title, public_price, stock")
+        .select("title, public_price, stock, image_url")
         .gt("stock", 0)
         .limit(35);
 
@@ -322,6 +337,16 @@ export async function POST(req: NextRequest) {
             .map((p: any) => `- ${p.title}: $${Number(p.public_price || 0)} MXN (Stock: ${p.stock})`)
             .join("\n")
         : "";
+
+      // Si el cliente pide fotos o ver opciones de algo en específico, buscar hasta 2 fotos reales
+      let matchedPhotoUrl = "";
+      if (/\b(foto|fotos|imagen|imágenes|muéstrame|muestrame|ver)\b/i.test(text) && Array.isArray(liveStock)) {
+        const words = text.toLowerCase().split(/\s+/).filter((w: string) => w.length >= 4);
+        const matched = liveStock.find((p: any) =>
+          words.some((w: string) => String(p.title || "").toLowerCase().includes(w))
+        );
+        if (matched?.image_url) matchedPhotoUrl = matched.image_url;
+      }
 
       const generalReply = await generateHumanReply({
         userMessage: text,
@@ -338,7 +363,7 @@ export async function POST(req: NextRequest) {
         ]);
       }
 
-      await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
+      await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply, undefined, undefined, matchedPhotoUrl || undefined);
       return NextResponse.json({
         success: true,
         event: "dm_sofia_general_replied",

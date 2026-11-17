@@ -212,7 +212,8 @@ export async function sendViaWhatsAppBridge(
   to: string,
   message: string,
   quotedMessageId?: string,
-  mentions?: string[]
+  mentions?: string[],
+  mediaUrl?: string
 ) {
   const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
   const apiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
@@ -231,6 +232,7 @@ export async function sendViaWhatsAppBridge(
         message,
         quotedMessageId,
         mentions,
+        mediaUrl: mediaUrl || undefined,
       }),
     });
     return res.ok;
