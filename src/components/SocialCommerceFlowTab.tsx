@@ -22,7 +22,7 @@ import {
   DEFAULT_HUMAN_SYSTEM_PROMPT,
 } from '@/lib/botEngine';
 
-export default function SocialCommerceFlowTab() {
+export default function SocialCommerceFlowTab({ products: initialProducts = [] }: { products?: any[] }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(DEFAULT_FLOW_NODES as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(DEFAULT_FLOW_EDGES as Edge[]);
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_HUMAN_SYSTEM_PROMPT);
@@ -31,7 +31,7 @@ export default function SocialCommerceFlowTab() {
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
   // Estado para Publicador FLUX -> Grupo WhatsApp
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>(initialProducts);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [groupJid, setGroupJid] = useState('');
   const [useFlux, setUseFlux] = useState(true);
@@ -66,15 +66,12 @@ export default function SocialCommerceFlowTab() {
         if (data.system_prompt) setSystemPrompt(data.system_prompt);
       }
 
-      const { data: prods } = await (supabase as any)
-        .from('products')
-        .select('id, name, price, stock')
-        .gt('stock', 0)
-        .limit(40);
-      if (prods) setProducts(prods);
+      if (initialProducts.length > 0) {
+        setProducts(initialProducts.filter((p: any) => Number(p.stock || 0) > 0));
+      }
     };
     loadFlow();
-  }, [setNodes, setEdges]);
+  }, [setNodes, setEdges, initialProducts]);
 
   const handleAutoPickStale = () => {
     if (!products.length) return;

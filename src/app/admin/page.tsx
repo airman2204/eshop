@@ -9390,7 +9390,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           {/* 12.3 SECCIÓN SOCIAL COMMERCE FLOW (REACT FLOW + BOT HUMANO) */}
           {(crmSubTab as string) === 'social_flow' && (
             <div className="space-y-4">
-              <SocialCommerceFlowTab />
+              <SocialCommerceFlowTab products={products} />
             </div>
           )}
 
