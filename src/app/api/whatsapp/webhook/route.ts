@@ -89,7 +89,22 @@ export async function POST(req: NextRequest) {
     // Evento B.1: Bienvenida automática cuando entra un nuevo miembro al grupo
     if (body.type === 'group_join' && body.groupJid) {
       const groupName = body.groupName ? ` a *${body.groupName}*` : "";
-      const welcomeText = `¡Hola! Qué gusto tenerte por aquí${groupName} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`;
+      const rawParticipant = String(body.participantJid || "").replace(/@.+/, "").replace(/\D/g, "");
+      let clientName = "";
+
+      if (rawParticipant) {
+        const { data: knownChat } = await supabase
+          .from("whatsapp_chats")
+          .select("client_name")
+          .or(`phone.ilike.%${rawParticipant.slice(-10)}%,notes.ilike.%"lid":"${rawParticipant}"%`)
+          .limit(1)
+          .maybeSingle();
+        if (knownChat?.client_name && !/^\d+$/.test(knownChat.client_name)) {
+          clientName = ` ${knownChat.client_name}`;
+        }
+      }
+
+      const welcomeText = `¡Hola${clientName}! Qué gusto tenerte por aquí${groupName} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`;
       await sendViaWhatsAppBridge(String(body.groupJid), welcomeText);
       return NextResponse.json({ success: true, event: 'group_welcome_sent' });
     }
