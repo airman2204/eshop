@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const QRCode = require('qrcode');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
@@ -10,90 +10,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const { createClient } = require('@supabase/supabase-js');
-
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ylflbastmupjknruqvpc.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsZmxiYXN0bXVwamtucnVxdnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1NTk3NzYsImV4cCI6MjEwNjEzNTc3Nn0.ep6kmm7Q_O1gzSbyPjhThegVKqaOkeYZF8e1oqv9yNw';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const PORT = process.env.PORT || 3001;
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://foxdrop.mx/api/whatsapp/webhook';
+const WEBHOOK_URL = process.env.WEBHOOK_URL || ''; // URL de tu tienda: https://tudominio.com/api/whatsapp/webhook
 const API_KEY = process.env.API_KEY || 'foxdrop_secret_2026';
 
 let qrCodeData = null;
 let connectionStatus = 'connecting'; // 'connecting', 'qr_ready', 'connected', 'disconnected'
 let sock = null;
 
-// Carpeta local donde Baileys lee y escribe los archivos de sesión
+// Carpeta donde se guarda la sesión para no pedir QR en cada reinicio
 const authDir = path.join(__dirname, 'auth_info_baileys');
 if (!fs.existsSync(authDir)) {
   fs.mkdirSync(authDir, { recursive: true });
 }
 
-// 1. Restaurar sesión desde Supabase hacia el disco local al arrancar el contenedor
-async function restoreSessionFromCloud() {
-  try {
-    const { data, error } = await supabase
-      .from('whatsapp_chats')
-      .select('notes')
-      .eq('phone', '_system_baileys_auth')
-      .maybeSingle();
-
-    if (!error && data && data.notes) {
-      const files = JSON.parse(data.notes);
-      let count = 0;
-      for (const [filename, contentBase64] of Object.entries(files)) {
-        const filePath = path.join(authDir, filename);
-        fs.writeFileSync(filePath, Buffer.from(contentBase64, 'base64'));
-        count++;
-      }
-      console.log(`📦 ¡Sesión de WhatsApp restaurada desde Supabase con éxito (${count} llaves)!`);
-    } else {
-      console.log('ℹ️ No hay sesión previa guardada en Supabase o es la primera vinculación.');
-    }
-  } catch (err) {
-    console.warn('Advertencia restaurando sesión desde Supabase:', err.message);
-  }
-}
-
-// 2. Guardar sesión desde el disco local hacia Supabase para sobrevivir reinicios de Render
-let syncTimeout = null;
-function scheduleCloudBackup() {
-  if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(async () => {
-    try {
-      if (!fs.existsSync(authDir)) return;
-      const fileNames = fs.readdirSync(authDir);
-      if (fileNames.length === 0) return;
-
-      const filesObj = {};
-      for (const f of fileNames) {
-        const fullPath = path.join(authDir, f);
-        if (fs.statSync(fullPath).isFile()) {
-          filesObj[f] = fs.readFileSync(fullPath).toString('base64');
-        }
-      }
-
-      await supabase
-        .from('whatsapp_chats')
-        .upsert({
-          phone: '_system_baileys_auth',
-          client_name: 'WhatsApp Session Backup',
-          notes: JSON.stringify(filesObj),
-          status: 'archived',
-          updated_at: new Date().toISOString(),
-        });
-      console.log(`☁️ Respaldo de sesión de WhatsApp guardado en Supabase (${fileNames.length} archivos).`);
-    } catch (err) {
-      console.warn('Error respaldando sesión en Supabase:', err.message);
-    }
-  }, 2000);
-}
-
 async function startWhatsApp() {
-  // Primero restaurar sesión guardada si el disco de Render está recién formateado
-  await restoreSessionFromCloud();
-
   const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
   sock = makeWASocket({
@@ -101,16 +32,9 @@ async function startWhatsApp() {
     printQRInTerminal: true,
     logger: pino({ level: 'silent' }), // Silenciar logs excesivos
     browser: ['FoxDrop CRM', 'Chrome', '1.0.0'],
-    keepAliveIntervalMs: 25000, // Enviar keep-alive a WhatsApp cada 25s
-    connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 60000,
-    syncFullHistory: false, // No sobrecargar memoria de Render con chats antiguos
   });
 
-  sock.ev.on('creds.update', async () => {
-    await saveCreds();
-    scheduleCloudBackup();
-  });
+  sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -128,28 +52,13 @@ async function startWhatsApp() {
       connectionStatus = 'disconnected';
       qrCodeData = null;
 
-      // Solo purgar credenciales si el usuario dio explícitamente "Cerrar sesión" en su celular (401 loggedOut)
-      const isExplicitLogOut = statusCode === DisconnectReason.loggedOut;
-      
-      if (isExplicitLogOut) {
-        console.log(`🚪 Sesión cerrada explícitamente desde el celular (status: ${statusCode}). Purgando llaves...`);
-        try {
-          await supabase.from('whatsapp_chats').delete().eq('phone', '_system_baileys_auth');
-          if (fs.existsSync(authDir)) fs.rmSync(authDir, { recursive: true, force: true });
-        } catch (e) {
-          console.warn('Error purgando authDir:', e.message);
-        }
-        setTimeout(startWhatsApp, 2000);
-      } else {
-        // En cualquier otra desconexión (500, 515, 408 timeout, caída de red), reconectar con las credenciales existentes
-        console.log(`🔄 Reconectando WhatsApp automáticamente usando sesión guardada...`);
-        setTimeout(startWhatsApp, 3000);
+      if (shouldReconnect) {
+        setTimeout(startWhatsApp, 4000);
       }
     } else if (connection === 'open') {
       console.log('✅ ¡WhatsApp Conectado exitosamente con FoxDrop!');
       connectionStatus = 'connected';
       qrCodeData = null;
-      scheduleCloudBackup();
     }
   });
 
@@ -160,23 +69,11 @@ async function startWhatsApp() {
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
 
-      // Extraer JID real: si remoteJid es un @lid, buscar el JID real en participant o remoteJidAlt
-      let senderJid = msg.key.remoteJid || '';
+      const senderJid = msg.key.remoteJid || '';
       // Filtrar mensajes de grupos
       if (senderJid.includes('@g.us')) continue;
 
-      let rawLid = '';
-      if (senderJid.endsWith('@lid')) {
-        rawLid = senderJid.replace(/@.+/, '');
-        // Baileys expone a veces el JID alternativo en remoteJidAlt o participant
-        if (msg.key.remoteJidAlt && !msg.key.remoteJidAlt.endsWith('@lid')) {
-          senderJid = msg.key.remoteJidAlt;
-        } else if (msg.key.participant && !msg.key.participant.endsWith('@lid')) {
-          senderJid = msg.key.participant;
-        }
-      }
-
-      // Extraer texto o detectar stickers / imágenes
+      const cleanPhone = senderJid.replace(/@.+/, '');
       let text = 
         msg.message.conversation || 
         msg.message.extendedTextMessage?.text || 
@@ -184,60 +81,17 @@ async function startWhatsApp() {
         '';
 
       let mediaType = undefined;
-      let mediaDataUrl = undefined;
-
       if (msg.message.stickerMessage) {
-        text = text || '👾 [Sticker]';
+        text = text || '👾 Sticker recibido';
         mediaType = 'sticker';
-        try {
-          const buffer = await downloadMediaMessage(
-            msg,
-            'buffer',
-            {},
-            { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
-          );
-          if (buffer && buffer.length > 0) {
-            mediaDataUrl = `data:image/webp;base64,${buffer.toString('base64')}`;
-            console.log(`🖼️ Sticker entrante descargado con éxito (${buffer.length} bytes)`);
-          }
-        } catch (mediaErr) {
-          console.warn('No se pudo descargar buffer del sticker:', mediaErr.message);
-        }
       } else if (msg.message.imageMessage) {
-        text = text || '📷 [Foto]';
+        text = text || '📷 Foto recibida';
         mediaType = 'image';
-        try {
-          const buffer = await downloadMediaMessage(
-            msg,
-            'buffer',
-            {},
-            { logger: pino({ level: 'silent' }), reuploadRequest: sock.updateMediaMessage }
-          );
-          if (buffer && buffer.length > 0) {
-            mediaDataUrl = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-          }
-        } catch {}
       }
 
-      const cleanPhone = senderJid.replace(/@.+/, '');
       const pushName = msg.pushName || 'Cliente WhatsApp';
 
-      // Consultar foto de perfil real del contacto en WhatsApp
-      let avatarUrl = '';
-      try {
-        const jidToFetch = rawLid ? `${rawLid}@lid` : `${cleanPhone}@s.whatsapp.net`;
-        avatarUrl = await sock.profilePictureUrl(jidToFetch, 'image').catch(() => '');
-      } catch {}
-
-      console.log(`📩 Mensaje recibido de ${cleanPhone} (LID: ${rawLid}) (${pushName}): ${text}`);
-
-      // Suscribirse inmediatamente a presencia de este usuario para recibir cuando esté escribiendo
-      try {
-        const jidToSub = rawLid ? `${rawLid}@lid` : `${cleanPhone}@s.whatsapp.net`;
-        await sock.presenceSubscribe(jidToSub);
-      } catch (subErr) {
-        console.warn('Error en presenceSubscribe:', subErr.message);
-      }
+      console.log(`📩 Mensaje recibido de ${cleanPhone} (${pushName}): ${text}`);
 
       if (WEBHOOK_URL && text) {
         try {
@@ -247,12 +101,10 @@ async function startWhatsApp() {
             body: JSON.stringify({
               type: 'message',
               phone: cleanPhone,
-              lid: rawLid || undefined,
               text: text,
               mediaType: mediaType,
-              mediaUrl: mediaDataUrl || undefined,
               clientName: pushName,
-              avatarUrl: avatarUrl || undefined,
+              lid: senderJid.includes('@lid') ? cleanPhone : undefined,
             }),
           });
         } catch (err) {
@@ -263,13 +115,33 @@ async function startWhatsApp() {
   });
 
   // Escuchar cuando el contacto está escribiendo o en línea (presence.update)
+  // Bienvenida automática cuando entra un nuevo miembro a un grupo
+  sock.ev.on('group-participants.update', async ({ id, participants, action }) => {
+    if (action === 'add' && id?.endsWith('@g.us') && WEBHOOK_URL) {
+      for (const participant of participants || []) {
+        try {
+          const cleanMember = String(participant).replace(/@.+/, '');
+          await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'group_join',
+              groupJid: id,
+              memberName: cleanMember,
+            }),
+          });
+        } catch (err) {
+          console.error('Error enviando group_join a webhook:', err.message);
+        }
+      }
+    }
+  });
+
   sock.ev.on('presence.update', async ({ id, presences }) => {
     if (!id || id.includes('@g.us')) return;
     const cleanPhone = id.replace(/@.+/, '');
     const presenceData = presences[id] || Object.values(presences)[0];
     const isTyping = presenceData?.lastKnownPresence === 'composing';
-
-    console.log(`👁️ Presence update para ${cleanPhone}: isTyping=${isTyping}, status=${presenceData?.lastKnownPresence}`);
 
     if (WEBHOOK_URL) {
       try {
@@ -284,7 +156,7 @@ async function startWhatsApp() {
           }),
         });
       } catch (err) {
-        console.warn('Error enviando presence al webhook:', err.message);
+        // silencioso
       }
     }
   });
@@ -314,7 +186,9 @@ async function startWhatsApp() {
                 messageId: update.key?.id,
               }),
             });
-          } catch (err) {}
+          } catch (err) {
+            // silencioso
+          }
         }
       }
     }
@@ -396,30 +270,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Endpoint GET o POST para forzar reseteo de sesión y generar QR nuevo
-app.all('/reset', async (req, res) => {
-  try {
-    console.log('🔄 Solicitud de reset de sesión recibida. Purgando credenciales...');
-    if (sock) {
-      try { sock.end(new Error('Reset solicitado')); } catch {}
-    }
-    if (fs.existsSync(authDir)) {
-      try { fs.rmSync(authDir, { recursive: true, force: true }); } catch {}
-    }
-    try {
-      await supabase.from('whatsapp_chats').delete().eq('phone', '_system_baileys_auth');
-    } catch {}
-
-    qrCodeData = null;
-    connectionStatus = 'connecting';
-    setTimeout(startWhatsApp, 1500);
-    res.json({ success: true, message: 'Sesión purgada exitosamente. Nuevo QR en camino...' });
-  } catch (err) {
-    console.error('Error en /reset:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Endpoint de salud
 app.get('/status', (req, res) => {
   res.json({ status: connectionStatus });
@@ -439,232 +289,73 @@ app.post('/message/sendText', async (req, res) => {
 
   try {
     let targetJid = '';
-    
-    if (number.includes('@lid')) {
-      targetJid = number;
-    } else if (number.includes('@s.whatsapp.net')) {
-      targetJid = number;
-    } else {
-      let digits = number.replace(/\D/g, '');
-      
-      // Si es un LID numérico puro
-      if (digits.length >= 14 && digits.startsWith('64')) {
-        targetJid = `${digits}@lid`;
-      } else {
-        // En WhatsApp para números de México, Baileys a menudo falla si se usa 52 en vez de 521 o viceversa.
-        // Consultamos onWhatsApp para obtener el JID exacto y activo en los servidores de WhatsApp.
-        try {
-          const candidates = [];
-          if (digits.startsWith('52') && digits.length === 12) {
-            candidates.push(`521${digits.slice(2)}@s.whatsapp.net`, `${digits}@s.whatsapp.net`);
-          } else if (digits.startsWith('521') && digits.length === 13) {
-            candidates.push(`${digits}@s.whatsapp.net`, `52${digits.slice(3)}@s.whatsapp.net`);
-          } else if (digits.length === 10) {
-            candidates.push(`521${digits}@s.whatsapp.net`, `52${digits}@s.whatsapp.net`);
-          } else {
-            candidates.push(`${digits}@s.whatsapp.net`);
-          }
 
-          const results = await sock.onWhatsApp(...candidates);
-          const valid = results?.find(r => r.exists && r.jid);
-          if (valid && valid.jid) {
-            targetJid = valid.jid;
-            console.log(`🎯 JID exacto verificado con WhatsApp para ${number}: ${targetJid}`);
-          } else {
-            // Fallback a 521 si es de 10 dígitos o 52
-            targetJid = digits.length === 10 ? `521${digits}@s.whatsapp.net` : `${digits}@s.whatsapp.net`;
-          }
-        } catch (onErr) {
-          console.warn('Advertencia onWhatsApp:', onErr.message);
-          targetJid = digits.length === 10 ? `521${digits}@s.whatsapp.net` : `${digits}@s.whatsapp.net`;
+    // Si el número ya viene con JID completo (ej. LID: 209929512185975@lid o @s.whatsapp.net)
+    if (typeof number === 'string' && (number.includes('@lid') || number.includes('@s.whatsapp.net'))) {
+      targetJid = number.trim();
+    } else {
+      const rawDigits = number.replace(/\D/g, '');
+      targetJid = `${rawDigits}@s.whatsapp.net`;
+
+      // Para números de México (52): Baileys requiere a veces 521XXXXXXXXXX y a veces 52XXXXXXXXXX
+      // Usamos sock.onWhatsApp para resolver el JID exacto registrado en los servidores de WhatsApp
+      try {
+        const candidates = [];
+        if (rawDigits.startsWith('52') && rawDigits.length === 12) {
+          // Formato 52 + 10 dígitos -> probar con 521 y 52
+          candidates.push(`521${rawDigits.slice(2)}@s.whatsapp.net`, `${rawDigits}@s.whatsapp.net`);
+        } else if (rawDigits.startsWith('521') && rawDigits.length === 13) {
+          candidates.push(`${rawDigits}@s.whatsapp.net`, `52${rawDigits.slice(3)}@s.whatsapp.net`);
+        } else if (rawDigits.length === 10) {
+          candidates.push(`521${rawDigits}@s.whatsapp.net`, `52${rawDigits}@s.whatsapp.net`);
+        } else {
+          candidates.push(`${rawDigits}@s.whatsapp.net`);
         }
+
+        const results = await sock.onWhatsApp(...candidates);
+        const valid = results?.find(r => r.exists && r.jid);
+        if (valid && valid.jid) {
+          targetJid = valid.jid;
+          console.log(`🎯 JID verificado con WhatsApp para ${number}: ${targetJid}`);
+        }
+      } catch (checkErr) {
+        console.warn('Advertencia verificando JID con onWhatsApp:', checkErr.message);
       }
     }
 
     let sent;
-    const isSticker = req.body.type === 'sticker' || (req.body.imageUrl && req.body.imageUrl.includes('sticker'));
-    if (isSticker && (req.body.imageUrl || req.body.url)) {
-      const stickerUrl = (req.body.imageUrl || req.body.url).replace('.png', '.webp');
-      try {
-        // Descargar buffer del WebP para entregárselo directamente a Baileys sin depender de fetch interno
-        const imgRes = await fetch(stickerUrl);
-        if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status} al descargar sticker`);
-        const arrayBuf = await imgRes.arrayBuffer();
-        const stickerBuffer = Buffer.from(arrayBuf);
-
-        sent = await sock.sendMessage(targetJid, {
-          sticker: stickerBuffer
-        });
-        console.log(`👾 Sticker enviado con éxito a ${targetJid} (${stickerBuffer.length} bytes): ${stickerUrl}`);
-      } catch (stkErr) {
-        console.warn('Fallo enviando como buffer de sticker, reintentando con url o imagen:', stkErr.message);
-        try {
-          sent = await sock.sendMessage(targetJid, {
-            sticker: { url: stickerUrl }
-          });
-        } catch {
-          sent = await sock.sendMessage(targetJid, {
-            image: { url: (req.body.imageUrl || req.body.url) },
-            caption: text && !text.startsWith('[Sticker:') ? text : 'FoxDrop 🦊'
-          });
-        }
-      }
+    if (req.body.type === 'sticker' && (req.body.imageUrl || req.body.url)) {
+      // Enviar como Sticker interactivo oficial de WhatsApp
+      const stickerUrl = req.body.imageUrl || req.body.url;
+      sent = await sock.sendMessage(targetJid, {
+        sticker: { url: stickerUrl }
+      });
+      console.log(`👾 Sticker enviado a ${number} (JID: ${targetJid}): ${stickerUrl}`);
     } else if (req.body.type === 'image' && (req.body.imageUrl || req.body.url)) {
+      // Enviar como Imagen con o sin pie de foto
       const imgUrl = req.body.imageUrl || req.body.url;
       sent = await sock.sendMessage(targetJid, {
         image: { url: imgUrl },
         caption: text || ''
       });
-      console.log(`📷 Imagen enviada con éxito a ${targetJid}: ${imgUrl}`);
+      console.log(`📷 Imagen enviada a ${number} (JID: ${targetJid}): ${imgUrl}`);
     } else {
       sent = await sock.sendMessage(targetJid, { text });
-      console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
+      console.log(`📤 Mensaje enviado a ${number} (JID: ${targetJid}): ${text}`);
     }
-
-    // Suscribirse a presencia del destinatario para que WhatsApp nos notifique cuando esté escribiendo
-    try {
-      await sock.presenceSubscribe(targetJid);
-    } catch {}
-
-    res.json({ success: true, messageId: sent.key.id, jid: targetJid });
+    
+    res.json({ 
+      success: true, 
+      messageId: sent.key.id, 
+      jid: targetJid,
+      lid: valid?.lid ? valid.lid.replace(/@.+/, '') : undefined
+    });
   } catch (err) {
     console.error('Error enviando mensaje por WhatsApp:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Endpoint POST para suscribirse a la presencia de un chat (cuando el usuario entra al chat en el admin)
-app.post('/chat/subscribePresence', async (req, res) => {
-  if (!sock || connectionStatus !== 'connected') {
-    return res.status(503).json({ error: 'WhatsApp no está conectado' });
-  }
-  const { phone, lid } = req.body;
-  if (!phone && !lid) {
-    return res.status(400).json({ error: 'phone o lid requerido' });
-  }
-  try {
-    const targetJid = lid ? `${lid}@lid` : (phone.length === 10 ? `521${phone}@s.whatsapp.net` : `${phone}@s.whatsapp.net`);
-    await sock.presenceSubscribe(targetJid);
-    console.log(`🔔 Suscrito a presencia de ${targetJid}`);
-    res.json({ success: true, jid: targetJid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Endpoint GET para obtener la información de perfil propia de la cuenta de FoxDrop
-app.get('/profile/myInfo', async (req, res) => {
-  if (!sock || connectionStatus !== 'connected') {
-    return res.status(503).json({ error: 'WhatsApp no está conectado' });
-  }
-
-  try {
-    const myJid = sock.user?.id || '';
-    let avatarUrl = '';
-    try {
-      avatarUrl = await sock.profilePictureUrl(myJid, 'image').catch(() => '');
-    } catch {}
-
-    let statusText = '';
-    try {
-      const statusRes = await sock.fetchStatus(myJid).catch(() => null);
-      statusText = statusRes?.status || '';
-    } catch {}
-
-    res.json({
-      success: true,
-      id: myJid,
-      name: sock.user?.name || 'FoxDrop',
-      phone: myJid.replace(/@.+/, '').replace(/:.+/, ''),
-      avatarUrl,
-      status: statusText,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Endpoint POST para actualizar la foto de perfil de la cuenta de FoxDrop
-app.post('/profile/updatePicture', async (req, res) => {
-  if (!sock || connectionStatus !== 'connected') {
-    return res.status(503).json({ error: 'WhatsApp no está conectado' });
-  }
-
-  const { imageBase64 } = req.body;
-  if (!imageBase64) {
-    return res.status(400).json({ error: 'imageBase64 requerida' });
-  }
-
-  try {
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(cleanBase64, 'base64');
-    const myJid = sock.user?.id;
-
-    await sock.updateProfilePicture(myJid, buffer);
-    console.log('✅ Foto de perfil de WhatsApp FoxDrop actualizada con éxito.');
-
-    let newAvatarUrl = '';
-    try {
-      newAvatarUrl = await sock.profilePictureUrl(myJid, 'image').catch(() => '');
-    } catch {}
-
-    res.json({ success: true, avatarUrl: newAvatarUrl });
-  } catch (err) {
-    console.error('Error actualizando foto de perfil en WhatsApp:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Endpoint POST para actualizar el estado/info de la cuenta de FoxDrop
-app.post('/profile/updateStatus', async (req, res) => {
-  if (!sock || connectionStatus !== 'connected') {
-    return res.status(503).json({ error: 'WhatsApp no está conectado' });
-  }
-
-  const { status } = req.body;
-  if (!status) {
-    return res.status(400).json({ error: 'Texto de estado requerido' });
-  }
-
-  try {
-    await sock.updateProfileStatus(status);
-    console.log(`✅ Estado de WhatsApp FoxDrop actualizado: "${status}"`);
-    res.json({ success: true, status });
-  } catch (err) {
-    console.error('Error actualizando estado en WhatsApp:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Endpoint GET para consultar bajo demanda el avatar de un contacto específico
-app.get('/contact/avatar', async (req, res) => {
-  if (!sock || connectionStatus !== 'connected') {
-    return res.status(503).json({ error: 'WhatsApp no está conectado' });
-  }
-
-  const { phone, lid } = req.query;
-  if (!phone && !lid) {
-    return res.status(400).json({ error: 'phone o lid requerido' });
-  }
-
-  try {
-    const targetJid = lid ? `${lid}@lid` : `${phone}@s.whatsapp.net`;
-    const avatarUrl = await sock.profilePictureUrl(targetJid, 'image').catch(() => '');
-    res.json({ success: true, avatarUrl });
-  } catch (err) {
-    res.json({ success: false, avatarUrl: '' });
-  }
-});
-
 app.listen(PORT, () => {
   console.log(`🚀 FoxDrop WhatsApp Bridge activo en el puerto ${PORT}`);
-
-  // Mantener vivo el servicio en Render Free (auto-ping cada 5 minutos)
-  const SELF_URL = process.env.RENDER_EXTERNAL_URL || 'https://foxdrop-whatsapp-bridge.onrender.com';
-  setInterval(() => {
-    fetch(`${SELF_URL}/status`)
-      .then(r => r.json())
-      .then(d => console.log(`💓 Auto-KeepAlive Bridge: ${d.status}`))
-      .catch(() => {});
-  }, 1000 * 60 * 5);
 });
