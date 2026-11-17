@@ -145,7 +145,7 @@ export async function sendViaWhatsAppBridge(to: string, message: string, quotedM
   const apiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
 
   try {
-    const res = await fetch(`${bridgeUrl}/send`, {
+    const res = await fetch(`${bridgeUrl}/message/sendText`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -153,6 +153,7 @@ export async function sendViaWhatsAppBridge(to: string, message: string, quotedM
       },
       body: JSON.stringify({
         phone: to,
+        text: message,
         message,
         quotedMessageId,
       }),

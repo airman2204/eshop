@@ -101,7 +101,7 @@ Reglas:
       }
 
       // 3. Enviar al grupo de WhatsApp vía Render Bridge
-      const sendRes = await fetch(`${bridgeUrl}/send`, {
+      const sendRes = await fetch(`${bridgeUrl}/message/sendText`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,6 +109,7 @@ Reglas:
         },
         body: JSON.stringify({
           phone: groupJid,
+          text: caption,
           message: caption,
           mediaUrl: finalImageUrl || undefined,
         }),
