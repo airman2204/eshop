@@ -86,6 +86,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, event: 'presence_updated' });
     }
 
+    // Evento B.1: Bienvenida automática cuando entra un nuevo miembro al grupo
+    if (body.type === 'group_join' && body.groupJid) {
+      const memberName = body.memberName || "nuev@ integrante";
+      const welcomeText = await generateHumanReply({
+        userMessage: `Acaba de entrar ${memberName} al grupo VIP de FoxDrop. Dale la bienvenida cálida en 2 líneas y explícale que si ve algo que le guste solo responda "yo" a la foto para apartarlo 20 minutos al instante.`,
+        nodeTemplate: `¡Bienvenid@ al grupo VIP de FoxDrop, ${memberName}! 🦊✨ Aquí subimos liquidaciones de importación con envío incluido. Si te gusta algo, solo responde *"yo"* a la foto y te lo aparto 20 min al instante.`,
+      });
+      await sendViaWhatsAppBridge(String(body.groupJid), welcomeText);
+      return NextResponse.json({ success: true, event: 'group_welcome_sent' });
+    }
+
     // Evento C: Mensaje nuevo entrante
     // Soportar distintos formatos de payload comunes (Evolution API, Baileys HTTP Bridge, etc.)
     const rawPhone = body.phone || body.sender || body.from || body.data?.key?.remoteJid || "";
