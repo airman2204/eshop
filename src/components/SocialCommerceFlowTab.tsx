@@ -38,6 +38,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [useFlux, setUseFlux] = useState(true);
   const [broadcasting, setBroadcasting] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
 
   useEffect(() => {
@@ -119,6 +120,34 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       type: 'ok',
       msg: `Sofía eligió automáticamente ${top3.length} artículos con mayor stock parado 🦊`,
     });
+  };
+
+  const handleSuggestSimilar = () => {
+    if (selectedProductIds.length === 0) return;
+    const base = products.find((p) => p.id === selectedProductIds[0]);
+    if (!base) return;
+    const baseText = `${base.name || base.title || ''} ${base.brand || ''} ${base.category || ''}`.toLowerCase();
+    const stopWords = new Set(['para', 'con', 'linea', 'línea', 'importado', 'fragancia', 'auto', 'jabon', 'jabón', 'liquido', 'líquido', 'repuesto', 'aromatizante', 'crema', 'producto']);
+    const keywords = baseText
+      .replace(/[()]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !stopWords.has(w));
+
+    const matches = products
+      .filter((p) => {
+        if (selectedProductIds.includes(p.id)) return false;
+        const txt = `${p.name || p.title || ''} ${p.brand || ''} ${p.category || ''}`.toLowerCase();
+        return keywords.some((kw) => txt.includes(kw));
+      })
+      .slice(0, 4)
+      .map((p) => p.id);
+
+    if (matches.length === 0) {
+      setToast({ type: 'err', msg: 'No encontré otros productos con marca o fragancia similar en tu stock.' });
+      return;
+    }
+    setSelectedProductIds((prev) => Array.from(new Set([...prev, ...matches])));
+    setToast({ type: 'ok', msg: `Sofía agregó ${matches.length} productos similares de tu stock 🦊✨` });
   };
 
   const handleGeneratePreview = async () => {
@@ -369,8 +398,35 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <input
+            type="text"
+            placeholder="Buscar por marca, fragancia o nombre..."
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            className="flex-1 min-w-[200px] text-xs px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          {selectedProductIds.length > 0 && (
+            <button
+              type="button"
+              onClick={handleSuggestSimilar}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              Sugerir similares (marca / fragancia)
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pt-1">
-          {products.map((p) => {
+          {products
+            .filter((p) => {
+              if (!productSearch.trim()) return true;
+              const q = productSearch.toLowerCase();
+              const txt = `${p.name || p.title || ''} ${p.brand || ''} ${p.category || ''}`.toLowerCase();
+              return txt.includes(q);
+            })
+            .map((p) => {
             const active = selectedProductIds.includes(p.id);
             return (
               <button
