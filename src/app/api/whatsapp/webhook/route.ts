@@ -246,6 +246,15 @@ export async function POST(req: NextRequest) {
         await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), dmReply);
         return NextResponse.json({ success: true, event: "dm_sofia_replied" });
       }
+
+      // Si no tiene apartado activo pero pregunta en DM (ej. "¿es seguro?", "¿son originales?"), Sofía también responde
+      const generalReply = await generateHumanReply({
+        userMessage: text,
+        nodeTemplate:
+          "Responde la duda del cliente con calidez y seguridad usando tu Skill de Sofía FoxDrop (importación directa EUA, 100% originales, Mercado Pago, SPEI y Contra Entrega en Puebla/Cholula), e invítalo a ver las piezas disponibles en el grupo o tienda.",
+      });
+      await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
+      return NextResponse.json({ success: true, event: "dm_sofia_general_replied" });
     }
 
     if (!cleanPhone || !text) {
