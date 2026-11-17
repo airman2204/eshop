@@ -49,14 +49,26 @@ export default function SocialCommerceFlowTab() {
         .maybeSingle();
 
       if (data) {
-        if (Array.isArray(data.nodes) && data.nodes.length > 0) setNodes(data.nodes);
-        if (Array.isArray(data.edges) && data.edges.length > 0) setEdges(data.edges);
+        if (Array.isArray(data.nodes) && data.nodes.length > 0) {
+          const hasWelcome = data.nodes.some((n: any) => n.id === 'welcome');
+          const mergedNodes = hasWelcome
+            ? data.nodes
+            : [DEFAULT_FLOW_NODES[0], ...data.nodes];
+          setNodes(mergedNodes);
+        }
+        if (Array.isArray(data.edges) && data.edges.length > 0) {
+          const hasWelcomeEdge = data.edges.some((e: any) => e.id === 'e-welcome-start');
+          const mergedEdges = hasWelcomeEdge
+            ? data.edges
+            : [DEFAULT_FLOW_EDGES[0], ...data.edges];
+          setEdges(mergedEdges);
+        }
         if (data.system_prompt) setSystemPrompt(data.system_prompt);
       }
 
       const { data: prods } = await (supabase as any)
         .from('products')
-        .select('id, name, sku, price, stock')
+        .select('id, name, price, stock')
         .gt('stock', 0)
         .order('created_at', { ascending: false })
         .limit(40);
