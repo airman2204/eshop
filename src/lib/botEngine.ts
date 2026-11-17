@@ -172,6 +172,9 @@ Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial
 
     const json = await res.json();
     const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!reply) {
+      console.error("[BotEngine] Gemini empty/error response:", JSON.stringify(json));
+    }
     return reply || fallback;
   } catch (err) {
     console.error("[BotEngine] Error Gemini:", err);
