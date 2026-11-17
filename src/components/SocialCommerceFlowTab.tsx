@@ -65,6 +65,18 @@ export default function SocialCommerceFlowTab() {
     loadFlow();
   }, [setNodes, setEdges]);
 
+  const handleAutoPickStale = () => {
+    if (!products.length) return;
+    // Priorizar productos con mayor stock disponible (y más antiguos al final de la lista)
+    const sorted = [...products].sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0));
+    const top3 = sorted.slice(0, 3).map((p) => p.id);
+    setSelectedProductIds(top3);
+    setToast({
+      type: 'ok',
+      msg: `Sofía eligió automáticamente ${top3.length} artículos con mayor stock parado 🦊`,
+    });
+  };
+
   const handleBroadcast = async () => {
     if (!groupJid.trim() || selectedProductIds.length === 0) {
       setToast({ type: 'err', msg: 'Ingresa el ID del grupo (@g.us) y selecciona al menos 1 producto.' });
@@ -206,15 +218,25 @@ export default function SocialCommerceFlowTab() {
               Publicar Liquidación al Grupo con FLUX + Sofía
             </h3>
           </div>
-          <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={useFlux}
-              onChange={(e) => setUseFlux(e.target.checked)}
-              className="rounded border-slate-300 text-emerald-600"
-            />
-            Generar foto de estudio con FLUX (fal.ai)
-          </label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleAutoPickStale}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold transition"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              Elegir automáticamente (Stock parado)
+            </button>
+            <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useFlux}
+                onChange={(e) => setUseFlux(e.target.checked)}
+                className="rounded border-slate-300 text-emerald-600"
+              />
+              Generar foto de estudio con FLUX (fal.ai)
+            </label>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
