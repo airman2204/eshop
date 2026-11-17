@@ -255,13 +255,47 @@ export async function POST(req: NextRequest) {
           .eq("id", activeRes.product_id)
           .maybeSingle();
 
+        const prodName = prod?.title || prod?.name || activeRes.sku;
+        const prodPrice = Number(prod?.public_price ?? prod?.publicPrice ?? prod?.price ?? 0);
+
+        // Si el cliente pide pagar con Mercado Pago / tarjeta / link, generar link real al instante
+        let paymentLink = "";
+        if (/\b(mercado\s*pago|mercadopago|tarjeta|link)\b/i.test(text) && process.env.MERCADOPAGO_ACCESS_TOKEN && prodPrice > 0) {
+          try {
+            const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+              },
+              body: JSON.stringify({
+                items: [{ title: prodName, quantity: 1, unit_price: prodPrice, currency_id: "MXN" }],
+                external_reference: activeRes.id,
+                back_urls: {
+                  success: "https://foxdrop.mx/tienda?pago=exitoso",
+                  failure: "https://foxdrop.mx/tienda?pago=fallido",
+                  pending: "https://foxdrop.mx/tienda?pago=pendiente",
+                },
+                auto_return: "approved",
+              }),
+            });
+            const mpJson = await mpRes.json();
+            if (mpJson?.init_point) paymentLink = mpJson.init_point;
+          } catch (mpErr) {
+            console.error("[Webhook] Error generando link MP:", mpErr);
+          }
+        }
+
         const dmReply = await generateHumanReply({
           userMessage: text,
           history: chatHistory,
-          productName: prod?.title || prod?.name || activeRes.sku,
+          productName: prodName,
           sku: activeRes.sku,
-          price: Number(prod?.public_price ?? prod?.publicPrice ?? prod?.price ?? 0),
-          nodeTemplate: "",
+          price: prodPrice,
+          paymentLink: paymentLink || undefined,
+          nodeTemplate: paymentLink
+            ? `¡Claro que sí! Aquí tienes tu link seguro de Mercado Pago para *${prodName}* ($${prodPrice} MXN): ${paymentLink} 🦊✨ En cuanto quede listo me avisas.`
+            : "",
         });
 
         if (chatForHist?.id) {

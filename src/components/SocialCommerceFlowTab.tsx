@@ -286,6 +286,28 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     [setEdges]
   );
 
+  const handleCorteDelDia = async () => {
+    setBroadcasting(true);
+    setToast(null);
+    try {
+      const res = await fetch('/api/admin/social-corte', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupJid: groupJid.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Error en corte');
+      setToast({
+        type: 'ok',
+        msg: `Corte del día listo: se notificó por privado a ${json.clientsNotified || 0} clientes 🦊🛍️`,
+      });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Error al hacer corte del día' });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
   const handleSaveFlow = async () => {
     setSaving(true);
     setToast(null);
@@ -359,14 +381,24 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         </div>
 
-        <button
-          onClick={handleSaveFlow}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50 transition"
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'Guardando...' : 'Guardar Flujo'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCorteDelDia}
+            disabled={broadcasting}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold disabled:opacity-50 transition"
+          >
+            🛍️ Hacer Corte del Día
+          </button>
+          <button
+            onClick={handleSaveFlow}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-50 transition"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? 'Guardando...' : 'Guardar Flujo'}
+          </button>
+        </div>
       </div>
 
       {toast && (
