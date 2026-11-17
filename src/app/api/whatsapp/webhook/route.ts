@@ -308,8 +308,9 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        const hasRealName = clientName && !/cliente/i.test(clientName);
         const dmReply = await generateHumanReply({
-          userMessage: text,
+          userMessage: `${hasRealName ? `[Cliente: ${clientName}] ` : ""}${text}`,
           history: chatHistory,
           productName: prodName,
           sku: activeRes.sku,
