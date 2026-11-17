@@ -525,8 +525,8 @@ app.post('/message/sendText', async (req, res) => {
     } else {
       let digits = number.replace(/\D/g, '');
       
-      // Si es un LID numérico puro
-      if (digits.length >= 14 && digits.startsWith('64')) {
+      // Si es un LID numérico puro (14+ dígitos que no es teléfono 52/1)
+      if (digits.length >= 14 && !digits.startsWith('52') && !digits.startsWith('1')) {
         targetJid = `${digits}@lid`;
       } else {
         // En WhatsApp para números de México, Baileys a menudo falla si se usa 52 en vez de 521 o viceversa.
