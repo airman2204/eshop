@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
           const payload = finalImageUrl
             ? {
                 image_url: finalImageUrl,
-                strength: 0.72,
-                prompt: `Professional luxury commercial studio product photography of ${prodName}, placed on a sleek marble pedestal with soft warm studio rim lighting, clean minimalist cream background, ultra sharp, magazine quality, no extra text, no watermarks`,
-                num_inference_steps: 24,
+                strength: 0.35,
+                prompt: `Keep the exact original product unchanged, enhance lighting and sharpness slightly, clean studio background, no extra text, no watermarks`,
+                num_inference_steps: 20,
                 num_images: 1,
               }
             : {
