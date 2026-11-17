@@ -55,17 +55,21 @@ export function detectGroupPurchaseIntent(
   const matchInQuote = cleanQuote.match(skuPattern);
   let skuCandidate = (matchInText?.[1] || matchInQuote?.[1] || "").toUpperCase() || null;
 
-  // Fallback: si el mensaje citado no trae [SKU], extraer palabras clave del título del producto
+  // Fallback: si el mensaje citado no trae [SKU], extraer palabras clave reales del producto
   if (!skuCandidate && cleanQuote) {
+    const stopWords = new Set([
+      "hola", "grupo", "miren", "llego", "llegó", "hoy", "solo", "pieza", "piezas",
+      "envio", "envío", "incluido", "esta", "este", "joyita", "tenemos", "disponible",
+      "queda", "responde", "mensaje", "para", "apartarlo", "importada", "importado",
+    ]);
     const cleanTitle = cleanQuote
-      .replace(/¡Hola grupo![^:]*:/i, "")
-      .replace(/Solo \d+ pieza.*/i, "")
-      .replace(/Ya te queda.*/i, "")
       .replace(/[^\w\sáéíóúñ]/gi, " ")
       .trim();
-    const words = cleanTitle.split(/\s+/).filter((w) => w.length >= 4).slice(0, 3);
+    const words = cleanTitle
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !stopWords.has(w.toLowerCase()));
     if (words.length > 0) {
-      skuCandidate = words.join(" ");
+      skuCandidate = words.slice(0, 2).join(" ");
     }
   }
 
