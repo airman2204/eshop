@@ -562,7 +562,14 @@ app.post('/message/sendText', async (req, res) => {
       });
       console.log(`📷 Imagen enviada con éxito a ${targetJid}: ${imgUrl}`);
     } else {
-      sent = await sock.sendMessage(targetJid, { text });
+      if (req.body.mediaUrl) {
+        sent = await sock.sendMessage(targetJid, {
+          image: { url: req.body.mediaUrl },
+          caption: text,
+        });
+      } else {
+        sent = await sock.sendMessage(targetJid, { text });
+      }
       console.log(`📤 Mensaje enviado con éxito a ${targetJid}: ${text}`);
     }
 
