@@ -117,6 +117,21 @@ export default function AdminCRM() {
 
   // Navegación CRM (Persistente en recarga)
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'saleads' | 'whatsapp' | 'cj_dropship' | 'japan' | 'campaigns' | 'analytics'>('inventory');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('foxdrop_admin_subtab');
+      if (saved && !window.location.search.includes('tab=')) {
+        setCrmSubTab(saved as any);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('foxdrop_admin_subtab', crmSubTab);
+    } catch {}
+  }, [crmSubTab]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Leer pestaña persistida al cargar
