@@ -162,8 +162,41 @@ async function startWhatsApp() {
 
       // Extraer JID real: si remoteJid es un @lid, buscar el JID real en participant o remoteJidAlt
       let senderJid = msg.key.remoteJid || '';
-      // Filtrar mensajes de grupos
-      if (senderJid.includes('@g.us')) continue;
+      // Si es mensaje de grupo (@g.us), reenviar al webhook para Social Commerce
+      if (senderJid.includes('@g.us')) {
+        const groupText =
+          msg.message.conversation ||
+          msg.message.extendedTextMessage?.text ||
+          msg.message.imageMessage?.caption ||
+          '';
+        const quoted = msg.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        const quotedText =
+          quoted?.conversation ||
+          quoted?.extendedTextMessage?.text ||
+          quoted?.imageMessage?.caption ||
+          '';
+        const participant = msg.key.participantAlt || msg.key.participant || '';
+        if (groupText && WEBHOOK_URL) {
+          try {
+            await fetch(WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                isGroup: true,
+                phone: senderJid,
+                participant,
+                text: groupText,
+                quotedText,
+                clientName: msg.pushName || 'Cliente',
+                messageId: msg.key.id,
+              }),
+            });
+          } catch (err) {
+            console.error('Error enviando mensaje de grupo al webhook:', err.message);
+          }
+        }
+        continue;
+      }
 
       let rawLid = '';
       if (senderJid.endsWith('@lid')) {
