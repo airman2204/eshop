@@ -749,7 +749,10 @@ app.listen(PORT, () => {
   setInterval(() => {
     fetch(`${SELF_URL}/status`)
       .then(r => r.json())
-      .then(d => console.log(`💓 Auto-KeepAlive Bridge: ${d.status}`))
+      .then(d => {
+        console.log(`💓 Auto-KeepAlive Bridge: ${d.status}`);
+        fetch('https://foxdrop.mx/api/whatsapp/expire-reservations').catch(() => {});
+      })
       .catch(() => {});
   }, 1000 * 60 * 5);
 });
