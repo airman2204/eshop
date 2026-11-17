@@ -41,6 +41,16 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
 
   useEffect(() => {
+    try {
+      const savedGroups = localStorage.getItem('foxdrop_wa_groups');
+      const savedJid = localStorage.getItem('foxdrop_wa_selected_group');
+      if (savedGroups) {
+        const parsed = JSON.parse(savedGroups);
+        if (Array.isArray(parsed) && parsed.length > 0) setGroups(parsed);
+      }
+      if (savedJid) setGroupJid(savedJid);
+    } catch {}
+
     const loadFlow = async () => {
       const supabase = getSupabaseBrowserClient();
       const { data } = await (supabase as any)
@@ -84,7 +94,11 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       const json = await res.json();
       if (Array.isArray(json.groups) && json.groups.length > 0) {
         setGroups(json.groups);
-        if (!groupJid) setGroupJid(json.groups[0].id);
+        localStorage.setItem('foxdrop_wa_groups', JSON.stringify(json.groups));
+        if (!groupJid) {
+          setGroupJid(json.groups[0].id);
+          localStorage.setItem('foxdrop_wa_selected_group', json.groups[0].id);
+        }
       } else {
         setToast({ type: 'err', msg: 'No se encontraron grupos o Render aún está reiniciando.' });
       }
@@ -303,7 +317,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             {groups.length > 0 ? (
               <select
                 value={groupJid}
-                onChange={(e) => setGroupJid(e.target.value)}
+                onChange={(e) => {
+                  setGroupJid(e.target.value);
+                  localStorage.setItem('foxdrop_wa_selected_group', e.target.value);
+                }}
                 className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
               >
                 {groups.map((g) => (
@@ -327,7 +344,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               disabled={loadingGroups}
               className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold whitespace-nowrap transition"
             >
-              {loadingGroups ? 'Cargando...' : 'Cargar Grupos'}
+              {loadingGroups ? 'Cargando...' : groups.length > 0 ? 'Actualizar' : 'Cargar Grupos'}
             </button>
           </div>
           <div className="md:col-span-2 flex gap-2">
