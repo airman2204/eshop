@@ -18,6 +18,16 @@ Reglas de estilo:
 
 export const DEFAULT_FLOW_NODES = [
   {
+    id: "welcome",
+    type: "input",
+    position: { x: 250, y: -110 },
+    data: {
+      label: "0. Bienvenida al Grupo",
+      messageTemplate:
+        "¡Hola{{client_name}}! Qué gusto tenerte por aquí{{group_name}} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *\"yo\"* a la foto y con gusto te lo apartamos.",
+    },
+  },
+  {
     id: "start",
     type: "input",
     position: { x: 250, y: 20 },
@@ -58,6 +68,7 @@ export const DEFAULT_FLOW_NODES = [
 ];
 
 export const DEFAULT_FLOW_EDGES = [
+  { id: "e-welcome-start", source: "welcome", target: "start", label: "Responde 'yo'" },
   { id: "e-start-mp", source: "start", target: "mp_option", label: "Opción 1 (MP)" },
   { id: "e-start-spei", source: "start", target: "spei_option", label: "Opción 2 (SPEI)" },
   { id: "e-mp-done", source: "mp_option", target: "ticket_done", label: "Webhook MP" },

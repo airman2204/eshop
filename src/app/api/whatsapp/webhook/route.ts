@@ -104,7 +104,16 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const welcomeText = `¡Hola${clientName}! Qué gusto tenerte por aquí${groupName} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`;
+      const flow = await getActiveBotFlow();
+      const welcomeNode = flow.nodes.find((n: any) => n.id === "welcome");
+      const rawTemplate =
+        welcomeNode?.data?.messageTemplate ||
+        `¡Hola{{client_name}}! Qué gusto tenerte por aquí{{group_name}} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`;
+
+      const welcomeText = rawTemplate
+        .replace(/\{\{client_name\}\}/g, clientName)
+        .replace(/\{\{group_name\}\}/g, groupName);
+
       await sendViaWhatsAppBridge(String(body.groupJid), welcomeText);
       return NextResponse.json({ success: true, event: 'group_welcome_sent' });
     }
