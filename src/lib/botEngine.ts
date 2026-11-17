@@ -109,6 +109,7 @@ export async function getActiveBotFlow() {
 export async function generateHumanReply(params: {
   userMessage: string;
   history?: { sender: string; text: string }[];
+  catalogContext?: string;
   productName?: string;
   sku?: string;
   price?: number;
@@ -145,7 +146,7 @@ export async function generateHumanReply(params: {
 Contexto actual:
 - Producto apartado (si aplica): ${params.productName || "Ninguno aún"} (SKU: ${params.sku || "N/A"}, Precio: $${params.price ?? 0} MXN)
 - Guía de referencia: ${fallback}
-${historyBlock}
+${params.catalogContext ? `\nInventario disponible en tiempo real (úsalo para dar nombres y precios exactos si el cliente pregunta qué tienes):\n${params.catalogContext}\n` : ""}${historyBlock}
 Mensaje NUEVO del cliente: "${params.userMessage}"
 
 Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si ya hay mensajes previos en el historial, PROHIBIDO volver a decir "¡Hola!" o saludar de nuevo: ve directo al grano respondiendo su duda.`;

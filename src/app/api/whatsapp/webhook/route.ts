@@ -270,11 +270,34 @@ export async function POST(req: NextRequest) {
       }
 
       // Si no tiene apartado activo pero pregunta en DM (ej. "¿es seguro?", "¿son originales?"), Sofía también responde
+      // Si no tiene apartado activo pero pregunta en DM, pasarle el inventario real en vivo
+      const { data: liveStock } = await (supabase as any)
+        .from("products")
+        .select("title, public_price, stock")
+        .gt("stock", 0)
+        .limit(35);
+
+      const catalogContext = Array.isArray(liveStock)
+        ? liveStock
+            .map((p: any) => `- ${p.title}: $${Number(p.public_price || 0)} MXN (Stock: ${p.stock})`)
+            .join("\n")
+        : "";
+
       const generalReply = await generateHumanReply({
         userMessage: text,
         history: chatHistory,
+        catalogContext,
         nodeTemplate: "",
       });
+
+      // Guardar ambos mensajes en whatsapp_messages para que la memoria funcione al segundo
+      if (chatForHist?.id) {
+        await (supabase as any).from("whatsapp_messages").insert([
+          { chat_id: chatForHist.id, sender: "client", text, status: "read" },
+          { chat_id: chatForHist.id, sender: "admin", text: generalReply, status: "sent" },
+        ]);
+      }
+
       await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
       return NextResponse.json({
         success: true,
