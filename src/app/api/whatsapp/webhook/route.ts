@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { formatPhoneNumber } from "@/lib/whatsapp";
 import { checkRateLimit } from "@/lib/security";
+import { detectGroupPurchaseIntent, createProductReservation } from "@/lib/socialCommerce";
+import { generateHumanReply, getActiveBotFlow, sendViaWhatsAppBridge } from "@/lib/botEngine";
 
 /**
  * POST /api/whatsapp/webhook
@@ -87,9 +89,53 @@ export async function POST(req: NextRequest) {
     // Evento C: Mensaje nuevo entrante
     // Soportar distintos formatos de payload comunes (Evolution API, Baileys HTTP Bridge, etc.)
     const rawPhone = body.phone || body.sender || body.from || body.data?.key?.remoteJid || "";
-    let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
     const text = body.text || body.message || body.data?.message?.conversation || body.data?.message?.extendedTextMessage?.text || "";
     const clientName = body.clientName || body.pushName || body.data?.pushName || "Cliente WhatsApp";
+
+    // Evento C.0: Captura de Social Commerce en Grupos (@g.us)
+    const isGroup = body.isGroup === true || String(rawPhone).endsWith("@g.us");
+    if (isGroup && text) {
+      const rawParticipant = body.participant || body.data?.key?.participant || "";
+      const participantPhone = formatPhoneNumber(String(rawParticipant).replace(/@.+/, ""));
+      const quotedText =
+        body.quotedText ||
+        body.data?.message?.extendedTextMessage?.contextInfo?.quotedMessage?.conversation ||
+        body.data?.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage?.caption ||
+        "";
+
+      const { hasIntent, skuCandidate } = detectGroupPurchaseIntent(text, quotedText);
+      if (hasIntent && skuCandidate && participantPhone) {
+        const res = await createProductReservation(skuCandidate, participantPhone, 20);
+        if (res.success && res.product) {
+          await sendViaWhatsAppBridge(
+            String(rawPhone),
+            `¡Apartado para *${clientName}*! Te escribo al privado para cerrar tu pedido 🦊`,
+            body.messageId || body.data?.key?.id
+          );
+          const flow = await getActiveBotFlow();
+          const startNode = flow.nodes.find((n: any) => n.id === "start");
+          const dmReply = await generateHumanReply({
+            userMessage: text,
+            productName: res.product.name,
+            sku: res.product.sku,
+            price: res.product.price,
+            nodeTemplate: startNode?.data?.messageTemplate,
+          });
+          await sendViaWhatsAppBridge(participantPhone, dmReply);
+          return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
+        } else if (res.reason === "out_of_stock") {
+          await sendViaWhatsAppBridge(
+            String(rawPhone),
+            `¡Ups, ${clientName}! Ya se apartó la última pieza de *${res.product?.name || skuCandidate}*. Si se libera en 20 min te avisamos 🦊`,
+            body.messageId || body.data?.key?.id
+          );
+          return NextResponse.json({ success: true, event: "group_out_of_stock" });
+        }
+      }
+      return NextResponse.json({ received: true, event: "group_ignored" });
+    }
+
+    let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
 
     if (!cleanPhone || !text) {
       return NextResponse.json({ received: true, note: "Mensaje vacío o sin remitente ignorado" });

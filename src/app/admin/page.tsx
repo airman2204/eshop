@@ -12,6 +12,7 @@ import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
 import SaleAdsTab from '@/components/SaleAdsTab';
 import AdminCampaignsTab from '@/components/AdminCampaignsTab';
 import AdminAnalyticsTab from '@/components/AdminAnalyticsTab';
+import SocialCommerceFlowTab from '@/components/SocialCommerceFlowTab';
 import { 
   Package, DollarSign, Truck, AlertTriangle, Plus, ArrowUpRight, MessageSquare, 
   Search, ShieldAlert, Sparkles, TrendingUp, Clock, CheckCircle2, User, RefreshCw, BarChart3, ChevronRight, X,
@@ -4687,6 +4688,27 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 </div>
               </div>
             </button>
+              {/* BOTÓN SOCIAL COMMERCE FLOW (REACT FLOW + BOT) */}
+              <button
+                onClick={() => { setCrmSubTab('social_flow' as any); setMobileSidebarOpen(false); }}
+                className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
+                  (crmSubTab as string) === 'social_flow'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-950/30'
+                    : 'bg-emerald-950/20 text-emerald-200 border-emerald-900/40 hover:border-emerald-700/60 hover:bg-emerald-900/30'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 text-left">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${(crmSubTab as string) === 'social_flow' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="block font-bold text-xs leading-none">
+                      Social Flow Bot
+                    </span>
+                  </div>
+                </div>
+              </button>
+
               {/* BOTÓN CAMPAÑAS & CUPONES QR */}
               <button
                 onClick={() => { setCrmSubTab('campaigns'); setMobileSidebarOpen(false); }}
@@ -9363,6 +9385,14 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             <div className="space-y-4">
               <AdminCampaignsTab />
             </div>
+          )}
+
+          {/* 12.3 SECCIÓN SOCIAL COMMERCE FLOW (REACT FLOW + BOT HUMANO) */}
+          {(crmSubTab as string) === 'social_flow' && (
+            <div className="space-y-4">
+              <SocialCommerceFlowTab />
+            </div>
+          )}
           )}
 
           {/* 12.3 SECCIÓN ANALÍTICAS, SEO & TRAZABILIDAD */}
