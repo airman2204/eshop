@@ -198,6 +198,11 @@ Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial
       }
     }
 
+    if (reply && Array.isArray(params.history) && params.history.length > 0) {
+      reply = reply.replace(/^¡?Hola[!,.:\s]*/i, "").trim();
+      if (reply) reply = reply.charAt(0).toUpperCase() + reply.slice(1);
+    }
+
     return reply || fallback;
   } catch (err) {
     console.error("[BotEngine] Error Gemini:", err);
