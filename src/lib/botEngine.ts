@@ -140,7 +140,12 @@ Redacta la respuesta exacta para enviar por WhatsApp siguiendo la guía del paso
 /**
  * Envía un mensaje saliente a través del bridge de WhatsApp en Render.
  */
-export async function sendViaWhatsAppBridge(to: string, message: string, quotedMessageId?: string) {
+export async function sendViaWhatsAppBridge(
+  to: string,
+  message: string,
+  quotedMessageId?: string,
+  mentions?: string[]
+) {
   const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
   const apiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
 
@@ -157,6 +162,7 @@ export async function sendViaWhatsAppBridge(to: string, message: string, quotedM
         text: message,
         message,
         quotedMessageId,
+        mentions,
       }),
     });
     return res.ok;
