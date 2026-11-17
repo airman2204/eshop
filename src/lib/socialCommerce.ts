@@ -128,21 +128,30 @@ export async function createProductReservation(
 
   if (!product) {
     const { data: allProds } = await (supabase as any).from("products").select("*").limit(250);
-    const queryWords = cleanQuery
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((w) => w.length >= 4);
-    let bestMatch: any = null;
-    let bestScore = 0;
-    for (const p of allProds || []) {
-      const title = String(p.title || p.name || "").toLowerCase();
-      const score = queryWords.reduce((acc, w) => acc + (title.includes(w) ? 1 : 0), 0);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = p;
+    // Primero intentar match exacto por barcode / sku / id
+    product = (allProds || []).find(
+      (p: any) =>
+        String(p.barcode || "").toUpperCase() === cleanQuery.toUpperCase() ||
+        String(p.sku || "").toUpperCase() === cleanQuery.toUpperCase()
+    ) || null;
+
+    if (!product) {
+      const queryWords = cleanQuery
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length >= 4);
+      let bestMatch: any = null;
+      let bestScore = 0;
+      for (const p of allProds || []) {
+        const title = String(p.title || p.name || "").toLowerCase();
+        const score = queryWords.reduce((acc, w) => acc + (title.includes(w) ? 1 : 0), 0);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = p;
+        }
       }
+      if (bestScore > 0) product = bestMatch;
     }
-    if (bestScore > 0) product = bestMatch;
   }
 
   if (!product) {
