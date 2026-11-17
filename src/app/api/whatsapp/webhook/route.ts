@@ -325,12 +325,14 @@ export async function POST(req: NextRequest) {
       }
 
       // Si no tiene apartado activo pero pregunta en DM (ej. "¿es seguro?", "¿son originales?"), Sofía también responde
-      // Si no tiene apartado activo pero pregunta en DM, pasarle el inventario real en vivo
-      const { data: liveStock } = await (supabase as any)
+      // Si no tiene apartado activo pero pregunta en DM, pasarle únicamente stock de Bath & Body Works
+      const { data: liveStockRaw } = await (supabase as any)
         .from("products")
         .select("title, public_price, stock, image_url")
         .gt("stock", 0)
+        .ilike("title", "%Bath%Body%")
         .limit(35);
+      const liveStock = liveStockRaw || [];
 
       const catalogContext = Array.isArray(liveStock)
         ? liveStock

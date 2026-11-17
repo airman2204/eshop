@@ -86,7 +86,13 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       }
 
       if (initialProducts.length > 0) {
-        setProducts(initialProducts.filter((p: any) => Number(p.stock || 0) > 0));
+        setProducts(
+          initialProducts.filter((p: any) => {
+            if (Number(p.stock || 0) <= 0) return false;
+            const txt = `${p.title || p.name || ''} ${p.brand || ''} ${p.category || ''}`.toLowerCase();
+            return txt.includes('bath') && txt.includes('body');
+          })
+        );
       }
 
       const { data: resData } = await (supabase as any)

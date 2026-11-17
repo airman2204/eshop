@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
           .from("products")
           .select("*")
           .gt("stock", 0)
+          .ilike("title", "%Bath%Body%")
           .neq("id", prod.id)
           .limit(30);
 
