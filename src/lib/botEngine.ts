@@ -123,7 +123,13 @@ export async function generateHumanReply(params: {
   const flow = await getActiveBotFlow();
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const fallback = (params.nodeTemplate || DEFAULT_FLOW_NODES[0].data.messageTemplate)
+  const fallback = (
+    params.nodeTemplate !== undefined
+      ? params.nodeTemplate || "¡Hola! Qué gusto saludarte, ¿en qué te puedo ayudar hoy? 🦊✨"
+      : DEFAULT_FLOW_NODES[0].data.messageTemplate
+  )
+    .replace(/\{\{client_name\}\}/g, "")
+    .replace(/\{\{group_name\}\}/g, "")
     .replace(/\{\{product_name\}\}/g, params.productName || "tu producto")
     .replace(/\{\{sku\}\}/g, params.sku || "FX")
     .replace(/\{\{price\}\}/g, String(params.price ?? ""))
