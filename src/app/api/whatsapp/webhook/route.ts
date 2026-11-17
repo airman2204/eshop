@@ -338,10 +338,17 @@ export async function POST(req: NextRequest) {
             .join("\n")
         : "";
 
-      // Si el cliente pide fotos o ver opciones de algo en específico, buscar hasta 2 fotos reales
+      // Si el cliente pide fotos o ver opciones de algo en específico, buscar foto real (normalizando plurales)
       let matchedPhotoUrl = "";
-      if (/\b(foto|fotos|imagen|imágenes|muéstrame|muestrame|ver)\b/i.test(text) && Array.isArray(liveStock)) {
-        const words = text.toLowerCase().split(/\s+/).filter((w: string) => w.length >= 4);
+      if (/\b(foto|fotos|imagen|imágenes|muéstrame|muestrame|ver|tienes|opciones|muestras)\b/i.test(text) && Array.isArray(liveStock)) {
+        const words = text
+          .toLowerCase()
+          .replace(/\bgeles\b/g, "gel")
+          .replace(/\bcremas\b/g, "crema")
+          .replace(/\bprotectores\b/g, "protector")
+          .replace(/\bcarros\b/g, "auto")
+          .split(/\s+/)
+          .filter((w: string) => w.length >= 3);
         const matched = liveStock.find((p: any) =>
           words.some((w: string) => String(p.title || "").toLowerCase().includes(w))
         );
