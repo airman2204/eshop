@@ -53,7 +53,21 @@ export function detectGroupPurchaseIntent(
   // Si tiene intención natural ("yo", "yo lo quiero", "mío"), buscar SKU en el texto o en el mensaje citado
   const matchInText = cleanText.match(skuPattern);
   const matchInQuote = cleanQuote.match(skuPattern);
-  const skuCandidate = (matchInText?.[1] || matchInQuote?.[1] || "").toUpperCase() || null;
+  let skuCandidate = (matchInText?.[1] || matchInQuote?.[1] || "").toUpperCase() || null;
+
+  // Fallback: si el mensaje citado no trae [SKU], extraer palabras clave del título del producto
+  if (!skuCandidate && cleanQuote) {
+    const cleanTitle = cleanQuote
+      .replace(/¡Hola grupo![^:]*:/i, "")
+      .replace(/Solo \d+ pieza.*/i, "")
+      .replace(/Ya te queda.*/i, "")
+      .replace(/[^\w\sáéíóúñ]/gi, " ")
+      .trim();
+    const words = cleanTitle.split(/\s+/).filter((w) => w.length >= 4).slice(0, 3);
+    if (words.length > 0) {
+      skuCandidate = words.join(" ");
+    }
+  }
 
   return { hasIntent: true, skuCandidate };
 }
@@ -97,17 +111,36 @@ export async function createProductReservation(
 ): Promise<ReservationResult> {
   const supabase = createServerClient();
   const cleanQuery = skuOrQuery.trim();
+  const isUuidPrefix = /^[A-F0-9]{8}$/i.test(cleanQuery);
 
-  const { data: product } = await (supabase as any)
-    .from("products")
-    .select("id, name, sku, price, stock, image_url")
-    .or(`sku.ilike.${cleanQuery},name.ilike.%${cleanQuery}%`)
-    .limit(1)
-    .maybeSingle();
+  let product: any = null;
+  if (isUuidPrefix) {
+    const { data: allProds } = await (supabase as any).from("products").select("*").limit(200);
+    product = (allProds || []).find((p: any) => String(p.id).toUpperCase().startsWith(cleanQuery.toUpperCase())) || null;
+  }
+
+  if (!product) {
+    const { data: byTitle } = await (supabase as any)
+      .from("products")
+      .select("*")
+      .ilike("title", `%${cleanQuery}%`)
+      .limit(1)
+      .maybeSingle();
+    product = byTitle;
+  }
 
   if (!product) {
     return { success: false, reason: "not_found" };
   }
+
+  const normalizedProduct = {
+    id: product.id,
+    name: product.title || product.name || "Producto FoxDrop",
+    sku: String(product.id).slice(0, 8).toUpperCase(),
+    price: Number(product.public_price ?? product.publicPrice ?? product.price ?? 0),
+    stock: Number(product.stock ?? 0),
+    image_url: product.image_url,
+  };
 
   // Verificar si este mismo cliente ya tiene un apartado activo para este producto
   const { data: existing } = await (supabase as any)
@@ -120,12 +153,12 @@ export async function createProductReservation(
     .maybeSingle();
 
   if (existing) {
-    return { success: true, reason: "already_reserved", reservation: existing, product };
+    return { success: true, reason: "already_reserved", reservation: existing, product: normalizedProduct };
   }
 
   const { available } = await getAvailableStock(product.id);
   if (available <= 0) {
-    return { success: false, reason: "out_of_stock", product, availableStock: 0 };
+    return { success: false, reason: "out_of_stock", product: normalizedProduct, availableStock: 0 };
   }
 
   const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
@@ -134,7 +167,7 @@ export async function createProductReservation(
     .from("inventory_reservations")
     .insert({
       product_id: product.id,
-      sku: product.sku || cleanQuery,
+      sku: normalizedProduct.sku,
       phone,
       qty: 1,
       status: "active",
@@ -151,7 +184,7 @@ export async function createProductReservation(
   return {
     success: true,
     reservation,
-    product,
+    product: normalizedProduct,
     availableStock: available - 1,
   };
 }
