@@ -139,9 +139,15 @@ export async function POST(req: NextRequest) {
       if (hasIntent && skuCandidate && participantPhone) {
         const res = await createProductReservation(skuCandidate, participantPhone, 20);
         if (res.success && res.product) {
+          const groupReplies = [
+            `¡Tuyo, *${clientName}*! Ya te eché *${res.product.name}* a tu bolsita, ahorita te escribo por privado 🦊`,
+            `¡Anotadísimo, *${clientName}*! Te mando mensajito en privado por *${res.product.name}* ✨`,
+            `¡Listo *${clientName}*, ya te aparté *${res.product.name}*! Checa tu privado 🛍️`,
+          ];
+          const randomGroupReply = groupReplies[Math.floor(Math.random() * groupReplies.length)];
           await sendViaWhatsAppBridge(
             String(rawPhone),
-            `¡Apartado para *${clientName}*! Te escribo al privado para cerrar tu pedido 🦊`,
+            randomGroupReply,
             body.messageId || body.data?.key?.id
           );
           const dmReply = await generateHumanReply({
