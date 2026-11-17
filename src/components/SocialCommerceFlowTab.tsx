@@ -38,6 +38,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [useFlux, setUseFlux] = useState(true);
   const [broadcasting, setBroadcasting] = useState(false);
+  const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
 
   useEffect(() => {
     const loadFlow = async () => {
@@ -106,9 +107,9 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     });
   };
 
-  const handleBroadcast = async () => {
-    if (!groupJid.trim() || selectedProductIds.length === 0) {
-      setToast({ type: 'err', msg: 'Ingresa el ID del grupo (@g.us) y selecciona al menos 1 producto.' });
+  const handleGeneratePreview = async () => {
+    if (selectedProductIds.length === 0) {
+      setToast({ type: 'err', msg: 'Selecciona al menos 1 producto para generar la vista previa.' });
       return;
     }
     setBroadcasting(true);
@@ -119,9 +120,37 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productIds: selectedProductIds,
-          groupJid: groupJid.trim(),
           useFlux,
+          previewOnly: true,
         }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Error generando vista previa');
+      setPreviews(json.results || []);
+      setToast({ type: 'ok', msg: 'Vista previa lista. Revísala abajo y dale a Enviar al Grupo 🦊' });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Error al generar vista previa' });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
+  const handleBroadcast = async () => {
+    if (!groupJid.trim() || (previews.length === 0 && selectedProductIds.length === 0)) {
+      setToast({ type: 'err', msg: 'Selecciona un grupo y genera primero la vista previa (o selecciona productos).' });
+      return;
+    }
+    setBroadcasting(true);
+    setToast(null);
+    try {
+      const res = await fetch('/api/admin/social-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          previews.length > 0
+            ? { groupJid: groupJid.trim(), previews }
+            : { productIds: selectedProductIds, groupJid: groupJid.trim(), useFlux }
+        ),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Error enviando al grupo');
@@ -130,6 +159,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
         msg: `¡Listo! Se enviaron ${json.results?.length || 0} publicaciones con Sofía al grupo 🦊`,
       });
       setSelectedProductIds([]);
+      setPreviews([]);
     } catch (err: any) {
       setToast({ type: 'err', msg: err?.message || 'Error al publicar en el grupo' });
     } finally {
@@ -300,14 +330,26 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               {loadingGroups ? 'Cargando...' : 'Cargar Grupos'}
             </button>
           </div>
-          <button
-            onClick={handleBroadcast}
-            disabled={broadcasting}
-            className="md:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50 transition"
-          >
-            <Send className="w-3.5 h-3.5" />
-            {broadcasting ? 'Generando y enviando...' : 'Generar y Enviar al Grupo'}
-          </button>
+          <div className="md:col-span-2 flex gap-2">
+            <button
+              type="button"
+              onClick={handleGeneratePreview}
+              disabled={broadcasting}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-50 transition"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {broadcasting ? 'Generando...' : '1. Generar Vista Previa'}
+            </button>
+            <button
+              type="button"
+              onClick={handleBroadcast}
+              disabled={broadcasting}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50 transition"
+            >
+              <Send className="w-3.5 h-3.5" />
+              2. Enviar al Grupo
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pt-1">
@@ -333,6 +375,35 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             );
           })}
         </div>
+
+        {previews.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+            {previews.map((prev, idx) => (
+              <div key={prev.id} className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                {prev.imageUrl && (
+                  <img
+                    src={prev.imageUrl}
+                    alt={prev.name}
+                    className="w-20 h-20 object-cover rounded-lg shrink-0 border border-slate-200"
+                  />
+                )}
+                <div className="flex-1 space-y-1">
+                  <div className="text-xs font-bold text-slate-800">{prev.name}</div>
+                  <textarea
+                    value={prev.caption}
+                    onChange={(e) =>
+                      setPreviews((list) =>
+                        list.map((item, i) => (i === idx ? { ...item, caption: e.target.value } : item))
+                      )
+                    }
+                    rows={4}
+                    className="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -382,6 +453,35 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             )}
           </div>
         </div>
+
+        {previews.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+            {previews.map((prev, idx) => (
+              <div key={prev.id} className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                {prev.imageUrl && (
+                  <img
+                    src={prev.imageUrl}
+                    alt={prev.name}
+                    className="w-20 h-20 object-cover rounded-lg shrink-0 border border-slate-200"
+                  />
+                )}
+                <div className="flex-1 space-y-1">
+                  <div className="text-xs font-bold text-slate-800">{prev.name}</div>
+                  <textarea
+                    value={prev.caption}
+                    onChange={(e) =>
+                      setPreviews((list) =>
+                        list.map((item, i) => (i === idx ? { ...item, caption: e.target.value } : item))
+                      )
+                    }
+                    rows={4}
+                    className="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

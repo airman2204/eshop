@@ -8,11 +8,40 @@ import { createServerClient } from "@/lib/supabase/server";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { productIds, groupJid, useFlux = true } = await req.json();
+    const { productIds, groupJid, useFlux = true, previewOnly = false, previews } = await req.json();
 
-    if (!Array.isArray(productIds) || productIds.length === 0 || !groupJid) {
+    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
+    const bridgeApiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
+
+    // Modo envío directo desde vista previa ya aprobada
+    if (Array.isArray(previews) && previews.length > 0) {
+      if (!groupJid) {
+        return NextResponse.json({ error: "Selecciona un grupo de WhatsApp." }, { status: 400 });
+      }
+      const sentResults: any[] = [];
+      for (const item of previews) {
+        const sendRes = await fetch(`${bridgeUrl}/message/sendText`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": bridgeApiKey,
+          },
+          body: JSON.stringify({
+            number: groupJid,
+            phone: groupJid,
+            text: item.caption,
+            message: item.caption,
+            mediaUrl: item.imageUrl || undefined,
+          }),
+        });
+        sentResults.push({ id: item.id, name: item.name, sent: sendRes.ok });
+      }
+      return NextResponse.json({ success: true, results: sentResults });
+    }
+
+    if (!Array.isArray(productIds) || productIds.length === 0 || (!previewOnly && !groupJid)) {
       return NextResponse.json(
-        { error: "Selecciona al menos 1 producto e ingresa el ID del grupo (@g.us)." },
+        { error: "Selecciona al menos 1 producto." },
         { status: 400 }
       );
     }
@@ -29,8 +58,6 @@ export async function POST(req: NextRequest) {
 
     const falKey = process.env.FAL_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
-    const bridgeUrl = process.env.WHATSAPP_BRIDGE_URL || "https://foxdrop-whatsapp-bridge.onrender.com";
-    const bridgeApiKey = process.env.WHATSAPP_BRIDGE_API_KEY || "foxdrop_secret_2026";
 
     const results: any[] = [];
 
@@ -100,7 +127,19 @@ Reglas:
         }
       }
 
-      // 3. Enviar al grupo de WhatsApp vía Render Bridge
+      // 3. Si es solo vista previa, devolver sin enviar todavía
+      if (previewOnly) {
+        results.push({
+          id: prod.id,
+          name: prod.name,
+          sku: skuCode,
+          caption,
+          imageUrl: finalImageUrl,
+        });
+        continue;
+      }
+
+      // 4. Enviar al grupo de WhatsApp vía Render Bridge
       const sendRes = await fetch(`${bridgeUrl}/message/sendText`, {
         method: "POST",
         headers: {
