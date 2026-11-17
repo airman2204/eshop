@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
 
     // Evento B.1: Bienvenida automática cuando entra un nuevo miembro al grupo
     if (body.type === 'group_join' && body.groupJid) {
-      const memberName = body.memberName || "nuev@ integrante";
+      const groupName = body.groupName ? ` a *${body.groupName}*` : "";
       const welcomeText = await generateHumanReply({
-        userMessage: `Acaba de entrar ${memberName} al grupo VIP de FoxDrop. Dale la bienvenida cálida en 2 líneas y explícale que si ve algo que le guste solo responda "yo" a la foto para apartarlo 20 minutos al instante.`,
-        nodeTemplate: `¡Bienvenid@ al grupo VIP de FoxDrop, ${memberName}! 🦊✨ Aquí subimos liquidaciones de importación con envío incluido. Si te gusta algo, solo responde *"yo"* a la foto y te lo aparto 20 min al instante.`,
+        userMessage: `Acaba de entrar alguien nuevo${groupName}. Dale una bienvenida súper cálida, amable y natural en 2 líneas, sin mencionar números raros, sin decir "liquidaciones" ni "20 minutos". Dile que aquí compartimos novedades y piezas especiales con envío incluido, y que si ve algo que le guste solo responda "yo" a la foto para apartárselo con gusto.`,
+        nodeTemplate: `¡Qué gusto tenerte por aquí${groupName}! 🦊✨ Aquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`,
       });
       await sendViaWhatsAppBridge(String(body.groupJid), welcomeText);
       return NextResponse.json({ success: true, event: 'group_welcome_sent' });

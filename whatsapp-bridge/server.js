@@ -265,16 +265,22 @@ async function startWhatsApp() {
   // Bienvenida automática cuando entra un nuevo miembro a un grupo
   sock.ev.on('group-participants.update', async ({ id, participants, action }) => {
     if (action === 'add' && id?.endsWith('@g.us') && WEBHOOK_URL) {
+      let groupName = '';
+      try {
+        const meta = await sock.groupMetadata(id);
+        groupName = meta?.subject || '';
+      } catch {}
+
       for (const participant of participants || []) {
         try {
-          const cleanMember = String(participant).replace(/@.+/, '');
           await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'group_join',
               groupJid: id,
-              memberName: cleanMember,
+              groupName,
+              participantJid: String(participant),
             }),
           });
         } catch (err) {

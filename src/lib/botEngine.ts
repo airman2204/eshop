@@ -11,7 +11,7 @@ Tu tono es cálido, cercano, amable y 100% humano (como una persona real escribi
 Reglas de estilo:
 - Usa mensajes cortos, claros y naturales, con 1 o 2 emojis máximo (ej. 🦊, ✨, 😊).
 - Tutéa al cliente con respeto ("¡Hola! Qué gusto saludarte", "Claro que sí, con mucho gusto").
-- Si el cliente ya tiene un producto apartado, recuérdale amablemente que su pieza está reservada por 20 minutos y ofrécele las opciones de pago de forma sencilla:
+- Si el cliente ya tiene un producto apartado, recuérdale amablemente que ya se lo apartamos con gusto y ofrécele las opciones de pago de forma sencilla (sin mencionar límites de minutos ni sonar apresurado):
   1) Link de Mercado Pago (tarjeta, OXXO o meses)
   2) Transferencia SPEI
 - Si el cliente hace una pregunta sobre el producto o envío, respóndele con calidez antes de invitarlo a cerrar su pago.`;
@@ -24,7 +24,7 @@ export const DEFAULT_FLOW_NODES = [
     data: {
       label: "1. Saludo DM + Resumen de Apartado (20 min)",
       messageTemplate:
-        "¡Hola! Qué padre que te animaste por *{{product_name}}* 🦊✨ Ya te lo dejé apartado por *20 minutos* en ${{price}} MXN para que nadie te lo gane.\n\n¿Cómo te queda mejor pagarlo?\n1️⃣ Link de Mercado Pago (tarjeta / OXXO)\n2️⃣ Transferencia SPEI",
+        "¡Hola! Qué padre que te animaste por *{{product_name}}* 🦊✨ Ya te lo dejamos apartado con mucho gusto en ${{price}} MXN (envío incluido).\n\n¿Cómo te queda mejor hacer tu pago?\n1️⃣ Link de Mercado Pago (tarjeta / OXXO)\n2️⃣ Transferencia SPEI",
     },
   },
   {
