@@ -164,7 +164,13 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: true, event: "group_out_of_stock" });
         }
       }
-      return NextResponse.json({ received: true, event: "group_ignored" });
+      return NextResponse.json({
+        received: true,
+        event: "group_ignored",
+        hasIntent,
+        skuCandidate,
+        participantPhone,
+      });
     }
 
     let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
