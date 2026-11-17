@@ -143,16 +143,16 @@ export async function POST(req: NextRequest) {
 
       if (geminiKey) {
         try {
-          const prompt = `Eres Sofía de FoxDrop. Redacta un mensaje corto, cálido y muy natural para un grupo de WhatsApp anunciando este producto de importación:
+          const prompt = `Eres Sofía, experta en Social Commerce y ventas de FoxDrop. Redacta un mensaje corto, persuasivo y 100% natural para el grupo de WhatsApp vendiendo este artículo:
 - Producto: ${prodName}
 - Precio ya con envío incluido: $${totalWithShipping} MXN
-- SKU obligatorio a incluir exactamente así: [${skuCode}]
 - Stock disponible: ${prod.stock} piezas${relatedText ? `\n- Productos relacionados en stock para combinar: ${relatedText}` : ""}
 
-Reglas:
-- Saluda con energía ("¡Hola grupo!", "Miren lo que nos llegó hoy...").
-- Indica claramente que el precio ya incluye envío.
-- Invita a responder este mensaje con "yo" o "yo lo quiero" para apartarlo.${relatedText ? `\n- Al final, sugiere amablemente que lo pueden combinar con: ${relatedText}.` : ""}`
+Reglas de estilo y autonomía:
+- NO empieces saludando con "¡Hola grupo!" (ya estamos en confianza platicando; ve directo al grano con un gancho atractivo: curiosidad, beneficio, antojo o escasez).
+- Indica claramente el precio ($${totalWithShipping} MXN ya con envío incluido).
+- Invita a responder este mensaje con "yo" para apartarlo.${relatedText ? `\n- Al final, sugiere brevemente combinarlo con: ${relatedText}.` : ""}
+- Máximo 3-4 líneas completas y 2 emojis.`
 
           const gRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
@@ -161,7 +161,11 @@ Reglas:
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+                generationConfig: {
+                  temperature: 0.85,
+                  maxOutputTokens: 2048,
+                  thinkingConfig: { thinkingBudget: 0 },
+                },
               }),
             }
           );
