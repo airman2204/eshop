@@ -155,7 +155,7 @@ Mensaje NUEVO del cliente: "${params.userMessage}"
 
 Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si el cliente solo dice "Hola", salúdalo natural y pregúntale en qué le puedes ayudar (sin repetir respuestas pasadas).`;
 
-    const res = await fetch(
+    let res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
@@ -170,10 +170,23 @@ Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial
       }
     );
 
-    const json = await res.json();
-    const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    let json = await res.json();
+    let reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (!reply) {
-      console.error("[BotEngine] Gemini empty/error response:", JSON.stringify(json));
+      console.error("[BotEngine] Gemini 2.5 empty/error:", JSON.stringify(json));
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.75, maxOutputTokens: 1024 },
+          }),
+        }
+      );
+      json = await res.json();
+      reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     }
     return reply || fallback;
   } catch (err) {
