@@ -53,9 +53,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       if (data) {
         if (Array.isArray(data.nodes) && data.nodes.length > 0) {
           const hasWelcome = data.nodes.some((n: any) => n.id === 'welcome');
-          const mergedNodes = hasWelcome
+          const mergedNodes = (hasWelcome
             ? data.nodes
-            : [DEFAULT_FLOW_NODES[0], ...data.nodes];
+            : [DEFAULT_FLOW_NODES[0], ...data.nodes]
+          ).map((n: any) => (n.id === 'start' ? { ...n, type: undefined } : n));
           setNodes(mergedNodes);
         }
         if (Array.isArray(data.edges) && data.edges.length > 0) {
