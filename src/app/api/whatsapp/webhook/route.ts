@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
       const { data: activeRes } = await (supabase as any)
         .from("inventory_reservations")
         .select("id, product_id, sku")
-        .eq("phone", cleanPhone)
+        .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
         .eq("status", "active")
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
