@@ -40,6 +40,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [broadcasting, setBroadcasting] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
+  const [activeReservations, setActiveReservations] = useState<any[]>([]);
 
   useEffect(() => {
     try {
@@ -84,9 +85,27 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       if (initialProducts.length > 0) {
         setProducts(initialProducts.filter((p: any) => Number(p.stock || 0) > 0));
       }
+
+      const { data: resData } = await (supabase as any)
+        .from('inventory_reservations')
+        .select('*')
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      if (resData) setActiveReservations(resData);
     };
     loadFlow();
   }, [setNodes, setEdges, initialProducts]);
+
+  const handleReleaseReservation = async (resId: string) => {
+    const supabase = getSupabaseBrowserClient();
+    await (supabase as any)
+      .from('inventory_reservations')
+      .update({ status: 'cancelled' })
+      .eq('id', resId);
+    setActiveReservations((prev) => prev.filter((r) => r.id !== resId));
+    setToast({ type: 'ok', msg: 'Apartado liberado manualmente 🦊' });
+  };
 
   const handleLoadGroups = async () => {
     setLoadingGroups(true);
@@ -277,7 +296,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700">
             <Workflow className="w-5 h-5" />
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
+      </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">
               Social Commerce Flow (WhatsApp + React Flow)
@@ -285,8 +333,66 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             <p className="text-xs text-slate-500">
               Diseña el árbol conversacional de apartado en grupo → DM humano → Pago MP / SPEI → Ticket.
             </p>
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         <button
           onClick={handleSaveFlow}
@@ -296,6 +402,35 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           <Save className="w-4 h-4" />
           {saving ? 'Guardando...' : 'Guardar Flujo'}
         </button>
+        {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {toast && (
@@ -308,7 +443,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
         >
           {toast.type === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {toast.msg}
-        </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
       )}
 
       {/* Panel Publicador con FLUX -> Grupo WhatsApp */}
@@ -319,7 +483,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             <h3 className="text-sm font-bold text-slate-900">
               Publicar Liquidación al Grupo con FLUX + Sofía
             </h3>
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
+      </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -338,8 +531,66 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               />
               Generar foto de estudio con FLUX (fal.ai)
             </label>
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="md:col-span-2 flex gap-2">
@@ -375,7 +626,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             >
               {loadingGroups ? 'Cargando...' : groups.length > 0 ? 'Actualizar' : 'Cargar Grupos'}
             </button>
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
+      </div>
           <div className="md:col-span-2 flex gap-2">
             <button
               type="button"
@@ -395,8 +675,66 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               <Send className="w-3.5 h-3.5" />
               2. Enviar al Grupo
             </button>
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <input
@@ -416,7 +754,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               Sugerir similares (marca / fragancia)
             </button>
           )}
-        </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pt-1">
           {products
@@ -447,7 +814,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               </button>
             );
           })}
-        </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         {previews.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
@@ -472,9 +868,125 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                     rows={4}
                     className="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
-                </div>
-              </div>
+                  {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+                {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
             ))}
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+        )}
+        {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -494,7 +1006,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             <Controls />
             <MiniMap />
           </ReactFlow>
-        </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         <div className="space-y-4 bg-white p-4 rounded-2xl border border-slate-200">
           <div>
@@ -508,7 +1049,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               rows={6}
               className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
+      </div>
 
           <div className="border-t border-slate-100 pt-4">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
@@ -524,8 +1094,66 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                 className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             )}
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+      </div>
+          {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
         {previews.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
@@ -550,9 +1178,125 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                     rows={4}
                     className="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
-                </div>
-              </div>
+                  {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+                {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
             ))}
+            {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+        )}
+        {activeReservations.length > 0 && (
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-700">
+              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {activeReservations.map((r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
+                  >
+                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
+                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
+                    <button
+                      type="button"
+                      onClick={() => handleReleaseReservation(r.id)}
+                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
+                    >
+                      Liberar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
