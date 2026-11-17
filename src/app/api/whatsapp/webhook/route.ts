@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
         // Responder cualquier duda o conversación libre en DM con Sofía (Skill oficial)
         const { data: prod } = await (supabase as any)
           .from("products")
-          .select("title, name, public_price, price")
+          .select("*")
           .eq("id", activeRes.product_id)
           .maybeSingle();
 
@@ -260,9 +260,17 @@ export async function POST(req: NextRequest) {
           history: chatHistory,
           productName: prod?.title || prod?.name || activeRes.sku,
           sku: activeRes.sku,
-          price: Number(prod?.public_price ?? prod?.price ?? 0),
-          nodeTemplate: "Responde la duda del cliente con calidez y seguridad usando tu Skill de Sofía FoxDrop, y recuérdale amablemente las opciones de pago (Mercado Pago, SPEI o Contra Entrega en Puebla/Cholula).",
+          price: Number(prod?.public_price ?? prod?.publicPrice ?? prod?.price ?? 0),
+          nodeTemplate: "",
         });
+
+        if (chatForHist?.id) {
+          await (supabase as any).from("whatsapp_messages").insert([
+            { chat_id: chatForHist.id, sender: "client", text, status: "read" },
+            { chat_id: chatForHist.id, sender: "admin", text: dmReply, status: "sent" },
+          ]);
+        }
+
         await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), dmReply);
         return NextResponse.json({ success: true, event: "dm_sofia_replied" });
       }
