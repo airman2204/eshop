@@ -178,23 +178,24 @@ Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial
     }
 
     if (!reply && groqKey) {
-      const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${groqKey}`,
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.75,
-          max_tokens: 800,
-        }),
-      });
-      const gJson = await gRes.json();
-      reply = gJson?.choices?.[0]?.message?.content?.trim() || "";
-      if (!reply) {
-        console.error("[BotEngine] Groq empty/error:", JSON.stringify(gJson));
+      for (const groqModel of ["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]) {
+        const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: groqModel,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.75,
+            max_tokens: 800,
+          }),
+        });
+        const gJson = await gRes.json();
+        reply = gJson?.choices?.[0]?.message?.content?.trim() || "";
+        if (reply) break;
+        console.error(`[BotEngine] Groq (${groqModel}) empty/error:`, JSON.stringify(gJson));
       }
     }
 
