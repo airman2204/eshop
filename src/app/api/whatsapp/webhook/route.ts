@@ -89,18 +89,8 @@ export async function POST(req: NextRequest) {
     // Evento B.1: Bienvenida automática cuando entra un nuevo miembro al grupo
     if (body.type === 'group_join' && body.groupJid) {
       const groupName = body.groupName ? ` a *${body.groupName}*` : "";
-      const participantJid = body.participantJid ? String(body.participantJid) : "";
-      const mentionTag = participantJid ? `@${participantJid.replace(/@.+/, "")}` : "";
-      const welcomeText = await generateHumanReply({
-        userMessage: `Acaba de entrar ${mentionTag || "alguien nuevo"}${groupName}. Dale una bienvenida súper cálida, amable y natural en 2 líneas, sin decir "liquidaciones" ni "20 minutos". Si tienes ${mentionTag}, inclúyelo tal cual al inicio para etiquetarlo. Dile que aquí compartimos novedades y piezas especiales con envío incluido, y que si ve algo que le guste solo responda "yo" a la foto para apartárselo con gusto.`,
-        nodeTemplate: `¡Hola ${mentionTag}! Qué gusto tenerte por aquí${groupName} 🦊✨ Aquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`,
-      });
-      await sendViaWhatsAppBridge(
-        String(body.groupJid),
-        welcomeText,
-        undefined,
-        participantJid ? [participantJid] : undefined
-      );
+      const welcomeText = `¡Hola! Qué gusto tenerte por aquí${groupName} 🦊✨\n\nAquí compartimos novedades y piezas especiales recién llegadas con envío incluido. Si ves algo que te encante, solo responde *"yo"* a la foto y con gusto te lo apartamos.`;
+      await sendViaWhatsAppBridge(String(body.groupJid), welcomeText);
       return NextResponse.json({ success: true, event: 'group_welcome_sent' });
     }
 
