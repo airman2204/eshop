@@ -276,7 +276,12 @@ export async function POST(req: NextRequest) {
         nodeTemplate: "",
       });
       await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
-      return NextResponse.json({ success: true, event: "dm_sofia_general_replied", reply: generalReply });
+      return NextResponse.json({
+        success: true,
+        event: "dm_sofia_general_replied",
+        reply: generalReply,
+        hasGeminiKey: !!(process.env.GEMINI_API_KEY || "").trim(),
+      });
     }
 
     if (!cleanPhone || !text) {
