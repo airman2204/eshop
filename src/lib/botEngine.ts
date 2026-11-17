@@ -155,39 +155,53 @@ Mensaje NUEVO del cliente: "${params.userMessage}"
 
 Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si el cliente solo dice "Hola", salúdalo natural y pregúntale en qué le puedes ayudar (sin repetir respuestas pasadas).`;
 
-    let res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.75,
-            maxOutputTokens: 2048,
-          },
-        }),
-      }
-    );
+    let reply = "";
+    const groqKey = (process.env.GROQ_API_KEY || "").trim();
 
-    let json = await res.json();
-    let reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!reply) {
-      console.error("[BotEngine] Gemini 2.5 empty/error:", JSON.stringify(json));
-      res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    if (apiKey) {
+      let res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.75, maxOutputTokens: 1024 },
+            generationConfig: {
+              temperature: 0.75,
+              maxOutputTokens: 2048,
+            },
           }),
         }
       );
-      json = await res.json();
-      reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+      let json = await res.json();
+      reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      if (!reply) {
+        console.error("[BotEngine] Gemini 2.5 empty/error:", JSON.stringify(json));
+      }
     }
+
+    if (!reply && groqKey) {
+      const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.75,
+          max_tokens: 800,
+        }),
+      });
+      const gJson = await gRes.json();
+      reply = gJson?.choices?.[0]?.message?.content?.trim() || "";
+      if (!reply) {
+        console.error("[BotEngine] Groq empty/error:", JSON.stringify(gJson));
+      }
+    }
+
     return reply || fallback;
   } catch (err) {
     console.error("[BotEngine] Error Gemini:", err);
