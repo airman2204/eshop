@@ -121,7 +121,7 @@ export async function generateHumanReply(params: {
   paymentLink?: string;
 }): Promise<string> {
   const flow = await getActiveBotFlow();
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (process.env.GEMINI_API_KEY || "").trim();
 
   const fallback = (
     params.nodeTemplate !== undefined
