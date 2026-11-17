@@ -8,7 +8,7 @@ import { createServerClient } from "@/lib/supabase/server";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { productIds, groupJid, shippingCost = 0, useFlux = true } = await req.json();
+    const { productIds, groupJid, useFlux = true } = await req.json();
 
     if (!Array.isArray(productIds) || productIds.length === 0 || !groupJid) {
       return NextResponse.json(
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Calcular precio con envío y redactar copy cálido con Sofía (Gemini)
-      const totalWithShipping = Number(prod.price || 0) + Number(shippingCost || 0);
+      // 2. Tomar el precio directo del inventario (con sus reglas ya aplicadas) y redactar copy cálido con Sofía
+      const totalWithShipping = Number(prod.price || 0);
       const skuCode = prod.sku || prod.id.slice(0, 8).toUpperCase();
       let caption = `¡Hola grupo! Miren esta joyita que tenemos disponible hoy: *${prod.name}* 🦊✨\n\nYa te queda en *$${totalWithShipping} MXN con envío incluido* 📦.\n\nSi lo quieres, solo responde a este mensaje con *"yo"* o *"yo lo quiero"* (SKU: [${skuCode}]). ¡Pocas piezas!`;
 

@@ -34,7 +34,6 @@ export default function SocialCommerceFlowTab() {
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [groupJid, setGroupJid] = useState('');
-  const [shippingCost, setShippingCost] = useState('0');
   const [useFlux, setUseFlux] = useState(true);
   const [broadcasting, setBroadcasting] = useState(false);
 
@@ -80,7 +79,6 @@ export default function SocialCommerceFlowTab() {
         body: JSON.stringify({
           productIds: selectedProductIds,
           groupJid: groupJid.trim(),
-          shippingCost: Number(shippingCost || 0),
           useFlux,
         }),
       });
@@ -219,20 +217,13 @@ export default function SocialCommerceFlowTab() {
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             type="text"
             placeholder="ID del Grupo (ej. 1203630...@g.us)"
             value={groupJid}
             onChange={(e) => setGroupJid(e.target.value)}
             className="md:col-span-2 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <input
-            type="number"
-            placeholder="Envío a sumar ($ MXN)"
-            value={shippingCost}
-            onChange={(e) => setShippingCost(e.target.value)}
-            className="text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button
             onClick={handleBroadcast}
