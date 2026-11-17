@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const { data: products, error } = await (supabase as any)
       .from("products")
-      .select("id, name, sku, price, stock, image_url, description")
+      .select("*")
       .in("id", productIds);
 
     if (error || !products?.length) {
@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
     const results: any[] = [];
 
     for (const prod of products) {
-      let finalImageUrl = prod.image_url || "";
+      const prodName = prod.name || prod.title || "Producto FoxDrop";
+      const prodPrice = Number(prod.price ?? prod.price_mxn ?? prod.sale_price ?? 0);
+      let finalImageUrl = prod.image_url || (Array.isArray(prod.images) ? prod.images[0] : "") || "";
 
       // 1. Generar foto de estudio limpia con FLUX.1 Schnell si está activo
       if (useFlux && falKey) {
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              prompt: `Clean commercial studio product photography of ${prod.name}, soft natural lighting, minimalist aesthetic background, high resolution, ultra sharp, no text, no watermarks, no badges`,
+              prompt: `Clean commercial studio product photography of ${prodName}, soft natural lighting, minimalist aesthetic background, high resolution, ultra sharp, no text, no watermarks, no badges`,
               image_size: "square_hd",
               num_inference_steps: 4,
               num_images: 1,
@@ -90,14 +92,14 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Tomar el precio directo del inventario (con sus reglas ya aplicadas) y redactar copy cálido con Sofía
-      const totalWithShipping = Number(prod.price || 0);
-      const skuCode = prod.sku || prod.id.slice(0, 8).toUpperCase();
-      let caption = `¡Hola grupo! Miren esta joyita que tenemos disponible hoy: *${prod.name}* 🦊✨\n\nYa te queda en *$${totalWithShipping} MXN con envío incluido* 📦.\n\nSi lo quieres, solo responde a este mensaje con *"yo"* o *"yo lo quiero"* (SKU: [${skuCode}]). ¡Pocas piezas!`;
+      const totalWithShipping = prodPrice;
+      const skuCode = prod.sku || String(prod.id).slice(0, 8).toUpperCase();
+      let caption = `¡Hola grupo! Miren esta joyita que tenemos disponible hoy: *${prodName}* 🦊✨\n\nYa te queda en *$${totalWithShipping} MXN con envío incluido* 📦.\n\nSi lo quieres, solo responde a este mensaje con *"yo"* o *"yo lo quiero"* (SKU: [${skuCode}]). ¡Pocas piezas!`;
 
       if (geminiKey) {
         try {
-          const prompt = `Eres Sofía de FoxDrop. Redacta un mensaje corto, cálido y muy natural para un grupo VIP de WhatsApp anunciando este producto de importación:
-- Producto: ${prod.name}
+          const prompt = `Eres Sofía de FoxDrop. Redacta un mensaje corto, cálido y muy natural para un grupo de WhatsApp anunciando este producto de importación:
+- Producto: ${prodName}
 - Precio ya con envío incluido: $${totalWithShipping} MXN
 - SKU obligatorio a incluir exactamente así: [${skuCode}]
 - Stock disponible: ${prod.stock} piezas
@@ -131,7 +133,7 @@ Reglas:
       if (previewOnly) {
         results.push({
           id: prod.id,
-          name: prod.name,
+          name: prodName,
           sku: skuCode,
           caption,
           imageUrl: finalImageUrl,
