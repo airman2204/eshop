@@ -104,7 +104,39 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Tomar el precio directo del inventario (con sus reglas ya aplicadas) y redactar copy cálido con Sofía
+      // 2. Buscar hasta 2 productos relacionados en stock para cross-selling (misma marca/fragancia)
+      let relatedText = "";
+      try {
+        const { data: allStock } = await (supabase as any)
+          .from("products")
+          .select("*")
+          .gt("stock", 0)
+          .neq("id", prod.id)
+          .limit(30);
+
+        if (Array.isArray(allStock) && allStock.length > 0) {
+          const words = prodName
+            .toLowerCase()
+            .replace(/[()]/g, " ")
+            .split(/\s+/)
+            .filter((w: string) => w.length >= 4 && !["para", "linea", "línea", "importado", "fragancia", "producto"].includes(w));
+
+          const related = allStock
+            .filter((other: any) => {
+              const txt = `${other.name || other.title || ""} ${other.brand || ""}`.toLowerCase();
+              return words.some((w: string) => txt.includes(w));
+            })
+            .slice(0, 2);
+
+          if (related.length > 0) {
+            relatedText = related
+              .map((r: any) => `${r.name || r.title} ($${Number(r.public_price ?? r.publicPrice ?? r.price ?? r.price_mxn ?? 0)} MXN)`)
+              .join(" y ");
+          }
+        }
+      } catch {}
+
+      // 3. Tomar el precio directo del inventario (con sus reglas ya aplicadas) y redactar copy cálido con Sofía
       const totalWithShipping = prodPrice;
       const skuCode = prod.sku || String(prod.id).slice(0, 8).toUpperCase();
       let caption = `¡Hola grupo! Miren esta joyita que tenemos disponible hoy: *${prodName}* 🦊✨\n\nYa te queda en *$${totalWithShipping} MXN con envío incluido* 📦.\n\nSi lo quieres, solo responde a este mensaje con *"yo"* o *"yo lo quiero"* (SKU: [${skuCode}]). ¡Pocas piezas!`;
@@ -115,13 +147,12 @@ export async function POST(req: NextRequest) {
 - Producto: ${prodName}
 - Precio ya con envío incluido: $${totalWithShipping} MXN
 - SKU obligatorio a incluir exactamente así: [${skuCode}]
-- Stock disponible: ${prod.stock} piezas
+- Stock disponible: ${prod.stock} piezas${relatedText ? `\n- Productos relacionados en stock para combinar: ${relatedText}` : ""}
 
 Reglas:
 - Saluda con energía ("¡Hola grupo!", "Miren lo que nos llegó hoy...").
 - Indica claramente que el precio ya incluye envío.
-- Invita a responder este mensaje con "yo" o "yo lo quiero" para apartarlo 20 minutos al instante.
-- Máximo 4 líneas y 2-3 emojis.`;
+- Invita a responder este mensaje con "yo" o "yo lo quiero" para apartarlo.${relatedText ? `\n- Al final, sugiere amablemente que lo pueden combinar con: ${relatedText}.` : ""}`
 
           const gRes = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
