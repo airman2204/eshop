@@ -152,6 +152,7 @@ export async function sendViaWhatsAppBridge(to: string, message: string, quotedM
         "x-api-key": apiKey,
       },
       body: JSON.stringify({
+        number: to,
         phone: to,
         text: message,
         message,

@@ -449,7 +449,8 @@ app.get('/status', (req, res) => {
 
 // Endpoint POST para enviar mensajes desde el panel Admin
 app.post('/message/sendText', async (req, res) => {
-  const { number, text } = req.body;
+  const number = req.body.number || req.body.phone;
+  const text = req.body.text || req.body.message;
 
   if (!sock || connectionStatus !== 'connected') {
     return res.status(503).json({ error: 'WhatsApp no está conectado todavía' });
@@ -462,7 +463,7 @@ app.post('/message/sendText', async (req, res) => {
   try {
     let targetJid = '';
     
-    if (number.includes('@lid')) {
+    if (number.includes('@lid') || number.includes('@g.us')) {
       targetJid = number;
     } else if (number.includes('@s.whatsapp.net')) {
       targetJid = number;

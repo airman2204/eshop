@@ -108,6 +108,7 @@ Reglas:
           "x-api-key": bridgeApiKey,
         },
         body: JSON.stringify({
+          number: groupJid,
           phone: groupJid,
           text: caption,
           message: caption,
