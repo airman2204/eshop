@@ -37,8 +37,8 @@ export function detectGroupPurchaseIntent(
   const cleanText = (text || "").trim();
   const cleanQuote = (quotedText || "").trim();
 
-  // Buscar patrón explícito de SKU (ej. FX-102, SKU-123, [ABC-12], o código alfanumérico con guion)
-  const skuPattern = /(?:sku[:\s#-]*|\[)?([A-Z]{2,6}[-_][A-Z0-9]{2,10}|\b[A-Z0-9]{4,12}\b)(?:\])?/i;
+  // Buscar patrón explícito de SKU (ej. [A1B2C3D4], FX-102, o código alfanumérico con al menos un número)
+  const skuPattern = /\[([A-Z0-9_-]{4,16})\]|\b([A-Z]{2,6}[-_][A-Z0-9]{2,10})\b|\b(?=[A-Z0-9]*\d)[A-Z0-9]{5,12}\b/i;
 
   const explicitCmd = cleanText.match(/(?:yo\s+lo\s+quiero|lo\s+quiero|apartar|quiero)\s+\[?([A-Z0-9_-]{3,20})\]?/i);
   if (explicitCmd?.[1]) {
@@ -53,7 +53,10 @@ export function detectGroupPurchaseIntent(
   // Si tiene intención natural ("yo", "yo lo quiero", "mío"), buscar SKU en el texto o en el mensaje citado
   const matchInText = cleanText.match(skuPattern);
   const matchInQuote = cleanQuote.match(skuPattern);
-  let skuCandidate = (matchInText?.[1] || matchInQuote?.[1] || "").toUpperCase() || null;
+  let skuCandidate = (
+    matchInText?.[1] || matchInText?.[2] || matchInText?.[0] ||
+    matchInQuote?.[1] || matchInQuote?.[2] || matchInQuote?.[0] || ""
+  ).replace(/[\[\]]/g, "").toUpperCase() || null;
 
   // Fallback: si el mensaje citado no trae [SKU], extraer palabras clave reales del producto
   if (!skuCandidate && cleanQuote) {
