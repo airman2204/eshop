@@ -29,7 +29,6 @@ export const DEFAULT_FLOW_NODES = [
   },
   {
     id: "start",
-    type: "input",
     position: { x: 250, y: 20 },
     data: {
       label: "1. Saludo DM + Resumen de Apartado (20 min)",

@@ -70,7 +70,6 @@ export default function SocialCommerceFlowTab() {
         .from('products')
         .select('id, name, price, stock')
         .gt('stock', 0)
-        .order('created_at', { ascending: false })
         .limit(40);
       if (prods) setProducts(prods);
     };
