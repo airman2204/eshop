@@ -944,6 +944,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
