@@ -133,7 +133,11 @@ Redacta la respuesta exacta para enviar por WhatsApp siguiendo la guía del paso
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.65, maxOutputTokens: 1024 },
+          generationConfig: {
+            temperature: 0.65,
+            maxOutputTokens: 2048,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
       }
     );
