@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
             price: res.product.price,
             nodeTemplate: startNode?.data?.messageTemplate,
           });
-          await sendViaWhatsAppBridge(participantPhone, dmReply);
+          await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
         } else if (res.reason === "out_of_stock") {
           await sendViaWhatsAppBridge(
