@@ -175,6 +175,35 @@ export async function POST(req: NextRequest) {
 
     let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
 
+    // Evento C.1: Si el cliente tiene un apartado activo y responde en privado (DM)
+    if (cleanPhone && text) {
+      const { data: activeRes } = await (supabase as any)
+        .from("inventory_reservations")
+        .select("id, product_id, sku")
+        .eq("phone", cleanPhone)
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeRes) {
+        const cancelRegex = /\b(mejor\s+no|no\s+lo\s+quiero|ya\s+no|cancela|cancelar|cancelalo|cancélalo|no\s+gracias)\b/i;
+        if (cancelRegex.test(text)) {
+          await (supabase as any)
+            .from("inventory_reservations")
+            .update({ status: "cancelled" })
+            .eq("id", activeRes.id);
+
+          await sendViaWhatsAppBridge(
+            cleanPhone,
+            "¡Sin problema! Ya lo liberamos por si alguien más lo aprovecha. Si te vuelves a animar, solo responde a la foto en el grupo 🦊✨"
+          );
+          return NextResponse.json({ success: true, event: "reservation_cancelled" });
+        }
+      }
+    }
+
     if (!cleanPhone || !text) {
       return NextResponse.json({ received: true, note: "Mensaje vacío o sin remitente ignorado" });
     }
