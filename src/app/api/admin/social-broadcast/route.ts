@@ -121,12 +121,21 @@ export async function POST(req: NextRequest) {
             .split(/\s+/)
             .filter((w: string) => w.length >= 4 && !["para", "linea", "línea", "importado", "fragancia", "producto"].includes(w));
 
+          const lowerMain = prodName.toLowerCase();
+          const isPortaGel = lowerMain.includes("porta gel");
+
           const related = allStock
-            .filter((other: any) => {
+            .map((other: any) => {
               const txt = `${other.name || other.title || ""} ${other.brand || ""}`.toLowerCase();
-              return words.some((w: string) => txt.includes(w));
+              let score = words.reduce((acc: number, w: string) => acc + (txt.includes(w) ? 1 : 0), 0);
+              if (isPortaGel && txt.includes("gel") && !txt.includes("porta gel")) score += 5;
+              if (isPortaGel && (txt.includes("crema") || txt.includes("jabón") || txt.includes("jabon"))) score -= 3;
+              return { other, score };
             })
-            .slice(0, 2);
+            .filter((x) => x.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 2)
+            .map((x) => x.other);
 
           if (related.length > 0) {
             relatedText = related
@@ -151,7 +160,7 @@ export async function POST(req: NextRequest) {
 Reglas de estilo y autonomía:
 - NO empieces saludando con "¡Hola grupo!" (ya estamos en confianza platicando; ve directo al grano con un gancho atractivo: curiosidad, beneficio, antojo o escasez).
 - Indica claramente el precio ($${totalWithShipping} MXN ya con envío incluido).
-- Invita a responder este mensaje con "yo" para apartarlo.${relatedText ? `\n- Al final, sugiere brevemente combinarlo con: ${relatedText}.` : ""}
+- Invita a responder este mensaje con "yo" para apartarlo.${relatedText ? `\n- Al final, sugiere brevemente combinarlo con: ${relatedText} (solo menciona los que realmente tengan sentido como complemento lógico del uso del producto).` : ""}
 - Máximo 3-4 líneas completas y 2 emojis.`
 
           const gRes = await fetch(
