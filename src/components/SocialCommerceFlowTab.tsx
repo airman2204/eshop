@@ -211,15 +211,33 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     }
   };
 
+  const getNextBatchIds = (count: number) => {
+    let sentIds: string[] = [];
+    try {
+      sentIds = JSON.parse(localStorage.getItem('foxdrop_sent_product_ids') || '[]');
+    } catch {}
+    let candidates = products.filter((p) => !sentIds.includes(p.id));
+    if (candidates.length === 0) {
+      sentIds = [];
+      candidates = [...products];
+    }
+    const picked = candidates
+      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
+      .slice(0, count)
+      .map((p) => p.id);
+    try {
+      localStorage.setItem('foxdrop_sent_product_ids', JSON.stringify([...sentIds, ...picked]));
+    } catch {}
+    return picked;
+  };
+
   const handleAutoPickStale = () => {
     if (!products.length) return;
-    // Priorizar productos con mayor stock disponible (y más antiguos al final de la lista)
-    const sorted = [...products].sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0));
-    const top3 = sorted.slice(0, 3).map((p) => p.id);
+    const top3 = getNextBatchIds(3);
     setSelectedProductIds(top3);
     setToast({
       type: 'ok',
-      msg: `Sofía eligió automáticamente ${top3.length} artículos con mayor stock parado 🦊`,
+      msg: `Sofía eligió ${top3.length} artículos nuevos de tu stock sin repetir 🦊`,
     });
   };
 
@@ -321,10 +339,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       setToast({ type: 'err', msg: 'Selecciona primero un grupo de WhatsApp.' });
       return;
     }
-    const top3 = [...products]
-      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
-      .slice(0, 3)
-      .map((p) => p.id);
+    const top3 = getNextBatchIds(3);
     if (top3.length === 0) return;
 
     setBroadcasting(true);
