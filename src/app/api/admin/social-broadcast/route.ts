@@ -75,8 +75,8 @@ export async function POST(req: NextRequest) {
           const payload = finalImageUrl
             ? {
                 image_url: finalImageUrl,
-                strength: 0.55,
-                prompt: `Keep the exact same product, bottle, packaging and label of ${prodName}, place it in a clean commercial studio photography setting with soft natural lighting, minimalist aesthetic background, ultra sharp, no extra text, no watermarks`,
+                strength: 0.72,
+                prompt: `Professional luxury commercial studio product photography of ${prodName}, placed on a sleek marble pedestal with soft warm studio rim lighting, clean minimalist cream background, ultra sharp, magazine quality, no extra text, no watermarks`,
                 num_inference_steps: 24,
                 num_images: 1,
               }
