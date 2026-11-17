@@ -273,8 +273,7 @@ export async function POST(req: NextRequest) {
       const generalReply = await generateHumanReply({
         userMessage: text,
         history: chatHistory,
-        nodeTemplate:
-          "¡Claro que sí! En FoxDrop todos nuestros productos son 100% originales de importación directa de EUA 🦊✨ Puedes pagar súper seguro con Mercado Pago (tarjeta o OXXO), transferencia SPEI o contra entrega si estás en Puebla / San Andrés Cholula.",
+        nodeTemplate: "",
       });
       await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
       return NextResponse.json({ success: true, event: "dm_sofia_general_replied" });
