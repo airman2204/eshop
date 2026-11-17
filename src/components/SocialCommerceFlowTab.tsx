@@ -34,6 +34,8 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [groupJid, setGroupJid] = useState('');
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [useFlux, setUseFlux] = useState(true);
   const [broadcasting, setBroadcasting] = useState(false);
 
@@ -72,6 +74,24 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     };
     loadFlow();
   }, [setNodes, setEdges, initialProducts]);
+
+  const handleLoadGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const res = await fetch('/api/whatsapp/groups');
+      const json = await res.json();
+      if (Array.isArray(json.groups) && json.groups.length > 0) {
+        setGroups(json.groups);
+        if (!groupJid) setGroupJid(json.groups[0].id);
+      } else {
+        setToast({ type: 'err', msg: 'No se encontraron grupos o Render aún está reiniciando.' });
+      }
+    } catch {
+      setToast({ type: 'err', msg: 'Error cargando grupos de WhatsApp.' });
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
   const handleAutoPickStale = () => {
     if (!products.length) return;
@@ -247,18 +267,42 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input
-            type="text"
-            placeholder="ID del Grupo (ej. 1203630...@g.us)"
-            value={groupJid}
-            onChange={(e) => setGroupJid(e.target.value)}
-            className="md:col-span-2 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="md:col-span-2 flex gap-2">
+            {groups.length > 0 ? (
+              <select
+                value={groupJid}
+                onChange={(e) => setGroupJid(e.target.value)}
+                className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+              >
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder="ID del Grupo (o dale a Cargar Grupos →)"
+                value={groupJid}
+                onChange={(e) => setGroupJid(e.target.value)}
+                className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            )}
+            <button
+              type="button"
+              onClick={handleLoadGroups}
+              disabled={loadingGroups}
+              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold whitespace-nowrap transition"
+            >
+              {loadingGroups ? 'Cargando...' : 'Cargar Grupos'}
+            </button>
+          </div>
           <button
             onClick={handleBroadcast}
             disabled={broadcasting}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50 transition"
+            className="md:col-span-2 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold disabled:opacity-50 transition"
           >
             <Send className="w-3.5 h-3.5" />
             {broadcasting ? 'Generando y enviando...' : 'Generar y Enviar al Grupo'}

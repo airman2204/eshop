@@ -454,6 +454,22 @@ app.get('/status', (req, res) => {
 });
 
 // Endpoint POST para enviar mensajes desde el panel Admin
+app.get('/groups', async (req, res) => {
+  if (!sock || connectionStatus !== 'connected') {
+    return res.status(503).json({ error: 'WhatsApp no conectado' });
+  }
+  try {
+    const participating = await sock.groupFetchAllParticipating();
+    const groups = Object.values(participating || {}).map((g) => ({
+      id: g.id,
+      name: g.subject || g.id,
+    }));
+    return res.json({ groups });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/message/sendText', async (req, res) => {
   const number = req.body.number || req.body.phone;
   const text = req.body.text || req.body.message;
