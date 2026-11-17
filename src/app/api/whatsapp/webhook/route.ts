@@ -144,14 +144,12 @@ export async function POST(req: NextRequest) {
             `¡Apartado para *${clientName}*! Te escribo al privado para cerrar tu pedido 🦊`,
             body.messageId || body.data?.key?.id
           );
-          const flow = await getActiveBotFlow();
-          const startNode = flow.nodes.find((n: any) => n.id === "start");
           const dmReply = await generateHumanReply({
-            userMessage: text,
+            userMessage: `Acabo de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). Confírmame el apartado con su nombre y precio, pregúntame mi nombre si no lo sabes y dime las 3 opciones de pago (Mercado Pago tarjeta, SPEI o Contra entrega Puebla/Cholula).`,
             productName: res.product.name,
             sku: res.product.sku,
             price: res.product.price,
-            nodeTemplate: startNode?.data?.messageTemplate,
+            nodeTemplate: `¡Qué padre! Ya te echamos a tu bolsita *${res.product.name}* en $${res.product.price} MXN (envío incluido) 🦊✨ ¿Con quién tengo el gusto? Cuando gustes cerrar tu compra puedes pagar con Tarjeta (Mercado Pago), Transferencia SPEI o Contra entrega (Puebla / San Andrés Cholula).`,
           });
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
