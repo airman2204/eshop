@@ -117,14 +117,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     loadFlow();
   }, [setNodes, setEdges, initialProducts]);
 
-  const handleReleaseReservation = async (resId: string) => {
+  const handleReleaseReservation = async (resItem: any) => {
     const supabase = getSupabaseBrowserClient();
     await (supabase as any)
       .from('inventory_reservations')
       .update({ status: 'cancelled' })
-      .eq('id', resId);
-    setActiveReservations((prev) => prev.map((r) => (r.id === resId ? { ...r, status: 'cancelled' } : r)));
-    setToast({ type: 'ok', msg: 'Apartado liberado manualmente 🦊' });
+      .eq('id', resItem.id);
+    setActiveReservations((prev) => prev.map((r) => (r.id === resItem.id ? { ...r, status: 'cancelled' } : r)));
+
+    if (groupJid.trim()) {
+      const prod = products.find((p) => p.id === resItem.product_id);
+      const prodName = prod?.title || prod?.name || resItem.sku;
+      const prodPrice = prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0;
+      await fetch('/api/admin/social-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupJid: groupJid.trim(),
+          previews: [
+            {
+              id: resItem.product_id,
+              name: prodName,
+              caption: `¡Buenas noticias! Se acaba de liberar *${prodName}* ($${prodPrice} MXN con envío incluido) 🦊✨ Si alguien se anima, solo responda *"yo"* para apartarlo.`,
+              imageUrl: prod?.image_url || prod?.imageUrl || undefined,
+            },
+          ],
+        }),
+      }).catch(() => {});
+    }
+
+    setToast({ type: 'ok', msg: 'Apartado liberado y avisado en el grupo 🦊' });
   };
 
   const handleApproveReservation = async (resItem: any) => {
@@ -732,7 +754,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleReleaseReservation(r.id)}
+                                onClick={() => handleReleaseReservation(r)}
                                 className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-red-600 font-semibold transition"
                               >
                                 Liberar
@@ -845,7 +867,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleReleaseReservation(r.id)}
+                                onClick={() => handleReleaseReservation(r)}
                                 className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-red-600 font-semibold transition"
                               >
                                 Liberar
