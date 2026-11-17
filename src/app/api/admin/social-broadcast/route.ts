@@ -63,24 +63,37 @@ export async function POST(req: NextRequest) {
 
     for (const prod of products) {
       const prodName = prod.name || prod.title || "Producto FoxDrop";
-      const prodPrice = Number(prod.price ?? prod.price_mxn ?? prod.sale_price ?? 0);
+      const prodPrice = Number(prod.public_price ?? prod.publicPrice ?? prod.price ?? prod.price_mxn ?? prod.sale_price ?? 0);
       let finalImageUrl = prod.image_url || (Array.isArray(prod.images) ? prod.images[0] : "") || "";
 
-      // 1. Generar foto de estudio limpia con FLUX.1 Schnell si está activo
+      // 1. Generar foto de estudio limpia con FLUX usando la foto real como referencia (Image-to-Image)
       if (useFlux && falKey) {
         try {
-          const fluxRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
+          const endpoint = finalImageUrl
+            ? "https://fal.run/fal-ai/flux/dev/image-to-image"
+            : "https://fal.run/fal-ai/flux/schnell";
+          const payload = finalImageUrl
+            ? {
+                image_url: finalImageUrl,
+                strength: 0.55,
+                prompt: `Keep the exact same product, bottle, packaging and label of ${prodName}, place it in a clean commercial studio photography setting with soft natural lighting, minimalist aesthetic background, ultra sharp, no extra text, no watermarks`,
+                num_inference_steps: 24,
+                num_images: 1,
+              }
+            : {
+                prompt: `Clean commercial studio product photography of ${prodName}, soft natural lighting, minimalist aesthetic background, high resolution, ultra sharp, no text, no watermarks, no badges`,
+                image_size: "square_hd",
+                num_inference_steps: 4,
+                num_images: 1,
+              };
+
+          const fluxRes = await fetch(endpoint, {
             method: "POST",
             headers: {
               Authorization: `Key ${falKey}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              prompt: `Clean commercial studio product photography of ${prodName}, soft natural lighting, minimalist aesthetic background, high resolution, ultra sharp, no text, no watermarks, no badges`,
-              image_size: "square_hd",
-              num_inference_steps: 4,
-              num_images: 1,
-            }),
+            body: JSON.stringify(payload),
           });
           const fluxJson = await fluxRes.json();
           if (fluxJson?.images?.[0]?.url) {

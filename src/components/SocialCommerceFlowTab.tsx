@@ -387,7 +387,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                     : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                 }`}
               >
-                {p.name || p.title || 'Producto'} (${p.price ?? p.priceMxn ?? p.salePrice ?? 0}) · Stock: {p.stock}
+                {p.name || p.title || 'Producto'} (${p.publicPrice ?? p.public_price ?? p.price ?? p.priceMxn ?? 0}) · Stock: {p.stock}
               </button>
             );
           })}
