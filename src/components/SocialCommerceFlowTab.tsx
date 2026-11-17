@@ -41,6 +41,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [productSearch, setProductSearch] = useState('');
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
   const [activeReservations, setActiveReservations] = useState<any[]>([]);
+  const [resFilter, setResFilter] = useState<'active' | 'converted' | 'all'>('active');
   const [chatNamesByPhone, setChatNamesByPhone] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -286,6 +287,34 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     [setEdges]
   );
 
+  const handleLanzarTanda3 = async () => {
+    if (!groupJid.trim()) {
+      setToast({ type: 'err', msg: 'Selecciona primero un grupo de WhatsApp.' });
+      return;
+    }
+    const top3 = [...products]
+      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
+      .slice(0, 3)
+      .map((p) => p.id);
+    if (top3.length === 0) return;
+
+    setBroadcasting(true);
+    setToast(null);
+    try {
+      const res = await fetch('/api/admin/social-broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productIds: top3, groupJid: groupJid.trim(), useFlux: false }),
+      });
+      if (!res.ok) throw new Error('Error lanzando tanda');
+      setToast({ type: 'ok', msg: `¡Sofía lanzó una tanda de ${top3.length} ofertas al grupo! ⚡🦊` });
+    } catch (err: any) {
+      setToast({ type: 'err', msg: err?.message || 'Error al lanzar tanda' });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
   const handleCorteDelDia = async () => {
     setBroadcasting(true);
     setToast(null);
@@ -424,6 +453,14 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             </h3>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLanzarTanda3}
+              disabled={broadcasting}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition disabled:opacity-50"
+            >
+              ⚡ Lanzar Tanda de 3
+            </button>
             <button
               type="button"
               onClick={handleAutoPickStale}
@@ -582,8 +619,26 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
         )}
         {activeReservations.length > 0 && (
           <div className="pt-3 border-t border-slate-100 space-y-2">
-            <div className="text-xs font-bold text-slate-800">
-              📋 Tablero de Apartados en Vivo ({activeReservations.filter((r) => r.status === 'active').length} activos)
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-bold text-slate-800">
+                📋 Tablero de Apartados en Vivo ({activeReservations.filter((r) => r.status === 'active').length} activos)
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px]">
+                {(['active', 'converted', 'all'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setResFilter(tab)}
+                    className={`px-2.5 py-1 rounded-lg font-semibold transition ${
+                      resFilter === tab
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {tab === 'active' ? 'Activos' : tab === 'converted' ? 'Pagados' : 'Todos'}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full text-left text-xs">
@@ -596,7 +651,13 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {activeReservations.map((r) => {
+                  {activeReservations
+                    .filter((r) => {
+                      if (resFilter === 'active') return r.status === 'active';
+                      if (resFilter === 'converted') return r.status === 'converted';
+                      return true;
+                    })
+                    .map((r) => {
                     const prod = products.find((p) => p.id === r.product_id);
                     const clientName = chatNamesByPhone[String(r.phone || '').slice(-10)] || 'Cliente WhatsApp';
                     const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
