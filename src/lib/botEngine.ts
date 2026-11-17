@@ -148,7 +148,7 @@ Contexto actual:
 ${historyBlock}
 Mensaje NUEVO del cliente: "${params.userMessage}"
 
-Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si el cliente solo dice "Hola", salúdalo natural y pregúntale en qué le puedes ayudar (sin repetir respuestas pasadas).`;
+Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si ya hay mensajes previos en el historial, PROHIBIDO volver a decir "¡Hola!" o saludar de nuevo: ve directo al grano respondiendo su duda.`;
 
     let reply = "";
     const groqKey = (process.env.GROQ_API_KEY || "").trim();
