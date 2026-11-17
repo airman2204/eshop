@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
 
     // Evento C.1: Si el cliente tiene un apartado activo y responde en privado (DM)
     if (cleanPhone && text) {
-      const { data: activeRes } = await (supabase as any)
+      let { data: activeRes } = await (supabase as any)
         .from("inventory_reservations")
         .select("id, product_id, sku")
         .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
@@ -186,6 +186,33 @@ export async function POST(req: NextRequest) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      // Si no encontró por teléfono, buscar si el chat tiene un LID asociado en whatsapp_chats
+      if (!activeRes) {
+        const { data: chatForLid } = await supabase
+          .from("whatsapp_chats")
+          .select("notes")
+          .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
+          .limit(1)
+          .maybeSingle();
+        let lidVal = "";
+        try {
+          const parsedNotes = typeof chatForLid?.notes === "string" ? JSON.parse(chatForLid.notes) : chatForLid?.notes;
+          lidVal = parsedNotes?.lid ? String(parsedNotes.lid) : "";
+        } catch {}
+        if (lidVal) {
+          const { data: resByLid } = await (supabase as any)
+            .from("inventory_reservations")
+            .select("id, product_id, sku")
+            .eq("phone", lidVal)
+            .eq("status", "active")
+            .gt("expires_at", new Date().toISOString())
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          activeRes = resByLid;
+        }
+      }
 
       if (activeRes) {
         const cancelRegex = /\b(mejor\s+no|no\s+lo\s+quiero|ya\s+no|cancela|cancelar|cancelalo|cancélalo|no\s+gracias)\b/i;
