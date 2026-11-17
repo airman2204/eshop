@@ -403,7 +403,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">
-              Social Commerce Flow (WhatsApp + React Flow)
+              Sofía — Personal Shopper FoxDrop
             </h2>
             <p className="text-xs text-slate-500">
               Diseña el árbol conversacional de apartado en grupo → DM humano → Pago MP / SPEI → Ticket.

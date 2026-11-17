@@ -4703,7 +4703,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </div>
                   <div>
                     <span className="block font-bold text-xs leading-none">
-                      Social Flow Bot
+                      Sofía Shopper
                     </span>
                   </div>
                 </div>
