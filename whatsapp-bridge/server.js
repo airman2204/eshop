@@ -595,6 +595,14 @@ app.post('/message/sendText', async (req, res) => {
       });
       console.log(`📷 Imagen enviada con éxito a ${targetJid}: ${imgUrl}`);
     } else {
+      // Simular "escribiendo..." natural (1.5s - 3s) antes de enviar para que se sienta 100% humano
+      try {
+        await sock.sendPresenceUpdate('composing', targetJid);
+        const delayMs = Math.min(3000, Math.max(1200, String(text || '').length * 25));
+        await new Promise((r) => setTimeout(r, delayMs));
+        await sock.sendPresenceUpdate('paused', targetJid);
+      } catch {}
+
       if (req.body.mediaUrl) {
         sent = await sock.sendMessage(targetJid, {
           image: { url: req.body.mediaUrl },
