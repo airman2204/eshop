@@ -72,7 +72,7 @@ export function detectGroupPurchaseIntent(
       .split(/\s+/)
       .filter((w) => w.length >= 4 && !stopWords.has(w.toLowerCase()));
     if (words.length > 0) {
-      skuCandidate = words.slice(0, 2).join(" ");
+      skuCandidate = words.slice(0, 8).join(" ");
     }
   }
 
