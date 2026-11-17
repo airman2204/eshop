@@ -175,8 +175,29 @@ export async function POST(req: NextRequest) {
 
     let cleanPhone = formatPhoneNumber(String(rawPhone).replace(/@.+/, ""));
 
-    // Evento C.1: Si el cliente tiene un apartado activo y responde en privado (DM)
+    // Evento C.1: Si el cliente responde en privado (DM), Sofía responde con memoria conversacional
     if (cleanPhone && text) {
+      // Cargar últimos 8 mensajes del historial para que Sofía tenga contexto real y no repita respuestas
+      let chatHistory: { sender: string; text: string }[] = [];
+      const { data: chatForHist } = await supabase
+        .from("whatsapp_chats")
+        .select("id")
+        .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
+        .limit(1)
+        .maybeSingle();
+
+      if (chatForHist?.id) {
+        const { data: msgs } = await supabase
+          .from("whatsapp_messages")
+          .select("sender, text")
+          .eq("chat_id", chatForHist.id)
+          .order("created_at", { ascending: false })
+          .limit(8);
+        if (Array.isArray(msgs)) {
+          chatHistory = msgs.reverse().map((m: any) => ({ sender: m.sender, text: m.text }));
+        }
+      }
+
       let { data: activeRes } = await (supabase as any)
         .from("inventory_reservations")
         .select("id, product_id, sku")
@@ -238,6 +259,7 @@ export async function POST(req: NextRequest) {
 
         const dmReply = await generateHumanReply({
           userMessage: text,
+          history: chatHistory,
           productName: prod?.title || prod?.name || activeRes.sku,
           sku: activeRes.sku,
           price: Number(prod?.public_price ?? prod?.price ?? 0),
@@ -250,6 +272,7 @@ export async function POST(req: NextRequest) {
       // Si no tiene apartado activo pero pregunta en DM (ej. "¿es seguro?", "¿son originales?"), Sofía también responde
       const generalReply = await generateHumanReply({
         userMessage: text,
+        history: chatHistory,
         nodeTemplate:
           "¡Claro que sí! En FoxDrop todos nuestros productos son 100% originales de importación directa de EUA 🦊✨ Puedes pagar súper seguro con Mercado Pago (tarjeta o OXXO), transferencia SPEI o contra entrega si estás en Puebla / San Andrés Cholula.",
       });

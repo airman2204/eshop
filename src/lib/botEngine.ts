@@ -112,6 +112,7 @@ export async function getActiveBotFlow() {
  */
 export async function generateHumanReply(params: {
   userMessage: string;
+  history?: { sender: string; text: string }[];
   productName?: string;
   sku?: string;
   price?: number;
@@ -130,14 +131,22 @@ export async function generateHumanReply(params: {
   if (!apiKey) return fallback;
 
   try {
+    const historyBlock =
+      Array.isArray(params.history) && params.history.length > 0
+        ? `\nHistorial reciente de esta conversación (léelo para NO repetir respuestas y continuar el hilo natural):\n${params.history
+            .map((m) => `- ${m.sender === "admin" ? "Sofía" : "Cliente"}: ${m.text}`)
+            .join("\n")}\n`
+        : "";
+
     const prompt = `${flow.systemPrompt}
 
-Contexto actual de la conversación:
-- Producto apartado: ${params.productName || "N/A"} (SKU: ${params.sku || "N/A"}, Precio: $${params.price ?? 0} MXN)
-- Guía del paso actual del flujo: ${fallback}
-- Mensaje del cliente: "${params.userMessage}"
+Contexto actual:
+- Producto apartado (si aplica): ${params.productName || "Ninguno aún"} (SKU: ${params.sku || "N/A"}, Precio: $${params.price ?? 0} MXN)
+- Guía de referencia: ${fallback}
+${historyBlock}
+Mensaje NUEVO del cliente: "${params.userMessage}"
 
-Redacta la respuesta exacta para enviar por WhatsApp siguiendo la guía del paso actual, pero con tu toque humano, cálido y natural. No inventes precios ni datos bancarios distintos a los de la guía.`;
+Responde ÚNICAMENTE al mensaje nuevo del cliente tomando en cuenta el historial. Si el cliente solo dice "Hola", salúdalo natural y pregúntale en qué le puedes ayudar (sin repetir respuestas pasadas).`;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
