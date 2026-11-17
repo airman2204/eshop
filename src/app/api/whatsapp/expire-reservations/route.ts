@@ -43,12 +43,12 @@ export async function GET() {
       if (targetGroupJid) {
         const { data: prod } = await (supabase as any)
           .from("products")
-          .select("title, name, public_price, price")
+          .select("*")
           .eq("id", resItem.product_id)
           .maybeSingle();
 
         const prodName = prod?.title || prod?.name || resItem.sku;
-        const prodPrice = Number(prod?.public_price ?? prod?.price ?? 0);
+        const prodPrice = Number(prod?.public_price ?? prod?.publicPrice ?? prod?.price ?? 0);
 
         await sendViaWhatsAppBridge(
           targetGroupJid,
