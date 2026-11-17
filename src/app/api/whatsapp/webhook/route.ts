@@ -150,12 +150,13 @@ export async function POST(req: NextRequest) {
             randomGroupReply,
             body.messageId || body.data?.key?.id
           );
+          const hasRealName = clientName && !/cliente/i.test(clientName);
           const dmReply = await generateHumanReply({
-            userMessage: `Acabo de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). Confírmame el apartado de forma muy educada, cálida y fluida (sin usar listas numeradas 1) 2) 3) ni preguntar seco "¿Cómo te llamas?", usa "¿Con quién tengo el gusto?" si no sabes mi nombre, y menciona las opciones de pago de corrido en un párrafo natural).`,
+            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Dile qué padre que se animó, confírmale el apartado con su precio y menciona de forma fluida que puede pagar con tarjeta por Mercado Pago, SPEI o contra entrega en Puebla/Cholula.`,
             productName: res.product.name,
             sku: res.product.sku,
             price: res.product.price,
-            nodeTemplate: `¡Qué gusto saludarte! Ya te aparté con mucho cariño tu *${res.product.name}* en $${res.product.price} MXN con envío incluido 🦊✨ ¿Con quién tengo el gusto? Cuando gustes cerrar tu pedido puedes pagar con tarjeta por Mercado Pago, transferencia SPEI o contra entrega si estás en Puebla o Cholula.`,
+            nodeTemplate: `¡Qué padre${hasRealName ? `, ${clientName}` : ""}! Qué gusto que te animaste por *${res.product.name}* en $${res.product.price} MXN con envío incluido 🦊✨${hasRealName ? "" : " ¿Con quién tengo el gusto?"} Cuando gustes cerrar tu pedido puedes pagar con tarjeta por Mercado Pago, transferencia SPEI o contra entrega si estás en Puebla o Cholula.`,
           });
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
