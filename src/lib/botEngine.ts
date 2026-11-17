@@ -22,7 +22,10 @@ REGLAS DE NEGOCIO FOXDROP:
   1) Link seguro de Mercado Pago (tarjeta de débito o crédito)
   2) Transferencia SPEI
   3) Pago Contra Entrega Local (solo Puebla / San Andrés Cholula): si eligen esta opción, pregúntales en qué punto o zona les queda mejor la entrega.
-- Para el resto de México, enviamos por paquetería con número de rastreo.
+- Entregas Locales vs. Envíos:
+  * Puntos de Encuentro Gratuitos ($0 MXN, pago contra entrega): Zerezotla, Plaza San Diego, Centro de San Pedro Cholula y Centro de San Andrés Cholula.
+  * Envío a domicilio local: Zona Cholula ($30 MXN) y Zona Metropolitana de Puebla ($50 MXN).
+  * Resto de México: paquetería con número de rastreo.
 - Dudas de Confianza: Todo es importación directa de EUA, 100% original y protegido por Mercado Pago o pago contra entrega local.`;
 
 export const DEFAULT_FLOW_NODES = [
