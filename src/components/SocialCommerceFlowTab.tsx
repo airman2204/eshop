@@ -41,6 +41,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [productSearch, setProductSearch] = useState('');
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
   const [activeReservations, setActiveReservations] = useState<any[]>([]);
+  const [chatNamesByPhone, setChatNamesByPhone] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -89,10 +90,21 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       const { data: resData } = await (supabase as any)
         .from('inventory_reservations')
         .select('*')
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
       if (resData) setActiveReservations(resData);
+
+      const { data: chatsData } = await (supabase as any)
+        .from('whatsapp_chats')
+        .select('phone, client_name')
+        .limit(200);
+      if (chatsData) {
+        const map: Record<string, string> = {};
+        for (const c of chatsData) {
+          if (c.phone && c.client_name) map[String(c.phone).slice(-10)] = c.client_name;
+        }
+        setChatNamesByPhone(map);
+      }
     };
     loadFlow();
   }, [setNodes, setEdges, initialProducts]);
@@ -103,8 +115,23 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       .from('inventory_reservations')
       .update({ status: 'cancelled' })
       .eq('id', resId);
-    setActiveReservations((prev) => prev.filter((r) => r.id !== resId));
+    setActiveReservations((prev) => prev.map((r) => (r.id === resId ? { ...r, status: 'cancelled' } : r)));
     setToast({ type: 'ok', msg: 'Apartado liberado manualmente 🦊' });
+  };
+
+  const handleApproveReservation = async (resItem: any) => {
+    const supabase = getSupabaseBrowserClient();
+    const prod = products.find((p) => p.id === resItem.product_id);
+    if (prod) {
+      const newStock = Math.max(0, Number(prod.stock || 0) - Number(resItem.qty || 1));
+      await (supabase as any).from('products').update({ stock: newStock }).eq('id', prod.id);
+    }
+    await (supabase as any)
+      .from('inventory_reservations')
+      .update({ status: 'converted' })
+      .eq('id', resItem.id);
+    setActiveReservations((prev) => prev.map((r) => (r.id === resItem.id ? { ...r, status: 'converted' } : r)));
+    setToast({ type: 'ok', msg: 'Pago aprobado y stock descontado 🦊✅' });
   };
 
   const handleLoadGroups = async () => {
@@ -497,31 +524,78 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         )}
         {activeReservations.length > 0 && (
-          <div className="pt-2 border-t border-slate-100 space-y-2">
-            <div className="text-xs font-bold text-slate-700">
-              ⏳ Apartados Activos en Vivo ({activeReservations.length}) — se liberan solos en 20 min
+          <div className="pt-3 border-t border-slate-100 space-y-2">
+            <div className="text-xs font-bold text-slate-800">
+              📋 Tablero de Apartados en Vivo ({activeReservations.filter((r) => r.status === 'active').length} activos)
             </div>
-            <div className="flex flex-wrap gap-2">
-              {activeReservations.map((r) => {
-                const prod = products.find((p) => p.id === r.product_id);
-                const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
-                return (
-                  <div
-                    key={r.id}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"
-                  >
-                    <span className="font-semibold">{prod?.title || prod?.name || r.sku}</span>
-                    <span className="text-amber-700">· {r.phone} · {minsLeft}m</span>
-                    <button
-                      type="button"
-                      onClick={() => handleReleaseReservation(r.id)}
-                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-red-50 text-red-600 border border-amber-200 font-semibold transition"
-                    >
-                      Liberar
-                    </button>
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
+                  <tr>
+                    <th className="px-3 py-2">Producto</th>
+                    <th className="px-3 py-2">Cliente</th>
+                    <th className="px-3 py-2">Estado / Tiempo</th>
+                    <th className="px-3 py-2 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {activeReservations.map((r) => {
+                    const prod = products.find((p) => p.id === r.product_id);
+                    const clientName = chatNamesByPhone[String(r.phone || '').slice(-10)] || 'Cliente WhatsApp';
+                    const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                    const isActive = r.status === 'active' && minsLeft > 0;
+                    return (
+                      <tr key={r.id}>
+                        <td className="px-3 py-2 font-semibold text-slate-800">
+                          {prod?.title || prod?.name || r.sku}
+                          <span className="ml-1 text-emerald-700 font-bold">
+                            (${prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0})
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-slate-700">
+                          <div className="font-medium">{clientName}</div>
+                          <div className="text-[10px] text-slate-400">{r.phone}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          {isActive ? (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold text-[10px]">
+                              ⏳ Activo · {minsLeft}m
+                            </span>
+                          ) : r.status === 'converted' ? (
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[10px]">
+                              ✅ Pagado
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold text-[10px]">
+                              Liberado / Expirado
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right space-x-1.5">
+                          {isActive && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleApproveReservation(r)}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition"
+                              >
+                                Aprobar Pago
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseReservation(r.id)}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-red-600 font-semibold transition"
+                              >
+                                Liberar
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
