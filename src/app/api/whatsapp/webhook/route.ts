@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
         nodeTemplate: "",
       });
       await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply);
-      return NextResponse.json({ success: true, event: "dm_sofia_general_replied" });
+      return NextResponse.json({ success: true, event: "dm_sofia_general_replied", reply: generalReply });
     }
 
     if (!cleanPhone || !text) {
