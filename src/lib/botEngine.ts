@@ -149,7 +149,6 @@ Redacta la respuesta exacta para enviar por WhatsApp siguiendo la guía del paso
           generationConfig: {
             temperature: 0.65,
             maxOutputTokens: 2048,
-            thinkingConfig: { thinkingBudget: 0 },
           },
         }),
       }
