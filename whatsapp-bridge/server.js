@@ -604,10 +604,15 @@ app.post('/message/sendText', async (req, res) => {
       } catch {}
 
       if (req.body.mediaUrl) {
-        sent = await sock.sendMessage(targetJid, {
-          image: { url: req.body.mediaUrl },
-          caption: text,
-        });
+        try {
+          sent = await sock.sendMessage(targetJid, {
+            image: { url: req.body.mediaUrl },
+            caption: text,
+          });
+        } catch (imgErr) {
+          console.error('Error enviando imagen en bridge, enviando solo texto:', imgErr.message);
+          sent = await sock.sendMessage(targetJid, { text });
+        }
       } else {
         sent = await sock.sendMessage(targetJid, { text });
       }
