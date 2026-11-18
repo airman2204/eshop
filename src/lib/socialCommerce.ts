@@ -33,21 +33,30 @@ const INTENT_REGEX =
 export function detectGroupPurchaseIntent(
   text: string,
   quotedText?: string
-): { hasIntent: boolean; skuCandidate: string | null } {
+): { hasIntent: boolean; skuCandidate: string | null; qty: number } {
   const cleanText = (text || "").trim();
   const cleanQuote = (quotedText || "").trim();
+
+  // Detectar cantidad solicitada: "yo 2", "yo quiero 3", "quiero 2", "dame 2", o solo "2" al citar foto
+  let qty = 1;
+  const qtyMatch =
+    cleanText.match(/(?:yo|quiero|dame|apartame|apártame)\s+(\d{1,2})\b/i) ||
+    (cleanQuote ? cleanText.match(/^(\d{1,2})$/) : null);
+  if (qtyMatch?.[1]) {
+    qty = Math.max(1, Math.min(20, Number(qtyMatch[1])));
+  }
 
   // Buscar patrón explícito de SKU (ej. [A1B2C3D4], FX-102, o código alfanumérico con al menos un número)
   const skuPattern = /\[([A-Z0-9_-]{4,16})\]|\b([A-Z]{2,6}[-_][A-Z0-9]{2,10})\b|\b(?=[A-Z0-9]*\d)[A-Z0-9]{5,12}\b/i;
 
   const explicitCmd = cleanText.match(/(?:yo\s+lo\s+quiero|lo\s+quiero|apartar|quiero)\s+\[?([A-Z0-9_-]{3,20})\]?/i);
-  if (explicitCmd?.[1]) {
-    return { hasIntent: true, skuCandidate: explicitCmd[1].toUpperCase() };
+  if (explicitCmd?.[1] && !/^\d{1,2}$/.test(explicitCmd[1])) {
+    return { hasIntent: true, skuCandidate: explicitCmd[1].toUpperCase(), qty };
   }
 
-  const hasIntent = INTENT_REGEX.test(cleanText);
+  const hasIntent = INTENT_REGEX.test(cleanText) || (Boolean(cleanQuote) && /^\d{1,2}$/.test(cleanText));
   if (!hasIntent) {
-    return { hasIntent: false, skuCandidate: null };
+    return { hasIntent: false, skuCandidate: null, qty: 1 };
   }
 
   // Si tiene intención natural ("yo", "yo lo quiero", "mío"), buscar SKU en el texto o en el mensaje citado
@@ -76,7 +85,7 @@ export function detectGroupPurchaseIntent(
     }
   }
 
-  return { hasIntent: true, skuCandidate };
+  return { hasIntent: true, skuCandidate, qty };
 }
 
 /**
@@ -114,7 +123,8 @@ export async function getAvailableStock(productId: string): Promise<{ stock: num
 export async function createProductReservation(
   skuOrQuery: string,
   phone: string,
-  minutes = 20
+  minutes = 120,
+  qty = 1
 ): Promise<ReservationResult> {
   const supabase = createServerClient();
   const cleanQuery = skuOrQuery.trim();
@@ -182,8 +192,8 @@ export async function createProductReservation(
   }
 
   const { available } = await getAvailableStock(product.id);
-  if (available <= 0) {
-    return { success: false, reason: "out_of_stock", product: normalizedProduct, availableStock: 0 };
+  if (available < qty) {
+    return { success: false, reason: "out_of_stock", product: normalizedProduct, availableStock: available };
   }
 
   const expiresAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
@@ -194,7 +204,7 @@ export async function createProductReservation(
       product_id: product.id,
       sku: normalizedProduct.sku,
       phone,
-      qty: 1,
+      qty,
       status: "active",
       expires_at: expiresAt,
     })

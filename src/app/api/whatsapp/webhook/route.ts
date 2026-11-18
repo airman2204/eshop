@@ -135,9 +135,9 @@ export async function POST(req: NextRequest) {
         body.data?.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage?.caption ||
         "";
 
-      const { hasIntent, skuCandidate } = detectGroupPurchaseIntent(text, quotedText);
+      const { hasIntent, skuCandidate, qty } = detectGroupPurchaseIntent(text, quotedText);
       if (hasIntent && skuCandidate && participantPhone) {
-        const res = await createProductReservation(skuCandidate, participantPhone, 120);
+        const res = await createProductReservation(skuCandidate, participantPhone, 120, qty);
         if (res.success && res.product) {
           // Verificar si el cliente ya tiene otros apartados activos hoy para no repetir "checa tu privado"
           const { count: activeCount } = await (supabase as any)
@@ -197,9 +197,14 @@ export async function POST(req: NextRequest) {
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
         } else if (res.reason === "out_of_stock") {
+          const left = Number(res.availableStock || 0);
+          const msgOut =
+            left > 0
+              ? `¡Lo siento, ${clientName}! Solo nos queda(n) *${left} pieza(s)* de *${res.product?.name || skuCandidate}* 🦊`
+              : `¡Lo siento, ${clientName}! Ya se nos agotó *${res.product?.name || skuCandidate}* 🦊`;
           await sendViaWhatsAppBridge(
             String(rawPhone),
-            `¡Ups, ${clientName}! Ya se apartó la última pieza de *${res.product?.name || skuCandidate}*. Si se libera en 20 min te avisamos 🦊`,
+            msgOut,
             body.messageId || body.data?.key?.id
           );
           return NextResponse.json({ success: true, event: "group_out_of_stock" });
