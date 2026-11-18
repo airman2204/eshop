@@ -22,6 +22,24 @@ export default function SaleAdsTab({ products: _products }: { products?: any[] }
   const [concepts, setConcepts] = useState<CampaignConcept[]>([]);
   const [imageUrl, setImageUrl] = useState('');
 
+  const handleSuggestObjective = () => {
+    const ideas =
+      platform === 'tiktok'
+        ? [
+            'Viralizar en TikTok el acceso al grupo Ventas Flash ⚡ FoxDrop mostrando la emoción de abrir cajas de EUA con ahorros reales frente a tiendas de México',
+            'Atraer tráfico masivo en TikTok con reto de "comenta ATAJO" para entrar al grupo VIP donde caen lotes limitados de perfumería, termos y accesorios de EUA',
+            'Captar compradores en todo México que buscan regalos originales de EUA sin pagar sobreprecio de departamentales, llevándolos directo al grupo de WhatsApp',
+          ]
+        : [
+            'Llenar el grupo privado Ventas Flash ⚡ FoxDrop desde Instagram Reels y Stories destacando exclusividad, lotes limitados de EUA y envíos a todo México',
+            'Atraer amantes de fragancias, cuidado corporal y accesorios importados de EUA en Instagram con CTA "comenta VIP" para enviarles el acceso privado',
+            'Posicionar a FoxDrop ("Tu atajo al mundo") en Instagram Ads para encargos directos de tiendas estadounidenses y liquidaciones relámpago en WhatsApp',
+          ];
+    const nextIdea = ideas.find((i) => i !== objective) || ideas[0];
+    setObjective(nextIdea);
+    setToast({ type: 'ok', msg: 'Sofía te propuso un nuevo objetivo ganador 🦊✨' });
+  };
+
   const handleGenerate = async () => {
     if (!objective.trim()) {
       setToast({ type: 'err', msg: 'Escribe un objetivo para generar la campaña.' });
@@ -119,9 +137,19 @@ export default function SaleAdsTab({ products: _products }: { products?: any[] }
 
       {/* Input de Objetivo */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-          Objetivo de tu campaña ({platform === 'instagram' ? 'Instagram' : 'TikTok'})
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+            Objetivo de tu campaña ({platform === 'instagram' ? 'Instagram' : 'TikTok'})
+          </label>
+          <button
+            type="button"
+            onClick={handleSuggestObjective}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#D96B27]" />
+            Que Sofía sugiera el objetivo
+          </button>
+        </div>
         <textarea
           value={objective}
           onChange={(e) => setObjective(e.target.value)}
