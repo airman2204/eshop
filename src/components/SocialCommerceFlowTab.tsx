@@ -834,12 +834,12 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       </div>
       )}
 
-      {/* VISTA 2: TABLERO DE APARTADOS */}
+      {/* VISTA 2: CARRITOS POR CLIENTE */}
       {subView === 'board' && (
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm font-bold text-slate-800">
-              📋 Tablero de Apartados en Vivo ({activeReservations.filter((r) => r.status === 'active').length} activos)
+              🛒 Carritos por Cliente ({activeReservations.filter((r) => r.status === 'active').length} piezas activas)
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               {(['active', 'converted', 'all'] as const).map((tab) => (
@@ -858,89 +858,80 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               ))}
             </div>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[10px]">
-                <tr>
-                  <th className="px-3 py-2">Producto</th>
-                  <th className="px-3 py-2">Cliente</th>
-                  <th className="px-3 py-2">Estado / Tiempo</th>
-                  <th className="px-3 py-2 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {activeReservations
-                  .filter((r) => {
-                    if (resFilter === 'active') return r.status === 'active';
-                    if (resFilter === 'converted') return r.status === 'converted';
-                    return true;
-                  })
-                  .map((r) => {
-                    const prod = products.find((p) => p.id === r.product_id);
-                    const clientName = chatNamesByPhone[String(r.phone || '').slice(-10)] || 'Cliente WhatsApp';
-                    const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
-                    const isActive = r.status === 'active' && minsLeft > 0;
-                    return (
-                      <tr key={r.id}>
-                        <td className="px-3 py-2 font-semibold text-slate-800">
-                          {prod?.title || prod?.name || r.sku}
-                          <span className="ml-1 text-emerald-700 font-bold">
-                            (${prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0})
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-slate-700">
-                          <div className="font-medium">{clientName}</div>
-                          <div className="text-[10px] text-slate-400">{r.phone}</div>
-                        </td>
-                        <td className="px-3 py-2">
-                          {isActive ? (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold text-[10px]">
-                              ⏳ Activo · {minsLeft}m
-                            </span>
-                          ) : r.status === 'converted' ? (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[10px]">
-                              ✅ Pagado
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold text-[10px]">
-                              Liberado / Expirado
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right space-x-1.5">
-                          {isActive ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleApproveReservation(r)}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition"
-                              >
-                                Aprobar Pago
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleReleaseReservation(r)}
-                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-red-600 font-semibold transition"
-                              >
-                                Liberar
-                              </button>
-                            </>
-                          ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Object.entries(
+              activeReservations
+                .filter((r) => {
+                  if (resFilter === 'active') return r.status === 'active';
+                  if (resFilter === 'converted') return r.status === 'converted';
+                  return true;
+                })
+                .reduce((acc: Record<string, any[]>, r) => {
+                  const key = r.phone || 'sin-telefono';
+                  if (!acc[key]) acc[key] = [];
+                  acc[key].push(r);
+                  return acc;
+                }, {})
+            ).map(([phone, items]) => {
+              const clientName = chatNamesByPhone[String(phone).slice(-10)] || 'Cliente WhatsApp';
+              const totalCart = items.reduce((sum, r) => {
+                const prod = products.find((p) => p.id === r.product_id);
+                return sum + Number(prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0);
+              }, 0);
+              const activeItems = items.filter((r) => r.status === 'active');
+
+              return (
+                <div key={phone} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                    <div>
+                      <div className="text-sm font-bold text-slate-900">{clientName}</div>
+                      <div className="text-[11px] text-slate-500">{phone} · {items.length} artículo(s)</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-extrabold text-emerald-700">${totalCart} MXN</div>
+                      {activeItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            for (const it of activeItems) await handleApproveReservation(it);
+                          }}
+                          className="mt-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition"
+                        >
+                          ✅ Aprobar Carrito
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {items.map((r) => {
+                      const prod = products.find((p) => p.id === r.product_id);
+                      const price = prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0;
+                      const minsLeft = Math.max(0, Math.ceil((new Date(r.expires_at).getTime() - Date.now()) / 60000));
+                      const isActive = r.status === 'active' && minsLeft > 0;
+                      return (
+                        <div key={r.id} className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-slate-800 truncate">{prod?.title || prod?.name || r.sku}</div>
+                            <div className="text-[10px] text-slate-500">
+                              ${price} MXN · {isActive ? `⏳ ${minsLeft}m` : r.status === 'converted' ? '✅ Pagado' : 'Liberado'}
+                            </div>
+                          </div>
+                          {isActive && (
                             <button
                               type="button"
-                              onClick={() => handleRelanzarProducto(r.product_id)}
-                              disabled={broadcasting}
-                              className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold transition disabled:opacity-50"
+                              onClick={() => handleReleaseReservation(r)}
+                              className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-red-50 text-red-600 text-[11px] font-semibold transition"
                             >
-                              🔥 Re-lanzar
+                              Liberar
                             </button>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
