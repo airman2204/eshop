@@ -146,7 +146,7 @@ export default function AdminCRM() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab') as any;
     const tabFromStorage = localStorage.getItem('foxdrop_admin_active_tab') as any;
-    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'whatsapp', 'cj_dropship', 'japan', 'campaigns', 'analytics'];
+    const validTabs = ['inventory', 'batches', 'orders', 'order_history', 'cancelled_orders', 'clients', 'special_orders', 'finance', 'carts', 'carousel', 'loyalty', 'shipping_payments', 'agent', 'saleads', 'social_flow', 'whatsapp', 'cj_dropship', 'japan', 'campaigns', 'analytics'];
 
     const targetTab = validTabs.includes(tabFromUrl) ? tabFromUrl : (validTabs.includes(tabFromStorage) ? tabFromStorage : null);
     if (targetTab) {
