@@ -3,7 +3,6 @@ import { Plus_Jakarta_Sans, Outfit, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Analytics from "@/components/Analytics";
-import SmoothScroll from "@/components/SmoothScroll";
 
 // Tipografía moderna elegante para toda la tienda
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -185,7 +184,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <Analytics />
-        <SmoothScroll>{children}</SmoothScroll>
+        {children}
         <CookieBanner />
         <script
           dangerouslySetInnerHTML={{
