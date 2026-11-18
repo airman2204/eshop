@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
 
       const { hasIntent, skuCandidate } = detectGroupPurchaseIntent(text, quotedText);
       if (hasIntent && skuCandidate && participantPhone) {
-        const res = await createProductReservation(skuCandidate, participantPhone, 20);
+        const res = await createProductReservation(skuCandidate, participantPhone, 120);
         if (res.success && res.product) {
           // Verificar si el cliente ya tiene otros apartados activos hoy para no repetir "checa tu privado"
           const { count: activeCount } = await (supabase as any)

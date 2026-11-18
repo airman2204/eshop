@@ -115,6 +115,43 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       }
     };
     loadFlow();
+
+    // Escuchar apartados nuevos en tiempo real (sin refrescar) + sonido de notificación
+    const supabase = getSupabaseBrowserClient();
+    const channel = supabase
+      .channel('social-reservations-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory_reservations' },
+        (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            setActiveReservations((prev) => [payload.new, ...prev]);
+            setToast({ type: 'ok', msg: '🔔 ¡Nuevo apartado en vivo en tu grupo de WhatsApp!' });
+            try {
+              const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(880, ctx.currentTime);
+              gain.gain.setValueAtTime(0.15, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start();
+              osc.stop(ctx.currentTime + 0.35);
+            } catch {}
+          } else if (payload.eventType === 'UPDATE') {
+            setActiveReservations((prev) =>
+              prev.map((r) => (r.id === payload.new.id ? payload.new : r))
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [setNodes, setEdges, initialProducts]);
 
   const handleReleaseReservation = async (resItem: any) => {
