@@ -139,11 +139,25 @@ export async function POST(req: NextRequest) {
       if (hasIntent && skuCandidate && participantPhone) {
         const res = await createProductReservation(skuCandidate, participantPhone, 20);
         if (res.success && res.product) {
-          const groupReplies = [
-            `¡Tuyo, *${clientName}*! Ya te eché *${res.product.name}* a tu bolsita, ahorita te escribo por privado 🦊`,
-            `¡Anotadísimo, *${clientName}*! Te mando mensajito en privado por *${res.product.name}* ✨`,
-            `¡Listo *${clientName}*, ya te aparté *${res.product.name}*! Checa tu privado 🛍️`,
-          ];
+          // Verificar si el cliente ya tiene otros apartados activos hoy para no repetir "checa tu privado"
+          const { count: activeCount } = await (supabase as any)
+            .from("inventory_reservations")
+            .select("id", { count: "exact", head: true })
+            .eq("phone", participantPhone)
+            .eq("status", "active")
+            .gt("expires_at", new Date().toISOString());
+
+          const isReturningToday = Number(activeCount || 0) > 1;
+          const groupReplies = isReturningToday
+            ? [
+                `¡Listo, agregado a tu carrito, *${clientName}*! 🦊🛍️`,
+                `¡Sumado a tu bolsita, *${clientName}*! ✨`,
+              ]
+            : [
+                `¡Tuyo, *${clientName}*! Ya te eché *${res.product.name}* a tu bolsita, ahorita te escribo por privado 🦊`,
+                `¡Anotadísimo, *${clientName}*! Te mando mensajito en privado por *${res.product.name}* ✨`,
+                `¡Listo *${clientName}*, ya te aparté *${res.product.name}*! Checa tu privado 🛍️`,
+              ];
           const randomGroupReply = groupReplies[Math.floor(Math.random() * groupReplies.length)];
           await sendViaWhatsAppBridge(
             String(rawPhone),
@@ -152,11 +166,11 @@ export async function POST(req: NextRequest) {
           );
           const hasRealName = clientName && !/cliente/i.test(clientName);
           const dmReply = await generateHumanReply({
-            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Confírmale en 2 líneas que ya se agregó a su bolsita del día y dile que puede seguir viendo cosas en el grupo (que al hacer el corte del día le mandas su total, o si ya quiere cerrar ahorita que te avise). NO le pidas todavía cómo quiere pagar.`,
+            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Confírmale en 2 líneas que ya se agregó a su carrito/bolsita y recuérdale que si quiere cerrar su pedido en cualquier momento solo mande la palabra "cerrar" (o puede seguir viendo novedades hasta el corte del día). NO le pidas todavía cómo quiere pagar.`,
             productName: res.product.name,
             sku: res.product.sku,
             price: res.product.price,
-            nodeTemplate: `¡Qué padre${hasRealName ? `, ${clientName}` : ""}! Ya te eché *${res.product.name}* ($${res.product.price} MXN) a tu bolsita 🦊🛍️ Puedes seguir viendo las novedades en el grupo; al corte del día te paso tu total, o si ya quieres cerrar ahorita me avisas.`,
+            nodeTemplate: `¡Listo${hasRealName ? `, ${clientName}` : ""}! Agregamos *${res.product.name}* ($${res.product.price} MXN) a tu carrito 🦊🛍️ Cuando quieras cerrar tu pedido solo mándame la palabra *cerrar* (o sigue viendo novedades hasta el corte del día).`,
           });
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
