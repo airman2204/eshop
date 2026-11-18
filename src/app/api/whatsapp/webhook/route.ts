@@ -198,6 +198,9 @@ export async function POST(req: NextRequest) {
 
     // Evento C.1: Si el cliente responde en privado (DM), Sofía responde con memoria conversacional
     if (cleanPhone && text) {
+      if (text.includes("[Sticker]") || text.trim() === "👾") {
+        return NextResponse.json({ success: true, event: "sticker_ignored" });
+      }
       // Cargar últimos 8 mensajes del historial para que Sofía tenga contexto real y no repita respuestas
       let chatHistory: { sender: string; text: string }[] = [];
       const { data: chatForHist } = await supabase
