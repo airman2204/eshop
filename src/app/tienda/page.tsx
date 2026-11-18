@@ -16,6 +16,7 @@ import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig 
 import GoogleAddressInput from '@/components/GoogleAddressInput';
 import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { OFFICIAL_PICKUP_POINTS, PickupPoint, assessShippingByAddress } from '@/lib/shippingRules';
+import HeroSection, { WHATSAPP_VIP_GROUP_URL } from '@/components/HeroSection';
 import { getActiveProducts, getClientBootstrap, subscribeToProductsChange } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
@@ -2453,22 +2454,16 @@ export default function TiendaFoxDrop() {
               </button>
             )}
 
-            {/* REWARDS / CLUB FOXDROP */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!user) {
-                  openAuthModal();
-                } else {
-                  setAccountTab('club');
-                  setCurrentView('account');
-                }
-              }}
-              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
+            {/* GRUPO VIP WHATSAPP */}
+            <a
+              href={WHATSAPP_VIP_GROUP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-amber-300 transition cursor-pointer text-amber-200 font-bold"
             >
-              <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span>club fox rewards</span>
-            </button>
+              <span>⚡</span>
+              <span>Grupo VIP</span>
+            </a>
 
             {/* FAVORITOS */}
             <button
@@ -2921,6 +2916,9 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
       </header>
+
+      {/* HERO SECTION RENOVADO + BANNER PUENTE COMUNIDAD VIP */}
+      {currentView === 'store' && <HeroSection />}
 
       {/* BANNER FLOTANTE DE NOTIFICACIÓN DE PEDIDO EN TIEMPO REAL */}
       {clientRealtimeToast && (
@@ -6167,8 +6165,8 @@ export default function TiendaFoxDrop() {
                     <ShieldCheck className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-white block text-xs">Tarjetas de Débito & Crédito</span>
-                    <span className="text-[10px] text-white/60">Disponible para importación internacional</span>
+                    <span className="font-bold text-white block text-xs">Mercado Pago / Tarjetas</span>
+                    <span className="text-[10px] text-white/60">Débito y Crédito 100% protegido</span>
                   </div>
                 </div>
               </div>
