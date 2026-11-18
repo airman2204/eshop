@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
           const prompt = `Eres Sofía, experta en Social Commerce y ventas de FoxDrop. Redacta un mensaje corto, persuasivo y 100% natural para el grupo de WhatsApp vendiendo este artículo:
 - Producto: ${prodName}
 - Precio ya con envío incluido: $${totalWithShipping} MXN
-- Stock disponible: ${prod.stock} piezas${relatedText ? `\n- Productos relacionados en stock para combinar: ${relatedText}` : ""}
+- Stock disponible: ${Number(prod.stock) === 1 ? "1 (¡ES EL ÚLTIMO / ÚLTIMA PIEZA!)" : `${prod.stock} piezas`}${relatedText ? `\n- Productos relacionados en stock para combinar: ${relatedText}` : ""}
 
 Reglas de estilo y autonomía:
 - NO empieces saludando con "¡Hola grupo!" ni digas "¡Chicas!" (usa tono neutro para hombres y mujeres por igual, ideal tanto para uso personal como para regalar).
