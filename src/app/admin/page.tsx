@@ -165,7 +165,7 @@ export default function AdminCRM() {
 
   // Sincronizar automáticamente en localStorage y URL cada vez que cambia crmSubTab
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !tabRestoredRef.current) return;
     try {
       localStorage.setItem('foxdrop_admin_active_tab', crmSubTab);
       const url = new URL(window.location.href);
