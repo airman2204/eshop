@@ -233,6 +233,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       // Si no encontró por teléfono, buscar si el chat tiene un LID asociado en whatsapp_chats
+      let lidVal = "";
       if (!activeRes) {
         const { data: chatForLid } = await supabase
           .from("whatsapp_chats")
@@ -240,7 +241,6 @@ export async function POST(req: NextRequest) {
           .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
           .limit(1)
           .maybeSingle();
-        let lidVal = "";
         try {
           const parsedNotes = typeof chatForLid?.notes === "string" ? JSON.parse(chatForLid.notes) : chatForLid?.notes;
           lidVal = parsedNotes?.lid ? String(parsedNotes.lid) : "";
