@@ -2793,6 +2793,37 @@ export default function TiendaFoxDrop() {
               <span>Bath & Body Works</span>
             </button>
 
+            {/* TIENDAS / MARCAS DINÁMICAS DESDE INVENTARIO */}
+            {Array.from(
+              new Set(
+                products
+                  .filter((p) => Number(p.stock || 0) > 0 && p.brand && p.brand !== 'Bath & Body Works')
+                  .map((p) => String(p.brand).trim())
+              )
+            ).map((brandName) => (
+              <button
+                key={brandName}
+                type="button"
+                onClick={() => {
+                  setSelectedBrand(brandName);
+                  setSelectedCategory('Todas');
+                  setBbwCollection('all');
+                  setActiveTab('all');
+                  if (currentView === 'account') setCurrentView('store');
+                  const el = document.getElementById('catalog-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
+                  selectedBrand === brandName
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#0F3E36] shadow-md ring-2 ring-amber-300'
+                    : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
+                }`}
+              >
+                <span>✨</span>
+                <span>{brandName}</span>
+              </button>
+            ))}
+
             {/* ESPECIAL NAVIDEÑO */}
             <button
               type="button"
