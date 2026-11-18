@@ -117,6 +117,7 @@ export default function AdminCRM() {
 
   // Navegación CRM (Persistente en recarga)
   const [crmSubTab, setCrmSubTab] = useState<'inventory' | 'batches' | 'orders' | 'order_history' | 'cancelled_orders' | 'clients' | 'special_orders' | 'finance' | 'carts' | 'carousel' | 'loyalty' | 'shipping_payments' | 'agent' | 'weavy' | 'saleads' | 'whatsapp' | 'cj_dropship' | 'japan' | 'campaigns' | 'analytics'>('inventory');
+  const tabRestoredRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -125,9 +126,11 @@ export default function AdminCRM() {
         setCrmSubTab(saved as any);
       }
     } catch {}
+    tabRestoredRef.current = true;
   }, []);
 
   useEffect(() => {
+    if (!tabRestoredRef.current) return;
     try {
       localStorage.setItem('foxdrop_admin_subtab', crmSubTab);
     } catch {}
