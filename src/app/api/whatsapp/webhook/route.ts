@@ -152,11 +152,11 @@ export async function POST(req: NextRequest) {
           );
           const hasRealName = clientName && !/cliente/i.test(clientName);
           const dmReply = await generateHumanReply({
-            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Dile qué padre que se animó, confírmale el apartado con su precio y menciona de forma fluida que puede pagar con tarjeta por Mercado Pago, SPEI o contra entrega en Puebla/Cholula.`,
+            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Confírmale en 2 líneas que ya se agregó a su bolsita del día y dile que puede seguir viendo cosas en el grupo (que al hacer el corte del día le mandas su total, o si ya quiere cerrar ahorita que te avise). NO le pidas todavía cómo quiere pagar.`,
             productName: res.product.name,
             sku: res.product.sku,
             price: res.product.price,
-            nodeTemplate: `¡Qué padre${hasRealName ? `, ${clientName}` : ""}! Qué gusto que te animaste por *${res.product.name}* en $${res.product.price} MXN con envío incluido 🦊✨${hasRealName ? "" : " ¿Con quién tengo el gusto?"} Cuando gustes cerrar tu pedido puedes pagar con tarjeta por Mercado Pago, transferencia SPEI o contra entrega si estás en Puebla o Cholula.`,
+            nodeTemplate: `¡Qué padre${hasRealName ? `, ${clientName}` : ""}! Ya te eché *${res.product.name}* ($${res.product.price} MXN) a tu bolsita 🦊🛍️ Puedes seguir viendo las novedades en el grupo; al corte del día te paso tu total, o si ya quieres cerrar ahorita me avisas.`,
           });
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
