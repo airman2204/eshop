@@ -21,27 +21,29 @@ export async function POST(req: NextRequest) {
     const groqKey = (process.env.GROQ_API_KEY || "").trim();
     const falKey = (process.env.FAL_KEY || "").trim();
 
-    const prompt = `Eres Sofía, Directora Creativa y Strategist de Performance Marketing para FoxDrop México (importación directa de EUA, lotes Bath & Body Works, entregas personales en Puebla/Cholula y envíos a todo México).
-El dueño quiere lanzar una campaña en ${isTikTok ? "TikTok Ads / Reels (9:16 vertical)" : "Instagram Ads (4:5 editorial)"} con este objetivo:
+    const prompt = `Eres el Director Creativo y Estratega de Growth Marketing de "FoxDrop" (foxdrop.mx), una comunidad privada y tienda de importación en México cuyo eslogan es "Tu atajo al mundo".
+Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram (Reels/Stories/Ads 4:5)"}:
 "${objective}"
 
-Enlace obligatorio del grupo de WhatsApp: ${WHATSAPP_GROUP_URL}
+REGLAS ESTRICTAS:
+1. NO centres el anuncio en vender un solo artículo específico. Vende el ACCESO al grupo privado de WhatsApp ("Ventas Flash ⚡ FoxDrop"), el ahorro frente a tiendas en México y la emoción de alcanzar lotes limitados antes de que se agoten.
+2. Usa productos populares de EUA (perfumería, cuidado corporal, accesorios, termos, maquillaje de marcas conocidas) únicamente como ejemplos visuales rápidos. NO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
+3. En orgánico, CTA pide comentar una palabra clave ("ATAJO", "VIP" o "GRUPO"). En Ads pagados, CTA dirige al enlace: ${WHATSAPP_GROUP_URL}
 
 Devuelve ÚNICAMENTE un JSON válido (sin markdown ni texto extra) con esta estructura exacta:
 {
-  "campaignName": "Nombre corto y atractivo de la campaña",
-  "artDirectionPrompt": "Prompt en inglés ultra detallado de dirección de arte editorial de agencia de lujo para FLUX: colección variada de productos Bath & Body Works (velas, brumas, cremas, geles) en composición de diseño gráfico profesional, paleta verde esmeralda oscuro #14352F y acentos dorados/ámbar #D96B27, iluminación de estudio cinematográfica, ${isTikTok ? "composición vertical 9:16 con aire limpio arriba y abajo" : "composición editorial 4:5 de revista"}, cero texto, cero letras falsas, cero marcas de agua",
-  "copies": [
-    { "angle": "Nombre del ángulo", "hook": "Gancho inicial que detiene el scroll", "body": "Texto persuasivo en español de México listo para copiar y pegar con el link ${WHATSAPP_GROUP_URL}", "cta": "Texto corto del botón" }
-  ],
-  "tiktokScript15s": "Guion rápido de 15 segundos (Escena 1, Escena 2, Cierre con CTA al grupo de WhatsApp)",
-  "audience": {
-    "locations": ["Puebla", "San Andrés Cholula", "México"],
-    "ageRange": "20-45",
-    "interests": ["Bath & Body Works", "Perfumes y Fragancias", "Compras Online"]
-  }
+  "campaignName": "Nombre de la campaña",
+  "concepts": [
+    {
+      "title": "Nombre del concepto",
+      "hook3s": "Gancho magnético de 3 segundos",
+      "script10s": "Texto en pantalla / Guion corto de 7-10 segundos",
+      "copyAndCta": "Copy breve para descripción + CTA (orgánico y Ads con ${WHATSAPP_GROUP_URL})",
+      "fluxPrompt": "Prompt detallado en inglés para FLUX: publicidad moderna e-commerce, paleta verde bosque oscuro #14352F y acentos naranja/dorado #D96B27, cajas de importación premium con productos variados de EUA (perfumería, cuidado corporal, termos, accesorios), espacio negativo limpio arriba para poner texto encima, cero texto dentro de la imagen, cero marcas de agua"
+    }
+  ]
 }
-Genera 4 copies muy distintos entre sí (no genéricos, tono mexicano natural).`;
+Genera exactamente 3 conceptos muy distintos entre sí.`;
 
     let rawJsonText = "";
 
@@ -84,9 +86,10 @@ Genera 4 copies muy distintos entre sí (no genéricos, tono mexicano natural).`
     const cleaned = rawJsonText.replace(/```json|```/gi, "").trim();
     const strategy = JSON.parse(cleaned);
 
-    // Generar creativo de agencia con FLUX
+    // Generar creativo de agencia con FLUX usando el primer concepto
     let imageDataUrl = "";
-    if (falKey && strategy.artDirectionPrompt) {
+    const firstFluxPrompt = strategy?.concepts?.[0]?.fluxPrompt || strategy?.artDirectionPrompt;
+    if (falKey && firstFluxPrompt) {
       const fluxRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
         method: "POST",
         headers: {
@@ -94,7 +97,7 @@ Genera 4 copies muy distintos entre sí (no genéricos, tono mexicano natural).`
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: strategy.artDirectionPrompt,
+          prompt: firstFluxPrompt,
           image_size: isTikTok ? "portrait_16_9" : "portrait_4_3",
           num_inference_steps: 4,
           num_images: 1,
