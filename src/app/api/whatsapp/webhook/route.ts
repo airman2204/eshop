@@ -164,14 +164,36 @@ export async function POST(req: NextRequest) {
             randomGroupReply,
             body.messageId || body.data?.key?.id
           );
+          // Construir el resumen actualizado del carrito completo del cliente
+          const { data: myCart } = await (supabase as any)
+            .from("inventory_reservations")
+            .select("product_id, sku, qty")
+            .eq("phone", participantPhone)
+            .eq("status", "active")
+            .gt("expires_at", new Date().toISOString());
+
+          let cartSummaryText = `• ${res.product.name} — $${res.product.price} MXN`;
+          let cartTotal = res.product.price;
+          if (Array.isArray(myCart) && myCart.length > 0) {
+            const prodIds = myCart.map((c: any) => c.product_id);
+            const { data: cartProds } = await (supabase as any)
+              .from("products")
+              .select("*")
+              .in("id", prodIds);
+            const pMap = new Map<string, any>((cartProds || []).map((p: any) => [p.id, p]));
+            cartTotal = 0;
+            cartSummaryText = myCart
+              .map((c: any) => {
+                const p = pMap.get(c.product_id);
+                const price = Number(p?.public_price ?? p?.publicPrice ?? p?.price ?? 0);
+                cartTotal += price * Number(c.qty || 1);
+                return `• ${p?.title || p?.name || c.sku} — $${price} MXN`;
+              })
+              .join("\n");
+          }
+
           const hasRealName = clientName && !/cliente/i.test(clientName);
-          const dmReply = await generateHumanReply({
-            userMessage: `El cliente${hasRealName ? ` se llama ${clientName} y` : ""} acaba de apartar "${res.product.name}" en el grupo ($${res.product.price} MXN). ${hasRealName ? `Salúdalo por su nombre (${clientName}), NO le preguntes cómo se llama.` : "Pregúntale amablemente ¿con quién tengo el gusto?"} Confírmale en 2 líneas que ya se agregó a su carrito/bolsita y recuérdale que si quiere cerrar su pedido en cualquier momento solo mande la palabra "cerrar" (o puede seguir viendo novedades hasta el corte del día). NO le pidas todavía cómo quiere pagar.`,
-            productName: res.product.name,
-            sku: res.product.sku,
-            price: res.product.price,
-            nodeTemplate: `¡Listo${hasRealName ? `, ${clientName}` : ""}! Agregamos *${res.product.name}* ($${res.product.price} MXN) a tu carrito 🦊🛍️ Cuando quieras cerrar tu pedido solo mándame la palabra *cerrar* (o sigue viendo novedades hasta el corte del día).`,
-          });
+          const dmReply = `¡Actualizamos tu carrito${hasRealName ? `, *${clientName}*` : ""}! 🦊🛒\n\n${cartSummaryText}\n\n*Total hasta ahora: $${cartTotal} MXN* (envío incluido).\n\nCuando quieras cerrar tu pedido solo mándame la palabra *cerrar* ✨`;
           await sendViaWhatsAppBridge(String(rawParticipant || participantPhone), dmReply);
           return NextResponse.json({ success: true, event: "group_reservation_created", sku: res.product.sku });
         } else if (res.reason === "out_of_stock") {
