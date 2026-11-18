@@ -201,14 +201,42 @@ export async function POST(req: NextRequest) {
       if (text.includes("[Sticker]") || text.trim() === "👾") {
         return NextResponse.json({ success: true, event: "sticker_ignored" });
       }
-      // Cargar últimos 8 mensajes del historial para que Sofía tenga contexto real y no repita respuestas
+      // Cargar últimos 8 mensajes del historial y verificar si está en Modo Humano (pausa automática)
       let chatHistory: { sender: string; text: string }[] = [];
       const { data: chatForHist } = await supabase
         .from("whatsapp_chats")
-        .select("id")
+        .select("id, notes")
         .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
         .limit(1)
         .maybeSingle();
+
+      // Si Mario o Nydia tomaron el control manual en este chat, Sofía no interrumpe
+      if (chatForHist?.notes) {
+        try {
+          const parsedNotes = typeof chatForHist.notes === "string" ? JSON.parse(chatForHist.notes) : chatForHist.notes;
+          if (parsedNotes?.manualUntil && new Date(parsedNotes.manualUntil).getTime() > Date.now()) {
+            return NextResponse.json({ success: true, event: "sofia_paused_manual_mode" });
+          }
+        } catch {}
+      }
+
+      // Permitir apartar directamente desde DM (ej. "apártame el gel Into The Night", "agrégame 1 crema...")
+      const dmReserveRegex = /\b(ap[aá]rtame|agr[eé]game|ponme|echame|[eé]chame|quiero\s+(?:un|una|el|la|\d+))\b/i;
+      if (dmReserveRegex.test(text)) {
+        const { qty } = detectGroupPurchaseIntent(text, text);
+        const dmRes = await createProductReservation(text, cleanPhone, 120, qty);
+        if (dmRes.success && dmRes.product) {
+          const confirmMsg = `¡Listo! Ya te agregué *${dmRes.product.name}* ($${dmRes.product.price} MXN) a tu carrito 🦊🛒 Cuando quieras cerrar tu pedido solo dime *"cerrar"* ✨`;
+          if (chatForHist?.id) {
+            await (supabase as any).from("whatsapp_messages").insert([
+              { chat_id: chatForHist.id, sender: "client", text, status: "read" },
+              { chat_id: chatForHist.id, sender: "admin", text: confirmMsg, status: "sent" },
+            ]);
+          }
+          await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), confirmMsg);
+          return NextResponse.json({ success: true, event: "dm_reservation_created", sku: dmRes.product.sku });
+        }
+      }
 
       if (chatForHist?.id) {
         const { data: msgs } = await supabase
