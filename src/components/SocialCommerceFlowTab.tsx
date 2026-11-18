@@ -259,7 +259,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       candidates = [...products];
     }
     const picked = candidates
-      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
+      .sort(() => Math.random() - 0.5)
       .slice(0, count)
       .map((p) => p.id);
     try {
