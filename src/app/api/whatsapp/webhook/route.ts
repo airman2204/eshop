@@ -324,16 +324,44 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // Obtener TODOS los apartados activos de este cliente para darle el carrito completo a Sofía
+        const clientPhones = [cleanPhone, ...(lidVal ? [lidVal] : [])].filter(Boolean);
+        const { data: allClientRes } = await (supabase as any)
+          .from("inventory_reservations")
+          .select("product_id, sku, qty")
+          .in("phone", clientPhones)
+          .eq("status", "active")
+          .gt("expires_at", new Date().toISOString());
+
+        let fullCartText = `${prodName} ($${prodPrice} MXN)`;
+        let fullCartTotal = prodPrice;
+        if (Array.isArray(allClientRes) && allClientRes.length > 0) {
+          const ids = allClientRes.map((r: any) => r.product_id);
+          const { data: cProds } = await (supabase as any).from("products").select("*").in("id", ids);
+          const cMap = new Map<string, any>((cProds || []).map((p: any) => [p.id, p]));
+          fullCartTotal = 0;
+          fullCartText = allClientRes
+            .map((r: any) => {
+              const p = cMap.get(r.product_id);
+              const pr = Number(p?.public_price ?? p?.publicPrice ?? p?.price ?? 0);
+              const q = Number(r.qty || 1);
+              fullCartTotal += pr * q;
+              return `- ${p?.title || p?.name || r.sku} x${q}: $${pr * q} MXN`;
+            })
+            .join("\n");
+        }
+
         const hasRealName = clientName && !/cliente/i.test(clientName);
         const dmReply = await generateHumanReply({
           userMessage: `${hasRealName ? `[Cliente: ${clientName}] ` : ""}${text}`,
           history: chatHistory,
+          catalogContext: `CARRITO ACTUAL DEL CLIENTE (ÚSALO SI PREGUNTA CUÁNTO LLEVA O QUÉ TIENE):\n${fullCartText}\nTOTAL ACTUAL DEL CARRITO: $${fullCartTotal} MXN`,
           productName: prodName,
           sku: activeRes.sku,
-          price: prodPrice,
+          price: fullCartTotal,
           paymentLink: paymentLink || undefined,
           nodeTemplate: paymentLink
-            ? `¡Claro que sí! Aquí tienes tu link seguro de Mercado Pago para *${prodName}* ($${prodPrice} MXN): ${paymentLink} 🦊✨ En cuanto quede listo me avisas.`
+            ? `¡Claro que sí! Aquí tienes tu link seguro de Mercado Pago por $${fullCartTotal} MXN: ${paymentLink} 🦊✨`
             : "",
         });
 
