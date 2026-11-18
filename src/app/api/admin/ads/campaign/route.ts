@@ -26,8 +26,8 @@ Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram 
 "${objective}"
 
 REGLAS ESTRICTAS:
-1. NO centres el anuncio en vender un solo artículo específico. Vende el ACCESO al grupo privado de WhatsApp ("Ventas Flash ⚡ FoxDrop"), el ahorro frente a tiendas en México y la emoción de alcanzar lotes limitados antes de que se agoten.
-2. Usa productos populares de EUA (perfumería, cuidado corporal, accesorios, termos, maquillaje de marcas conocidas) únicamente como ejemplos visuales rápidos. NO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
+1. POSICIONAMIENTO PREMIUM: NUNCA uses palabras como "lotes", "pacas", "saldos" ni repitas "de EUA". Posiciona a FoxDrop como una marca moderna de "Drops exclusivos", "hallazgos curados" y "lanzamientos de piezas limitadas" con precios preferenciales dentro de nuestra comunidad privada de WhatsApp ("Ventas Flash ⚡ FoxDrop").
+2. FLEXIBILIDAD DE CATÁLOGO: Presenta el grupo como el lugar donde caen lanzamientos sorpresa cada semana (fragancias, cuidado personal, accesorios y artículos virales originales) en cantidades limitadas, enfocándote en la exclusividad de entrar al grupo antes de que se agoten. NO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
 3. En orgánico, CTA pide comentar una palabra clave ("ATAJO", "VIP" o "GRUPO"). En Ads pagados, CTA dirige al enlace: ${WHATSAPP_GROUP_URL}
 
 Devuelve ÚNICAMENTE un JSON válido (sin markdown ni texto extra) con esta estructura exacta:

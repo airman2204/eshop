@@ -14,7 +14,7 @@ interface CampaignConcept {
 export default function SaleAdsTab({ products: _products }: { products?: any[] }) {
   const [platform, setPlatform] = useState<'instagram' | 'tiktok'>('instagram');
   const [objective, setObjective] = useState(
-    'Atraer tráfico masivo al grupo privado Ventas Flash ⚡ FoxDrop destacando lotes limitados de EUA y ahorro frente a tiendas en México'
+    'Atraer tráfico masivo a nuestra comunidad privada Ventas Flash ⚡ FoxDrop destacando Drops exclusivos, hallazgos curados y lanzamientos de piezas limitadas con precios preferenciales'
   );
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
@@ -26,14 +26,14 @@ export default function SaleAdsTab({ products: _products }: { products?: any[] }
     const ideas =
       platform === 'tiktok'
         ? [
-            'Viralizar en TikTok el acceso al grupo Ventas Flash ⚡ FoxDrop mostrando la emoción de abrir cajas de EUA con ahorros reales frente a tiendas de México',
-            'Atraer tráfico masivo en TikTok con reto de "comenta ATAJO" para entrar al grupo VIP donde caen lotes limitados de perfumería, termos y accesorios de EUA',
-            'Captar compradores en todo México que buscan regalos originales de EUA sin pagar sobreprecio de departamentales, llevándolos directo al grupo de WhatsApp',
+            'Viralizar en TikTok el acceso a nuestra comunidad privada Ventas Flash ⚡ FoxDrop donde caen Drops exclusivos y hallazgos curados cada semana',
+            'Atraer tráfico masivo en TikTok con CTA "comenta ATAJO" para entrar al grupo VIP de lanzamientos sorpresa de piezas limitadas antes de que se agoten',
+            'Captar amantes de fragancias, cuidado personal y accesorios virales originales con precios preferenciales dentro de la comunidad FoxDrop',
           ]
         : [
-            'Llenar el grupo privado Ventas Flash ⚡ FoxDrop desde Instagram Reels y Stories destacando exclusividad, lotes limitados de EUA y envíos a todo México',
-            'Atraer amantes de fragancias, cuidado corporal y accesorios importados de EUA en Instagram con CTA "comenta VIP" para enviarles el acceso privado',
-            'Posicionar a FoxDrop ("Tu atajo al mundo") en Instagram Ads para encargos directos de tiendas estadounidenses y liquidaciones relámpago en WhatsApp',
+            'Llenar la comunidad privada Ventas Flash ⚡ FoxDrop desde Instagram Reels y Stories destacando Drops exclusivos y lanzamientos sorpresa cada semana',
+            'Atraer amantes de hallazgos curados (fragancias, cuidado personal y accesorios originales) en Instagram con CTA "comenta VIP" para enviarles acceso privado',
+            'Posicionar a FoxDrop ("Tu atajo al mundo") en Instagram Ads como el lugar de lanzamientos de piezas limitadas con precios preferenciales en todo México',
           ];
     const nextIdea = ideas.find((i) => i !== objective) || ideas[0];
     setObjective(nextIdea);
