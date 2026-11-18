@@ -160,9 +160,9 @@ export default function SaleAdsTab({ products: _products }: { products?: any[] }
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">
             {[
-              'Llenar el grupo VIP con emoción de lotes limitados de EUA',
-              'Atraer compradores buscando regalos originales de EUA con ahorro',
-              'Destacar encargos directos de tiendas de EUA a todo México',
+              'Llenar la comunidad VIP con Drops exclusivos y hallazgos curados',
+              'Atraer compradores buscando lanzamientos sorpresa de piezas limitadas',
+              'Destacar precios preferenciales en fragancias, cuidado personal y accesorios',
             ].map((preset) => (
               <button
                 key={preset}
