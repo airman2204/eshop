@@ -16,6 +16,7 @@ import { Product, UserAddress, UserCard, CheckoutSettings, ShippingMethodConfig 
 import GoogleAddressInput from '@/components/GoogleAddressInput';
 import { getCheckoutSettings, DEFAULT_CHECKOUT_SETTINGS } from '@/lib/checkoutSettings';
 import { OFFICIAL_PICKUP_POINTS, PickupPoint, assessShippingByAddress } from '@/lib/shippingRules';
+import MotionMarquee from '@/components/MotionMarquee';
 import { getActiveProducts, getClientBootstrap, subscribeToProductsChange } from '@/lib/products';
 import { 
   sendEmailOTP, verifyEmailOTP, upsertUserProfile, getCurrentUserProfile, signOut as authSignOut, 
@@ -3206,6 +3207,10 @@ export default function TiendaFoxDrop() {
                 </div>
               </>
             )}
+
+            <div className="mb-3 rounded-2xl overflow-hidden shadow-sm">
+              <MotionMarquee />
+            </div>
 
             <div className={`grid grid-cols-2 md:grid-cols-4 gap-2.5 rounded-2xl p-3 shadow-2xs transition-colors duration-300 ${
               isHalloween 
