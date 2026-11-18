@@ -104,12 +104,16 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
 
       const { data: chatsData } = await (supabase as any)
         .from('whatsapp_chats')
-        .select('phone, client_name')
+        .select('phone, client_name, notes')
         .limit(200);
       if (chatsData) {
         const map: Record<string, string> = {};
         for (const c of chatsData) {
           if (c.phone && c.client_name) map[String(c.phone).slice(-10)] = c.client_name;
+          try {
+            const parsed = typeof c.notes === 'string' ? JSON.parse(c.notes) : c.notes;
+            if (parsed?.lid && c.client_name) map[String(parsed.lid)] = c.client_name;
+          } catch {}
         }
         setChatNamesByPhone(map);
       }
@@ -149,7 +153,39 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
       )
       .subscribe();
 
+    // Polling ligero cada 5s para actualizar carritos y sonar notificación aunque Supabase Realtime esté apagado
+    let knownCount = -1;
+    const pollTimer = setInterval(async () => {
+      const { data: latest } = await (supabase as any)
+        .from('inventory_reservations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (Array.isArray(latest)) {
+        const activeNow = latest.filter((r: any) => r.status === 'active').length;
+        if (knownCount !== -1 && activeNow > knownCount) {
+          setToast({ type: 'ok', msg: '🔔 ¡Nuevo apartado en vivo en tu grupo de WhatsApp!' });
+          try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+          } catch {}
+        }
+        knownCount = activeNow;
+        setActiveReservations(latest);
+      }
+    }, 5000);
+
     return () => {
+      clearInterval(pollTimer);
       supabase.removeChannel(channel);
     };
   }, [setNodes, setEdges, initialProducts]);
@@ -873,7 +909,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                   return acc;
                 }, {})
             ).map(([phone, items]) => {
-              const clientName = chatNamesByPhone[String(phone).slice(-10)] || 'Cliente WhatsApp';
+              const clientName =
+                chatNamesByPhone[String(phone)] ||
+                chatNamesByPhone[String(phone).slice(-10)] ||
+                'Cliente WhatsApp';
               const totalCart = items.reduce((sum, r) => {
                 const prod = products.find((p) => p.id === r.product_id);
                 return sum + Number(prod?.publicPrice ?? prod?.public_price ?? prod?.price ?? 0);

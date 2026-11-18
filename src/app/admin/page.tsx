@@ -133,6 +133,9 @@ export default function AdminCRM() {
     if (!tabRestoredRef.current) return;
     try {
       localStorage.setItem('foxdrop_admin_subtab', crmSubTab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', crmSubTab);
+      window.history.replaceState(null, '', url.toString());
     } catch {}
   }, [crmSubTab]);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
