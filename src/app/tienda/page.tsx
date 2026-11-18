@@ -2769,7 +2769,7 @@ export default function TiendaFoxDrop() {
 
         {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN PLECA TRANSPARENTE CON HOVER Y ACTIVO */}
         <div className="border-t border-white/10 bg-[#0B332C]/40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start md:justify-center gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start gap-4 sm:gap-6 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
             
             {/* BOTÓN DESTACADO BATH & BODY WORKS (BODEGA DISPONIBLE) */}
             <button
@@ -2797,7 +2797,13 @@ export default function TiendaFoxDrop() {
             {Array.from(
               new Set(
                 products
-                  .filter((p) => Number(p.stock || 0) > 0 && p.brand && p.brand !== 'Bath & Body Works')
+                  .filter(
+                    (p) =>
+                      Number(p.stock || 0) > 0 &&
+                      p.brand &&
+                      p.brand !== 'Bath & Body Works' &&
+                      !String(p.brand).toLowerCase().includes('cj')
+                  )
                   .map((p) => String(p.brand).trim())
               )
             ).map((brandName) => (
