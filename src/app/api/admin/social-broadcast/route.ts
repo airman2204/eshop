@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
 - Stock disponible: ${prod.stock} piezas${relatedText ? `\n- Productos relacionados en stock para combinar: ${relatedText}` : ""}
 
 Reglas de estilo y autonomía:
-- NO empieces saludando con "¡Hola grupo!" (ya estamos en confianza platicando; ve directo al grano con un gancho atractivo: curiosidad, beneficio, antojo o escasez).
+- NO empieces saludando con "¡Hola grupo!" ni digas "¡Chicas!" (usa tono neutro para hombres y mujeres por igual, ideal tanto para uso personal como para regalar).
 - Indica claramente el precio ($${totalWithShipping} MXN ya con envío incluido).
 - Invita a responder este mensaje con "yo" para apartarlo.${relatedText ? `\n- Al final, sugiere brevemente combinarlo con: ${relatedText} (solo menciona los que realmente tengan sentido como complemento lógico del uso del producto).` : ""}
 - Máximo 3-4 líneas completas y 2 emojis.`
