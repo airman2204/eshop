@@ -148,8 +148,8 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       const fluxPayload = refImageUrl
         ? {
             image_url: refImageUrl,
-            strength: 0.45,
-            prompt: `${firstFluxPrompt}, featuring authentic Bath & Body Works product packaging unchanged on a dark emerald green #14352F luxury studio surface with warm #D96B27 lighting`,
+            strength: 0.62,
+            prompt: `${firstFluxPrompt}, keep the center product bottle shape, place it on a dark emerald green #14352F luxury studio surface with warm #D96B27 rim lighting`,
             num_inference_steps: 22,
             num_images: 1,
           }
