@@ -89,8 +89,9 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
         body: JSON.stringify({
           model: "openai/gpt-oss-120b",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.8,
-          max_tokens: 1800,
+          temperature: 0.75,
+          max_tokens: 3000,
+          response_format: { type: "json_object" },
         }),
       });
       const gJson = await gRes.json();
