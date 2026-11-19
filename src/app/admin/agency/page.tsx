@@ -387,78 +387,74 @@ export default function AgencyCommandCenterPage() {
   const handleSimulateFlow = () => {
     if (isSimulating) return;
     setIsSimulating(true);
-    appendLog("Iniciando simulación de flujo semanal...", true);
+    appendLog("1/4 Mateo lleva la estrategia semanal al Estudio Creativo...", true);
 
-    // Step 1: Valeria & Diego walk to central Mesa de Aprobación (top: 52%, left: 50%)
+    // Paso 1: Mateo camina al Estudio Creativo (Valeria y Diego)
     setAgents((prev) =>
       prev.map((a) =>
-        a.id === "valeria"
-          ? {
-              ...a,
-              currentTop: "52%",
-              currentLeft: "46%",
-              isMoving: true,
-              status: "review",
-              bubbleText: "Llevando copy a mesa",
-            }
-          : a.id === "diego"
-          ? {
-              ...a,
-              currentTop: "52%",
-              currentLeft: "54%",
-              isMoving: true,
-              status: "review",
-              bubbleText: "Llevando arte a mesa",
-            }
+        a.id === "mateo"
+          ? { ...a, currentTop: "64%", currentLeft: "20%", status: "working", bubbleText: "Entregando estrategia" }
           : a
       )
     );
 
-    // Step 2: Move to Camila & Sofía
+    // Paso 2: Mateo regresa; Valeria y Diego caminan a Mesa de Aprobación
     setTimeout(() => {
-      appendLog("Valeria y Diego entregaron en Mesa de Aprobación → pasando a Camila y Sofía");
+      appendLog("2/4 Valeria y Diego llevan piezas a Mesa de Aprobación");
       setAgents((prev) =>
         prev.map((a) =>
-          a.id === "valeria"
-            ? {
-                ...a,
-                currentTop: "32%",
-                currentLeft: "80%",
-                status: "approved",
-                bubbleText: "Entregado a Camila",
-              }
+          a.id === "mateo"
+            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia entregada ✓" }
+            : a.id === "valeria"
+            ? { ...a, currentTop: "52%", currentLeft: "46%", status: "review", bubbleText: "Copy lista en mesa" }
             : a.id === "diego"
-            ? {
-                ...a,
-                currentTop: "68%",
-                currentLeft: "73%",
-                status: "approved",
-                bubbleText: "Enviado a Sofía WA",
-              }
+            ? { ...a, currentTop: "52%", currentLeft: "54%", status: "review", bubbleText: "Arte listo en mesa" }
             : a
         )
       );
-    }, 2200);
+    }, 1800);
 
-    // Step 3: Return home
+    // Paso 3: Valeria y Diego entregan a Camila y Andrés en Crecimiento & Redes
     setTimeout(() => {
+      appendLog("3/4 Piezas aprobadas → Camila programa y Andrés lanza Ads", true);
+      setAgents((prev) =>
+        prev.map((a) =>
+          a.id === "valeria"
+            ? { ...a, currentTop: "32%", currentLeft: "80%", status: "approved", bubbleText: "Entregado a Camila ✓" }
+            : a.id === "diego"
+            ? { ...a, currentTop: "32%", currentLeft: "72%", status: "approved", bubbleText: "Entregado a Andrés ✓" }
+            : a.id === "camila"
+            ? { ...a, status: "working", bubbleText: "Programando Reels/TikTok" }
+            : a.id === "andres"
+            ? { ...a, status: "working", bubbleText: "Campaña Meta Ads ON" }
+            : a
+        )
+      );
+    }, 3600);
+
+    // Paso 4: Tráfico hacia Sofía (Ventas WA) y Bruno (ROI), y todos vuelven a sus puestos
+    setTimeout(() => {
+      appendLog("4/4 Sofía recibe +18 leads VIP en WhatsApp y Bruno calcula ROI +24%", true);
       setAgents((prev) =>
         prev.map((a) => ({
           ...a,
           currentTop: a.homeTop,
           currentLeft: a.homeLeft,
-          isMoving: false,
-          status: a.id === "sofia" ? "approved" : "active",
+          status: a.id === "sofia" || a.id === "bruno" ? "approved" : "active",
           bubbleText:
-            a.id === "valeria"
-              ? "Copy aprobada ✓"
-              : a.id === "diego"
-              ? "Arte aprobada ✓"
+            a.id === "sofia"
+              ? "+18 leads en grupo VIP"
+              : a.id === "bruno"
+              ? "ROI +24% esta semana"
+              : a.id === "camila"
+              ? "5 piezas programadas ✓"
+              : a.id === "andres"
+              ? "Ads activos ✓"
               : a.bubbleText,
         }))
       );
       setIsSimulating(false);
-    }, 4500);
+    }, 5600);
   };
 
   return (
