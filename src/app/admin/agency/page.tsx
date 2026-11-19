@@ -146,6 +146,7 @@ export default function AgencyCommandCenterPage() {
     agentStates: dbAgents,
     deliverables: dbDeliverables,
     activityLogs: dbLogs,
+    metrics: dbMetrics,
     isConnected,
     approveDeliverable,
     updateDeliverableCaption,
@@ -702,12 +703,16 @@ export default function AgencyCommandCenterPage() {
             {activeTab === "roi" && (
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
-                  <p className="text-[11px] text-emerald-300/80">Leads en WhatsApp</p>
-                  <p className="mt-1 text-xl font-black text-[#10B981]">+14 hoy</p>
+                  <p className="text-[11px] text-emerald-300/80">Miembros en WhatsApp</p>
+                  <p className="mt-1 text-xl font-black text-[#10B981]">
+                    {dbMetrics.reduce((acc, m) => acc + (m.new_group_members || 0), 0)}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
-                  <p className="text-[11px] text-emerald-300/80">ROAS Semanal</p>
-                  <p className="mt-1 text-xl font-black text-[#D96B27]">3.4x</p>
+                  <p className="text-[11px] text-emerald-300/80">Ventas Cerradas</p>
+                  <p className="mt-1 text-xl font-black text-[#D96B27]">
+                    ${dbMetrics.reduce((acc, m) => acc + Number(m.closed_sales_mxn || 0), 0)} MXN
+                  </p>
                 </div>
               </div>
             )}
