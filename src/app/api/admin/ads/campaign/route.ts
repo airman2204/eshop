@@ -11,7 +11,7 @@ const WHATSAPP_GROUP_URL =
  */
 export async function POST(req: NextRequest) {
   try {
-    const { objective, platform = "instagram", generateImage = false } = await req.json();
+    const { objective, platform = "instagram", generateImage = true } = await req.json();
 
     if (!objective || !String(objective).trim()) {
       return NextResponse.json({ error: "Escribe el objetivo de tu campaña." }, { status: 400 });
