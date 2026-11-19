@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     const geminiKey = (process.env.GEMINI_API_KEY || "").trim();
+    const groqKey = (process.env.GROQ_API_KEY || "").trim();
     const supabase = createServerClient() as any;
 
     const { data: prods } = await supabase
@@ -72,6 +73,60 @@ Devuelve JSON válido:
           .replace(/```json|```/gi, "")
           .trim();
         const parsed = JSON.parse(raw);
+        if (groqKey) {
+      try {
+        const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-120b",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 1800,
+            response_format: { type: "json_object" },
+          }),
+        });
+        const gJson = await gRes.json();
+        const raw = (gJson?.choices?.[0]?.message?.content || "").trim();
+        const parsed = JSON.parse(raw);
+        return NextResponse.json({
+          ok: true,
+          reply: parsed.reply || "Listo, actualizado.",
+          updatedStrategy: parsed.updatedStrategy || "",
+        });
+      } catch {}
+    }
+
+    return NextResponse.json({
+          ok: true,
+          reply: parsed.reply || "Listo, actualizado.",
+          updatedStrategy: parsed.updatedStrategy || "",
+        });
+      } catch {}
+    }
+
+    if (groqKey) {
+      try {
+        const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-120b",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 1800,
+            response_format: { type: "json_object" },
+          }),
+        });
+        const gJson = await gRes.json();
+        const raw = (gJson?.choices?.[0]?.message?.content || "").trim();
+        const parsed = JSON.parse(raw);
         return NextResponse.json({
           ok: true,
           reply: parsed.reply || "Listo, actualizado.",
@@ -88,6 +143,33 @@ Devuelve JSON válido:
         `📅 PLAN SEMANAL — ${weekLabel}\n• Lunes (Instagram Reel): Trío de Brumas Bath & Body Works — Gancho de precio especial en WhatsApp VIP.\n• Martes (TikTok): Rutina de 3 pasos (Jabón + Crema + Bruma) — Storytelling.\n• Miércoles (Instagram Post/Carousel): Comparativa de aromas top + CTA directo al grupo.\n• Jueves (TikTok): "POV: Entraste antes de que volaran" — Urgencia de piezas limitadas.\n• Viernes (Instagram Reel): Cierre de Drop semanal + enlace directo a Ventas Flash ⚡ FoxDrop.`,
     });
   } catch (err: any) {
+    if (groqKey) {
+      try {
+        const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-oss-120b",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 1800,
+            response_format: { type: "json_object" },
+          }),
+        });
+        const gJson = await gRes.json();
+        const raw = (gJson?.choices?.[0]?.message?.content || "").trim();
+        const parsed = JSON.parse(raw);
+        return NextResponse.json({
+          ok: true,
+          reply: parsed.reply || "Listo, actualizado.",
+          updatedStrategy: parsed.updatedStrategy || "",
+        });
+      } catch {}
+    }
+
     return NextResponse.json({ error: err?.message || "Error en chat" }, { status: 500 });
   }
 }
