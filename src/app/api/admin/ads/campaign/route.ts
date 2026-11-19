@@ -29,13 +29,13 @@ export async function POST(req: NextRequest) {
       .select("*")
       .gt("stock", 0)
       .ilike("title", "%Bath%Body%")
-      .limit(24);
+      .limit(50);
 
     if (!Array.isArray(realProds) || realProds.length === 0) {
       const fallbackRes = await (supabase as any)
         .from("products")
         .select("*")
-        .limit(24);
+        .limit(50);
       realProds = fallbackRes.data;
     }
 
@@ -157,8 +157,17 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
     const chosenProducts = chosenIds
       .map((id) => realList.find((p: any) => String(p.id) === id))
       .filter(Boolean);
+    const pickSmartCombo = (list: any[]) => {
+      const mists = list.filter((p: any) => /bruma|mist/i.test(String(p.title || "")));
+      if (mists.length >= 3) return mists.slice(0, 3);
+      const bodyCare = list.filter((p: any) => /crema|jab[oó]n|shower|cream|eucalyptus/i.test(String(p.title || "")));
+      if (bodyCare.length >= 3) return bodyCare.slice(0, 3);
+      const gels = list.filter((p: any) => /gel/i.test(String(p.title || "")));
+      if (gels.length >= 3) return gels.slice(0, 3);
+      return list.slice(0, 3);
+    };
     const comboProducts =
-      chosenProducts.length >= 2 ? chosenProducts.slice(0, 3) : realList.slice(0, 3);
+      chosenProducts.length >= 2 ? chosenProducts.slice(0, 3) : pickSmartCombo(realList);
     const comboImageUrls = comboProducts.map(getProdImg).filter(Boolean);
 
     // Generar creativo editorial multi-producto con fal-ai/nano-banana-pro/edit
