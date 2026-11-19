@@ -48,21 +48,45 @@ function AgentCharacter({
   onSelect: () => void;
 }) {
   const currentX = parseFloat(agent.currentLeft) || 0;
-  const prevXRef = useRef<number>(currentX);
+  const currentY = parseFloat(agent.currentTop) || 0;
+  const prevCoordsRef = useRef<{ x: number; y: number }>({ x: currentX, y: currentY });
   const [facingLeft, setFacingLeft] = useState(false);
-  const [isMoving, setIsMoving] = useState(false);
+  const [isWalking, setIsWalking] = useState(false);
+  const [route, setRoute] = useState<{ left: string | string[]; top: string | string[] }>({
+    left: agent.currentLeft,
+    top: agent.currentTop,
+  });
 
   useEffect(() => {
-    if (currentX < prevXRef.current - 0.5) {
-      setFacingLeft(true);
-    } else if (currentX > prevXRef.current + 0.5) {
-      setFacingLeft(false);
+    const prev = prevCoordsRef.current;
+    if (currentX !== prev.x || currentY !== prev.y) {
+      setFacingLeft(currentX < prev.x);
+      setIsWalking(true);
+
+      // Si cambia de cuarto/zona, pasar por el pasillo central (50%, 52%) para no atravesar paredes
+      const distance = Math.hypot(currentX - prev.x, currentY - prev.y);
+      if (distance > 22) {
+        setRoute({
+          left: [`${prev.x}%`, "50%", `${currentX}%`],
+          top: [`${prev.y}%`, "52%", `${currentY}%`],
+        });
+      } else {
+        setRoute({
+          left: `${currentX}%`,
+          top: `${currentY}%`,
+        });
+      }
+
+      prevCoordsRef.current = { x: currentX, y: currentY };
+      const timer = setTimeout(() => {
+        setIsWalking(false);
+      }, 1800);
+      return () => clearTimeout(timer);
     }
-    prevXRef.current = currentX;
-  }, [currentX]);
+  }, [currentX, currentY]);
 
   const activeVariant =
-    isMoving || agent.isMoving
+    isWalking || agent.isMoving
       ? "walking"
       : agent.status === "working"
       ? "working"
@@ -81,17 +105,14 @@ function AgentCharacter({
     <motion.div
       initial={false}
       animate={{
-        left: agent.currentLeft,
-        top: agent.currentTop,
+        left: route.left,
+        top: route.top,
       }}
       transition={{
-        type: "spring",
-        stiffness: 55,
-        damping: 16,
-        mass: 1,
+        type: "tween",
+        duration: 1.8,
+        ease: "easeInOut",
       }}
-      onAnimationStart={() => setIsMoving(true)}
-      onAnimationComplete={() => setIsMoving(false)}
       style={{ position: "absolute", transform: "translate(-50%, -50%)" }}
       className="z-20 flex flex-col items-center"
     >
@@ -161,12 +182,12 @@ function AgentCharacter({
             animate={activeVariant}
             variants={{
               walking: {
-                y: [0, -7, 0],
-                rotate: [-5, 5, -5],
+                y: [0, -9, 0, -9, 0],
+                rotate: [-7, 7, -7, 7, 0],
                 scaleX: facingLeft ? -1 : 1,
                 transition: {
-                  y: { repeat: Infinity, duration: 0.42, ease: "easeInOut" },
-                  rotate: { repeat: Infinity, duration: 0.42, ease: "easeInOut" },
+                  y: { repeat: Infinity, duration: 0.45, ease: "easeInOut" },
+                  rotate: { repeat: Infinity, duration: 0.45, ease: "easeInOut" },
                   scaleX: { duration: 0.15 },
                 },
               },
@@ -209,14 +230,14 @@ function AgentCharacter({
           <motion.span
             animate={
               activeVariant === "walking"
-                ? { scale: [1, 0.82, 1] }
+                ? { scale: [1, 0.72, 1, 0.72, 1] }
                 : activeVariant === "waiting_approval"
                 ? { scale: [1, 0.8, 1, 0.85, 1] }
                 : { scale: 1 }
             }
             transition={
               activeVariant === "walking"
-                ? { repeat: Infinity, duration: 0.42, ease: "easeInOut" }
+                ? { repeat: Infinity, duration: 0.45, ease: "easeInOut" }
                 : activeVariant === "waiting_approval"
                 ? { repeat: Infinity, repeatDelay: 1.8, duration: 0.55, ease: "easeOut" }
                 : { duration: 0.3 }
