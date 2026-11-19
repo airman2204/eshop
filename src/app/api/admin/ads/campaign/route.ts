@@ -24,12 +24,20 @@ export async function POST(req: NextRequest) {
 
     // Consultar productos reales de Bath & Body Works en inventario para que Sofía arme combos coherentes
     const supabase = createServerClient();
-    const { data: realProds } = await (supabase as any)
+    let { data: realProds } = await (supabase as any)
       .from("products")
       .select("id,title,public_price,image_url,images")
       .gt("stock", 0)
       .ilike("title", "%Bath%Body%")
       .limit(24);
+
+    if (!Array.isArray(realProds) || realProds.length === 0) {
+      const fallbackRes = await (supabase as any)
+        .from("products")
+        .select("id,title,public_price,image_url,images")
+        .limit(24);
+      realProds = fallbackRes.data;
+    }
 
     const realList = (Array.isArray(realProds) ? realProds : []).filter(
       (p: any) => p.image_url || (Array.isArray(p.images) && p.images[0])
