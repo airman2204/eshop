@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     let { data: realProds } = await (supabase as any)
       .from("products")
-      .select("id,title,public_price,image_url,images")
+      .select("*")
       .gt("stock", 0)
       .ilike("title", "%Bath%Body%")
       .limit(24);
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(realProds) || realProds.length === 0) {
       const fallbackRes = await (supabase as any)
         .from("products")
-        .select("id,title,public_price,image_url,images")
+        .select("*")
         .limit(24);
       realProds = fallbackRes.data;
     }
