@@ -4667,6 +4667,26 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
           ) : (
             <>
+          {/* BOTÓN DESTACADO: AGENCY COMMAND CENTER */}
+          <div className="mb-2">
+            <a
+              href="/admin/agency"
+              className="w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border bg-emerald-950/70 text-emerald-100 border-emerald-700/60 hover:border-[#D96B27] hover:bg-emerald-900/70"
+            >
+              <div className="flex items-center gap-2.5 text-left">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-[#D96B27]/20 text-[#D96B27]">
+                  <span className="text-sm">🦊</span>
+                </div>
+                <div>
+                  <span className="block font-bold text-xs leading-none flex items-center gap-1.5">
+                    Agency Command
+                    <span className="bg-[#D96B27] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Oficina 2D</span>
+                  </span>
+                </div>
+              </div>
+            </a>
+          </div>
+
           {/* BOTÓN DESTACADO: FOXADS (SALEADS PARA FOXDROP) */}
           <div>
             <button
