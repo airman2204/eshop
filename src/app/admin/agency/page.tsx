@@ -194,6 +194,8 @@ export default function AgencyCommandCenterPage() {
   const [logs, setLogs] = useState<ActivityLog[]>(INITIAL_LOGS);
   const [chatInput, setChatInput] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
 
   // Sincronizar agentes desde Supabase Realtime cuando existan filas en agent_states
   React.useEffect(() => {
@@ -335,19 +337,52 @@ export default function AgencyCommandCenterPage() {
     }, 2400);
   };
 
-  const handleRegenerate = () => {
-    if (!activePiece) return;
+  const handleGenerateWeek = async () => {
+    if (isGeneratingWeek) return;
+    setIsGeneratingWeek(true);
+    appendLog("Iniciando nueva campaña semanal con Sofía, Mateo, Valeria y Diego...", true);
+    try {
+      const res = await fetch("/api/agency/generate-week", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekLabel: campaign, theme: "Drops Exclusivos Bath & Body Works" }),
+      });
+      const data = await res.json();
+      if (data?.ok) {
+        appendLog(`Campaña lista: ${data.count} piezas reales guardadas en Mesa de Aprobación`, true);
+      }
+    } catch {
+      appendLog("Error al generar la campaña semanal");
+    } finally {
+      setIsGeneratingWeek(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!activePiece || isRefining) return;
+    setIsRefining(true);
     setAgents((prev) =>
       prev.map((a) =>
-        a.id === activePiece.agentId
-          ? { ...a, status: "working", bubbleText: "Regenerando..." }
+        a.id === "diego"
+          ? { ...a, status: "working", bubbleText: "Regenerando composición..." }
           : a
       )
     );
-    appendLog(`${selectedAgent.name} está regenerando "${activePiece.title}"`);
+    appendLog(`Diego está regenerando "${activePiece.title}" con inventario real...`);
+    try {
+      await fetch("/api/agency/refine-deliverable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deliverableId: activePiece.id }),
+      });
+    } catch {
+      appendLog("Error al regenerar el visual");
+    } finally {
+      setIsRefining(false);
+    }
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
+  const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
     const msg = chatInput.trim();
@@ -361,6 +396,19 @@ export default function AgencyCommandCenterPage() {
       )
     );
     appendLog(`Ajuste para ${selectedAgent.name}: "${msg}"`, true);
+
+    if (activePiece && (selectedAgentId === "diego" || selectedAgentId === "valeria")) {
+      setIsRefining(true);
+      try {
+        await fetch("/api/agency/refine-deliverable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deliverableId: activePiece.id, feedbackNotes: msg }),
+        });
+      } finally {
+        setIsRefining(false);
+      }
+    }
   };
 
   const handleSimulateFlow = () => {
@@ -501,11 +549,12 @@ export default function AgencyCommandCenterPage() {
           {/* Primary Action */}
           <button
             type="button"
-            onClick={() => appendLog("Nueva campaña semanal iniciada por Director General", true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#D96B27]/25 transition hover:bg-[#c55e1e]"
+            onClick={handleGenerateWeek}
+            disabled={isGeneratingWeek}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#D96B27]/25 transition hover:bg-[#c55e1e] disabled:opacity-60"
           >
-            <Plus className="h-4 w-4" />
-            Nueva Campaña Semanal
+            <Plus className={`h-4 w-4 ${isGeneratingWeek ? "animate-spin" : ""}`} />
+            {isGeneratingWeek ? "Generando 5 piezas..." : "Nueva Campaña Semanal"}
           </button>
         </div>
       </header>
@@ -641,9 +690,11 @@ export default function AgencyCommandCenterPage() {
                   <button
                     type="button"
                     onClick={handleRegenerate}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-700/80 bg-[#14352F] px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/60"
+                    disabled={isRefining}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-700/80 bg-[#14352F] px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/60 disabled:opacity-60"
                   >
-                    <RefreshCw className="h-3.5 w-3.5" /> ↻ Regenerar
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefining ? "animate-spin" : ""}`} />
+                    {isRefining ? "Regenerando visual..." : "↻ Regenerar"}
                   </button>
                 </div>
               </>
