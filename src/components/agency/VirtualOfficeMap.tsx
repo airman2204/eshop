@@ -150,19 +150,7 @@ export default function VirtualOfficeMap({
               </div>
 
               {/* Character Body + Floor Shadow + Golden Selection Ring */}
-              <motion.div
-                animate={
-                  agent.isMoving
-                    ? { y: [0, -5, 0, -4, 0] }
-                    : { y: [0, -1.5, 0] }
-                }
-                transition={{
-                  repeat: Infinity,
-                  duration: agent.isMoving ? 0.45 : 2.6,
-                  ease: "easeInOut",
-                }}
-                className="relative flex flex-col items-center"
-              >
+              <div className="relative flex flex-col items-center">
                 {/* Golden selection ring on the floor */}
                 {isSelected && (
                   <span className="absolute -bottom-1.5 h-5 w-11 rounded-full border-2 border-[#D96B27] bg-[#D96B27]/25 shadow-[0_0_16px_#D96B27]" />
@@ -237,7 +225,7 @@ export default function VirtualOfficeMap({
                     }`}
                   />
                 </div>
-              </motion.div>
+              </div>
 
               {/* Name & Role Pill Below */}
               <div className="mt-1.5 rounded-md bg-[#0D2420]/90 px-2 py-0.5 text-center shadow border border-emerald-900/80">

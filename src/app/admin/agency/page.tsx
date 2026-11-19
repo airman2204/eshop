@@ -137,34 +137,7 @@ const INITIAL_AGENTS: OfficeAgent[] = [
   },
 ];
 
-const INITIAL_PIECES: ApprovalPiece[] = [
-  {
-    id: "piece-1",
-    title: "Trío Brumas Bath & Body Works (Drops Exclusivos)",
-    agentId: "diego",
-    agentLabel: "Diego (Arte) & Valeria (Copy)",
-    platform: "Instagram Reel",
-    schedule: "Mar 19 · 18:30",
-    imageUrl:
-      "https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=800&q=80",
-    caption:
-      "Tu atajo al drop de la semana 🦊 Piezas exclusivas de Bath & Body Works disponibles únicamente en nuestro grupo VIP de WhatsApp. Entra antes del jueves y asegura la tuya. #FoxDrop #DropExclusivo",
-    status: "pending",
-  },
-  {
-    id: "piece-2",
-    title: "Rutina Eucalyptus Spearmint (3 Pasos)",
-    agentId: "valeria",
-    agentLabel: "Valeria (Copy) & Diego (Arte)",
-    platform: "TikTok",
-    schedule: "Jue 21 · 19:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?auto=format&fit=crop&w=800&q=80",
-    caption:
-      "¿Quieres que tu aroma dure todo el día? Jabón + Crema + Bruma en nuestro grupo privado de WhatsApp a precio especial. Comenta VIP y te mandamos el acceso ⚡",
-    status: "pending",
-  },
-];
+const INITIAL_PIECES: ApprovalPiece[] = [];
 
 const INITIAL_LOGS: ActivityLog[] = [
   { id: "l1", time: "10:15 AM", text: "Mateo entregó estrategia a Valeria y Diego" },
@@ -187,7 +160,7 @@ export default function AgencyCommandCenterPage() {
 
   const [agents, setAgents] = useState<OfficeAgent[]>(INITIAL_AGENTS);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("diego");
-  const [campaign, setCampaign] = useState("Semana 47: Drops Exclusivos WhatsApp");
+  const [campaign, setCampaign] = useState("Semana 1: Drops Exclusivos WhatsApp");
   const [activeTab, setActiveTab] = useState<"approve" | "calendar" | "roi">("approve");
   const [pieces, setPieces] = useState<ApprovalPiece[]>(INITIAL_PIECES);
   const [currentPieceIndex, setCurrentPieceIndex] = useState(0);
@@ -496,16 +469,8 @@ export default function AgencyCommandCenterPage() {
           {/* Brand + Title + Campaign Selector */}
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D96B27]/20 border border-[#D96B27]/50 overflow-hidden">
-                <img
-                  src="/images/foxdrop-logo.png"
-                  alt="FoxDrop"
-                  className="h-7 w-7 object-contain"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
-                />
-                <span className="text-lg">🦊</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D96B27]/20 border border-[#D96B27]/50">
+                <span className="text-xl leading-none">🦊</span>
               </div>
               <div>
                 <h1 className="text-sm font-bold tracking-tight text-white">
@@ -517,11 +482,11 @@ export default function AgencyCommandCenterPage() {
                     onChange={(e) => setCampaign(e.target.value)}
                     className="bg-transparent font-medium text-emerald-200 focus:outline-none cursor-pointer"
                   >
-                    <option value="Semana 47: Drops Exclusivos WhatsApp" className="bg-[#0D2420]">
-                      Semana 47: Drops Exclusivos WhatsApp
+                    <option value="Semana 1: Drops Exclusivos WhatsApp" className="bg-[#0D2420]">
+                      Semana 1: Drops Exclusivos WhatsApp
                     </option>
-                    <option value="Semana 48: Bath & Body Works Gift Sets" className="bg-[#0D2420]">
-                      Semana 48: Bath &amp; Body Works Gift Sets
+                    <option value="Semana 2: Bath & Body Works Gift Sets" className="bg-[#0D2420]">
+                      Semana 2: Bath &amp; Body Works Gift Sets
                     </option>
                   </select>
                   <ChevronDown className="h-3 w-3 opacity-70" />
@@ -637,6 +602,16 @@ export default function AgencyCommandCenterPage() {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeTab === "approve" && !activePiece && (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-emerald-800/80 bg-[#14352F]/40 p-6 text-center">
+                <span className="text-3xl mb-2">🦊</span>
+                <p className="text-xs font-bold text-white">Sin piezas por aprobar</p>
+                <p className="mt-1 text-[11px] text-emerald-300/80">
+                  Presiona <strong>+ Nueva Campaña Semanal</strong> para generar tus 5 piezas reales con productos de tu inventario.
+                </p>
+              </div>
+            )}
+
             {activeTab === "approve" && activePiece && (
               <>
                 <div className="flex items-center justify-between text-[11px] text-emerald-200/80">
