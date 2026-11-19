@@ -11,7 +11,7 @@ const WHATSAPP_GROUP_URL =
  */
 export async function POST(req: NextRequest) {
   try {
-    const { objective, platform = "instagram" } = await req.json();
+    const { objective, platform = "instagram", generateImage = false } = await req.json();
 
     if (!objective || !String(objective).trim()) {
       return NextResponse.json({ error: "Escribe el objetivo de tu campaña." }, { status: 400 });
@@ -108,7 +108,7 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       .replace(/prompt\s+detailed\s+in\s+english\s+for\s+flux[:\s]*/gi, "")
       .replace(/\bflux\b/gi, "")
       .trim() + ", strictly no text, no letters, no words, no logos, unbranded clean photography";
-    if (falKey && firstFluxPrompt) {
+    if (generateImage && falKey && firstFluxPrompt) {
       const endpoint = refImageUrl
         ? "https://fal.run/fal-ai/flux/dev/image-to-image"
         : "https://fal.run/fal-ai/flux/schnell";
