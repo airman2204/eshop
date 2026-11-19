@@ -26,14 +26,17 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const { data: realProds } = await (supabase as any)
       .from("products")
-      .select("title, public_price, image_url")
+      .select("*")
       .gt("stock", 0)
       .ilike("title", "%Bath%Body%")
       .limit(5);
 
     const realList = Array.isArray(realProds) ? realProds : [];
     const realNamesText = realList.map((p: any) => `- ${p.title} ($${p.public_price} MXN)`).join("\n");
-    const refImageUrl = realList.find((p: any) => p.image_url)?.image_url || "";
+    const refImageUrl =
+      realList.find((p: any) => p.image_url || (Array.isArray(p.images) && p.images[0]))?.image_url ||
+      realList.find((p: any) => Array.isArray(p.images) && p.images[0])?.images?.[0] ||
+      "";
 
     const prompt = `Eres el Director Creativo y Estratega de Growth Marketing de "FoxDrop" (foxdrop.mx), una comunidad privada y tienda de importación en México cuyo eslogan es "Tu atajo al mundo".
 Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram (Reels/Stories/Ads 4:5)"}:
