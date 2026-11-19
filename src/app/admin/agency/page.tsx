@@ -259,6 +259,27 @@ export default function AgencyCommandCenterPage() {
     setLogs((prev) => [...prev.slice(-5), { id: `log-${Date.now()}`, time, text, highlight }]);
   };
 
+  const playWorkDoneSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      [587.33, 880].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(0.08, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.25);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.26);
+      });
+    } catch {}
+  };
+
   const handleUpdateCaption = (newCaption: string) => {
     if (!activePiece) return;
     setPieces((prev) =>
@@ -318,12 +339,13 @@ export default function AgencyCommandCenterPage() {
     setSelectedAgentId("mateo");
     setActiveTab("approve");
     setStrategyProposal("Mateo está armando el plan detallado de Lunes a Viernes para Instagram y TikTok...");
-    appendLog("1/3 Mateo llevó la propuesta de estrategia semanal a la Mesa de Aprobación", true);
+    appendLog("1/3 Mateo está planeando la semana en su Sala de Estrategia...", true);
 
+    // Mateo se queda en su oficina mientras planea
     setAgents((prev) =>
       prev.map((a) =>
         a.id === "mateo"
-          ? { ...a, currentTop: "52%", currentLeft: "50%", status: "review", bubbleText: "Propuesta lista en mesa" }
+          ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "working", bubbleText: "Planeando semana..." }
           : a
       )
     );
@@ -338,6 +360,17 @@ export default function AgencyCommandCenterPage() {
       if (data?.updatedStrategy) setStrategyProposal(data.updatedStrategy);
       if (data?.reply) setAgentReply(data.reply);
     } catch {}
+
+    // Ya terminó de planear: suena notificación y camina a la Mesa de Aprobación
+    playWorkDoneSound();
+    appendLog("Mateo terminó el plan y lo llevó a la Mesa de Aprobación", true);
+    setAgents((prev) =>
+      prev.map((a) =>
+        a.id === "mateo"
+          ? { ...a, currentTop: "52%", currentLeft: "50%", status: "review", bubbleText: "Propuesta lista en mesa" }
+          : a
+      )
+    );
   };
 
   const handleApproveStrategy = async () => {
@@ -395,6 +428,7 @@ export default function AgencyCommandCenterPage() {
           );
         }
         setSelectedAgentId("diego");
+        playWorkDoneSound();
         setAgents((prev) =>
           prev.map((a) =>
             a.id === "valeria"
@@ -435,6 +469,7 @@ export default function AgencyCommandCenterPage() {
       appendLog("Error al regenerar el visual");
     } finally {
       setIsRefining(false);
+      playWorkDoneSound();
     }
   };
 
