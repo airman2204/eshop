@@ -398,35 +398,41 @@ export default function AgencyCommandCenterPage() {
       )
     );
 
-    // Paso 2: Mateo regresa; Valeria y Diego caminan a Mesa de Aprobación
+    // Paso 2: Mateo regresa; Valeria, Diego, Andrés y Camila se reúnen en Mesa de Aprobación
     setTimeout(() => {
-      appendLog("2/4 Valeria y Diego llevan piezas a Mesa de Aprobación");
+      appendLog("2/4 Valeria, Diego, Andrés y Camila se reúnen en Mesa de Aprobación");
       setAgents((prev) =>
         prev.map((a) =>
           a.id === "mateo"
             ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia entregada ✓" }
             : a.id === "valeria"
-            ? { ...a, currentTop: "52%", currentLeft: "46%", status: "review", bubbleText: "Copy lista en mesa" }
+            ? { ...a, currentTop: "52%", currentLeft: "44%", status: "review", bubbleText: "Copy lista en mesa" }
             : a.id === "diego"
-            ? { ...a, currentTop: "52%", currentLeft: "54%", status: "review", bubbleText: "Arte listo en mesa" }
+            ? { ...a, currentTop: "52%", currentLeft: "50%", status: "review", bubbleText: "Arte listo en mesa" }
+            : a.id === "andres"
+            ? { ...a, currentTop: "48%", currentLeft: "56%", status: "working", bubbleText: "Revisando Ads" }
+            : a.id === "camila"
+            ? { ...a, currentTop: "56%", currentLeft: "56%", status: "working", bubbleText: "Recogiendo piezas" }
             : a
         )
       );
     }, 1800);
 
-    // Paso 3: Valeria y Diego entregan a Camila y Andrés en Crecimiento & Redes
+    // Paso 3: Camila y Andrés vuelven a Redes; Sofía y Bruno suben a coordinar leads y ROI
     setTimeout(() => {
-      appendLog("3/4 Piezas aprobadas → Camila programa y Andrés lanza Ads", true);
+      appendLog("3/4 Camila y Andrés lanzan campaña; Sofía y Bruno suben a coordinar leads", true);
       setAgents((prev) =>
         prev.map((a) =>
-          a.id === "valeria"
-            ? { ...a, currentTop: "32%", currentLeft: "80%", status: "approved", bubbleText: "Entregado a Camila ✓" }
-            : a.id === "diego"
-            ? { ...a, currentTop: "32%", currentLeft: "72%", status: "approved", bubbleText: "Entregado a Andrés ✓" }
+          a.id === "valeria" || a.id === "diego"
+            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "approved", bubbleText: "Entregado ✓" }
             : a.id === "camila"
-            ? { ...a, status: "working", bubbleText: "Programando Reels/TikTok" }
+            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "working", bubbleText: "Programando Reels/TikTok" }
             : a.id === "andres"
-            ? { ...a, status: "working", bubbleText: "Campaña Meta Ads ON" }
+            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "working", bubbleText: "Campaña Meta Ads ON" }
+            : a.id === "sofia"
+            ? { ...a, currentTop: "38%", currentLeft: "78%", status: "working", bubbleText: "Conectando WhatsApp VIP" }
+            : a.id === "bruno"
+            ? { ...a, currentTop: "38%", currentLeft: "72%", status: "working", bubbleText: "Midiendo conversión" }
             : a
         )
       );
