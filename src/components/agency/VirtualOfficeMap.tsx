@@ -171,66 +171,64 @@ export default function VirtualOfficeMap({
                 {/* Floor shadow */}
                 <span className="absolute -bottom-1 h-2.5 w-8 rounded-full bg-black/55 blur-[2px]" />
 
-                {/* 2D Chibi Character SVG */}
+                {/* 2D Chibi Fox Character SVG */}
                 <div
-                  className={`relative flex h-12 w-10 items-center justify-center transition-transform group-hover:scale-110 ${
+                  className={`relative flex h-12 w-12 items-center justify-center transition-transform group-hover:scale-110 ${
                     isSelected ? "drop-shadow-[0_0_10px_#D96B27]" : "drop-shadow-md"
                   }`}
                 >
-                  <svg viewBox="0 0 40 48" className="h-12 w-10 overflow-visible">
+                  <svg viewBox="0 0 48 48" className="h-12 w-12 overflow-visible">
+                    {/* Fluffy Fox Tail */}
+                    <path
+                      d="M30 37 C40 35, 44 26, 39 22 C36 25, 34 30, 29 33 Z"
+                      fill="#D96B27"
+                      stroke="#0D2420"
+                      strokeWidth="1.6"
+                    />
+                    <path d="M39 22 C41 24, 41 27, 38 28 C37 26, 37 24, 39 22 Z" fill="#FFF7ED" />
                     {/* Torso / Hoodie */}
                     <path
-                      d="M10 30 C10 24, 30 24, 30 30 L32 42 C32 44, 28 45, 20 45 C12 45, 8 44, 8 42 Z"
+                      d="M14 30 C14 25, 34 25, 34 30 L36 42 C36 44, 32 45, 24 45 C16 45, 12 44, 12 42 Z"
                       fill={agent.avatarColor}
                       stroke={isSelected ? "#D96B27" : "#0D2420"}
-                      strokeWidth="2"
+                      strokeWidth="1.8"
                     />
-                    {/* Shoes */}
-                    <ellipse cx="14" cy="45" rx="4" ry="2.2" fill="#111827" />
-                    <ellipse cx="26" cy="45" rx="4" ry="2.2" fill="#111827" />
-                    {/* Head */}
-                    <circle
-                      cx="20"
-                      cy="16"
-                      r="11.5"
-                      fill="#FDE6C4"
-                      stroke={isSelected ? "#D96B27" : "#0D2420"}
-                      strokeWidth="2"
+                    {/* Paws / Shoes */}
+                    <ellipse cx="18" cy="45" rx="4" ry="2.2" fill="#111827" />
+                    <ellipse cx="30" cy="45" rx="4" ry="2.2" fill="#111827" />
+                    {/* Fox Ears */}
+                    <polygon points="12,15 14,3 21,11" fill="#D96B27" stroke="#0D2420" strokeWidth="1.6" />
+                    <polygon points="14,13 15,6 19,11" fill="#FDBA74" />
+                    <polygon points="36,15 34,3 27,11" fill="#D96B27" stroke="#0D2420" strokeWidth="1.6" />
+                    <polygon points="34,13 33,6 29,11" fill="#FDBA74" />
+                    {/* Fox Head */}
+                    <ellipse
+                      cx="24"
+                      cy="18"
+                      rx="12"
+                      ry="10.5"
+                      fill="#EA580C"
+                      stroke={isSelected ? "#FDBA74" : "#0D2420"}
+                      strokeWidth="1.8"
                     />
-                    {/* Hair / Fox Ears for Mateo */}
-                    {agent.id === "mateo" ? (
-                      <>
-                        <polygon points="9,11 13,2 17,9" fill="#D96B27" stroke="#0D2420" strokeWidth="1.5" />
-                        <polygon points="31,11 27,2 23,9" fill="#D96B27" stroke="#0D2420" strokeWidth="1.5" />
-                        <path d="M9 14 C10 6, 30 6, 31 14 C27 10, 13 10, 9 14 Z" fill="#D96B27" />
-                      </>
-                    ) : (
-                      <path
-                        d="M8.5 15 C9 5, 31 5, 31.5 15 C27 10, 13 10, 8.5 15 Z"
-                        fill={agent.hairColor}
-                      />
-                    )}
-                    {/* Eyes */}
-                    <circle cx="15.5" cy="17" r="1.7" fill="#111827" />
-                    <circle cx="24.5" cy="17" r="1.7" fill="#111827" />
-                    <circle cx="16" cy="16.4" r="0.6" fill="#FFFFFF" />
-                    <circle cx="25" cy="16.4" r="0.6" fill="#FFFFFF" />
-                    {/* Smile */}
-                    <path
-                      d="M17 21 Q20 23.5 23 21"
-                      fill="none"
-                      stroke="#92400E"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
+                    {/* White Fox Cheeks */}
+                    <path d="M12.5 19 C15 17, 20 21, 24 27 C17 27, 13 24, 12.5 19 Z" fill="#FFF7ED" />
+                    <path d="M35.5 19 C33 17, 28 21, 24 27 C31 27, 35 24, 35.5 19 Z" fill="#FFF7ED" />
+                    {/* Cute Eyes */}
+                    <circle cx="19" cy="17.5" r="1.8" fill="#111827" />
+                    <circle cx="29" cy="17.5" r="1.8" fill="#111827" />
+                    <circle cx="19.5" cy="16.9" r="0.65" fill="#FFFFFF" />
+                    <circle cx="29.5" cy="16.9" r="0.65" fill="#FFFFFF" />
+                    {/* Fox Nose */}
+                    <ellipse cx="24" cy="21.5" rx="2" ry="1.4" fill="#111827" />
                     {/* Role Badge on Chest */}
-                    <text x="20" y="38" textAnchor="middle" fontSize="9">
+                    <text x="24" y="38" textAnchor="middle" fontSize="9">
                       {agent.emoji}
                     </text>
                   </svg>
                   {/* Online dot */}
                   <span
-                    className={`absolute right-0 bottom-1 h-3 w-3 rounded-full border-2 border-[#0D2420] ${
+                    className={`absolute right-0.5 bottom-1 h-3 w-3 rounded-full border-2 border-[#0D2420] ${
                       agent.status === "working"
                         ? "bg-[#D96B27]"
                         : agent.status === "review"
