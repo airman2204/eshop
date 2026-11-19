@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Sparkles, CheckCircle2, Clock } from "lucide-react";
 
@@ -37,6 +37,203 @@ const ROOM_LABELS = [
   { id: "growth", label: "Crecimiento & Redes", top: "7%", left: "68%" },
   { id: "sales", label: "Ventas & ROI", top: "55%", left: "68%" },
 ];
+
+function AgentCharacter({
+  agent,
+  isSelected,
+  onSelect,
+}: {
+  agent: OfficeAgent;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const currentX = parseFloat(agent.currentLeft) || 0;
+  const prevXRef = useRef<number>(currentX);
+  const [facingLeft, setFacingLeft] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+
+  useEffect(() => {
+    if (currentX < prevXRef.current - 0.5) {
+      setFacingLeft(true);
+    } else if (currentX > prevXRef.current + 0.5) {
+      setFacingLeft(false);
+    }
+    prevXRef.current = currentX;
+  }, [currentX]);
+
+  const activeVariant =
+    isMoving || agent.isMoving
+      ? "walking"
+      : agent.status === "working"
+      ? "working"
+      : agent.status === "review"
+      ? "waiting_approval"
+      : "idle";
+
+  const statusColor =
+    agent.status === "approved" || agent.status === "active"
+      ? "border-[#10B981] bg-[#0D2420]/95 text-emerald-200"
+      : agent.status === "review"
+      ? "border-amber-400 bg-[#0D2420]/95 text-amber-200"
+      : "border-[#D96B27] bg-[#0D2420]/95 text-orange-200";
+
+  return (
+    <motion.div
+      initial={false}
+      animate={{
+        left: agent.currentLeft,
+        top: agent.currentTop,
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 55,
+        damping: 16,
+        mass: 1,
+      }}
+      onAnimationStart={() => setIsMoving(true)}
+      onAnimationComplete={() => setIsMoving(false)}
+      style={{ position: "absolute", transform: "translate(-50%, -50%)" }}
+      className="z-20 flex flex-col items-center"
+    >
+      <motion.button
+        type="button"
+        onClick={onSelect}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+        className="group relative flex flex-col items-center focus:outline-none"
+      >
+        {/* Burbuja de estado estilo videojuego (independiente del volteo) */}
+        <div
+          className={`mb-1 max-w-[145px] truncate rounded-full border px-2 py-0.5 text-[10px] font-medium shadow-lg backdrop-blur-sm ${statusColor}`}
+        >
+          {agent.status === "approved" && (
+            <CheckCircle2 className="mr-1 inline h-2.5 w-2.5 text-[#10B981]" />
+          )}
+          {agent.status === "review" && (
+            <Clock className="mr-1 inline h-2.5 w-2.5 text-amber-400" />
+          )}
+          {agent.bubbleText}
+        </div>
+
+        {/* Contenedor del sprite + partículas + sombra */}
+        <div className="relative flex flex-col items-center">
+          {/* Partículas flotantes cuando está working */}
+          {activeVariant === "working" && (
+            <div className="pointer-events-none absolute -top-4 inset-x-0 flex justify-center gap-1.5">
+              {[0, 1, 2].map((idx) => (
+                <motion.span
+                  key={idx}
+                  initial={{ opacity: 0, y: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: [0, -14] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1.4,
+                    delay: idx * 0.35,
+                    ease: "easeOut",
+                  }}
+                  className="text-[10px] text-[#D96B27]"
+                >
+                  ✨
+                </motion.span>
+              ))}
+            </div>
+          )}
+
+          {/* Anillo pulsante dorado cuando espera aprobación */}
+          {activeVariant === "waiting_approval" && (
+            <motion.span
+              animate={{ scale: [0.95, 1.25, 0.95], opacity: [0.85, 0.25, 0.85] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+              className="pointer-events-none absolute -bottom-1.5 h-5 w-12 rounded-full border-2 border-[#D96B27] bg-[#D96B27]/20"
+            />
+          )}
+
+          {/* Halo luminoso de selección */}
+          {isSelected && (
+            <span className="pointer-events-none absolute -bottom-1.5 h-5 w-12 rounded-full border-2 border-[#D96B27] bg-[#D96B27]/25 shadow-[0_0_18px_#D96B27]" />
+          )}
+
+          {/* Sprite PNG del zorrito con rigging/elástico */}
+          <motion.img
+            src={`/images/agents/${agent.id}.png`}
+            alt={agent.name}
+            draggable={false}
+            animate={activeVariant}
+            variants={{
+              walking: {
+                y: [0, -7, 0],
+                rotate: [-5, 5, -5],
+                scaleX: facingLeft ? -1 : 1,
+                transition: {
+                  y: { repeat: Infinity, duration: 0.42, ease: "easeInOut" },
+                  rotate: { repeat: Infinity, duration: 0.42, ease: "easeInOut" },
+                  scaleX: { duration: 0.15 },
+                },
+              },
+              working: {
+                scaleY: [1, 0.94, 1.03, 1],
+                y: [0, 1.5, -1, 0],
+                scaleX: facingLeft ? -1 : 1,
+                transition: {
+                  repeat: Infinity,
+                  duration: 1.1,
+                  ease: "easeInOut",
+                },
+              },
+              waiting_approval: {
+                y: [0, -8, 0, -5, 0],
+                scaleX: facingLeft ? -1 : 1,
+                transition: {
+                  repeat: Infinity,
+                  repeatDelay: 1.8,
+                  duration: 0.55,
+                  ease: "easeOut",
+                },
+              },
+              idle: {
+                scaleY: [1, 1.025, 1],
+                scaleX: facingLeft ? -1 : 1,
+                transition: {
+                  repeat: Infinity,
+                  duration: 2.4,
+                  ease: "easeInOut",
+                },
+              },
+            }}
+            className={`relative z-10 h-14 w-14 object-contain select-none ${
+              isSelected ? "drop-shadow-[0_0_10px_rgba(217,107,39,0.9)]" : "drop-shadow-md"
+            }`}
+          />
+
+          {/* Sombra dinámica en el piso */}
+          <motion.span
+            animate={
+              activeVariant === "walking"
+                ? { scale: [1, 0.82, 1] }
+                : activeVariant === "waiting_approval"
+                ? { scale: [1, 0.8, 1, 0.85, 1] }
+                : { scale: 1 }
+            }
+            transition={
+              activeVariant === "walking"
+                ? { repeat: Infinity, duration: 0.42, ease: "easeInOut" }
+                : activeVariant === "waiting_approval"
+                ? { repeat: Infinity, repeatDelay: 1.8, duration: 0.55, ease: "easeOut" }
+                : { duration: 0.3 }
+            }
+            className=" -mt-1.5 h-2.5 w-9 rounded-full bg-black/45 blur-[2px]"
+          />
+        </div>
+
+        {/* Etiqueta de nombre y rol */}
+        <div className="mt-1 rounded-md border border-emerald-900/80 bg-[#0D2420]/90 px-2 py-0.5 text-center shadow">
+          <p className="text-[10px] font-bold leading-tight text-white">{agent.name}</p>
+          <p className="text-[9px] leading-tight text-emerald-300/80">{agent.role}</p>
+        </div>
+      </motion.button>
+    </motion.div>
+  );
+}
 
 export default function VirtualOfficeMap({
   agents,
@@ -107,138 +304,15 @@ export default function VirtualOfficeMap({
           </div>
         ))}
 
-        {/* 7 Animated Chibi/2D Agents */}
-        {agents.map((agent) => {
-          const isSelected = agent.id === selectedAgentId;
-          const statusColor =
-            agent.status === "approved" || agent.status === "active"
-              ? "border-[#10B981] bg-[#0D2420]/95 text-emerald-200"
-              : agent.status === "review"
-              ? "border-amber-400 bg-[#0D2420]/95 text-amber-200"
-              : "border-[#D96B27] bg-[#0D2420]/95 text-orange-200";
-
-          return (
-            <motion.button
-              key={agent.id}
-              type="button"
-              onClick={() => onSelectAgent(agent.id)}
-              initial={false}
-              animate={{
-                top: agent.currentTop,
-                left: agent.currentLeft,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 90,
-                damping: 16,
-                mass: 0.9,
-              }}
-              style={{ transform: "translate(-50%, -50%)" }}
-              className="group absolute z-20 flex flex-col items-center focus:outline-none"
-            >
-              {/* Video-game Status Bubble Above */}
-              <div
-                className={`mb-1.5 max-w-[140px] truncate rounded-full border px-2 py-0.5 text-[10px] font-medium shadow-lg backdrop-blur-sm transition-transform group-hover:scale-105 ${statusColor}`}
-              >
-                {agent.status === "approved" && (
-                  <CheckCircle2 className="mr-1 inline h-2.5 w-2.5 text-[#10B981]" />
-                )}
-                {agent.status === "review" && (
-                  <Clock className="mr-1 inline h-2.5 w-2.5 text-amber-400" />
-                )}
-                {agent.bubbleText}
-              </div>
-
-              {/* Character Body + Floor Shadow + Golden Selection Ring */}
-              <div className="relative flex flex-col items-center">
-                {/* Golden selection ring on the floor */}
-                {isSelected && (
-                  <span className="absolute -bottom-1.5 h-5 w-11 rounded-full border-2 border-[#D96B27] bg-[#D96B27]/25 shadow-[0_0_16px_#D96B27]" />
-                )}
-
-                {/* Floor shadow */}
-                <span className="absolute -bottom-1 h-2.5 w-8 rounded-full bg-black/55 blur-[2px]" />
-
-                {/* 2D Chibi Fox Character SVG */}
-                <div
-                  className={`relative flex h-12 w-12 items-center justify-center transition-transform group-hover:scale-110 ${
-                    isSelected ? "drop-shadow-[0_0_10px_#D96B27]" : "drop-shadow-md"
-                  }`}
-                >
-                  <svg viewBox="0 0 48 48" className="h-12 w-12 overflow-visible">
-                    {/* Fluffy Fox Tail */}
-                    <path
-                      d="M30 37 C40 35, 44 26, 39 22 C36 25, 34 30, 29 33 Z"
-                      fill="#D96B27"
-                      stroke="#0D2420"
-                      strokeWidth="1.6"
-                    />
-                    <path d="M39 22 C41 24, 41 27, 38 28 C37 26, 37 24, 39 22 Z" fill="#FFF7ED" />
-                    {/* Torso / Hoodie */}
-                    <path
-                      d="M14 30 C14 25, 34 25, 34 30 L36 42 C36 44, 32 45, 24 45 C16 45, 12 44, 12 42 Z"
-                      fill={agent.avatarColor}
-                      stroke={isSelected ? "#D96B27" : "#0D2420"}
-                      strokeWidth="1.8"
-                    />
-                    {/* Paws / Shoes */}
-                    <ellipse cx="18" cy="45" rx="4" ry="2.2" fill="#111827" />
-                    <ellipse cx="30" cy="45" rx="4" ry="2.2" fill="#111827" />
-                    {/* Fox Ears */}
-                    <polygon points="12,15 14,3 21,11" fill="#D96B27" stroke="#0D2420" strokeWidth="1.6" />
-                    <polygon points="14,13 15,6 19,11" fill="#FDBA74" />
-                    <polygon points="36,15 34,3 27,11" fill="#D96B27" stroke="#0D2420" strokeWidth="1.6" />
-                    <polygon points="34,13 33,6 29,11" fill="#FDBA74" />
-                    {/* Fox Head */}
-                    <ellipse
-                      cx="24"
-                      cy="18"
-                      rx="12"
-                      ry="10.5"
-                      fill="#EA580C"
-                      stroke={isSelected ? "#FDBA74" : "#0D2420"}
-                      strokeWidth="1.8"
-                    />
-                    {/* White Fox Cheeks */}
-                    <path d="M12.5 19 C15 17, 20 21, 24 27 C17 27, 13 24, 12.5 19 Z" fill="#FFF7ED" />
-                    <path d="M35.5 19 C33 17, 28 21, 24 27 C31 27, 35 24, 35.5 19 Z" fill="#FFF7ED" />
-                    {/* Cute Eyes */}
-                    <circle cx="19" cy="17.5" r="1.8" fill="#111827" />
-                    <circle cx="29" cy="17.5" r="1.8" fill="#111827" />
-                    <circle cx="19.5" cy="16.9" r="0.65" fill="#FFFFFF" />
-                    <circle cx="29.5" cy="16.9" r="0.65" fill="#FFFFFF" />
-                    {/* Fox Nose */}
-                    <ellipse cx="24" cy="21.5" rx="2" ry="1.4" fill="#111827" />
-                    {/* Role Badge on Chest */}
-                    <text x="24" y="38" textAnchor="middle" fontSize="9">
-                      {agent.emoji}
-                    </text>
-                  </svg>
-                  {/* Online dot */}
-                  <span
-                    className={`absolute right-0.5 bottom-1 h-3 w-3 rounded-full border-2 border-[#0D2420] ${
-                      agent.status === "working"
-                        ? "bg-[#D96B27]"
-                        : agent.status === "review"
-                        ? "bg-amber-400"
-                        : "bg-[#10B981]"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Name & Role Pill Below */}
-              <div className="mt-1.5 rounded-md bg-[#0D2420]/90 px-2 py-0.5 text-center shadow border border-emerald-900/80">
-                <p className="text-[10px] font-bold leading-tight text-white">
-                  {agent.name}
-                </p>
-                <p className="text-[9px] leading-tight text-emerald-300/80">
-                  {agent.role}
-                </p>
-              </div>
-            </motion.button>
-          );
-        })}
+        {/* 7 Animated Fox PNG Characters */}
+        {agents.map((agent) => (
+          <AgentCharacter
+            key={agent.id}
+            agent={agent}
+            isSelected={agent.id === selectedAgentId}
+            onSelect={() => onSelectAgent(agent.id)}
+          />
+        ))}
       </div>
     </div>
   );
