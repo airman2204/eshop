@@ -22,21 +22,22 @@ export async function POST(req: NextRequest) {
     const groqKey = (process.env.GROQ_API_KEY || "").trim();
     const falKey = (process.env.FAL_KEY || "").trim();
 
-    // Consultar productos reales de Bath & Body Works en inventario para usarlos como referencia real
+    // Consultar productos reales de Bath & Body Works en inventario para que Sofía arme combos coherentes
     const supabase = createServerClient();
     const { data: realProds } = await (supabase as any)
       .from("products")
-      .select("*")
+      .select("id,title,public_price,image_url,images")
       .gt("stock", 0)
       .ilike("title", "%Bath%Body%")
-      .limit(5);
+      .limit(24);
 
-    const realList = Array.isArray(realProds) ? realProds : [];
-    const realNamesText = realList.map((p: any) => `- ${p.title} ($${p.public_price} MXN)`).join("\n");
-    const refImageUrl =
-      realList.find((p: any) => p.image_url || (Array.isArray(p.images) && p.images[0]))?.image_url ||
-      realList.find((p: any) => Array.isArray(p.images) && p.images[0])?.images?.[0] ||
-      "";
+    const realList = (Array.isArray(realProds) ? realProds : []).filter(
+      (p: any) => p.image_url || (Array.isArray(p.images) && p.images[0])
+    );
+    const getProdImg = (p: any) => p.image_url || (Array.isArray(p.images) && p.images[0]) || "";
+    const realNamesText = realList
+      .map((p: any) => `- [ID: ${p.id}] ${p.title} ($${p.public_price} MXN)`)
+      .join("\n");
 
     const prompt = `Eres el Director Creativo y Estratega de Growth Marketing de "FoxDrop" (foxdrop.mx), una comunidad privada y tienda de importación en México cuyo eslogan es "Tu atajo al mundo".
 Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram (Reels/Stories/Ads 4:5)"}:
@@ -44,12 +45,19 @@ Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram 
 
 REGLAS ESTRICTAS:
 1. POSICIONAMIENTO PREMIUM: NUNCA uses palabras como "lotes", "pacas", "saldos" ni repitas "de EUA". Posiciona a FoxDrop como una marca moderna de "Drops exclusivos", "hallazgos curados" y "lanzamientos de piezas limitadas" con precios preferenciales dentro de nuestra comunidad privada de WhatsApp ("Ventas Flash ⚡ FoxDrop").
-2. FLEXIBILIDAD DE CATÁLOGO: Presenta el grupo como el lugar donde caen lanzamientos sorpresa cada semana (fragancias, cuidado personal y accesorios originales de Bath & Body Works) en cantidades limitadas, enfocándote en la exclusividad de entrar al grupo antes de que se agoten. Usa estos productos reales de nuestro inventario como referencia:\n${realNamesText || "- Productos originales Bath & Body Works"}\nNO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
+2. CURACIÓN DE COMBOS ESTILO BATH & BODY WORKS: Selecciona exactamente 3 productos reales del inventario abajo listado que formen un combo coherente siguiendo las reglas oficiales de Bath & Body Works:
+   - Opción 1 (Rutina 3 Pasos / Fragrance Layering): Jabón de ducha + Crema corporal + Bruma corporal (misma fragancia o familia olfativa).
+   - Opción 2 (Blend Bar / Mix & Match): Crema corporal base (cálida/fresca) + Bruma floral/frutal + complemento.
+   - Opción 3 (Trío de Brumas o Esenciales): 3 productos de la misma categoría para distintas ocasiones.
+   Inventario disponible:
+${realNamesText || "- Productos originales Bath & Body Works"}
+   NO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
 3. En orgánico, CTA pide comentar una palabra clave ("ATAJO", "VIP" o "GRUPO"). En Ads pagados, CTA dirige al enlace: ${WHATSAPP_GROUP_URL}
 
 Devuelve ÚNICAMENTE un JSON válido (sin markdown ni texto extra) con esta estructura exacta:
 {
   "campaignName": "Nombre de la campaña",
+  "selectedProductIds": ["id1", "id2", "id3"],
   "concepts": [
     {
       "title": "Nombre del concepto",
@@ -134,27 +142,36 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       };
     }
 
-    // Generar creativo de agencia con FLUX usando el primer concepto (limpiando la palabra FLUX para que no la pinte)
+    // Resolver los 3 productos elegidos por Sofía para armar el combo
+    const chosenIds: string[] = Array.isArray(strategy?.selectedProductIds)
+      ? strategy.selectedProductIds.map((id: any) => String(id))
+      : [];
+    const chosenProducts = chosenIds
+      .map((id) => realList.find((p: any) => String(p.id) === id))
+      .filter(Boolean);
+    const comboProducts =
+      chosenProducts.length >= 2 ? chosenProducts.slice(0, 3) : realList.slice(0, 3);
+    const comboImageUrls = comboProducts.map(getProdImg).filter(Boolean);
+
+    // Generar creativo editorial multi-producto con fal-ai/nano-banana-pro/edit
     let imageDataUrl = "";
-    const rawFluxPrompt = strategy?.concepts?.[0]?.fluxPrompt || strategy?.artDirectionPrompt || "";
-    const firstFluxPrompt = rawFluxPrompt
-      .replace(/prompt\s+detailed\s+in\s+english\s+for\s+flux[:\s]*/gi, "")
-      .replace(/\bflux\b/gi, "")
-      .trim() + ", strictly no text, no letters, no words, no logos, unbranded clean photography";
-    if (generateImage && falKey && firstFluxPrompt) {
-      const endpoint = refImageUrl
-        ? "https://fal.run/fal-ai/flux/dev/image-to-image"
+    if (generateImage && falKey) {
+      const useMultiImage = comboImageUrls.length > 0;
+      const endpoint = useMultiImage
+        ? "https://fal.run/fal-ai/nano-banana-pro/edit"
         : "https://fal.run/fal-ai/flux/schnell";
-      const fluxPayload = refImageUrl
+      const fluxPayload = useMultiImage
         ? {
-            image_url: refImageUrl,
-            strength: 0.62,
-            prompt: `${firstFluxPrompt}, keep the center product bottle shape, place it on a dark emerald green #14352F luxury studio surface with warm #D96B27 rim lighting`,
-            num_inference_steps: 22,
+            prompt:
+              `Create a ${isTikTok ? "9:16" : "4:5"} vertical luxury editorial promotional graphic featuring these exact ${comboImageUrls.length} Bath & Body Works products arranged together on a sleek circular dark emerald green and brushed gold podium. Deep dark emerald green (#14352F) studio background with subtle golden bokeh sparkles, glowing warm burnt-orange (#D96B27) rim light ring behind the podium, and a cute 3D fox mascot peeking from the right side of the podium. Top header: 'FOXDROP' in warm gold/orange and 'TU ATAJO AL MUNDO' in white. Bold headline: 'DROPS' in white and 'EXCLUSIVOS' in gold. Bottom text: 'BATH & BODY WORKS' and '¡ÚLTIMAS PIEZAS!' in white, plus an orange pill button at the bottom reading 'Únete al Grupo VIP de WhatsApp'. Preserve the exact packaging and labels of the reference products.`,
+            image_urls: comboImageUrls,
+            aspect_ratio: isTikTok ? "9:16" : "4:5",
             num_images: 1,
+            output_format: "jpeg",
           }
         : {
-            prompt: firstFluxPrompt,
+            prompt:
+              "Clean editorial luxury studio composition on dark emerald green #14352F surface with #D96B27 warm lighting, negative space at top, strictly no text",
             image_size: isTikTok ? "portrait_16_9" : "portrait_4_3",
             num_inference_steps: 4,
             num_images: 1,
