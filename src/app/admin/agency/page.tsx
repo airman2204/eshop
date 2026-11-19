@@ -748,8 +748,33 @@ export default function AgencyCommandCenterPage() {
               </div>
             )}
 
-            {activeTab === "approve" && activePiece && (
+            {activeTab === "approve" && workflowStep !== "strategy_review" && activePiece && (
               <>
+                {pendingPieces.length > 1 && (
+                  <div className="flex items-center justify-between rounded-lg border border-emerald-800/60 bg-[#14352F]/70 px-2.5 py-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPieceIndex((i) => (i - 1 + pendingPieces.length) % pendingPieces.length)
+                      }
+                      className="rounded px-2 py-0.5 text-emerald-200 hover:bg-emerald-800/60"
+                    >
+                      ← Anterior
+                    </button>
+                    <span className="font-bold text-white">
+                      Pieza {Math.min(currentPieceIndex + 1, pendingPieces.length)} de {pendingPieces.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPieceIndex((i) => (i + 1) % pendingPieces.length)
+                      }
+                      className="rounded px-2 py-0.5 text-emerald-200 hover:bg-emerald-800/60"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-[11px] text-emerald-200/80">
                   <span className="rounded-md border border-[#D96B27]/40 bg-[#D96B27]/15 px-2 py-0.5 font-medium text-[#FDBA74]">
                     {activePiece.platform}
