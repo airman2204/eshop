@@ -171,19 +171,66 @@ export default function VirtualOfficeMap({
                 {/* Floor shadow */}
                 <span className="absolute -bottom-1 h-2.5 w-8 rounded-full bg-black/55 blur-[2px]" />
 
-                {/* 2D Chibi Avatar */}
+                {/* 2D Chibi Character SVG */}
                 <div
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 shadow-lg transition-transform group-hover:scale-110 ${
-                    isSelected
-                      ? "border-[#D96B27] ring-2 ring-[#D96B27]/50"
-                      : "border-white/80"
+                  className={`relative flex h-12 w-10 items-center justify-center transition-transform group-hover:scale-110 ${
+                    isSelected ? "drop-shadow-[0_0_10px_#D96B27]" : "drop-shadow-md"
                   }`}
-                  style={{ backgroundColor: agent.avatarColor }}
                 >
-                  <span className="text-lg leading-none select-none">{agent.emoji}</span>
+                  <svg viewBox="0 0 40 48" className="h-12 w-10 overflow-visible">
+                    {/* Torso / Hoodie */}
+                    <path
+                      d="M10 30 C10 24, 30 24, 30 30 L32 42 C32 44, 28 45, 20 45 C12 45, 8 44, 8 42 Z"
+                      fill={agent.avatarColor}
+                      stroke={isSelected ? "#D96B27" : "#0D2420"}
+                      strokeWidth="2"
+                    />
+                    {/* Shoes */}
+                    <ellipse cx="14" cy="45" rx="4" ry="2.2" fill="#111827" />
+                    <ellipse cx="26" cy="45" rx="4" ry="2.2" fill="#111827" />
+                    {/* Head */}
+                    <circle
+                      cx="20"
+                      cy="16"
+                      r="11.5"
+                      fill="#FDE6C4"
+                      stroke={isSelected ? "#D96B27" : "#0D2420"}
+                      strokeWidth="2"
+                    />
+                    {/* Hair / Fox Ears for Mateo */}
+                    {agent.id === "mateo" ? (
+                      <>
+                        <polygon points="9,11 13,2 17,9" fill="#D96B27" stroke="#0D2420" strokeWidth="1.5" />
+                        <polygon points="31,11 27,2 23,9" fill="#D96B27" stroke="#0D2420" strokeWidth="1.5" />
+                        <path d="M9 14 C10 6, 30 6, 31 14 C27 10, 13 10, 9 14 Z" fill="#D96B27" />
+                      </>
+                    ) : (
+                      <path
+                        d="M8.5 15 C9 5, 31 5, 31.5 15 C27 10, 13 10, 8.5 15 Z"
+                        fill={agent.hairColor}
+                      />
+                    )}
+                    {/* Eyes */}
+                    <circle cx="15.5" cy="17" r="1.7" fill="#111827" />
+                    <circle cx="24.5" cy="17" r="1.7" fill="#111827" />
+                    <circle cx="16" cy="16.4" r="0.6" fill="#FFFFFF" />
+                    <circle cx="25" cy="16.4" r="0.6" fill="#FFFFFF" />
+                    {/* Smile */}
+                    <path
+                      d="M17 21 Q20 23.5 23 21"
+                      fill="none"
+                      stroke="#92400E"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                    {/* Role Badge on Chest */}
+                    <text x="20" y="38" textAnchor="middle" fontSize="9">
+                      {agent.emoji}
+                    </text>
+                  </svg>
                   {/* Online dot */}
                   <span
-                    className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-[#0D2420] ${
+                    className={`absolute right-0 bottom-1 h-3 w-3 rounded-full border-2 border-[#0D2420] ${
                       agent.status === "working"
                         ? "bg-[#D96B27]"
                         : agent.status === "review"
