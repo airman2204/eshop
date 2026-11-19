@@ -52,7 +52,7 @@ Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram 
 "${objective}"
 
 REGLAS ESTRICTAS:
-1. POSICIONAMIENTO PREMIUM: NUNCA uses palabras como "lotes", "pacas", "saldos" ni repitas "de EUA". Posiciona a FoxDrop como una marca moderna de "Drops exclusivos", "hallazgos curados" y "lanzamientos de piezas limitadas" con precios preferenciales dentro de nuestra comunidad privada de WhatsApp ("Ventas Flash ⚡ FoxDrop").
+1. POSICIONAMIENTO PREMIUM Y NATURAL (ESPAÑOL DE MÉXICO): NUNCA uses palabras como "lotes", "pacas", "saldos", "hallazgos curados" ni repitas "de EUA". Usa lenguaje directo y natural de México ("drops exclusivos", "piezas exclusivas", "favoritos seleccionados", "lanzamientos limitados", "a precio especial") dentro de nuestra comunidad privada de WhatsApp ("Ventas Flash ⚡ FoxDrop").
 2. CURACIÓN DE COMBOS ESTILO BATH & BODY WORKS: Selecciona exactamente 3 productos reales del inventario abajo listado que formen un combo coherente siguiendo las reglas oficiales de Bath & Body Works:
    - Opción 1 (Rutina 3 Pasos / Fragrance Layering): Jabón de ducha + Crema corporal + Bruma corporal (misma fragancia o familia olfativa).
    - Opción 2 (Blend Bar / Mix & Match): Crema corporal base (cálida/fresca) + Bruma floral/frutal + complemento.
@@ -142,7 +142,7 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
           {
             title: "Acceso VIP a Drops Limitados",
             hook3s: "¿Pagas precio completo por tus fragancias favoritas?",
-            script10s: "Cada semana soltamos hallazgos curados de Bath & Body Works en piezas limitadas dentro de nuestra comunidad privada.",
+            script10s: "Cada semana soltamos piezas exclusivas de Bath & Body Works a precio especial en nuestro grupo privado.",
             copyAndCta: `Comenta 'ATAJO' para mandarte el acceso privado, o únete directo aquí: ${WHATSAPP_GROUP_URL}`,
             fluxPrompt: "Clean editorial studio composition on dark emerald green #14352F surface with #D96B27 warm lighting, negative space at top, strictly no text",
           },
