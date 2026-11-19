@@ -166,8 +166,10 @@ export default function AgencyCommandCenterPage() {
   const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [workflowStep, setWorkflowStep] = useState<"idle" | "strategy_review" | "creative_review">("idle");
+  const [agentReply, setAgentReply] = useState<string>("");
+  const [isChatting, setIsChatting] = useState(false);
   const [strategyProposal, setStrategyProposal] = useState(
-    "Semana 1 — Drops Exclusivos Bath & Body Works:\n• Ángulo: Piezas limitadas a precio especial dentro del grupo VIP de WhatsApp.\n• Mix de contenido: 3 Reels/Posts en Instagram + 2 TikToks.\n• Meta: Llenar Ventas Flash ⚡ FoxDrop."
+    "Generando plan semanal detallado..."
   );
 
   // Sincronizar agentes desde Supabase Realtime cuando existan filas en agent_states
@@ -310,11 +312,12 @@ export default function AgencyCommandCenterPage() {
     }, 2400);
   };
 
-  const handleGenerateWeek = () => {
+  const handleGenerateWeek = async () => {
     if (isGeneratingWeek) return;
     setWorkflowStep("strategy_review");
     setSelectedAgentId("mateo");
     setActiveTab("approve");
+    setStrategyProposal("Mateo está armando el plan detallado de Lunes a Viernes para Instagram y TikTok...");
     appendLog("1/3 Mateo llevó la propuesta de estrategia semanal a la Mesa de Aprobación", true);
 
     setAgents((prev) =>
@@ -324,6 +327,17 @@ export default function AgencyCommandCenterPage() {
           : a
       )
     );
+
+    try {
+      const res = await fetch("/api/agency/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId: "mateo", weekLabel: campaign }),
+      });
+      const data = await res.json();
+      if (data?.updatedStrategy) setStrategyProposal(data.updatedStrategy);
+      if (data?.reply) setAgentReply(data.reply);
+    } catch {}
   };
 
   const handleApproveStrategy = async () => {
@@ -426,30 +440,54 @@ export default function AgencyCommandCenterPage() {
 
   const handleSendChat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || isChatting) return;
     const msg = chatInput.trim();
     setChatInput("");
+    setIsChatting(true);
 
     setAgents((prev) =>
       prev.map((a) =>
         a.id === selectedAgentId
-          ? { ...a, status: "working", bubbleText: "Aplicando ajuste..." }
+          ? { ...a, status: "working", bubbleText: "Pensando respuesta..." }
           : a
       )
     );
-    appendLog(`Ajuste para ${selectedAgent.name}: "${msg}"`, true);
+    appendLog(`Tú → ${selectedAgent.name}: "${msg}"`, true);
 
-    if (activePiece && (selectedAgentId === "diego" || selectedAgentId === "valeria")) {
-      setIsRefining(true);
-      try {
+    try {
+      if (activePiece && workflowStep === "creative_review" && selectedAgentId === "diego") {
+        setIsRefining(true);
         await fetch("/api/agency/refine-deliverable", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ deliverableId: activePiece.id, feedbackNotes: msg }),
         });
-      } finally {
-        setIsRefining(false);
+        setAgentReply("Listo, ya regeneré el visual con tu ajuste.");
+      } else {
+        const res = await fetch("/api/agency/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentId: selectedAgentId,
+            message: msg,
+            currentStrategy: strategyProposal,
+            weekLabel: campaign,
+          }),
+        });
+        const data = await res.json();
+        if (data?.reply) setAgentReply(data.reply);
+        if (data?.updatedStrategy) setStrategyProposal(data.updatedStrategy);
       }
+    } finally {
+      setIsRefining(false);
+      setIsChatting(false);
+      setAgents((prev) =>
+        prev.map((a) =>
+          a.id === selectedAgentId
+            ? { ...a, status: workflowStep === "strategy_review" && a.id === "mateo" ? "review" : "active", bubbleText: "Respondido ✓" }
+            : a
+        )
+      );
     }
   };
 
@@ -821,8 +859,14 @@ export default function AgencyCommandCenterPage() {
           {/* Quick Agent Chat */}
           <form
             onSubmit={handleSendChat}
-            className="border-t border-emerald-800/60 bg-[#0A1C19] p-3"
+            className="border-t border-emerald-800/60 bg-[#0A1C19] p-3 space-y-2"
           >
+            {agentReply && (
+              <div className="rounded-lg border border-emerald-800/60 bg-[#14352F]/80 px-2.5 py-1.5 text-[11px] text-emerald-100">
+                <span className="font-bold text-[#FDBA74]">{selectedAgent.name}: </span>
+                {agentReply}
+              </div>
+            )}
             <div className="flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-[#14352F] px-3 py-1.5">
               <MessageSquare className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               <input
