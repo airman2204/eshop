@@ -15,6 +15,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import VirtualOfficeMap, { OfficeAgent } from "@/components/agency/VirtualOfficeMap";
+import { useAgencyRealtime } from "@/hooks/useAgencyRealtime";
 
 interface ApprovalPiece {
   id: string;
@@ -173,6 +174,17 @@ const INITIAL_LOGS: ActivityLog[] = [
 ];
 
 export default function AgencyCommandCenterPage() {
+  const {
+    agentStates: dbAgents,
+    deliverables: dbDeliverables,
+    activityLogs: dbLogs,
+    isConnected,
+    approveDeliverable,
+    updateDeliverableCaption,
+    sendAgentFeedback,
+    logActivity,
+  } = useAgencyRealtime();
+
   const [agents, setAgents] = useState<OfficeAgent[]>(INITIAL_AGENTS);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("diego");
   const [campaign, setCampaign] = useState("Semana 47: Drops Exclusivos WhatsApp");
@@ -182,6 +194,80 @@ export default function AgencyCommandCenterPage() {
   const [logs, setLogs] = useState<ActivityLog[]>(INITIAL_LOGS);
   const [chatInput, setChatInput] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
+
+  // Sincronizar agentes desde Supabase Realtime cuando existan filas en agent_states
+  React.useEffect(() => {
+    if (dbAgents.length === 0) return;
+    setAgents((prev) =>
+      prev.map((local) => {
+        const remote = dbAgents.find((r) => r.agent_id === local.id);
+        if (!remote) return local;
+        return {
+          ...local,
+          name: remote.name,
+          role: remote.role,
+          currentTop: `${remote.current_y}%`,
+          currentLeft: `${remote.current_x}%`,
+          isMoving: remote.status === "walking",
+          status:
+            remote.status === "waiting_approval"
+              ? "review"
+              : remote.status === "working" || remote.status === "walking"
+              ? "working"
+              : "active",
+          bubbleText: remote.speech_bubble || local.bubbleText,
+        };
+      })
+    );
+  }, [dbAgents]);
+
+  // Sincronizar entregables desde Supabase Realtime
+  React.useEffect(() => {
+    if (dbDeliverables.length === 0) return;
+    setPieces(
+      dbDeliverables.map((d) => ({
+        id: d.id,
+        title: d.hook_text || "Pieza de Campaña",
+        agentId: d.created_by_agents?.[0] || "diego",
+        agentLabel: (d.created_by_agents || ["Diego", "Valeria"]).join(" & "),
+        platform:
+          d.platform === "tiktok"
+            ? "TikTok"
+            : d.platform === "instagram_post"
+            ? "Instagram Story"
+            : "Instagram Reel",
+        schedule: d.scheduled_date
+          ? new Date(d.scheduled_date).toLocaleDateString("es-MX", {
+              weekday: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "Por programar",
+        imageUrl:
+          d.image_url ||
+          "https://images.unsplash.com/photo-1616949755610-8c9bbc08f138?auto=format&fit=crop&w=800&q=80",
+        caption: d.caption_text,
+        status: d.status === "approved" || d.status === "published" ? "approved" : "pending",
+      }))
+    );
+  }, [dbDeliverables]);
+
+  // Sincronizar logs desde Supabase Realtime
+  React.useEffect(() => {
+    if (dbLogs.length === 0) return;
+    setLogs(
+      dbLogs.map((l) => ({
+        id: l.id,
+        time: new Date(l.created_at).toLocaleTimeString("es-MX", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        text: l.action_message,
+        highlight: true,
+      }))
+    );
+  }, [dbLogs]);
 
   const pendingPieces = pieces.filter((p) => p.status === "pending");
   const activePiece = pendingPieces[currentPieceIndex] || pendingPieces[0] || pieces[0];
