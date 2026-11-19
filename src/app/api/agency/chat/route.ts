@@ -135,14 +135,6 @@ Devuelve JSON válido:
       } catch {}
     }
 
-    return NextResponse.json({
-      ok: true,
-      reply: "Propuesta semanal lista. Puedes editarla o pedir ajustes aquí.",
-      updatedStrategy:
-        currentStrategy ||
-        `📅 PLAN SEMANAL — ${weekLabel}\n• Lunes (Instagram Reel): Trío de Brumas Bath & Body Works — Gancho de precio especial en WhatsApp VIP.\n• Martes (TikTok): Rutina de 3 pasos (Jabón + Crema + Bruma) — Storytelling.\n• Miércoles (Instagram Post/Carousel): Comparativa de aromas top + CTA directo al grupo.\n• Jueves (TikTok): "POV: Entraste antes de que volaran" — Urgencia de piezas limitadas.\n• Viernes (Instagram Reel): Cierre de Drop semanal + enlace directo a Ventas Flash ⚡ FoxDrop.`,
-    });
-  } catch (err: any) {
     if (groqKey) {
       try {
         const gRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -170,6 +162,14 @@ Devuelve JSON válido:
       } catch {}
     }
 
+    return NextResponse.json({
+      ok: true,
+      reply: "Propuesta semanal lista. Puedes editarla o pedir ajustes aquí.",
+      updatedStrategy:
+        currentStrategy ||
+        `📅 PLAN SEMANAL — ${weekLabel}\n• Lunes (Instagram Reel): Trío de Brumas Bath & Body Works — Gancho de precio especial en WhatsApp VIP.\n• Martes (TikTok): Rutina de 3 pasos (Jabón + Crema + Bruma) — Storytelling.\n• Miércoles (Instagram Post/Carousel): Comparativa de aromas top + CTA directo al grupo.\n• Jueves (TikTok): "POV: Entraste antes de que volaran" — Urgencia de piezas limitadas.\n• Viernes (Instagram Reel): Cierre de Drop semanal + enlace directo a Ventas Flash ⚡ FoxDrop.`,
+    });
+  } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Error en chat" }, { status: 500 });
   }
 }
