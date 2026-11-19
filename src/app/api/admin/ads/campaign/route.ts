@@ -38,8 +38,8 @@ Devuelve ÚNICAMENTE un JSON válido (sin markdown ni texto extra) con esta estr
       "title": "Nombre del concepto",
       "hook3s": "Gancho magnético de 3 segundos",
       "script10s": "Texto en pantalla / Guion corto de 7-10 segundos",
-      "copyAndCta": "Copy breve para descripción + CTA (orgánico y Ads con ${WHATSAPP_GROUP_URL})",
-      "fluxPrompt": "Prompt detallado en inglés para FLUX: publicidad moderna e-commerce, paleta verde bosque oscuro #14352F y acentos naranja/dorado #D96B27, cajas de importación premium con productos variados de EUA (perfumería, cuidado corporal, termos, accesorios), espacio negativo limpio arriba para poner texto encima, cero texto dentro de la imagen, cero marcas de agua"
+      "copyAndCta": "Copy breve en español de MÉXICO (usa 'Comenta', NUNCA 'Comentá' ni modismos argentinos/españoles) + CTA (orgánico y Ads con ${WHATSAPP_GROUP_URL})",
+      "fluxPrompt": "A clean editorial luxury studio photograph of unbranded premium gift boxes, perfume bottles, candles, and body care accessories arranged on a dark emerald green #14352F surface with warm burnt orange #D96B27 accents, soft studio lighting, wide clean empty space at the top for text overlay, strictly zero text, no words, no letters, no logos anywhere in the image"
     }
   ]
 }
@@ -86,9 +86,13 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
     const cleaned = rawJsonText.replace(/```json|```/gi, "").trim();
     const strategy = JSON.parse(cleaned);
 
-    // Generar creativo de agencia con FLUX usando el primer concepto
+    // Generar creativo de agencia con FLUX usando el primer concepto (limpiando la palabra FLUX para que no la pinte)
     let imageDataUrl = "";
-    const firstFluxPrompt = strategy?.concepts?.[0]?.fluxPrompt || strategy?.artDirectionPrompt;
+    const rawFluxPrompt = strategy?.concepts?.[0]?.fluxPrompt || strategy?.artDirectionPrompt || "";
+    const firstFluxPrompt = rawFluxPrompt
+      .replace(/prompt\s+detailed\s+in\s+english\s+for\s+flux[:\s]*/gi, "")
+      .replace(/\bflux\b/gi, "")
+      .trim() + ", strictly no text, no letters, no words, no logos, unbranded clean photography";
     if (falKey && firstFluxPrompt) {
       const fluxRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
         method: "POST",
