@@ -165,6 +165,10 @@ export default function AgencyCommandCenterPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
+  const [workflowStep, setWorkflowStep] = useState<"idle" | "strategy_review" | "creative_review">("idle");
+  const [strategyProposal, setStrategyProposal] = useState(
+    "Semana 1 — Drops Exclusivos Bath & Body Works:\n• Ángulo: Piezas limitadas a precio especial dentro del grupo VIP de WhatsApp.\n• Mix de contenido: 3 Reels/Posts en Instagram + 2 TikToks.\n• Meta: Llenar Ventas Flash ⚡ FoxDrop."
+  );
 
   // Sincronizar agentes desde Supabase Realtime cuando existan filas en agent_states
   React.useEffect(() => {
@@ -306,16 +310,32 @@ export default function AgencyCommandCenterPage() {
     }, 2400);
   };
 
-  const handleGenerateWeek = async () => {
+  const handleGenerateWeek = () => {
     if (isGeneratingWeek) return;
-    setIsGeneratingWeek(true);
-    appendLog("Iniciando nueva campaña semanal con Mateo, Valeria y Diego...", true);
+    setWorkflowStep("strategy_review");
+    setSelectedAgentId("mateo");
+    setActiveTab("approve");
+    appendLog("1/3 Mateo llevó la propuesta de estrategia semanal a la Mesa de Aprobación", true);
 
-    // Mover inmediatamente a Mateo al Estudio Creativo y poner a Valeria/Diego a trabajar
     setAgents((prev) =>
       prev.map((a) =>
         a.id === "mateo"
-          ? { ...a, currentTop: "64%", currentLeft: "20%", status: "working", bubbleText: "Entregando estrategia..." }
+          ? { ...a, currentTop: "52%", currentLeft: "50%", status: "review", bubbleText: "Propuesta lista en mesa" }
+          : a
+      )
+    );
+  };
+
+  const handleApproveStrategy = async () => {
+    if (isGeneratingWeek) return;
+    setIsGeneratingWeek(true);
+    setWorkflowStep("creative_review");
+    appendLog("2/3 Estrategia aprobada → Mateo pasa el brief a Valeria y Diego", true);
+
+    setAgents((prev) =>
+      prev.map((a) =>
+        a.id === "mateo"
+          ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia aprobada ✓" }
           : a.id === "valeria"
           ? { ...a, status: "working", bubbleText: "Redactando 5 copys..." }
           : a.id === "diego"
@@ -328,11 +348,11 @@ export default function AgencyCommandCenterPage() {
       const res = await fetch("/api/agency/generate-week", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekLabel: campaign, theme: "Drops Exclusivos Bath & Body Works" }),
+        body: JSON.stringify({ weekLabel: campaign, theme: strategyProposal }),
       });
       const data = await res.json();
       if (data?.ok) {
-        appendLog(`Campaña lista: ${data.count} piezas reales guardadas en Mesa de Aprobación`, true);
+        appendLog(`Valeria y Diego entregaron ${data.count} piezas en Mesa de Aprobación`, true);
         if (Array.isArray(data.deliverables) && data.deliverables.length > 0) {
           setPieces(
             data.deliverables.map((d: any) => ({
@@ -360,11 +380,10 @@ export default function AgencyCommandCenterPage() {
             }))
           );
         }
+        setSelectedAgentId("diego");
         setAgents((prev) =>
           prev.map((a) =>
-            a.id === "mateo"
-              ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia lista ✓" }
-              : a.id === "valeria"
+            a.id === "valeria"
               ? { ...a, currentTop: "52%", currentLeft: "47%", status: "review", bubbleText: "Copys en mesa" }
               : a.id === "diego"
               ? { ...a, currentTop: "52%", currentLeft: "53%", status: "review", bubbleText: "Visual listo en mesa" }
@@ -372,10 +391,10 @@ export default function AgencyCommandCenterPage() {
           )
         );
       } else {
-        appendLog(data?.error || "Error al generar la campaña semanal");
+        appendLog(data?.error || "Error al generar piezas");
       }
     } catch {
-      appendLog("Error de conexión al generar la campaña semanal");
+      appendLog("Error de conexión al generar piezas");
     } finally {
       setIsGeneratingWeek(false);
     }
@@ -654,7 +673,34 @@ export default function AgencyCommandCenterPage() {
 
           {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeTab === "approve" && !activePiece && (
+            {activeTab === "approve" && workflowStep === "strategy_review" && (
+              <div className="space-y-3 rounded-xl border border-[#D96B27]/60 bg-[#14352F]/70 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="rounded-full bg-[#D96B27]/20 px-2.5 py-0.5 text-[10px] font-bold uppercase text-[#FDBA74]">
+                    Paso 1 · Propuesta de Mateo (CMO)
+                  </span>
+                </div>
+                <textarea
+                  rows={5}
+                  value={strategyProposal}
+                  onChange={(e) => setStrategyProposal(e.target.value)}
+                  className="w-full rounded-xl border border-emerald-800/70 bg-[#0D2420] p-2.5 text-xs leading-relaxed text-emerald-50 focus:border-[#D96B27] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleApproveStrategy}
+                  disabled={isGeneratingWeek}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D96B27] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition hover:bg-[#c55e1e] disabled:opacity-60"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {isGeneratingWeek
+                    ? "Valeria y Diego creando piezas..."
+                    : "✓ Aprobar Estrategia → Pasar a Valeria y Diego"}
+                </button>
+              </div>
+            )}
+
+            {activeTab === "approve" && workflowStep !== "strategy_review" && !activePiece && (
               <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-emerald-800/80 bg-[#14352F]/40 p-6 text-center">
                 <span className="text-3xl mb-2">🦊</span>
                 <p className="text-xs font-bold text-white">Sin piezas por aprobar</p>
