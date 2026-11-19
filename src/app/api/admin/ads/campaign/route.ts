@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@/lib/supabase/server";
 
 const WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/BFB3Fo9akFBAAQ6RjMYhWo?s=cl&p=i&iam=2";
@@ -21,13 +22,26 @@ export async function POST(req: NextRequest) {
     const groqKey = (process.env.GROQ_API_KEY || "").trim();
     const falKey = (process.env.FAL_KEY || "").trim();
 
+    // Consultar productos reales de Bath & Body Works en inventario para usarlos como referencia real
+    const supabase = createServerClient();
+    const { data: realProds } = await (supabase as any)
+      .from("products")
+      .select("title, public_price, image_url")
+      .gt("stock", 0)
+      .ilike("title", "%Bath%Body%")
+      .limit(5);
+
+    const realList = Array.isArray(realProds) ? realProds : [];
+    const realNamesText = realList.map((p: any) => `- ${p.title} ($${p.public_price} MXN)`).join("\n");
+    const refImageUrl = realList.find((p: any) => p.image_url)?.image_url || "";
+
     const prompt = `Eres el Director Creativo y Estratega de Growth Marketing de "FoxDrop" (foxdrop.mx), una comunidad privada y tienda de importación en México cuyo eslogan es "Tu atajo al mundo".
 Objetivo de esta campaña en ${isTikTok ? "TikTok (9:16 vertical)" : "Instagram (Reels/Stories/Ads 4:5)"}:
 "${objective}"
 
 REGLAS ESTRICTAS:
 1. POSICIONAMIENTO PREMIUM: NUNCA uses palabras como "lotes", "pacas", "saldos" ni repitas "de EUA". Posiciona a FoxDrop como una marca moderna de "Drops exclusivos", "hallazgos curados" y "lanzamientos de piezas limitadas" con precios preferenciales dentro de nuestra comunidad privada de WhatsApp ("Ventas Flash ⚡ FoxDrop").
-2. FLEXIBILIDAD DE CATÁLOGO: Presenta el grupo como el lugar donde caen lanzamientos sorpresa cada semana (fragancias, cuidado personal, accesorios y artículos virales originales) en cantidades limitadas, enfocándote en la exclusividad de entrar al grupo antes de que se agoten. NO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
+2. FLEXIBILIDAD DE CATÁLOGO: Presenta el grupo como el lugar donde caen lanzamientos sorpresa cada semana (fragancias, cuidado personal y accesorios originales de Bath & Body Works) en cantidades limitadas, enfocándote en la exclusividad de entrar al grupo antes de que se agoten. Usa estos productos reales de nuestro inventario como referencia:\n${realNamesText || "- Productos originales Bath & Body Works"}\nNO menciones skincare coreano ni ciudades específicas de México (enfoque 100% nacional).
 3. En orgánico, CTA pide comentar una palabra clave ("ATAJO", "VIP" o "GRUPO"). En Ads pagados, CTA dirige al enlace: ${WHATSAPP_GROUP_URL}
 
 Devuelve ÚNICAMENTE un JSON válido (sin markdown ni texto extra) con esta estructura exacta:
@@ -94,18 +108,31 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       .replace(/\bflux\b/gi, "")
       .trim() + ", strictly no text, no letters, no words, no logos, unbranded clean photography";
     if (falKey && firstFluxPrompt) {
-      const fluxRes = await fetch("https://fal.run/fal-ai/flux/schnell", {
+      const endpoint = refImageUrl
+        ? "https://fal.run/fal-ai/flux/dev/image-to-image"
+        : "https://fal.run/fal-ai/flux/schnell";
+      const fluxPayload = refImageUrl
+        ? {
+            image_url: refImageUrl,
+            strength: 0.45,
+            prompt: `${firstFluxPrompt}, featuring authentic Bath & Body Works product packaging unchanged on a dark emerald green #14352F luxury studio surface with warm #D96B27 lighting`,
+            num_inference_steps: 22,
+            num_images: 1,
+          }
+        : {
+            prompt: firstFluxPrompt,
+            image_size: isTikTok ? "portrait_16_9" : "portrait_4_3",
+            num_inference_steps: 4,
+            num_images: 1,
+          };
+
+      const fluxRes = await fetch(endpoint, {
         method: "POST",
         headers: {
           Authorization: `Key ${falKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prompt: firstFluxPrompt,
-          image_size: isTikTok ? "portrait_16_9" : "portrait_4_3",
-          num_inference_steps: 4,
-          num_images: 1,
-        }),
+        body: JSON.stringify(fluxPayload),
       });
       const fluxJson = await fluxRes.json();
       const imgUrl = fluxJson?.images?.[0]?.url;
