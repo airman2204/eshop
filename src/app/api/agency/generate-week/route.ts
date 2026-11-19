@@ -148,47 +148,47 @@ Devuelve ÚNICAMENTE un JSON array válido con 5 objetos:
       })
       .eq("agent_id", "diego");
 
-    // 5. Generar visuales reales invocando /api/admin/ads/campaign y guardar en deliverables
+    // 5. Generar visuales reales en paralelo invocando /api/admin/ads/campaign y guardar en deliverables
     const origin = req.nextUrl.origin;
-    const insertedDeliverables: any[] = [];
+    const insertedDeliverables = (
+      await Promise.all(
+        piecesPlan.map(async (piece, i) => {
+          let generatedImageUrl = "";
+          try {
+            const adRes = await fetch(`${origin}/api/admin/ads/campaign`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                objective: piece.visual_direction,
+                platform: piece.platform === "tiktok" ? "tiktok" : "instagram",
+                generateImage: i === 0, // Genera el visual #1 de inmediato para evitar timeout en Vercel; los demás se pueden regenerar al instante
+              }),
+            });
+            const adJson = await adRes.json();
+            generatedImageUrl = adJson?.imageUrl || "";
+          } catch {}
 
-    for (let i = 0; i < piecesPlan.length; i++) {
-      const piece = piecesPlan[i];
-      let generatedImageUrl = "";
+          const scheduled = new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000).toISOString();
+          const { data: deliv } = await supabase
+            .from("deliverables")
+            .insert({
+              campaign_id: campaignId,
+              platform: piece.platform,
+              scheduled_date: scheduled,
+              hook_text: piece.hook_text,
+              caption_text: piece.caption_text,
+              flux_prompt: piece.visual_direction,
+              image_url: generatedImageUrl,
+              status: "pending_approval",
+              created_by_agents: ["valeria", "diego"],
+            })
+            .select()
+            .single();
 
-      try {
-        const adRes = await fetch(`${origin}/api/admin/ads/campaign`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            objective: piece.visual_direction,
-            platform: piece.platform === "tiktok" ? "tiktok" : "instagram",
-            generateImage: true,
-          }),
-        });
-        const adJson = await adRes.json();
-        generatedImageUrl = adJson?.imageUrl || "";
-      } catch {}
-
-      const scheduled = new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000).toISOString();
-      const { data: deliv } = await supabase
-        .from("deliverables")
-        .insert({
-          campaign_id: campaignId,
-          platform: piece.platform,
-          scheduled_date: scheduled,
-          hook_text: piece.hook_text,
-          caption_text: piece.caption_text,
-          flux_prompt: piece.visual_direction,
-          image_url: generatedImageUrl,
-          status: "pending_approval",
-          created_by_agents: ["valeria", "diego"],
+          return deliv;
         })
-        .select()
-        .single();
-
-      if (deliv) insertedDeliverables.push(deliv);
-    }
+      )
+    ).filter(Boolean);
 
     // 6. Mover a Valeria (47, 52) y Diego (53, 52) a la Mesa de Aprobación
     await supabase

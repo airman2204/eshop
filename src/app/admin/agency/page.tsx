@@ -309,7 +309,21 @@ export default function AgencyCommandCenterPage() {
   const handleGenerateWeek = async () => {
     if (isGeneratingWeek) return;
     setIsGeneratingWeek(true);
-    appendLog("Iniciando nueva campaña semanal con Sofía, Mateo, Valeria y Diego...", true);
+    appendLog("Iniciando nueva campaña semanal con Mateo, Valeria y Diego...", true);
+
+    // Mover inmediatamente a Mateo al Estudio Creativo y poner a Valeria/Diego a trabajar
+    setAgents((prev) =>
+      prev.map((a) =>
+        a.id === "mateo"
+          ? { ...a, currentTop: "64%", currentLeft: "20%", status: "working", bubbleText: "Entregando estrategia..." }
+          : a.id === "valeria"
+          ? { ...a, status: "working", bubbleText: "Redactando 5 copys..." }
+          : a.id === "diego"
+          ? { ...a, status: "working", bubbleText: "Componiendo visual real..." }
+          : a
+      )
+    );
+
     try {
       const res = await fetch("/api/agency/generate-week", {
         method: "POST",
@@ -319,9 +333,49 @@ export default function AgencyCommandCenterPage() {
       const data = await res.json();
       if (data?.ok) {
         appendLog(`Campaña lista: ${data.count} piezas reales guardadas en Mesa de Aprobación`, true);
+        if (Array.isArray(data.deliverables) && data.deliverables.length > 0) {
+          setPieces(
+            data.deliverables.map((d: any) => ({
+              id: d.id,
+              title: d.hook_text || "Pieza de Campaña",
+              agentId: "diego",
+              agentLabel: "Valeria & Diego",
+              platform:
+                d.platform === "tiktok"
+                  ? "TikTok"
+                  : d.platform === "instagram_post"
+                  ? "Instagram Story"
+                  : "Instagram Reel",
+              schedule: d.scheduled_date
+                ? new Date(d.scheduled_date).toLocaleDateString("es-MX", {
+                    weekday: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Por programar",
+              imageUrl: d.image_url || "",
+              caption: d.caption_text || "",
+              status: "pending",
+            }))
+          );
+        }
+        setAgents((prev) =>
+          prev.map((a) =>
+            a.id === "mateo"
+              ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia lista ✓" }
+              : a.id === "valeria"
+              ? { ...a, currentTop: "52%", currentLeft: "47%", status: "review", bubbleText: "Copys en mesa" }
+              : a.id === "diego"
+              ? { ...a, currentTop: "52%", currentLeft: "53%", status: "review", bubbleText: "Visual listo en mesa" }
+              : a
+          )
+        );
+      } else {
+        appendLog(data?.error || "Error al generar la campaña semanal");
       }
     } catch {
-      appendLog("Error al generar la campaña semanal");
+      appendLog("Error de conexión al generar la campaña semanal");
     } finally {
       setIsGeneratingWeek(false);
     }
