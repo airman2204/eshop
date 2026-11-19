@@ -98,8 +98,38 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       rawJsonText = gJson?.choices?.[0]?.message?.content?.trim() || "";
     }
 
-    const cleaned = rawJsonText.replace(/```json|```/gi, "").trim();
-    const strategy = JSON.parse(cleaned);
+    const cleaned = rawJsonText
+      .replace(/```json|```/gi, "")
+      .replace(/[\u0000-\u001F]+/g, " ")
+      .trim();
+
+    let strategy: any = null;
+    try {
+      strategy = JSON.parse(cleaned);
+    } catch {
+      const startIdx = cleaned.indexOf("{");
+      const endIdx = cleaned.lastIndexOf("}");
+      if (startIdx !== -1 && endIdx > startIdx) {
+        try {
+          strategy = JSON.parse(cleaned.slice(startIdx, endIdx + 1));
+        } catch {}
+      }
+    }
+
+    if (!strategy || !Array.isArray(strategy.concepts)) {
+      strategy = {
+        campaignName: "Drops Exclusivos — Ventas Flash ⚡ FoxDrop",
+        concepts: [
+          {
+            title: "Acceso VIP a Drops Limitados",
+            hook3s: "¿Pagas precio completo por tus fragancias favoritas?",
+            script10s: "Cada semana soltamos hallazgos curados de Bath & Body Works en piezas limitadas dentro de nuestra comunidad privada.",
+            copyAndCta: `Comenta 'ATAJO' para mandarte el acceso privado, o únete directo aquí: ${WHATSAPP_GROUP_URL}`,
+            fluxPrompt: "Clean editorial studio composition on dark emerald green #14352F surface with #D96B27 warm lighting, negative space at top, strictly no text",
+          },
+        ],
+      };
+    }
 
     // Generar creativo de agencia con FLUX usando el primer concepto (limpiando la palabra FLUX para que no la pinte)
     let imageDataUrl = "";
