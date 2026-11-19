@@ -46,7 +46,7 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     currentTop: "26%",
     currentLeft: "19%",
     status: "active",
-    bubbleText: "Plan semanal listo",
+    bubbleText: "Listo para iniciar",
     avatarColor: "#1E4D43",
     hairColor: "#111827",
     emoji: "🦊",
@@ -59,8 +59,8 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     homeLeft: "15%",
     currentTop: "72%",
     currentLeft: "15%",
-    status: "review",
-    bubbleText: "Copy v2 lista",
+    status: "active",
+    bubbleText: "En espera",
     avatarColor: "#255C50",
     hairColor: "#78350F",
     emoji: "✍️",
@@ -73,8 +73,8 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     homeLeft: "24%",
     currentTop: "72%",
     currentLeft: "24%",
-    status: "working",
-    bubbleText: "Generando en Flux...",
+    status: "active",
+    bubbleText: "En espera",
     avatarColor: "#D96B27",
     hairColor: "#1F2937",
     emoji: "🎨",
@@ -87,8 +87,8 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     homeLeft: "74%",
     currentTop: "28%",
     currentLeft: "74%",
-    status: "working",
-    bubbleText: "Ads en revisión",
+    status: "active",
+    bubbleText: "En espera",
     avatarColor: "#1F4E45",
     hairColor: "#374151",
     emoji: "📊",
@@ -102,7 +102,7 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     currentTop: "28%",
     currentLeft: "85%",
     status: "active",
-    bubbleText: "Esperando piezas",
+    bubbleText: "En espera",
     avatarColor: "#2B6CB0",
     hairColor: "#92400E",
     emoji: "📱",
@@ -115,8 +115,8 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     homeLeft: "78%",
     currentTop: "74%",
     currentLeft: "78%",
-    status: "approved",
-    bubbleText: "14 leads en grupo",
+    status: "active",
+    bubbleText: "En espera",
     avatarColor: "#10B981",
     hairColor: "#451A03",
     emoji: "💬",
@@ -130,7 +130,7 @@ const INITIAL_AGENTS: OfficeAgent[] = [
     currentTop: "63%",
     currentLeft: "74%",
     status: "active",
-    bubbleText: "ROI +18%",
+    bubbleText: "En espera",
     avatarColor: "#0F766E",
     hairColor: "#111827",
     emoji: "📈",
@@ -139,12 +139,7 @@ const INITIAL_AGENTS: OfficeAgent[] = [
 
 const INITIAL_PIECES: ApprovalPiece[] = [];
 
-const INITIAL_LOGS: ActivityLog[] = [
-  { id: "l1", time: "10:15 AM", text: "Mateo entregó estrategia a Valeria y Diego" },
-  { id: "l2", time: "10:22 AM", text: "Diego completó 2 visuales para el drop" },
-  { id: "l3", time: "10:28 AM", text: "Valeria envió 2 copys a Mesa de Aprobación" },
-  { id: "l4", time: "10:31 AM", text: "Sofía recibió 14 leads del grupo VIP", highlight: true },
-];
+const INITIAL_LOGS: ActivityLog[] = [];
 
 export default function AgencyCommandCenterPage() {
   const {
