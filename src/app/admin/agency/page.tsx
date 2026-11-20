@@ -713,10 +713,10 @@ export default function AgencyCommandCenterPage() {
                   </span>
                 </div>
                 <textarea
-                  rows={5}
+                  rows={14}
                   value={strategyProposal}
                   onChange={(e) => setStrategyProposal(e.target.value)}
-                  className="w-full rounded-xl border border-emerald-800/70 bg-[#0D2420] p-2.5 text-xs leading-relaxed text-emerald-50 focus:border-[#D96B27] focus:outline-none"
+                  className="w-full rounded-xl border border-emerald-800/70 bg-[#0D2420] p-3 text-xs leading-relaxed text-emerald-50 focus:border-[#D96B27] focus:outline-none"
                 />
                 <button
                   type="button"
