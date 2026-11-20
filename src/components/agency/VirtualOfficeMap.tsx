@@ -174,6 +174,25 @@ function AgentCharacter({
             <span className="pointer-events-none absolute -bottom-1.5 h-5 w-12 rounded-full border-2 border-[#D96B27] bg-[#D96B27]/25 shadow-[0_0_18px_#D96B27]" />
           )}
 
+          {/* Partículas de pasos en el piso cuando camina */}
+          {isWalking && (
+            <div className="pointer-events-none absolute -bottom-1 inset-x-0 flex justify-center gap-2">
+              {[0, 1].map((idx) => (
+                <motion.span
+                  key={idx}
+                  initial={{ opacity: 0.8, scale: 0.6, y: 0 }}
+                  animate={{ opacity: [0.8, 0], scale: [0.6, 1.2], y: [0, -4] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 0.36,
+                    delay: idx * 0.18,
+                  }}
+                  className="h-1.5 w-1.5 rounded-full bg-amber-200/70 blur-[0.5px]"
+                />
+              ))}
+            </div>
+          )}
+
           {/* Sprite PNG del zorrito con rigging/elástico */}
           <motion.img
             src={`/images/agents/${agent.id}.png`}
@@ -182,12 +201,14 @@ function AgentCharacter({
             animate={activeVariant}
             variants={{
               walking: {
-                y: [0, -9, 0, -9, 0],
-                rotate: [-7, 7, -7, 7, 0],
+                y: [0, -12, 0, -12, 0],
+                rotate: [-10, 10, -10, 10, 0],
+                scaleY: [1, 0.9, 1.06, 0.9, 1],
                 scaleX: facingLeft ? -1 : 1,
                 transition: {
-                  y: { repeat: Infinity, duration: 0.45, ease: "easeInOut" },
-                  rotate: { repeat: Infinity, duration: 0.45, ease: "easeInOut" },
+                  y: { repeat: Infinity, duration: 0.36, ease: "easeInOut" },
+                  rotate: { repeat: Infinity, duration: 0.36, ease: "easeInOut" },
+                  scaleY: { repeat: Infinity, duration: 0.36, ease: "easeInOut" },
                   scaleX: { duration: 0.15 },
                 },
               },
