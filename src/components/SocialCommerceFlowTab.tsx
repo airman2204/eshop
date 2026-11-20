@@ -687,13 +687,12 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                               btn.textContent = 'Enviando...';
                               try {
                                 const adminTok =
-                                  (typeof adminToken !== 'undefined' && adminToken) ||
-                                  (typeof window !== 'undefined'
+                                  typeof window !== 'undefined'
                                     ? localStorage.getItem('admin_token') ||
                                       localStorage.getItem('foxdrop_admin_token') ||
                                       sessionStorage.getItem('admin_token') ||
                                       ''
-                                    : '');
+                                    : '';
                                 const res = await fetch('/api/whatsapp/send', {
                                   method: 'POST',
                                   headers: {
@@ -712,12 +711,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                                 if (res.ok && !data.error) {
                                   btn.textContent = '✓ Enviado';
                                 } else {
-                                  btn.textContent = '⚠ Error';
-                                  setErrorMsg(data.error || 'No se pudo enviar al grupo');
+                                  btn.textContent = `⚠ ${data.error || 'No autorizado'}`;
                                 }
                               } catch {
-                                btn.textContent = '⚠ Error';
-                                setErrorMsg('Error de conexión al enviar al grupo');
+                                btn.textContent = '⚠ Error de conexión';
                               }
                             }}
                             className="rounded-md bg-[#D96B27] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-[#c55e1e] disabled:opacity-50"
