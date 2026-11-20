@@ -186,6 +186,9 @@ export default function AgencyCommandCenterPage() {
   const [brunoSummary, setBrunoSummary] = useState<string>("");
   const [isAskingBruno, setIsAskingBruno] = useState(false);
   const [isPolishingCopy, setIsPolishingCopy] = useState(false);
+  const [strategyProposal, setStrategyProposal] = useState(
+    "Generando plan semanal detallado..."
+  );
 
   // Persistir estado de la sesión en localStorage para no perderlo al refrescar
   React.useEffect(() => {
@@ -219,9 +222,6 @@ export default function AgencyCommandCenterPage() {
     setLogs([]);
     setPieces([]);
   };
-  const [strategyProposal, setStrategyProposal] = useState(
-    "Generando plan semanal detallado..."
-  );
 
   // Sincronizar agentes desde Supabase Realtime cuando existan filas en agent_states
   React.useEffect(() => {
