@@ -15,8 +15,19 @@ import {
   MessageSquare,
   Download,
 } from "lucide-react";
-import VirtualOfficeMap, { OfficeAgent } from "@/components/agency/VirtualOfficeMap";
+import dynamic from "next/dynamic";
+import { OfficeAgent } from "@/components/agency/VirtualOfficeMap";
+import { officeEvents } from "@/components/agency/phaser/officeEvents";
 import { useAgencyRealtime } from "@/hooks/useAgencyRealtime";
+
+const VirtualOffice = dynamic(() => import("@/components/agency/VirtualOffice"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-[4/3] rounded-2xl border border-emerald-800/60 bg-[#0D2420] flex items-center justify-center text-xs text-emerald-300">
+      Cargando Oficina Virtual Phaser 3...
+    </div>
+  ),
+});
 
 interface ApprovalPiece {
   id: string;
@@ -530,80 +541,33 @@ export default function AgencyCommandCenterPage() {
   const handleSimulateFlow = () => {
     if (isSimulating) return;
     setIsSimulating(true);
-    appendLog("1/4 Mateo lleva la estrategia semanal al Estudio Creativo...", true);
+    appendLog("1/4 Mateo camina a la Mesa de Aprobación con la estrategia...", true);
+    officeEvents.emit("agent:move", { agentId: "mateo", targetPoint: "mesa_aprobacion", status: "Por revisar" });
 
-    // Paso 1: Mateo camina al Estudio Creativo (Valeria y Diego)
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === "mateo"
-          ? { ...a, currentTop: "64%", currentLeft: "20%", status: "working", bubbleText: "Entregando estrategia" }
-          : a
-      )
-    );
-
-    // Paso 2: Mateo regresa; Valeria, Diego, Andrés y Camila se reúnen en Mesa de Aprobación
     setTimeout(() => {
-      appendLog("2/4 Valeria, Diego, Andrés y Camila se reúnen en Mesa de Aprobación");
-      setAgents((prev) =>
-        prev.map((a) =>
-          a.id === "mateo"
-            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "active", bubbleText: "Estrategia entregada ✓" }
-            : a.id === "valeria"
-            ? { ...a, currentTop: "52%", currentLeft: "44%", status: "review", bubbleText: "Copy lista en mesa" }
-            : a.id === "diego"
-            ? { ...a, currentTop: "52%", currentLeft: "50%", status: "review", bubbleText: "Arte listo en mesa" }
-            : a.id === "andres"
-            ? { ...a, currentTop: "48%", currentLeft: "56%", status: "working", bubbleText: "Revisando Ads" }
-            : a.id === "camila"
-            ? { ...a, currentTop: "56%", currentLeft: "56%", status: "working", bubbleText: "Recogiendo piezas" }
-            : a
-        )
-      );
-    }, 1800);
+      appendLog("2/4 Valeria y Diego caminan a Mesa de Aprobación");
+      officeEvents.emit("agent:move", { agentId: "mateo", targetPoint: "mateo", status: "Activo" });
+      officeEvents.emit("agent:move", { agentId: "valeria", targetPoint: "mesa_aprobacion", status: "Por revisar" });
+      officeEvents.emit("agent:move", { agentId: "diego", targetPoint: "mesa_aprobacion", status: "Por revisar" });
+    }, 2000);
 
-    // Paso 3: Camila y Andrés vuelven a Redes; Sofía y Bruno suben a coordinar leads y ROI
     setTimeout(() => {
-      appendLog("3/4 Camila y Andrés lanzan campaña; Sofía y Bruno suben a coordinar leads", true);
-      setAgents((prev) =>
-        prev.map((a) =>
-          a.id === "valeria" || a.id === "diego"
-            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "approved", bubbleText: "Entregado ✓" }
-            : a.id === "camila"
-            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "working", bubbleText: "Programando Reels/TikTok" }
-            : a.id === "andres"
-            ? { ...a, currentTop: a.homeTop, currentLeft: a.homeLeft, status: "working", bubbleText: "Campaña Meta Ads ON" }
-            : a.id === "sofia"
-            ? { ...a, currentTop: "38%", currentLeft: "78%", status: "working", bubbleText: "Conectando WhatsApp VIP" }
-            : a.id === "bruno"
-            ? { ...a, currentTop: "38%", currentLeft: "72%", status: "working", bubbleText: "Midiendo conversión" }
-            : a
-        )
-      );
-    }, 3600);
+      appendLog("3/4 Camila y Andrés reciben piezas; Sofía y Bruno coordinan leads y ROI", true);
+      officeEvents.emit("agent:move", { agentId: "valeria", targetPoint: "valeria", status: "Activo" });
+      officeEvents.emit("agent:move", { agentId: "diego", targetPoint: "diego", status: "Activo" });
+      officeEvents.emit("agent:move", { agentId: "andres", targetPoint: "mesa_aprobacion", status: "Trabajando" });
+      officeEvents.emit("agent:move", { agentId: "camila", targetPoint: "mesa_aprobacion", status: "Trabajando" });
+      officeEvents.emit("agent:move", { agentId: "sofia", targetPoint: "camila", status: "Trabajando" });
+      officeEvents.emit("agent:move", { agentId: "bruno", targetPoint: "andres", status: "Trabajando" });
+    }, 4200);
 
-    // Paso 4: Tráfico hacia Sofía (Ventas WA) y Bruno (ROI), y todos vuelven a sus puestos
     setTimeout(() => {
-      appendLog("4/4 Sofía recibe +18 leads VIP en WhatsApp y Bruno calcula ROI +24%", true);
-      setAgents((prev) =>
-        prev.map((a) => ({
-          ...a,
-          currentTop: a.homeTop,
-          currentLeft: a.homeLeft,
-          status: a.id === "sofia" || a.id === "bruno" ? "approved" : "active",
-          bubbleText:
-            a.id === "sofia"
-              ? "+18 leads en grupo VIP"
-              : a.id === "bruno"
-              ? "ROI +24% esta semana"
-              : a.id === "camila"
-              ? "5 piezas programadas ✓"
-              : a.id === "andres"
-              ? "Ads activos ✓"
-              : a.bubbleText,
-        }))
-      );
+      appendLog("4/4 Todos regresan a sus estaciones con resultados actualizados", true);
+      ["andres", "camila", "sofia", "bruno"].forEach((id) => {
+        officeEvents.emit("agent:move", { agentId: id, targetPoint: id, status: "Activo" });
+      });
       setIsSimulating(false);
-    }, 5600);
+    }, 6600);
   };
 
   return (
@@ -671,11 +635,9 @@ export default function AgencyCommandCenterPage() {
 
       {/* MAIN WORKSPACE: 68% LEFT MAP + 32% RIGHT INSPECTOR */}
       <main className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
-        {/* 2. OFICINA VIRTUAL ESTILO GATHER TOWN (68% -> 8 cols) */}
+        {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (68% -> 8 cols) */}
         <section className="lg:col-span-8">
-          <VirtualOfficeMap
-            agents={agents}
-            selectedAgentId={selectedAgentId}
+          <VirtualOffice
             onSelectAgent={setSelectedAgentId}
             onSimulateFlow={handleSimulateFlow}
             isSimulating={isSimulating}
