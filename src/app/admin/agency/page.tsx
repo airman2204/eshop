@@ -704,7 +704,7 @@ export default function AgencyCommandCenterPage() {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
             {activeTab === "approve" && workflowStep === "strategy_review" && (
               <div className="space-y-3 rounded-xl border border-[#D96B27]/60 bg-[#14352F]/70 p-4">
                 <div className="flex items-center justify-between">
@@ -1118,7 +1118,7 @@ export default function AgencyCommandCenterPage() {
           {/* Quick Agent Chat */}
           <form
             onSubmit={handleSendChat}
-            className="border-t border-emerald-800/60 bg-[#0A1C19] p-3 space-y-2"
+            className="shrink-0 border-t border-emerald-800/60 bg-[#0A1C19] p-3 space-y-2"
           >
             {agentReply && (
               <div className="rounded-lg border border-emerald-800/60 bg-[#14352F]/80 px-2.5 py-1.5 text-[11px] text-emerald-100">
