@@ -108,9 +108,10 @@ export class AgentSprite extends Phaser.GameObjects.Container {
 
   private startIdleAnimation() {
     if (this.idleTween) this.idleTween.stop();
+    const baseScaleY = this.sprite.scaleY;
     this.idleTween = this.scene.tweens.add({
       targets: this.sprite,
-      scaleY: { from: 1, to: 1.04 },
+      scaleY: { from: baseScaleY, to: baseScaleY * 1.04 },
       duration: 1200,
       yoyo: true,
       repeat: -1,
