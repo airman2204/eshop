@@ -686,14 +686,15 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                               const btn = e.currentTarget;
                               btn.textContent = 'Enviando...';
                               try {
+                                const adminTok = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_token') || '' : '';
                                 const res = await fetch('/api/whatsapp/send', {
                                   method: 'POST',
                                   headers: {
                                     'Content-Type': 'application/json',
-                                    ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+                                    ...(adminTok ? { Authorization: `Bearer ${adminTok}` } : {}),
                                   },
                                   body: JSON.stringify({
-                                    adminToken,
+                                    adminToken: adminTok,
                                     to: groupJid,
                                     phone: groupJid,
                                     message: p.caption || p.title,
