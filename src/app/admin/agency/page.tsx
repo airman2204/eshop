@@ -186,6 +186,39 @@ export default function AgencyCommandCenterPage() {
   const [brunoSummary, setBrunoSummary] = useState<string>("");
   const [isAskingBruno, setIsAskingBruno] = useState(false);
   const [isPolishingCopy, setIsPolishingCopy] = useState(false);
+
+  // Persistir estado de la sesión en localStorage para no perderlo al refrescar
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem("foxdrop_agency_state_v1");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.workflowStep) setWorkflowStep(parsed.workflowStep);
+        if (parsed.strategyProposal) setStrategyProposal(parsed.strategyProposal);
+        if (Array.isArray(parsed.chatMessages)) setChatMessages(parsed.chatMessages);
+        if (Array.isArray(parsed.logs)) setLogs(parsed.logs);
+        if (parsed.campaign) setCampaign(parsed.campaign);
+      }
+    } catch {}
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(
+        "foxdrop_agency_state_v1",
+        JSON.stringify({ workflowStep, strategyProposal, chatMessages, logs, campaign })
+      );
+    } catch {}
+  }, [workflowStep, strategyProposal, chatMessages, logs, campaign]);
+
+  const handleResetAgency = () => {
+    localStorage.removeItem("foxdrop_agency_state_v1");
+    setWorkflowStep("idle");
+    setStrategyProposal("Generando plan semanal detallado...");
+    setChatMessages([]);
+    setLogs([]);
+    setPieces([]);
+  };
   const [strategyProposal, setStrategyProposal] = useState(
     "Generando plan semanal detallado..."
   );
@@ -622,16 +655,25 @@ export default function AgencyCommandCenterPage() {
             </div>
           </div>
 
-          {/* Primary Action */}
-          <button
-            type="button"
-            onClick={handleGenerateWeek}
-            disabled={isGeneratingWeek}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#D96B27]/25 transition hover:bg-[#c55e1e] disabled:opacity-60"
-          >
-            <Plus className={`h-4 w-4 ${isGeneratingWeek ? "animate-spin" : ""}`} />
-            {isGeneratingWeek ? "Generando 5 piezas..." : "Nueva Campaña Semanal"}
-          </button>
+          {/* Primary Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleResetAgency}
+              className="inline-flex items-center gap-1 rounded-xl border border-emerald-700/70 bg-[#14352F] px-3 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/60"
+            >
+              ↺ Reiniciar
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateWeek}
+              disabled={isGeneratingWeek}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#D96B27] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#D96B27]/25 transition hover:bg-[#c55e1e] disabled:opacity-60"
+            >
+              <Plus className={`h-4 w-4 ${isGeneratingWeek ? "animate-spin" : ""}`} />
+              {isGeneratingWeek ? "Generando 5 piezas..." : "Nueva Campaña Semanal"}
+            </button>
+          </div>
         </div>
       </header>
 
