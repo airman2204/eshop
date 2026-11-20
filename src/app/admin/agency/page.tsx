@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Sparkles,
   MessageSquare,
+  Download,
 } from "lucide-react";
 import VirtualOfficeMap, { OfficeAgent } from "@/components/agency/VirtualOfficeMap";
 import { useAgencyRealtime } from "@/hooks/useAgencyRealtime";
@@ -867,6 +868,15 @@ export default function AgencyCommandCenterPage() {
                     <RefreshCw className={`h-3.5 w-3.5 ${isRefining ? "animate-spin" : ""}`} />
                     {isRefining ? "Regenerando visual..." : "↻ Regenerar"}
                   </button>
+                  {activePiece.imageUrl && (
+                    <a
+                      href={activePiece.imageUrl}
+                      download={`foxdrop-${activePiece.id}.jpg`}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-700/80 bg-[#0A1C19] px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/60"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Descargar imagen
+                    </a>
+                  )}
                 </div>
               </>
             )}
