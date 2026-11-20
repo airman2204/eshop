@@ -594,31 +594,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             </h3>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleLanzarTanda3}
-              disabled={broadcasting}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition disabled:opacity-50"
-            >
-              ⚡ Lanzar Tanda de 3
-            </button>
-            <button
-              type="button"
-              onClick={handleAutoPickStale}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold transition"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              Elegir automáticamente (Stock parado)
-            </button>
-            <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useFlux}
-                onChange={(e) => setUseFlux(e.target.checked)}
-                className="rounded border-slate-300 text-emerald-600"
-              />
-              Generar foto de estudio con FLUX (fal.ai)
-            </label>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+              Conectado a FoxDrop Agency
+            </span>
           </div>
         </div>
 
