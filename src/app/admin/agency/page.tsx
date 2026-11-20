@@ -553,10 +553,10 @@ export default function AgencyCommandCenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#14352F] text-emerald-50 flex flex-col">
+    <div className="w-full min-h-screen bg-[#14352F] text-emerald-50 flex flex-col">
       {/* 1. HEADER SUPERIOR */}
       <header className="border-b border-emerald-800/70 bg-[#0D2420]/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
           {/* Title + Campaign Selector */}
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-3">
@@ -613,7 +613,7 @@ export default function AgencyCommandCenterPage() {
       </header>
 
       {/* MAIN WORKSPACE: 68% LEFT MAP + 32% RIGHT INSPECTOR */}
-      <main className="mx-auto grid w-full max-w-[1600px] flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
+      <main className="grid w-full flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
         {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (68% -> 8 cols) */}
         <section className="lg:col-span-8">
           <VirtualOffice
@@ -1067,7 +1067,7 @@ export default function AgencyCommandCenterPage() {
 
       {/* 4. BARRA INFERIOR DE ACTIVIDAD EN VIVO */}
       <footer className="border-t border-emerald-800/70 bg-[#0D2420]/95 px-4 py-3">
-        <div className="mx-auto max-w-[1600px]">
+        <div className="w-full">
           <div className="mb-2 flex items-center justify-between text-[11px] text-emerald-300/80">
             <span className="flex items-center gap-1.5 font-semibold text-white">
               <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
