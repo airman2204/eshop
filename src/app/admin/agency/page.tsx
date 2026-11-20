@@ -178,6 +178,7 @@ export default function AgencyCommandCenterPage() {
   const [chatInput, setChatInput] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [isGeneratingWeek, setIsGeneratingWeek] = useState(false);
+  const [isPlanningStrategy, setIsPlanningStrategy] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [workflowStep, setWorkflowStep] = useState<"idle" | "strategy_review" | "creative_review">("idle");
   const [agentReply, setAgentReply] = useState<string>("");
@@ -328,7 +329,8 @@ export default function AgencyCommandCenterPage() {
   };
 
   const handleGenerateWeek = async () => {
-    if (isGeneratingWeek) return;
+    if (isGeneratingWeek || isPlanningStrategy) return;
+    setIsPlanningStrategy(true);
     setWorkflowStep("strategy_review");
     setSelectedAgentId("mateo");
     setActiveTab("approve");
@@ -356,6 +358,7 @@ export default function AgencyCommandCenterPage() {
     } catch {}
 
     // Ya terminó de planear: suena notificación y camina a la Mesa de Aprobación
+    setIsPlanningStrategy(false);
     playWorkDoneSound();
     appendLog("Mateo terminó el plan y lo llevó a la Mesa de Aprobación", true);
     setAgents((prev) =>
@@ -715,11 +718,13 @@ export default function AgencyCommandCenterPage() {
                 <button
                   type="button"
                   onClick={handleApproveStrategy}
-                  disabled={isGeneratingWeek}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D96B27] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition hover:bg-[#c55e1e] disabled:opacity-60"
+                  disabled={isGeneratingWeek || isPlanningStrategy}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D96B27] px-4 py-2.5 text-xs font-bold text-white shadow-lg transition hover:bg-[#c55e1e] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                  {isGeneratingWeek
+                  {isPlanningStrategy
+                    ? "Mateo está armando la estrategia..."
+                    : isGeneratingWeek
                     ? "Valeria y Diego creando piezas..."
                     : "✓ Aprobar Estrategia → Pasar a Valeria y Diego"}
                 </button>
