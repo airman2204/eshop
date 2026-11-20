@@ -4,6 +4,7 @@ import { formatPhoneNumber } from "@/lib/whatsapp";
 import { checkRateLimit } from "@/lib/security";
 import { detectGroupPurchaseIntent, createProductReservation } from "@/lib/socialCommerce";
 import { generateHumanReply, getActiveBotFlow, sendViaWhatsAppBridge } from "@/lib/botEngine";
+import { reportWhatsappLeadToAgency } from "@/lib/agency/sofiaSync";
 
 /**
  * POST /api/whatsapp/webhook
@@ -30,6 +31,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     const supabase = createServerClient();
+
+    // Notificar actividad entrante a la oficina virtual de la agencia (fire-and-forget)
+    if (body.type !== "receipt" && body.phone) {
+      reportWhatsappLeadToAgency(`Nuevo mensaje de ${String(body.phone).slice(-4)}`).catch(() => {});
+    }
 
     // Evento A: Actualización de estado de mensaje (1 paloma, 2 palomas, leídos)
     if (body.type === 'receipt' && body.phone && body.status) {
