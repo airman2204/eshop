@@ -188,6 +188,35 @@ export function useAgencyRealtime() {
       .eq("id", id);
   }, []);
 
+  const upsertMetric = useCallback(
+    async (
+      deliverableId: string,
+      values: { clicks_to_whatsapp?: number; new_group_members?: number; closed_sales_mxn?: number }
+    ) => {
+      const supabase = getSupabaseBrowserClient();
+      const { data: existing } = await (supabase as any)
+        .from("campaign_metrics")
+        .select("id")
+        .eq("deliverable_id", deliverableId)
+        .maybeSingle();
+
+      if (existing?.id) {
+        await (supabase as any)
+          .from("campaign_metrics")
+          .update({ ...values, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      } else {
+        await (supabase as any).from("campaign_metrics").insert({
+          deliverable_id: deliverableId,
+          clicks_to_whatsapp: values.clicks_to_whatsapp ?? 0,
+          new_group_members: values.new_group_members ?? 0,
+          closed_sales_mxn: values.closed_sales_mxn ?? 0,
+        });
+      }
+    },
+    []
+  );
+
   return {
     campaigns,
     agentStates,
@@ -201,6 +230,7 @@ export function useAgencyRealtime() {
     updateDeliverableCaption,
     approveDeliverable,
     sendAgentFeedback,
+    upsertMetric,
     refresh: fetchAll,
   };
 }

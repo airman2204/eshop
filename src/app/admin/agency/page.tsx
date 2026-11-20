@@ -163,6 +163,7 @@ export default function AgencyCommandCenterPage() {
     approveDeliverable,
     updateDeliverableCaption,
     sendAgentFeedback,
+    upsertMetric,
     logActivity,
   } = useAgencyRealtime();
 
@@ -299,7 +300,7 @@ export default function AgencyCommandCenterPage() {
     );
   };
 
-  const handleApprovePiece = () => {
+  const handleApprovePiece = async () => {
     if (!activePiece || activePiece.status === "approved") return;
 
     setPieces((prev) =>
@@ -307,41 +308,21 @@ export default function AgencyCommandCenterPage() {
     );
     setCurrentPieceIndex(0);
 
-    // Move Diego/Valeria toward Camila on approval, then return
-    setAgents((prev) =>
-      prev.map((a) =>
-        a.id === activePiece.agentId
-          ? {
-              ...a,
-              currentTop: "32%",
-              currentLeft: "81%",
-              status: "approved",
-              bubbleText: "Entregado a Camila ✓",
-              isMoving: true,
-            }
-          : a.id === "camila"
-          ? { ...a, status: "approved", bubbleText: "Programando pieza ✓" }
-          : a
-      )
-    );
+    try {
+      await navigator.clipboard.writeText(activePiece.caption);
+    } catch {}
 
-    appendLog(`Aprobaste "${activePiece.title}" → enviado a Camila (${activePiece.platform})`, true);
+    await approveDeliverable(activePiece.id);
+    await upsertMetric(activePiece.id, { clicks_to_whatsapp: 0, new_group_members: 0, closed_sales_mxn: 0 });
+    await logActivity("admin", "camila", `Aprobada "${activePiece.title}" → lista para publicar`);
+
+    officeEvents.emit("agent:move", { agentId: "diego", targetPoint: "camila", status: "Activo" });
+    officeEvents.emit("agent:move", { agentId: "camila", targetPoint: "camila", status: "Trabajando" });
+
+    appendLog(`✓ Aprobada "${activePiece.title}" (caption copiado al portapapeles)`, true);
 
     setTimeout(() => {
-      setAgents((prev) =>
-        prev.map((a) =>
-          a.id === activePiece.agentId
-            ? {
-                ...a,
-                currentTop: a.homeTop,
-                currentLeft: a.homeLeft,
-                isMoving: false,
-                status: "active",
-                bubbleText: "Listo para siguiente",
-              }
-            : a
-        )
-      );
+      officeEvents.emit("agent:move", { agentId: "diego", targetPoint: "diego", status: "Activo" });
     }, 2400);
   };
 
@@ -880,19 +861,62 @@ export default function AgencyCommandCenterPage() {
             )}
 
             {activeTab === "roi" && (
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
-                  <p className="text-[11px] text-emerald-300/80">Miembros en WhatsApp</p>
-                  <p className="mt-1 text-xl font-black text-[#10B981]">
-                    {dbMetrics.reduce((acc, m) => acc + (m.new_group_members || 0), 0)}
-                  </p>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
+                    <p className="text-[11px] text-emerald-300/80">Miembros en WhatsApp</p>
+                    <p className="mt-1 text-xl font-black text-[#10B981]">
+                      {dbMetrics.reduce((acc, m) => acc + (m.new_group_members || 0), 0)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
+                    <p className="text-[11px] text-emerald-300/80">Ventas Cerradas</p>
+                    <p className="mt-1 text-xl font-black text-[#D96B27]">
+                      ${dbMetrics.reduce((acc, m) => acc + Number(m.closed_sales_mxn || 0), 0)} MXN
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3">
-                  <p className="text-[11px] text-emerald-300/80">Ventas Cerradas</p>
-                  <p className="mt-1 text-xl font-black text-[#D96B27]">
-                    ${dbMetrics.reduce((acc, m) => acc + Number(m.closed_sales_mxn || 0), 0)} MXN
-                  </p>
-                </div>
+
+                {pieces.filter((p) => p.status === "approved").map((p) => {
+                  const m = dbMetrics.find((x) => x.deliverable_id === p.id);
+                  return (
+                    <div
+                      key={p.id}
+                      className="rounded-xl border border-emerald-800/60 bg-[#14352F]/50 p-3 space-y-2"
+                    >
+                      <p className="text-xs font-bold text-white truncate">{p.title}</p>
+                      <div className="grid grid-cols-3 gap-2 text-[11px]">
+                        <label className="block">
+                          <span className="text-emerald-300/70">Clics WA</span>
+                          <input
+                            type="number"
+                            defaultValue={m?.clicks_to_whatsapp ?? 0}
+                            onBlur={(e) => upsertMetric(p.id, { clicks_to_whatsapp: Number(e.target.value) || 0 })}
+                            className="mt-0.5 w-full rounded bg-[#0D2420] px-2 py-1 text-white border border-emerald-800/70"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-emerald-300/70">Miembros</span>
+                          <input
+                            type="number"
+                            defaultValue={m?.new_group_members ?? 0}
+                            onBlur={(e) => upsertMetric(p.id, { new_group_members: Number(e.target.value) || 0 })}
+                            className="mt-0.5 w-full rounded bg-[#0D2420] px-2 py-1 text-white border border-emerald-800/70"
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-emerald-300/70">Ventas MXN</span>
+                          <input
+                            type="number"
+                            defaultValue={m?.closed_sales_mxn ?? 0}
+                            onBlur={(e) => upsertMetric(p.id, { closed_sales_mxn: Number(e.target.value) || 0 })}
+                            className="mt-0.5 w-full rounded bg-[#0D2420] px-2 py-1 text-white border border-emerald-800/70"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
