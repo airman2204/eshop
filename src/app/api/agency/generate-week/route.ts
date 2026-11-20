@@ -57,8 +57,9 @@ export async function POST(req: NextRequest) {
     let piecesPlan: WeeklyPiecePlan[] = [];
     if (geminiKey) {
       try {
-        const prompt = `Eres Mateo (CMO) y Valeria (Copywriter) de FoxDrop (foxdrop.mx), marca mexicana de Drops Exclusivos.
-Genera exactamente 5 piezas semanales (3 para Instagram: "instagram_reel" o "instagram_post", y 2 para TikTok: "tiktok") para el tema: "${theme}".
+        const prompt = `Eres Mateo (CMO) y Valeria (Copywriter) de FoxDrop (foxdrop.mx), aplicando ad-creative.
+Diseña exactamente 5 piezas semanales basadas en 3 OFERTAS reales para el tema: "${theme}".
+Cada pieza debe probar un ángulo distinto (Deseo/Beneficio vs Urgencia/Escasez) entre Instagram ("instagram_reel" / "instagram_post") y TikTok ("tiktok").
 REGLAS:
 - NUNCA uses "lotes", "pacas", "saldos" ni menciones ciudades específicas de México.
 - Usa español natural de México ("piezas exclusivas", "favoritos seleccionados", "a precio especial").
@@ -67,9 +68,9 @@ Devuelve ÚNICAMENTE un JSON array válido con 5 objetos:
 [
   {
     "platform": "instagram_reel",
-    "hook_text": "Gancho corto de 3 segundos",
-    "caption_text": "Copy completo con CTA al grupo de WhatsApp",
-    "visual_direction": "Descripción breve del combo de productos Bath & Body Works"
+    "hook_text": "[Ángulo Deseo] Gancho de 3 segundos",
+    "caption_text": "Copy persuasivo con oferta clara y CTA al grupo de WhatsApp",
+    "visual_direction": "Descripción del combo de 3 productos Bath & Body Works"
   }
 ]`;
         const res = await fetch(
