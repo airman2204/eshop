@@ -9376,9 +9376,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* 12. SECCIÓN FOXADS AI (SALEADS PARA FOXDROP) */}
         {(crmSubTab === 'saleads' || crmSubTab === 'agent' || crmSubTab === 'weavy') && (
-          <AgencyCommandCenterPage /> 
-            products={products} 
-          />
+          <AgencyCommandCenterPage />
         )}
 
           {/* 12.2 SECCIÓN CAMPAÑAS Y CUPONES QR PHYGITAL */}
