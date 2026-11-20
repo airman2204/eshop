@@ -880,34 +880,49 @@ export default function AgencyCommandCenterPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
                     {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((day, idx) => {
-                      const p = pieces[idx];
+                      const dayPieces = pieces.filter((_, pIdx) => pIdx % 5 === idx);
                       return (
                         <div
                           key={day}
-                          className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-2.5"
+                          className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-2.5 space-y-1.5"
                         >
                           <div className="flex items-center justify-between text-[10px]">
                             <span className="font-bold uppercase text-[#FDBA74]">{day}</span>
-                            <span className="text-emerald-300/80">{p ? p.schedule : "Libre"}</span>
+                            <span className="text-emerald-300/80">
+                              {dayPieces.length} {dayPieces.length === 1 ? "publicación" : "publicaciones"}
+                            </span>
                           </div>
-                          {p ? (
-                            <div className="mt-1 flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="truncate text-xs font-semibold text-white">{p.title}</p>
-                                <p className="text-[10px] text-emerald-300/80">{p.platform}</p>
-                              </div>
-                              <span
-                                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${
-                                  p.status === "approved"
-                                    ? "bg-[#10B981]/20 text-[#10B981]"
-                                    : "bg-amber-500/20 text-amber-300"
-                                }`}
+                          {dayPieces.length > 0 ? (
+                            dayPieces.map((p) => (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  const pendIdx = pendingPieces.findIndex((x) => x.id === p.id);
+                                  if (pendIdx !== -1) setCurrentPieceIndex(pendIdx);
+                                  setActiveTab("approve");
+                                }}
+                                className="w-full text-left rounded-lg border border-emerald-800/50 bg-[#0D2420]/70 p-2 flex items-center justify-between gap-2 hover:border-[#D96B27]/60 transition"
                               >
-                                {p.status === "approved" ? "Aprobado" : "Pendiente"}
-                              </span>
-                            </div>
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-white">{p.title}</p>
+                                  <p className="text-[10px] text-emerald-300/80">
+                                    {p.platform} · {p.schedule}
+                                  </p>
+                                </div>
+                                <span
+                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                                    p.status === "approved"
+                                      ? "bg-[#10B981]/20 text-[#10B981]"
+                                      : "bg-amber-500/20 text-amber-300"
+                                  }`}
+                                >
+                                  {p.status === "approved" ? "Aprobado" : "Por aprobar"}
+                                </span>
+                              </button>
+                            ))
                           ) : (
-                            <p className="mt-1 text-[11px] text-emerald-400/50">Sin pauta asignada</p>
+                            <p className="text-[11px] text-emerald-400/50">Sin pauta asignada</p>
                           )}
                         </div>
                       );
