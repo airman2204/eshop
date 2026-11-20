@@ -71,10 +71,10 @@ export default function VirtualOffice({
         </button>
       </div>
 
-      {/* Phaser 3 Canvas Container (4:3) */}
+      {/* Phaser 3 Canvas Container (4:3, fits viewport without scroll) */}
       <div
         ref={containerRef}
-        className="w-full aspect-[4/3] overflow-hidden rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl"
+        className="w-full aspect-[4/3] max-h-[calc(100vh-230px)] overflow-hidden rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl"
       />
     </div>
   );

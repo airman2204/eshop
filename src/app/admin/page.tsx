@@ -12676,7 +12676,7 @@ ${ticketImg}
             transform: `translate3d(${bubblePos.x}px, ${bubblePos.y}px, 0)`,
             touchAction: 'none',
           }}
-          className="hidden md:flex fixed bottom-8 right-6 z-50 flex-col items-center gap-2 select-none"
+          className="hidden"
         >
         {/* Manija de arrastre / Grip superior táctil */}
         <div
