@@ -668,15 +668,36 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-bold text-slate-900 truncate">{p.title}</p>
                         <p className="mt-0.5 text-[11px] text-slate-600 line-clamp-2">{p.caption}</p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard?.writeText(p.caption || '');
-                          }}
-                          className="mt-1.5 rounded-md bg-[#14352F] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-900"
-                        >
-                          Copiar texto para WhatsApp
-                        </button>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(p.caption || '');
+                            }}
+                            className="rounded-md bg-[#14352F] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-900"
+                          >
+                            Copiar texto
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!groupJid || broadcasting}
+                            onClick={async () => {
+                              if (!groupJid) return;
+                              await fetch('/api/whatsapp/send', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  to: groupJid,
+                                  message: p.caption || p.title,
+                                  imageUrl: p.imageUrl || undefined,
+                                }),
+                              });
+                            }}
+                            className="rounded-md bg-[#D96B27] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-[#c55e1e] disabled:opacity-50"
+                          >
+                            📤 Enviar al Grupo
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
