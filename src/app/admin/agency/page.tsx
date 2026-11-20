@@ -183,6 +183,8 @@ export default function AgencyCommandCenterPage() {
   const [workflowStep, setWorkflowStep] = useState<"idle" | "strategy_review" | "creative_review">("idle");
   const [agentReply, setAgentReply] = useState<string>("");
   const [isChatting, setIsChatting] = useState(false);
+  const [brunoSummary, setBrunoSummary] = useState<string>("");
+  const [isAskingBruno, setIsAskingBruno] = useState(false);
   const [strategyProposal, setStrategyProposal] = useState(
     "Generando plan semanal detallado..."
   );
@@ -994,6 +996,48 @@ export default function AgencyCommandCenterPage() {
                     </p>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  disabled={isAskingBruno}
+                  onClick={async () => {
+                    setIsAskingBruno(true);
+                    officeEvents.emit("agent:move", { agentId: "bruno", targetPoint: "bruno", status: "Trabajando" });
+                    const summaryInput = pieces
+                      .filter((p) => p.status === "approved")
+                      .map((p) => {
+                        const m = dbMetrics.find((x) => x.deliverable_id === p.id);
+                        return `${p.title} (${p.platform}): ${m?.clicks_to_whatsapp || 0} clics, ${m?.new_group_members || 0} miembros, $${m?.closed_sales_mxn || 0} MXN`;
+                      })
+                      .join(" | ");
+                    try {
+                      const res = await fetch("/api/agency/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          agentId: "bruno",
+                          message: `Analiza estas métricas reales de la semana y dime en 3 líneas qué oferta y ángulo funcionó mejor y qué repetir la próxima semana: ${summaryInput || "Sin ventas registradas aún."}`,
+                          weekLabel: campaign,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data?.reply) setBrunoSummary(data.reply);
+                    } finally {
+                      setIsAskingBruno(false);
+                      officeEvents.emit("agent:move", { agentId: "bruno", targetPoint: "bruno", status: "Activo" });
+                    }
+                  }}
+                  className="w-full rounded-xl border border-[#D96B27]/60 bg-[#D96B27]/15 px-3 py-2 text-xs font-bold text-[#FDBA74] transition hover:bg-[#D96B27]/25 disabled:opacity-50"
+                >
+                  {isAskingBruno ? "Bruno analizando métricas..." : "📊 Pedir Resumen Semanal a Bruno"}
+                </button>
+
+                {brunoSummary && (
+                  <div className="rounded-xl border border-emerald-700/60 bg-[#0A1C19] p-3 text-xs leading-relaxed text-emerald-100">
+                    <p className="mb-1 text-[10px] font-bold uppercase text-[#10B981]">Análisis de Bruno (ROI)</p>
+                    {brunoSummary}
+                  </div>
+                )}
 
                 {pieces.filter((p) => p.status === "approved").map((p) => {
                   const m = dbMetrics.find((x) => x.deliverable_id === p.id);
