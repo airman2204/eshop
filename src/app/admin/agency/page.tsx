@@ -557,15 +557,12 @@ export default function AgencyCommandCenterPage() {
       {/* 1. HEADER SUPERIOR */}
       <header className="border-b border-emerald-800/70 bg-[#0D2420]/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
-          {/* Brand + Title + Campaign Selector */}
+          {/* Title + Campaign Selector */}
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D96B27]/20 border border-[#D96B27]/50">
-                <span className="text-xl leading-none">🦊</span>
-              </div>
+            <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-sm font-bold tracking-tight text-white">
-                  Agency Command Center
+                  FoxDrop Agency
                 </h1>
                 <div className="flex items-center gap-1 text-xs text-emerald-300/80">
                   <select

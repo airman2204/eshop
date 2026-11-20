@@ -4682,9 +4682,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   <span className="text-sm">🦊</span>
                 </div>
                 <div>
-                  <span className="block font-bold text-xs leading-none flex items-center gap-1.5">
-                    Agency Command
-                    <span className="bg-[#D96B27] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase">Oficina 2D</span>
+                  <span className="block font-bold text-xs leading-none">
+                    FoxDrop Agency
                   </span>
                   <span className={`text-[10px] font-normal ${crmSubTab === 'saleads' ? 'text-white/80' : 'text-slate-400'}`}>Anuncios & Campañas</span>
                 </div>
