@@ -600,10 +600,14 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           <div className="flex items-center gap-2">
             <ImageIcon className="w-4 h-4 text-emerald-600" />
             <h3 className="text-sm font-bold text-slate-900">
-              Publicar Liquidación al Grupo con FLUX + Sofía
+              Publicar Liquidación al Grupo con Sofía
             </h3>
           </div>
-          <div className="flex items-center gap-3">
+          <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            Conectado a FoxDrop Agency
+          </span>
+        </div>
+
         {/* KPI Summary Bar (Interactive Dashboard Builder) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div className="rounded-xl border border-emerald-800/30 bg-[#14352F] p-3 text-white shadow-sm">
@@ -683,13 +687,6 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             return null;
           }
         })()}
-
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-              Conectado a FoxDrop Agency
-            </span>
-          </div>
-        </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
