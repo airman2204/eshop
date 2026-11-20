@@ -9,7 +9,7 @@ import AdminWhatsAppTab from '@/components/AdminWhatsAppTab';
 import AdminCjTab from '@/components/AdminCjTab';
 import AdminJapanTab from '@/components/AdminJapanTab';
 import AdminCjDispatchModal from '@/components/AdminCjDispatchModal';
-import SaleAdsTab from '@/components/SaleAdsTab';
+import AgencyCommandCenterPage from '@/app/admin/agency/page';
 import AdminCampaignsTab from '@/components/AdminCampaignsTab';
 import AdminAnalyticsTab from '@/components/AdminAnalyticsTab';
 import SocialCommerceFlowTab from '@/components/SocialCommerceFlowTab';
@@ -4668,43 +4668,23 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           ) : (
             <>
           {/* BOTÓN DESTACADO: AGENCY COMMAND CENTER */}
-          <div className="mb-2">
-            <a
-              href="/admin/agency"
-              className="w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border bg-emerald-950/70 text-emerald-100 border-emerald-700/60 hover:border-[#D96B27] hover:bg-emerald-900/70"
-            >
-              <div className="flex items-center gap-2.5 text-left">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-[#D96B27]/20 text-[#D96B27]">
-                  <span className="text-sm">🦊</span>
-                </div>
-                <div>
-                  <span className="block font-bold text-xs leading-none flex items-center gap-1.5">
-                    Agency Command
-                    <span className="bg-[#D96B27] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Oficina 2D</span>
-                  </span>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          {/* BOTÓN DESTACADO: FOXADS (SALEADS PARA FOXDROP) */}
           <div>
             <button
               onClick={() => { setCrmSubTab('saleads'); setMobileSidebarOpen(false); }}
               className={`w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
                 crmSubTab === 'saleads'
-                  ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white border-orange-400 shadow-md shadow-orange-950/30'
-                  : 'bg-slate-900/60 text-slate-200 border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/60'
+                  ? 'bg-gradient-to-r from-[#14352F] to-[#D96B27] text-white border-[#D96B27] shadow-md'
+                  : 'bg-slate-900/60 text-slate-200 border-slate-800 hover:border-[#D96B27]/60 hover:bg-slate-800/60'
               }`}
             >
               <div className="flex items-center gap-2.5 text-left">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'saleads' ? 'bg-white/20 text-white' : 'bg-gradient-to-tr from-orange-500/20 to-pink-500/20 text-orange-400'}`}>
-                  <Sparkles className="w-4 h-4" />
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'saleads' ? 'bg-white/20 text-white' : 'bg-[#D96B27]/20 text-[#D96B27]'}`}>
+                  <span className="text-sm">🦊</span>
                 </div>
                 <div>
                   <span className="block font-bold text-xs leading-none flex items-center gap-1.5">
-                    FoxAds AI
-                    <span className="bg-gradient-to-r from-orange-400 to-pink-400 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase">SaleADS</span>
+                    Agency Command
+                    <span className="bg-[#D96B27] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase">Oficina 2D</span>
                   </span>
                   <span className={`text-[10px] font-normal ${crmSubTab === 'saleads' ? 'text-white/80' : 'text-slate-400'}`}>Anuncios & Campañas</span>
                 </div>
@@ -9397,7 +9377,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
         {/* 12. SECCIÓN FOXADS AI (SALEADS PARA FOXDROP) */}
         {(crmSubTab === 'saleads' || crmSubTab === 'agent' || crmSubTab === 'weavy') && (
-          <SaleAdsTab 
+          <AgencyCommandCenterPage /> 
             products={products} 
           />
         )}
