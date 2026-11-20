@@ -686,32 +686,25 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                               const btn = e.currentTarget;
                               btn.textContent = 'Enviando...';
                               try {
-                                const adminTok =
-                                  typeof window !== 'undefined'
-                                    ? localStorage.getItem('admin_token') ||
-                                      localStorage.getItem('foxdrop_admin_token') ||
-                                      sessionStorage.getItem('admin_token') ||
-                                      ''
-                                    : '';
-                                const res = await fetch('/api/whatsapp/send', {
+                                const res = await fetch('/api/admin/social-broadcast', {
                                   method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    ...(adminTok ? { Authorization: `Bearer ${adminTok}` } : {}),
-                                  },
+                                  headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
-                                    adminToken: adminTok,
-                                    to: groupJid,
-                                    phone: groupJid,
-                                    message: p.caption || p.title,
-                                    imageUrl: p.imageUrl || undefined,
+                                    groupJid: groupJid.trim(),
+                                    previews: [
+                                      {
+                                        caption: p.caption || p.title,
+                                        imageUrl: p.imageUrl || undefined,
+                                      },
+                                    ],
                                   }),
                                 });
                                 const data = await res.json().catch(() => ({}));
                                 if (res.ok && !data.error) {
                                   btn.textContent = '✓ Enviado';
+                                  setToast({ type: 'ok', msg: `Drop enviado al grupo de WhatsApp 🦊` });
                                 } else {
-                                  btn.textContent = `⚠ ${data.error || 'No autorizado'}`;
+                                  btn.textContent = `⚠ ${data.error || 'Error'}`;
                                 }
                               } catch {
                                 btn.textContent = '⚠ Error de conexión';
