@@ -694,7 +694,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                                     previews: [
                                       {
                                         caption: p.caption || p.title,
-                                        imageUrl: p.imageUrl || undefined,
+                                        imageUrl: p.imageUrl?.startsWith('http') ? p.imageUrl : undefined,
                                       },
                                     ],
                                   }),
