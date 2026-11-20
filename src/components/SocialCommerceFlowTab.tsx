@@ -512,17 +512,27 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700">
-            <Workflow className="w-5 h-5" />
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#0D2420] via-[#14352F] to-[#0D2420] p-4 rounded-2xl border border-emerald-700/60 shadow-xl backdrop-blur-md">
+        <div className="flex items-center gap-3.5">
+          <div className="relative h-14 w-14 shrink-0 rounded-2xl border-2 border-[#D96B27] bg-[#0D2420] p-1 shadow-[0_0_20px_rgba(217,107,39,0.28)]">
+            <img
+              src="/images/agents/sofia.png"
+              alt="Sofía Personal Shopper"
+              className="h-full w-full object-contain"
+            />
+            <span className="absolute -right-1 -bottom-1 h-3.5 w-3.5 rounded-full border-2 border-[#0D2420] bg-[#10B981]" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Sofía — Personal Shopper FoxDrop
-            </h2>
-            <p className="text-xs text-slate-500">
-              Diseña el árbol conversacional de apartado en grupo → DM humano → Pago MP / SPEI → Ticket.
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-extrabold tracking-tight text-white">
+                Sofía — Personal Shopper FoxDrop
+              </h2>
+              <span className="rounded-full bg-[#10B981]/20 border border-[#10B981]/40 px-2 py-0.5 text-[10px] font-bold text-[#10B981]">
+                En Línea
+              </span>
+            </div>
+            <p className="text-xs text-emerald-200/80">
+              Apartado en grupo VIP → Atención por DM → Pago MP / SPEI → Ticket automático.
             </p>
           </div>
         </div>
