@@ -181,7 +181,7 @@ export default function AgencyCommandCenterPage() {
   const [isPlanningStrategy, setIsPlanningStrategy] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [workflowStep, setWorkflowStep] = useState<"idle" | "strategy_review" | "creative_review">("idle");
-  const [agentReply, setAgentReply] = useState<string>("");
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; sender: "user" | "agent"; name: string; text: string }>>([]);
   const [isChatting, setIsChatting] = useState(false);
   const [brunoSummary, setBrunoSummary] = useState<string>("");
   const [isAskingBruno, setIsAskingBruno] = useState(false);
@@ -357,7 +357,12 @@ export default function AgencyCommandCenterPage() {
       });
       const data = await res.json();
       if (data?.updatedStrategy) setStrategyProposal(data.updatedStrategy);
-      if (data?.reply) setAgentReply(data.reply);
+      if (data?.reply) {
+        setChatMessages((prev) => [
+          ...prev,
+          { id: `msg-${Date.now()}`, sender: "agent", name: "Mateo", text: data.reply },
+        ]);
+      }
     } catch {}
 
     // Ya terminó de planear: suena notificación y camina a la Mesa de Aprobación
@@ -479,6 +484,10 @@ export default function AgencyCommandCenterPage() {
     const msg = chatInput.trim();
     setChatInput("");
     setIsChatting(true);
+    setChatMessages((prev) => [
+      ...prev,
+      { id: `u-${Date.now()}`, sender: "user", name: "Tú", text: msg },
+    ]);
 
     setAgents((prev) =>
       prev.map((a) =>
@@ -497,7 +506,10 @@ export default function AgencyCommandCenterPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ deliverableId: activePiece.id, feedbackNotes: msg }),
         });
-        setAgentReply("Listo, ya regeneré el visual con tu ajuste.");
+        setChatMessages((prev) => [
+          ...prev,
+          { id: `a-${Date.now()}`, sender: "agent", name: "Diego", text: "Listo, ya regeneré el visual con tu ajuste." },
+        ]);
       } else {
         const res = await fetch("/api/agency/chat", {
           method: "POST",
@@ -510,7 +522,12 @@ export default function AgencyCommandCenterPage() {
           }),
         });
         const data = await res.json();
-        if (data?.reply) setAgentReply(data.reply);
+        if (data?.reply) {
+          setChatMessages((prev) => [
+            ...prev,
+            { id: `a-${Date.now()}`, sender: "agent", name: selectedAgent.name, text: data.reply },
+          ]);
+        }
         if (data?.updatedStrategy) setStrategyProposal(data.updatedStrategy);
       }
     } finally {
@@ -1149,10 +1166,21 @@ export default function AgencyCommandCenterPage() {
             onSubmit={handleSendChat}
             className="shrink-0 border-t border-emerald-800/60 bg-[#0A1C19] p-3 space-y-2"
           >
-            {agentReply && (
-              <div className="rounded-lg border border-emerald-800/60 bg-[#14352F]/80 px-2.5 py-1.5 text-[11px] text-emerald-100">
-                <span className="font-bold text-[#FDBA74]">{selectedAgent.name}: </span>
-                {agentReply}
+            {chatMessages.length > 0 && (
+              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                {chatMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`rounded-lg px-2.5 py-1.5 text-[11px] ${
+                      m.sender === "user"
+                        ? "ml-6 bg-[#D96B27]/20 border border-[#D96B27]/40 text-orange-100"
+                        : "mr-6 bg-[#14352F]/80 border border-emerald-800/60 text-emerald-100"
+                    }`}
+                  >
+                    <span className="font-bold text-[#FDBA74]">{m.name}: </span>
+                    {m.text}
+                  </div>
+                ))}
               </div>
             )}
             <div className="flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-[#14352F] px-3 py-1.5">
