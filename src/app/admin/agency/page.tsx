@@ -185,6 +185,7 @@ export default function AgencyCommandCenterPage() {
   const [isChatting, setIsChatting] = useState(false);
   const [brunoSummary, setBrunoSummary] = useState<string>("");
   const [isAskingBruno, setIsAskingBruno] = useState(false);
+  const [isPolishingCopy, setIsPolishingCopy] = useState(false);
   const [strategyProposal, setStrategyProposal] = useState(
     "Generando plan semanal detallado..."
   );
@@ -804,7 +805,38 @@ export default function AgencyCommandCenterPage() {
                 <div>
                   <label className="mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-emerald-300/80">
                     <span>Caption · Editable</span>
-                    <Sparkles className="h-3 w-3 text-[#D96B27]" />
+                    <button
+                      type="button"
+                      disabled={isPolishingCopy}
+                      onClick={async () => {
+                        if (!activePiece) return;
+                        setIsPolishingCopy(true);
+                        officeEvents.emit("agent:move", { agentId: "valeria", targetPoint: "valeria", status: "Trabajando" });
+                        try {
+                          const res = await fetch("/api/agency/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              agentId: "valeria",
+                              message: `Pule y mejora este caption para ${activePiece.platform} haciéndolo más corto, directo y persuasivo en español de México (mantén el link de WhatsApp). Devuelve solo el caption mejorado en "reply":\n${activePiece.caption}`,
+                              weekLabel: campaign,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data?.reply) {
+                            handleUpdateCaption(data.reply);
+                            updateDeliverableCaption(activePiece.id, data.reply);
+                          }
+                        } finally {
+                          setIsPolishingCopy(false);
+                          officeEvents.emit("agent:move", { agentId: "valeria", targetPoint: "valeria", status: "Activo" });
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md border border-[#D96B27]/50 bg-[#D96B27]/15 px-2 py-0.5 text-[10px] font-bold normal-case text-[#FDBA74] hover:bg-[#D96B27]/25 disabled:opacity-50"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      {isPolishingCopy ? "Puliendo..." : "Pulir Copy"}
+                    </button>
                   </label>
                   <textarea
                     rows={4}
