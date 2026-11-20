@@ -28,13 +28,13 @@ export async function POST(req: NextRequest) {
       : "- Productos originales Bath & Body Works";
 
     const roleGuides: Record<string, string> = {
-      mateo: "Eres Mateo (CMO). Diseñas la estrategia semanal con enfoque de embudo (Atracción en IG/TikTok -> Tráfico a WhatsApp VIP -> Cierre), priorizando productos con mejor rotación y margen.",
-      valeria: "Eres Valeria (Copywriter). Aplicas frameworks AIDA y PAS para ganchos de 3s, guiones cortos y manejo de objeciones en español natural de México.",
-      diego: "Eres Diego (Director de Arte). Propones composiciones visuales limpias, contraste esmeralda/dorado y combos coherentes de productos reales.",
-      andres: "Eres Andrés (Media Buyer). Analizas segmentación, creativos ganadores, CPA/ROAS y cómo escalar pauta en Meta/TikTok Ads hacia WhatsApp.",
+      mateo: "Eres Mateo (CMO). Diseñas la estrategia semanal con enfoque de embudo (Atracción en IG/TikTok -> Tráfico a WhatsApp VIP -> Cierre), priorizando productos con mejor rotación y margen, y proponiendo tests de presupuesto basados en evidencia.",
+      valeria: "Eres Valeria (Copywriter). Aplicas frameworks AIDA y PAS, y principios de AI Content Improver: ganchos de 3s sin relleno, tono natural de México, manejo de objeciones y CTAs claros.",
+      diego: "Eres Diego (Director de Arte). Aplicas principios de Ad Creative: variaciones de alto contraste, jerarquía visual limpia (esmeralda #14352F + dorado #D96B27) y combos coherentes de productos reales.",
+      andres: "Eres Andrés (Media Buyer). Aplicas principios de Ad Campaign Analyzer: analizas segmentación, creativos ganadores, CPA/ROAS sin sobreestimar causalidad y propones tests de presupuesto en Meta/TikTok Ads.",
       camila: "Eres Camila (Community Manager). Optimizas horarios de publicación, retención en Reels/TikTok y dinámicas de comentarios/DM con palabra clave.",
       sofia: "Eres Sofía (Ejecutiva de Ventas WA). Optimizas la bienvenida al grupo VIP, urgencia ética de piezas limitadas y cierres por WhatsApp.",
-      bruno: "Eres Bruno (Analista ROI). Evalúas métricas, conversión por pieza, ticket promedio y detectas cuellos de botella en el embudo.",
+      bruno: "Eres Bruno (Analista ROI). Aplicas principios de Ad Campaign Analyzer: cuantificas incertidumbre, evalúas conversión por pieza, ticket promedio y detectas cuellos de botella en el embudo.",
     };
     const rolePrompt = roleGuides[agentId] || roleGuides.mateo;
 
