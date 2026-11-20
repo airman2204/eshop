@@ -594,6 +594,40 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             </h3>
           </div>
           <div className="flex items-center gap-3">
+        {/* KPI Summary Bar (Interactive Dashboard Builder) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="rounded-xl border border-emerald-800/30 bg-[#14352F] p-3 text-white shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300/80">
+              Agencia → WhatsApp
+            </p>
+            <p className="mt-1 text-lg font-black text-white">Conectado</p>
+            <p className="text-[10px] text-emerald-300/70">Sincronizado con deliverables</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Grupo Activo
+            </p>
+            <p className="mt-1 text-sm font-bold text-slate-800 truncate">
+              {groups.find((g) => g.id === groupJid)?.name || "Ventas Flash ⚡ FoxDrop"}
+            </p>
+            <p className="text-[10px] text-emerald-600 font-medium">Canal VIP</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Productos en Stock
+            </p>
+            <p className="mt-1 text-lg font-black text-slate-800">{products?.length || 0}</p>
+            <p className="text-[10px] text-slate-500">Disponibles para drop</p>
+          </div>
+          <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-3 shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#D96B27]">
+              Estado Sofía
+            </p>
+            <p className="mt-1 text-lg font-black text-[#D96B27]">En Línea</p>
+            <p className="text-[10px] text-orange-700/80">Lista para cerrar ventas</p>
+          </div>
+        </div>
+
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
               Conectado a FoxDrop Agency
