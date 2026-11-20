@@ -203,6 +203,7 @@ export default function AgencyCommandCenterPage() {
         if (Array.isArray(parsed.chatMessages)) setChatMessages(parsed.chatMessages);
         if (Array.isArray(parsed.logs)) setLogs(parsed.logs);
         if (parsed.campaign) setCampaign(parsed.campaign);
+        if (Array.isArray(parsed.pieces) && parsed.pieces.length > 0) setPieces(parsed.pieces);
       }
     } catch {}
     setHydrated(true);
@@ -213,10 +214,10 @@ export default function AgencyCommandCenterPage() {
     try {
       localStorage.setItem(
         "foxdrop_agency_state_v1",
-        JSON.stringify({ workflowStep, strategyProposal, chatMessages, logs, campaign })
+        JSON.stringify({ workflowStep, strategyProposal, chatMessages, logs, campaign, pieces })
       );
     } catch {}
-  }, [hydrated, workflowStep, strategyProposal, chatMessages, logs, campaign]);
+  }, [hydrated, workflowStep, strategyProposal, chatMessages, logs, campaign, pieces]);
 
   const handleResetAgency = () => {
     localStorage.removeItem("foxdrop_agency_state_v1");

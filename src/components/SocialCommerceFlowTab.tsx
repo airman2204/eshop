@@ -638,6 +638,52 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         </div>
 
+        {/* Drops Aprobados desde FoxDrop Agency */}
+        {(() => {
+          try {
+            const raw = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_agency_state_v1') : null;
+            const parsed = raw ? JSON.parse(raw) : null;
+            const approved = Array.isArray(parsed?.pieces)
+              ? parsed.pieces.filter((p: any) => p.status === 'approved')
+              : [];
+            if (approved.length === 0) return null;
+            return (
+              <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900">
+                    📦 Drops Aprobados de FoxDrop Agency ({approved.length})
+                  </h4>
+                  <span className="text-[11px] text-emerald-700 font-medium">Listos para WhatsApp</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {approved.map((p: any) => (
+                    <div key={p.id} className="flex gap-3 rounded-xl border border-emerald-200 bg-white p-3 shadow-sm">
+                      {p.imageUrl && (
+                        <img src={p.imageUrl} alt={p.title} className="h-16 w-16 shrink-0 rounded-lg object-cover border border-slate-200" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-900 truncate">{p.title}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-600 line-clamp-2">{p.caption}</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(p.caption || '');
+                          }}
+                          className="mt-1.5 rounded-md bg-[#14352F] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-900"
+                        >
+                          Copiar texto para WhatsApp
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          } catch {
+            return null;
+          }
+        })()}
+
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
               Conectado a FoxDrop Agency
