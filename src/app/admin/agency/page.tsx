@@ -190,6 +190,8 @@ export default function AgencyCommandCenterPage() {
     "Generando plan semanal detallado..."
   );
 
+  const [hydrated, setHydrated] = useState(false);
+
   // Persistir estado de la sesión en localStorage para no perderlo al refrescar
   React.useEffect(() => {
     try {
@@ -203,16 +205,18 @@ export default function AgencyCommandCenterPage() {
         if (parsed.campaign) setCampaign(parsed.campaign);
       }
     } catch {}
+    setHydrated(true);
   }, []);
 
   React.useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(
         "foxdrop_agency_state_v1",
         JSON.stringify({ workflowStep, strategyProposal, chatMessages, logs, campaign })
       );
     } catch {}
-  }, [workflowStep, strategyProposal, chatMessages, logs, campaign]);
+  }, [hydrated, workflowStep, strategyProposal, chatMessages, logs, campaign]);
 
   const handleResetAgency = () => {
     localStorage.removeItem("foxdrop_agency_state_v1");
