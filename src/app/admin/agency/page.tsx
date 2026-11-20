@@ -954,7 +954,11 @@ export default function AgencyCommandCenterPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-700/80 bg-[#14352F] px-4 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-900/60 disabled:opacity-60"
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${isRefining ? "animate-spin" : ""}`} />
-                    {isRefining ? "Regenerando visual..." : "↻ Regenerar"}
+                    {isRefining
+                      ? "Generando visual..."
+                      : activePiece.imageUrl
+                      ? "↻ Regenerar"
+                      : "✨ Generar visual"}
                   </button>
                   {activePiece.imageUrl && (
                     <a
