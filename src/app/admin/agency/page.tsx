@@ -721,10 +721,65 @@ export default function AgencyCommandCenterPage() {
         </div>
       </div>
 
-      {/* MAIN WORKSPACE: 68% LEFT MAP + 32% RIGHT INSPECTOR */}
-      <main className="grid w-full flex-1 min-h-0 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
-        {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (68% -> 8 cols) */}
-        <section className="lg:col-span-8">
+      {/* MAIN WORKSPACE: 3 COLUMNS (CHAT + MAPA PHASER + INSPECTOR) */}
+      <main className="grid w-full flex-1 min-h-0 grid-cols-1 gap-3 p-3 lg:grid-cols-12">
+        {/* 1. CHAT EN VIVO CON EL AGENTE (3 cols) */}
+        <aside className="lg:col-span-3 flex flex-col min-h-0 rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between border-b border-emerald-800/60 bg-[#0A1C19] px-3.5 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
+              <span className="text-xs font-bold text-white">Chat · {selectedAgent.name}</span>
+            </div>
+            <span className="text-[10px] text-emerald-300/70">{selectedAgent.role}</span>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+            {chatMessages.length === 0 ? (
+              <p className="text-[11px] text-emerald-300/60 text-center mt-6">
+                Haz clic en cualquier zorrito del mapa y pregúntale o pídele ajustes aquí.
+              </p>
+            ) : (
+              chatMessages.map((m) => (
+                <div
+                  key={m.id}
+                  className={`rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                    m.sender === "user"
+                      ? "ml-4 bg-[#D96B27]/20 border border-[#D96B27]/40 text-orange-100"
+                      : "mr-4 bg-[#14352F]/80 border border-emerald-800/60 text-emerald-100"
+                  }`}
+                >
+                  <span className="block text-[10px] font-bold text-[#FDBA74] mb-0.5">{m.name}</span>
+                  {m.text}
+                </div>
+              ))
+            )}
+          </div>
+
+          <form
+            onSubmit={handleSendChat}
+            className="shrink-0 border-t border-emerald-800/60 bg-[#0A1C19] p-2.5"
+          >
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-[#14352F] px-3 py-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder={`Escribe a ${selectedAgent.name}...`}
+                className="w-full bg-transparent text-xs text-white placeholder-emerald-300/50 focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#D96B27] text-white transition hover:bg-[#c55e1e]"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </form>
+        </aside>
+
+        {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (5 cols) */}
+        <section className="lg:col-span-5 flex flex-col min-h-0">
           <VirtualOffice
             onSelectAgent={setSelectedAgentId}
             onSimulateFlow={handleSimulateFlow}
@@ -1222,48 +1277,8 @@ export default function AgencyCommandCenterPage() {
             )}
           </div>
 
-          {/* Quick Agent Chat */}
-          <form
-            onSubmit={handleSendChat}
-            className="shrink-0 border-t border-emerald-800/60 bg-[#0A1C19] p-3 space-y-2"
-          >
-            {chatMessages.length > 0 && (
-              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                {chatMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`rounded-lg px-2.5 py-1.5 text-[11px] ${
-                      m.sender === "user"
-                        ? "ml-6 bg-[#D96B27]/20 border border-[#D96B27]/40 text-orange-100"
-                        : "mr-6 bg-[#14352F]/80 border border-emerald-800/60 text-emerald-100"
-                    }`}
-                  >
-                    <span className="font-bold text-[#FDBA74]">{m.name}: </span>
-                    {m.text}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-800/80 bg-[#14352F] px-3 py-1.5">
-              <MessageSquare className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder={`Pide un ajuste a ${selectedAgent.name}...`}
-                className="w-full bg-transparent text-xs text-white placeholder-emerald-300/50 focus:outline-none"
-              />
-              <button
-                type="submit"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#D96B27] text-white transition hover:bg-[#c55e1e]"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </form>
         </aside>
       </main>
-
     </div>
   );
 }
