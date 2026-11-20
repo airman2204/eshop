@@ -27,8 +27,19 @@ export async function POST(req: NextRequest) {
       ? prods.map((p: any) => `- ${p.title} ($${p.public_price} MXN)`).join("\n")
       : "- Productos originales Bath & Body Works";
 
+    const roleGuides: Record<string, string> = {
+      mateo: "Eres Mateo (CMO). Diseñas la estrategia semanal con enfoque de embudo (Atracción en IG/TikTok -> Tráfico a WhatsApp VIP -> Cierre), priorizando productos con mejor rotación y margen.",
+      valeria: "Eres Valeria (Copywriter). Aplicas frameworks AIDA y PAS para ganchos de 3s, guiones cortos y manejo de objeciones en español natural de México.",
+      diego: "Eres Diego (Director de Arte). Propones composiciones visuales limpias, contraste esmeralda/dorado y combos coherentes de productos reales.",
+      andres: "Eres Andrés (Media Buyer). Analizas segmentación, creativos ganadores, CPA/ROAS y cómo escalar pauta en Meta/TikTok Ads hacia WhatsApp.",
+      camila: "Eres Camila (Community Manager). Optimizas horarios de publicación, retención en Reels/TikTok y dinámicas de comentarios/DM con palabra clave.",
+      sofia: "Eres Sofía (Ejecutiva de Ventas WA). Optimizas la bienvenida al grupo VIP, urgencia ética de piezas limitadas y cierres por WhatsApp.",
+      bruno: "Eres Bruno (Analista ROI). Evalúas métricas, conversión por pieza, ticket promedio y detectas cuellos de botella en el embudo.",
+    };
+    const rolePrompt = roleGuides[agentId] || roleGuides.mateo;
+
     const prompt = message
-      ? `Eres ${agentId.toUpperCase()} de la agencia FoxDrop (foxdrop.mx).
+      ? `${rolePrompt}
 El Director General te escribió en el chat: "${message}"
 Plan semanal actual:
 ${currentStrategy || weekLabel}
@@ -36,18 +47,18 @@ ${currentStrategy || weekLabel}
 Inventario real disponible:
 ${inventoryText}
 
-Responde en español natural de México (directo, claro, sin "lotes/pacas/saldos").
+Responde en español natural de México (directo, analítico, sin "lotes/pacas/saldos").
 Si te piden ajustar la estrategia o tienes que actualizar el plan de la semana (Lunes a Viernes para Instagram y TikTok), devuelve un JSON válido:
 {
-  "reply": "Tu respuesta breve y clara al Director General",
-  "updatedStrategy": "El plan semanal completo actualizado (Lunes a Viernes, Instagram y TikTok, combos y CTA a ${WHATSAPP_GROUP_URL}) o cadena vacía si solo fue una pregunta"
+  "reply": "Tu respuesta analítica y accionable al Director General",
+  "updatedStrategy": "El plan semanal completo actualizado (Lunes a Viernes, Instagram y TikTok, combos, ángulo AIDA/PAS y CTA a ${WHATSAPP_GROUP_URL}) o cadena vacía si solo fue una pregunta"
 }`
-      : `Eres Mateo (CMO) de FoxDrop (foxdrop.mx). Arma una propuesta DETALLADA para "${weekLabel}" usando este inventario real de Bath & Body Works:
+      : `${rolePrompt} Arma una propuesta DETALLADA para "${weekLabel}" usando este inventario real de Bath & Body Works:
 ${inventoryText}
 
 Incluye:
-- Objetivo de la semana (llevar tráfico al grupo VIP de WhatsApp: ${WHATSAPP_GROUP_URL})
-- Calendario detallado de Lunes a Viernes especificando qué se publica en Instagram y qué en TikTok, qué combo de 3 productos se usa y el ángulo de cada día.
+- Objetivo de embudo de la semana (Atracción IG/TikTok -> Grupo VIP de WhatsApp: ${WHATSAPP_GROUP_URL} -> Cierre)
+- Calendario detallado de Lunes a Viernes especificando red social (Instagram o TikTok), formato, combo de 3 productos, gancho AIDA/PAS y CTA.
 - Español natural de México (sin "lotes", "pacas", "saldos").
 Devuelve JSON válido:
 {
