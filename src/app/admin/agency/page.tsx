@@ -618,6 +618,35 @@ export default function AgencyCommandCenterPage() {
         </div>
       </header>
 
+      {/* 2. BARRA SUPERIOR DE ACTIVIDAD EN VIVO */}
+      <div className="border-b border-emerald-800/70 bg-[#0D2420]/95 px-4 py-2 shrink-0">
+        <div className="flex items-center gap-3 overflow-x-auto">
+          <span className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-white">
+            <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
+            Actividad en vivo:
+          </span>
+          {logs.length === 0 ? (
+            <span className="text-[11px] text-emerald-300/60">
+              Esperando actividad — presiona + Nueva Campaña Semanal para comenzar.
+            </span>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] ${
+                  log.highlight
+                    ? "border-[#D96B27]/60 bg-[#D96B27]/10 text-orange-100"
+                    : "border-emerald-800/60 bg-[#14352F]/70 text-emerald-100"
+                }`}
+              >
+                <span className="font-bold text-[#D96B27] mr-1.5">{log.time}</span>
+                <span>{log.text}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* MAIN WORKSPACE: 68% LEFT MAP + 32% RIGHT INSPECTOR */}
       <main className="grid w-full flex-1 min-h-0 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
         {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (68% -> 8 cols) */}
@@ -1146,33 +1175,6 @@ export default function AgencyCommandCenterPage() {
         </aside>
       </main>
 
-      {/* 4. BARRA INFERIOR DE ACTIVIDAD EN VIVO */}
-      <footer className="border-t border-emerald-800/70 bg-[#0D2420]/95 px-4 py-3">
-        <div className="w-full">
-          <div className="mb-2 flex items-center justify-between text-[11px] text-emerald-300/80">
-            <span className="flex items-center gap-1.5 font-semibold text-white">
-              <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-              Actividad en vivo
-            </span>
-            <span>Traspasos entre agentes</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className={`min-w-[240px] flex-1 rounded-xl border px-3 py-2 text-xs ${
-                  log.highlight
-                    ? "border-[#D96B27]/60 bg-[#D96B27]/10 text-orange-100"
-                    : "border-emerald-800/60 bg-[#14352F]/70 text-emerald-100"
-                }`}
-              >
-                <p className="text-[10px] font-bold text-[#D96B27]">{log.time}</p>
-                <p className="mt-0.5 truncate text-[11px]">{log.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
