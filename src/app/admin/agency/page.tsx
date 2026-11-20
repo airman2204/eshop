@@ -498,11 +498,22 @@ export default function AgencyCommandCenterPage() {
     );
     appendLog(`Diego está regenerando "${activePiece.title}" con inventario real...`);
     try {
-      await fetch("/api/agency/refine-deliverable", {
+      const res = await fetch("/api/agency/refine-deliverable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deliverableId: activePiece.id }),
       });
+      const data = await res.json();
+      if (data?.deliverable?.image_url) {
+        setPieces((prev) =>
+          prev.map((p) =>
+            p.id === activePiece.id ? { ...p, imageUrl: data.deliverable.image_url } : p
+          )
+        );
+        appendLog(`✓ Visual generado para "${activePiece.title}"`, true);
+      } else {
+        appendLog(data?.error || "No se pudo generar el visual");
+      }
     } catch {
       appendLog("Error al regenerar el visual");
     } finally {
