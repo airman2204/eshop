@@ -681,17 +681,35 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                           <button
                             type="button"
                             disabled={!groupJid || broadcasting}
-                            onClick={async () => {
+                            onClick={async (e) => {
                               if (!groupJid) return;
-                              await fetch('/api/whatsapp/send', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  to: groupJid,
-                                  message: p.caption || p.title,
-                                  imageUrl: p.imageUrl || undefined,
-                                }),
-                              });
+                              const btn = e.currentTarget;
+                              btn.textContent = 'Enviando...';
+                              try {
+                                const res = await fetch('/api/whatsapp/send', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+                                  },
+                                  body: JSON.stringify({
+                                    adminToken,
+                                    to: groupJid,
+                                    phone: groupJid,
+                                    message: p.caption || p.title,
+                                    imageUrl: p.imageUrl || undefined,
+                                  }),
+                                });
+                                const data = await res.json().catch(() => ({}));
+                                if (res.ok && !data.error) {
+                                  btn.textContent = '✓ Enviado';
+                                } else {
+                                  btn.textContent = '⚠ Error';
+                                  alert(data.error || 'No se pudo enviar al grupo');
+                                }
+                              } catch {
+                                btn.textContent = '⚠ Error';
+                              }
                             }}
                             className="rounded-md bg-[#D96B27] px-2.5 py-1 text-[10px] font-bold text-white hover:bg-[#c55e1e] disabled:opacity-50"
                           >
