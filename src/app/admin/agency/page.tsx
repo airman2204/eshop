@@ -170,7 +170,8 @@ export default function AgencyCommandCenterPage() {
   const [agents, setAgents] = useState<OfficeAgent[]>(INITIAL_AGENTS);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("diego");
   const [campaign, setCampaign] = useState("Semana 1: Drops Exclusivos WhatsApp");
-  const [activeTab, setActiveTab] = useState<"approve" | "calendar" | "roi">("approve");
+  const [activeTab, setActiveTab] = useState<"approve" | "calendar" | "whatsapp" | "roi">("approve");
+  const [calendarView, setCalendarView] = useState<"week" | "month">("week");
   const [pieces, setPieces] = useState<ApprovalPiece[]>(INITIAL_PIECES);
   const [currentPieceIndex, setCurrentPieceIndex] = useState(0);
   const [logs, setLogs] = useState<ActivityLog[]>(INITIAL_LOGS);
@@ -628,42 +629,53 @@ export default function AgencyCommandCenterPage() {
         {/* 3. PANEL INSPECTOR Y COLA DE APROBACIÓN (32% -> 4 cols) */}
         <aside className="lg:col-span-4 flex flex-col rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl overflow-hidden">
           {/* Tabs */}
-          <div className="grid grid-cols-3 border-b border-emerald-800/60 bg-[#0A1C19]">
+          <div className="grid grid-cols-4 border-b border-emerald-800/60 bg-[#0A1C19]">
             <button
               type="button"
               onClick={() => setActiveTab("approve")}
-              className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition ${
+              className={`flex items-center justify-center gap-1 py-3 text-[11px] font-semibold transition ${
                 activeTab === "approve"
                   ? "border-b-2 border-[#D96B27] text-white bg-[#0D2420]"
                   : "text-emerald-300/70 hover:text-white"
               }`}
             >
-              Por Aprobar
-              <span className="rounded-full bg-[#D96B27] px-1.5 py-0.5 text-[10px] font-bold text-white">
+              Aprobar
+              <span className="rounded-full bg-[#D96B27] px-1.5 py-0.5 text-[9px] font-bold text-white">
                 {pendingPieces.length}
               </span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("calendar")}
-              className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition ${
+              className={`flex items-center justify-center gap-1 py-3 text-[11px] font-semibold transition ${
                 activeTab === "calendar"
                   ? "border-b-2 border-[#D96B27] text-white bg-[#0D2420]"
                   : "text-emerald-300/70 hover:text-white"
               }`}
             >
-              <Calendar className="h-3.5 w-3.5" /> Calendario
+              <Calendar className="h-3 w-3" /> Calendario
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("whatsapp")}
+              className={`flex items-center justify-center gap-1 py-3 text-[11px] font-semibold transition ${
+                activeTab === "whatsapp"
+                  ? "border-b-2 border-[#D96B27] text-white bg-[#0D2420]"
+                  : "text-emerald-300/70 hover:text-white"
+              }`}
+            >
+              <MessageSquare className="h-3 w-3" /> WhatsApp
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("roi")}
-              className={`flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition ${
+              className={`flex items-center justify-center gap-1 py-3 text-[11px] font-semibold transition ${
                 activeTab === "roi"
                   ? "border-b-2 border-[#D96B27] text-white bg-[#0D2420]"
                   : "text-emerald-300/70 hover:text-white"
               }`}
             >
-              <TrendingUp className="h-3.5 w-3.5" /> Historial &amp; ROI
+              <TrendingUp className="h-3 w-3" /> ROI
             </button>
           </div>
 
@@ -834,29 +846,118 @@ export default function AgencyCommandCenterPage() {
             )}
 
             {activeTab === "calendar" && (
-              <div className="space-y-2.5">
-                {pieces.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-3"
-                  >
-                    <div>
-                      <p className="text-xs font-bold text-white">{p.title}</p>
-                      <p className="text-[11px] text-emerald-300/80">
-                        {p.platform} · {p.schedule}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        p.status === "approved"
-                          ? "bg-[#10B981]/20 text-[#10B981]"
-                          : "bg-amber-500/20 text-amber-300"
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300/80">
+                    Pauta en Redes
+                  </span>
+                  <div className="flex rounded-lg border border-emerald-800/70 bg-[#0A1C19] p-0.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setCalendarView("week")}
+                      className={`rounded-md px-2 py-0.5 font-semibold ${
+                        calendarView === "week" ? "bg-[#D96B27] text-white" : "text-emerald-300/70"
                       }`}
                     >
-                      {p.status === "approved" ? "Aprobado" : "Pendiente"}
-                    </span>
+                      Semana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarView("month")}
+                      className={`rounded-md px-2 py-0.5 font-semibold ${
+                        calendarView === "month" ? "bg-[#D96B27] text-white" : "text-emerald-300/70"
+                      }`}
+                    >
+                      Mes
+                    </button>
                   </div>
-                ))}
+                </div>
+
+                {pieces.length === 0 ? (
+                  <p className="text-xs text-emerald-300/70">
+                    Aún no hay piezas programadas. Genera una campaña semanal para llenar el calendario.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((day, idx) => {
+                      const p = pieces[idx];
+                      return (
+                        <div
+                          key={day}
+                          className="rounded-xl border border-emerald-800/60 bg-[#14352F]/70 p-2.5"
+                        >
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-bold uppercase text-[#FDBA74]">{day}</span>
+                            <span className="text-emerald-300/80">{p ? p.schedule : "Libre"}</span>
+                          </div>
+                          {p ? (
+                            <div className="mt-1 flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-white">{p.title}</p>
+                                <p className="text-[10px] text-emerald-300/80">{p.platform}</p>
+                              </div>
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                                  p.status === "approved"
+                                    ? "bg-[#10B981]/20 text-[#10B981]"
+                                    : "bg-amber-500/20 text-amber-300"
+                                }`}
+                              >
+                                {p.status === "approved" ? "Aprobado" : "Pendiente"}
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-[11px] text-emerald-400/50">Sin pauta asignada</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "whatsapp" && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-[#10B981]/40 bg-[#14352F]/70 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#10B981]">
+                    Proceso 2 · Ventas &amp; Servicio en WhatsApp (Sofía)
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-100">
+                    Lista de rotación semanal para no repetir producto y empujar el stock con atención al cliente.
+                  </p>
+                </div>
+
+                {pieces.length === 0 ? (
+                  <p className="text-xs text-emerald-300/70">
+                    Genera la campaña semanal para asignar los combos del día a Sofía.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {pieces.map((p, idx) => {
+                      const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+                      return (
+                        <div
+                          key={p.id}
+                          className="rounded-xl border border-emerald-800/60 bg-[#14352F]/60 p-3 space-y-1.5"
+                        >
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="font-bold uppercase text-[#FDBA74]">
+                              {days[idx] || `Día ${idx + 1}`}
+                            </span>
+                            <span className="rounded bg-[#10B981]/20 px-1.5 py-0.5 font-semibold text-[#10B981]">
+                              Meta: 5–8 piezas
+                            </span>
+                          </div>
+                          <p className="text-xs font-bold text-white">{p.title}</p>
+                          <p className="text-[11px] text-emerald-200/80">
+                            💬 <strong>Cómo venderlo:</strong> Ofrece el combo con envío rápido y resalta últimas piezas disponibles en grupo VIP.
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
