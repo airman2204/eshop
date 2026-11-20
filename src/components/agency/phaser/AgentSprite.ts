@@ -15,6 +15,8 @@ export class AgentSprite extends Phaser.GameObjects.Container {
   private walkTween?: Phaser.Tweens.Tween;
   private idleTween?: Phaser.Tweens.Tween;
   private isWalking = false;
+  private baseScaleX = 1;
+  private baseScaleY = 1;
 
   constructor(
     scene: Phaser.Scene,
@@ -43,6 +45,8 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     // 3. Sprite del zorrito
     this.sprite = scene.add.image(0, -10, `agent_${id}`);
     this.sprite.setDisplaySize(76, 76);
+    this.baseScaleX = this.sprite.scaleX;
+    this.baseScaleY = this.sprite.scaleY;
     this.add(this.sprite);
 
     // 4. Contenedor superior dinámico (Nombre + Rol + Badge de estado)
@@ -108,10 +112,12 @@ export class AgentSprite extends Phaser.GameObjects.Container {
 
   private startIdleAnimation() {
     if (this.idleTween) this.idleTween.stop();
-    const baseScaleY = this.sprite.scaleY;
+    // Sentado en su silla: ligeramente más bajo y compacto
+    this.sprite.setPosition(0, -2);
+    this.sprite.setScale(this.baseScaleX * 1.05, this.baseScaleY * 0.86);
     this.idleTween = this.scene.tweens.add({
       targets: this.sprite,
-      scaleY: { from: baseScaleY, to: baseScaleY * 1.04 },
+      scaleY: { from: this.baseScaleY * 0.86, to: this.baseScaleY * 0.9 },
       duration: 1200,
       yoyo: true,
       repeat: -1,
@@ -132,6 +138,16 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     if (this.walkTween) this.walkTween.stop();
     if (this.idleTween) this.idleTween.stop();
     this.isWalking = true;
+
+    // Levantarse de la silla antes de caminar
+    this.scene.tweens.add({
+      targets: this.sprite,
+      y: -10,
+      scaleX: this.baseScaleX,
+      scaleY: this.baseScaleY,
+      duration: 180,
+      ease: "Back.easeOut",
+    });
 
     // Animación de pasos (rebote + balanceo)
     const stepTween = this.scene.tweens.add({
