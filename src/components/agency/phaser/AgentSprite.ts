@@ -31,18 +31,18 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.agentRole = role;
 
     // 1. Anillo dorado de selección en el piso
-    this.selectionRing = scene.add.ellipse(0, 14, 42, 16, 0xd96b27, 0.28);
+    this.selectionRing = scene.add.ellipse(0, 22, 56, 20, 0xd96b27, 0.28);
     this.selectionRing.setStrokeStyle(2, 0xd96b27, 1);
     this.selectionRing.setVisible(false);
     this.add(this.selectionRing);
 
     // 2. Sombra dinámica en el piso
-    this.shadow = scene.add.ellipse(0, 14, 30, 11, 0x000000, 0.45);
+    this.shadow = scene.add.ellipse(0, 22, 42, 14, 0x000000, 0.45);
     this.add(this.shadow);
 
     // 3. Sprite del zorrito
-    this.sprite = scene.add.image(0, -6, `agent_${id}`);
-    this.sprite.setDisplaySize(48, 48);
+    this.sprite = scene.add.image(0, -10, `agent_${id}`);
+    this.sprite.setDisplaySize(76, 76);
     this.add(this.sprite);
 
     // 4. Contenedor superior dinámico (Nombre + Rol + Badge de estado)
@@ -50,9 +50,9 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.add(this.badgeBg);
 
     this.badgeText = scene.add
-      .text(0, -44, `${name} · ${status}`, {
+      .text(0, -58, `${name} · ${status}`, {
         fontFamily: "Arial, sans-serif",
-        fontSize: "11px",
+        fontSize: "12px",
         fontStyle: "bold",
         color: "#ffffff",
       })
@@ -60,18 +60,18 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.add(this.badgeText);
 
     const roleLabel = scene.add
-      .text(0, 26, `${name} (${role})`, {
+      .text(0, 36, `${name} (${role})`, {
         fontFamily: "Arial, sans-serif",
-        fontSize: "10px",
+        fontSize: "11px",
         color: "#a7f3d0",
         backgroundColor: "#0D2420",
-        padding: { x: 5, y: 2 },
+        padding: { x: 6, y: 2 },
       })
       .setOrigin(0.5, 0.5);
     this.add(roleLabel);
 
     this.setStatus(status);
-    this.setSize(48, 56);
+    this.setSize(76, 86);
     this.setInteractive({ useHandCursor: true });
 
     this.on("pointerdown", () => {
@@ -102,8 +102,8 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.badgeBg.clear();
     this.badgeBg.fillStyle(0x0d2420, 0.92);
     this.badgeBg.lineStyle(1.5, color, 1);
-    this.badgeBg.fillRoundedRect(-w / 2, -44 - h / 2, w, h, 9);
-    this.badgeBg.strokeRoundedRect(-w / 2, -44 - h / 2, w, h, 9);
+    this.badgeBg.fillRoundedRect(-w / 2, -58 - h / 2, w, h, 9);
+    this.badgeBg.strokeRoundedRect(-w / 2, -58 - h / 2, w, h, 9);
   }
 
   private startIdleAnimation() {
