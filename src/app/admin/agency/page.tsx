@@ -559,7 +559,7 @@ export default function AgencyCommandCenterPage() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-56px)] overflow-hidden bg-[#14352F] text-emerald-50 flex flex-col">
+    <div className="w-full h-[calc(100vh-80px)] overflow-hidden bg-[#14352F] text-emerald-50 flex flex-col">
       {/* 1. HEADER SUPERIOR */}
       <header className="border-b border-emerald-800/70 bg-[#0D2420]/95 px-4 py-3 backdrop-blur-md">
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
