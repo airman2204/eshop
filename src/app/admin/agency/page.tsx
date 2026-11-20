@@ -616,7 +616,7 @@ export default function AgencyCommandCenterPage() {
       </header>
 
       {/* MAIN WORKSPACE: 68% LEFT MAP + 32% RIGHT INSPECTOR */}
-      <main className="grid w-full flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
+      <main className="grid w-full flex-1 min-h-0 grid-cols-1 gap-4 p-4 lg:grid-cols-12">
         {/* 2. OFICINA VIRTUAL PHASER 3 + TILED + EASYSTAR (68% -> 8 cols) */}
         <section className="lg:col-span-8">
           <VirtualOffice
@@ -627,7 +627,7 @@ export default function AgencyCommandCenterPage() {
         </section>
 
         {/* 3. PANEL INSPECTOR Y COLA DE APROBACIÓN (32% -> 4 cols) */}
-        <aside className="lg:col-span-4 flex flex-col rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl overflow-hidden">
+        <aside className="lg:col-span-4 flex flex-col min-h-0 rounded-2xl border border-emerald-800/60 bg-[#0D2420] shadow-2xl overflow-hidden">
           {/* Tabs */}
           <div className="grid grid-cols-4 border-b border-emerald-800/60 bg-[#0A1C19]">
             <button
@@ -778,7 +778,7 @@ export default function AgencyCommandCenterPage() {
                 </div>
 
                 {/* Creative Preview */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-emerald-800/70 bg-[#14352F] flex items-center justify-center">
+                <div className="relative h-48 w-full overflow-hidden rounded-xl border border-emerald-800/70 bg-[#14352F] flex items-center justify-center">
                   {activePiece.imageUrl ? (
                     <img
                       src={activePiece.imageUrl}
