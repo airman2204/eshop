@@ -39,6 +39,7 @@ interface ApprovalPiece {
   imageUrl: string;
   caption: string;
   status: "pending" | "approved";
+  whatsappApproved?: boolean;
 }
 
 interface ActivityLog {
@@ -1167,6 +1168,19 @@ export default function AgencyCommandCenterPage() {
                           <p className="text-[11px] text-emerald-200/80">
                             💬 <strong>Cómo venderlo:</strong> Ofrece el combo con envío rápido y resalta últimas piezas disponibles en grupo VIP.
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPieces((prev) =>
+                                prev.map((x) => (x.id === p.id ? { ...x, whatsappApproved: true } : x))
+                              );
+                              appendLog(`✓ "${p.title}" enviado a Sofía Shopper (WhatsApp)`, true);
+                            }}
+                            disabled={p.whatsappApproved}
+                            className="mt-1 w-full rounded-lg bg-[#10B981] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-emerald-600 disabled:bg-emerald-900/60 disabled:text-emerald-300"
+                          >
+                            {p.whatsappApproved ? "✓ Enviado a Sofía Shopper" : "✓ Aprobar y Enviar a Sofía Shopper"}
+                          </button>
                         </div>
                       );
                     })}

@@ -648,7 +648,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             const raw = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_agency_state_v1') : null;
             const parsed = raw ? JSON.parse(raw) : null;
             const approved = Array.isArray(parsed?.pieces)
-              ? parsed.pieces.filter((p: any) => p.status === 'approved')
+              ? parsed.pieces.filter((p: any) => p.status === 'approved' || p.whatsappApproved)
               : [];
             if (approved.length === 0) return null;
             return (
