@@ -821,12 +821,21 @@ export default function AgencyCommandCenterPage() {
                 </div>
 
                 {/* Creative Preview */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-emerald-800/70 bg-[#14352F]">
-                  <img
-                    src={activePiece.imageUrl}
-                    alt={activePiece.title}
-                    className="h-full w-full object-cover"
-                  />
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-emerald-800/70 bg-[#14352F] flex items-center justify-center">
+                  {activePiece.imageUrl ? (
+                    <img
+                      src={activePiece.imageUrl}
+                      alt={activePiece.title}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="px-4 text-center">
+                      <p className="text-xs font-bold text-white">Sin visual generado todavía</p>
+                      <p className="mt-1 text-[11px] text-emerald-300/80">
+                        Presiona <strong>↻ Regenerar</strong> abajo para que Diego cree la composición con 3 productos reales.
+                      </p>
+                    </div>
+                  )}
                   <div className="absolute top-2 left-2 rounded-md bg-[#D96B27] px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow">
                     Drop Limitado
                   </div>
