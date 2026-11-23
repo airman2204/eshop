@@ -693,7 +693,10 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
                                     groupJid: groupJid.trim(),
                                     previews: [
                                       {
-                                        caption: p.caption || p.title,
+                                        caption: (p.caption || p.title).replace(
+                                          /https:\/\/chat\.whatsapp\.com\/\S+/gi,
+                                          '¡Responde YO o mándame DM para apartar tu pieza! ⚡'
+                                        ),
                                         imageUrl: p.imageUrl?.startsWith('http') ? p.imageUrl : undefined,
                                       },
                                     ],
