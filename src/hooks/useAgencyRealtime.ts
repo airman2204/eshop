@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAgencyBrowserClient as getSupabaseBrowserClient } from "@/lib/supabase/agency";
 
 export interface DbCampaign {
   id: string;
