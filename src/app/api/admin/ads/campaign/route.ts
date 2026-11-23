@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { uploadImageToCloudinary } from "@/lib/cloudinary";
 
 const WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/BFB3Fo9akFBAAQ6RjMYhWo?s=cl&p=i&iam=2";
@@ -206,9 +207,7 @@ Genera exactamente 3 conceptos muy distintos entre sí.`;
       const imgUrl = fluxJson?.images?.[0]?.url;
       if (imgUrl) {
         try {
-          const imgRes = await fetch(imgUrl);
-          const buf = Buffer.from(await imgRes.arrayBuffer());
-          imageDataUrl = `data:image/jpeg;base64,${buf.toString("base64")}`;
+          imageDataUrl = await uploadImageToCloudinary(imgUrl, "foxdrop-agency");
         } catch {
           imageDataUrl = imgUrl;
         }
