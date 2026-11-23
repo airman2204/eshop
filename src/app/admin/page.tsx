@@ -2389,7 +2389,11 @@ export default function AdminCRM() {
       if (!res.ok || !data.description) {
         throw new Error(data.error || 'No se pudo generar la descripción con IA');
       }
-      setNewDescription(data.description);
+      const cleanDesc = String(data.description)
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+        .replace(/^[ \t]+/gm, '')
+        .trim();
+      setNewDescription(cleanDesc);
       setShowAiRewriteHintInput(false);
     } catch (err: any) {
       alert(`Aviso IA: ${err.message || 'Intenta nuevamente'}`);
