@@ -726,7 +726,7 @@ export async function POST(req: NextRequest) {
       const clientMap = new Map<string, any>();
 
       (profiles || []).forEach((p: any) => {
-        const key = (p.phone || p.email || p.id).trim().toLowerCase();
+        const key = String(p.phone || p.email || p.id || "").trim().toLowerCase();
         if (!clientMap.has(key)) {
           clientMap.set(key, {
             id: p.id,
