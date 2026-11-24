@@ -292,12 +292,21 @@ export default function AdminCRM() {
 
   useEffect(() => {
     if (showPosModal || showAddModal) {
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.overscrollBehavior = 'none';
       document.body.style.overflow = 'hidden';
+      document.body.style.overscrollBehavior = 'none';
     } else {
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
       document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
     }
     return () => {
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.overscrollBehavior = '';
       document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
     };
   }, [showPosModal, showAddModal]);
   const [posCart, setPosCart] = useState<{ product: Product; quantity: number }[]>([]);
@@ -11215,7 +11224,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 )}
 
                 {/* Lista interactiva de productos coincidentes */}
-                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
+                <div className="max-h-48 overflow-y-auto overscroll-contain border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
                   {(() => {
                     const cleanTerm = posSearchTerm.trim().toLowerCase();
                     const filtered = products.filter(p => {
