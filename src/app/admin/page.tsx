@@ -11254,7 +11254,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         onClick={() => handleAddToCartPos(prod)}
                         className="w-full text-left p-2.5 hover:bg-orange-50/60 flex items-center justify-between transition group"
                       >
-                        <div className="flex items-center gap-2.5 truncate">
+                        <div className="flex items-start gap-2.5 min-w-0 flex-1 pr-2">
                           {prod.images && prod.images[0] ? (
                             <img
                               src={getSafeAdminImageUrl(prod.images[0])}
@@ -11267,9 +11267,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               📦
                             </div>
                           )}
-                          <div className="truncate">
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="font-bold text-slate-800 truncate">{prod.title}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-800 whitespace-normal break-words leading-snug">{prod.title}</span>
                               {prod.isCombo && (
                                 <span className="bg-purple-100 text-purple-700 text-[9px] px-1 rounded font-black shrink-0">
                                   COMBO
