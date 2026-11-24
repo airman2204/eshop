@@ -3789,7 +3789,7 @@ export default function AdminCRM() {
     });
   };
 
-  const posSubtotal = posCart.reduce((acc, item) => acc + (item.product.publicPrice * item.quantity), 0);
+  const posSubtotal = posCart.reduce((acc, item) => acc + (Number(item.product.publicPrice || 0) * item.quantity), 0);
   const posDiscountAmount = posAppliedCoupon 
     ? Math.round((posSubtotal * posAppliedCoupon.discountPercent) / 100) 
     : 0;
@@ -3799,7 +3799,7 @@ export default function AdminCRM() {
   // Cliente detectado en tiempo real según el teléfono tecleado en el POS
   const posDetectedClient = posClientPhone.trim() ? clients.find(c => {
     const cleanInput = posClientPhone.replace(/[^0-9]/g, '');
-    const cleanClientPhone = c.phone.replace(/[^0-9]/g, '');
+    const cleanClientPhone = String(c.phone || '').replace(/[^0-9]/g, '');
     return cleanInput && cleanClientPhone.includes(cleanInput);
   }) : null;
 
@@ -11336,7 +11336,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                         <div className="truncate flex-1">
                           <p className="font-bold text-slate-900 truncate">{item.product.title}</p>
                           <p className="text-[10px] text-slate-500 font-semibold">
-                            ${item.product.publicPrice.toFixed(2)} c/u • SKU: {item.product.sku}
+                            ${Number(item.product.publicPrice || 0).toFixed(2)} c/u • SKU: {item.product.sku || 'S/N'}
                           </p>
                         </div>
 
@@ -11359,7 +11359,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                             </button>
                           </div>
                           <span className="font-black text-slate-900 text-xs w-16 text-right">
-                            ${(item.product.publicPrice * item.quantity).toFixed(2)}
+                            ${(Number(item.product.publicPrice || 0) * item.quantity).toFixed(2)}
                           </span>
                         </div>
                       </div>
