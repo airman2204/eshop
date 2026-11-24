@@ -207,52 +207,179 @@ export async function POST(req: NextRequest) {
       if (text.includes("[Sticker]") || text.trim() === "👾") {
         return NextResponse.json({ success: true, event: "sticker_ignored" });
       }
-      // Cargar últimos 8 mensajes del historial y verificar si está en Modo Humano (pausa automática)
-      let chatHistory: { sender: string; text: string }[] = [];
-      const { data: chatForHist } = await supabase
+
+      const incomingLidForDm =
+        body.lid ||
+        (String(rawPhone).includes("@lid") ? String(rawPhone).replace(/@.+/, "") : undefined) ||
+        (cleanPhone.length > 12 && !cleanPhone.startsWith("52") ? cleanPhone : undefined);
+      const incomingAvatarForDm = body.avatarUrl || body.avatar_url || undefined;
+      const nowIso = new Date().toISOString();
+
+      // 1. Buscar o crear el chat SIEMPRE antes de responder para garantizar ID válido y memoria
+      const orParts = [`phone.eq.${cleanPhone}`];
+      if (cleanPhone.length >= 10) orParts.push(`phone.ilike.%${cleanPhone.slice(-10)}%`);
+      if (incomingLidForDm) orParts.push(`notes.ilike.%"lid":"${incomingLidForDm}"%`);
+
+      let { data: chatForHist } = await (supabase as any)
         .from("whatsapp_chats")
-        .select("id, notes")
-        .or(`phone.eq.${cleanPhone},phone.ilike.%${cleanPhone.slice(-10)}%`)
+        .select("id, phone, client_name, unread_count, notes")
+        .or(orParts.join(","))
         .limit(1)
         .maybeSingle();
 
-      // Si Mario o Nydia tomaron el control manual en este chat, Sofía no interrumpe
+      let parsedNotes: any = {};
       if (chatForHist?.notes) {
         try {
-          const parsedNotes = typeof chatForHist.notes === "string" ? JSON.parse(chatForHist.notes) : chatForHist.notes;
-          if (parsedNotes?.manualUntil && new Date(parsedNotes.manualUntil).getTime() > Date.now()) {
-            return NextResponse.json({ success: true, event: "sofia_paused_manual_mode" });
-          }
-        } catch {}
-      }
-
-      // Permitir apartar directamente desde DM (ej. "apártame el gel Into The Night", "agrégame 1 crema...")
-      const dmReserveRegex = /\b(ap[aá]rtame|agr[eé]game|ponme|echame|[eé]chame|quiero\s+(?:un|una|el|la|\d+))\b/i;
-      if (dmReserveRegex.test(text)) {
-        const { qty } = detectGroupPurchaseIntent(text, text);
-        const dmRes = await createProductReservation(text, cleanPhone, 120, qty);
-        if (dmRes.success && dmRes.product) {
-          const confirmMsg = `¡Listo! Ya te agregué *${dmRes.product.name}* ($${dmRes.product.price} MXN) a tu carrito 🦊🛒 Cuando quieras cerrar tu pedido solo dime *"cerrar"* ✨`;
-          if (chatForHist?.id) {
-            await (supabase as any).from("whatsapp_messages").insert([
-              { chat_id: chatForHist.id, sender: "client", text, status: "read" },
-              { chat_id: chatForHist.id, sender: "admin", text: confirmMsg, status: "sent" },
-            ]);
-          }
-          await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), confirmMsg);
-          return NextResponse.json({ success: true, event: "dm_reservation_created", sku: dmRes.product.sku });
+          parsedNotes = typeof chatForHist.notes === "string" ? JSON.parse(chatForHist.notes) : (chatForHist.notes || {});
+        } catch {
+          parsedNotes = {};
         }
       }
+      if (incomingLidForDm && !parsedNotes.lid) {
+        parsedNotes.lid = incomingLidForDm;
+      }
 
+      // Reparar chat con id null (migración CSV sin default UUID) o crear chat nuevo con UUID explícito
+      if (chatForHist && !chatForHist.id) {
+        const repairedId = crypto.randomUUID();
+        await (supabase as any)
+          .from("whatsapp_chats")
+          .update({ id: repairedId, created_at: nowIso, updated_at: nowIso })
+          .eq("phone", chatForHist.phone);
+        chatForHist = { ...chatForHist, id: repairedId };
+      } else if (!chatForHist) {
+        const newId = crypto.randomUUID();
+        const { data: createdChat } = await (supabase as any)
+          .from("whatsapp_chats")
+          .insert({
+            id: newId,
+            phone: cleanPhone,
+            client_name: clientName,
+            last_message: text,
+            last_message_time: nowIso,
+            unread_count: 1,
+            status: "active",
+            notes: Object.keys(parsedNotes).length > 0 ? JSON.stringify(parsedNotes) : null,
+            created_at: nowIso,
+            updated_at: nowIso,
+            ...(incomingAvatarForDm ? { avatar_url: incomingAvatarForDm } : {}),
+          })
+          .select("id, phone, client_name, unread_count, notes")
+          .maybeSingle();
+        chatForHist = createdChat || { id: newId, phone: cleanPhone, client_name: clientName, unread_count: 1, notes: null };
+      } else if (chatForHist.phone && chatForHist.phone !== cleanPhone && chatForHist.phone.startsWith("52")) {
+        cleanPhone = chatForHist.phone;
+      }
+
+      // Cargar historial previo desde whatsapp_messages o respaldo en notes.recentHistory
+      let chatHistory: { sender: string; text: string }[] = [];
       if (chatForHist?.id) {
-        const { data: msgs } = await supabase
+        const { data: msgs } = await (supabase as any)
           .from("whatsapp_messages")
           .select("sender, text")
           .eq("chat_id", chatForHist.id)
           .order("created_at", { ascending: false })
-          .limit(8);
-        if (Array.isArray(msgs)) {
+          .limit(10);
+        if (Array.isArray(msgs) && msgs.length > 0) {
           chatHistory = msgs.reverse().map((m: any) => ({ sender: m.sender, text: m.text }));
+        }
+      }
+      if (chatHistory.length === 0 && Array.isArray(parsedNotes.recentHistory)) {
+        chatHistory = parsedNotes.recentHistory.slice(-10);
+      }
+
+      // Resolver nombre real del cliente (BD -> pushName -> respuesta corta cuando Sofía preguntó el nombre)
+      const isGenericName = (n?: string | null) =>
+        !n || /^cliente(\s+whatsapp)?$/i.test(n.trim()) || /^\+?\d+$/.test(n.trim());
+
+      let knownClientName = !isGenericName(chatForHist?.client_name)
+        ? String(chatForHist.client_name).trim()
+        : !isGenericName(clientName)
+          ? String(clientName).trim()
+          : "";
+
+      const lastBotMsg = [...chatHistory].reverse().find((m) => m.sender === "admin")?.text || "";
+      const trimmedIncoming = text.trim();
+      if (
+        /con\s+qui[eé]n\s+tengo\s+el\s+gusto|tu\s+nombre|c[oó]mo\s+te\s+llamas/i.test(lastBotMsg) &&
+        /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+){0,2}$/.test(trimmedIncoming) &&
+        !/^(hola|buenas|buenos|tardes|dias|noches|si|s[ií]|no|ok|gracias|body|crema|gel|vela|cuanto|precio|tienes|tendras)$/i.test(trimmedIncoming)
+      ) {
+        knownClientName = trimmedIncoming;
+      }
+
+      // Helper para persistir el turno tanto en whatsapp_chats (con respaldo recentHistory) como en whatsapp_messages
+      const persistConversationTurn = async (userMsg: string, botMsg?: string) => {
+        const updatedHist = [
+          ...(Array.isArray(parsedNotes.recentHistory) ? parsedNotes.recentHistory : chatHistory),
+          { sender: "client", text: userMsg },
+          ...(botMsg ? [{ sender: "admin", text: botMsg }] : []),
+        ].slice(-14);
+        parsedNotes.recentHistory = updatedHist;
+
+        const replyTimeIso = new Date(Date.now() + 500).toISOString();
+        if (chatForHist?.id) {
+          await (supabase as any)
+            .from("whatsapp_chats")
+            .update({
+              client_name: knownClientName || chatForHist.client_name || clientName,
+              last_message: botMsg || userMsg,
+              last_message_time: botMsg ? replyTimeIso : nowIso,
+              unread_count: (Number(chatForHist.unread_count) || 0) + 1,
+              notes: JSON.stringify(parsedNotes),
+              updated_at: replyTimeIso,
+              ...(incomingAvatarForDm ? { avatar_url: incomingAvatarForDm } : {}),
+            })
+            .eq("id", chatForHist.id);
+
+          const rowsToInsert: any[] = [
+            {
+              id: crypto.randomUUID(),
+              chat_id: chatForHist.id,
+              phone: cleanPhone,
+              sender: "client",
+              sender_name: knownClientName || clientName,
+              text: userMsg,
+              status: "read",
+              created_at: nowIso,
+            },
+          ];
+          if (botMsg) {
+            rowsToInsert.push({
+              id: crypto.randomUUID(),
+              chat_id: chatForHist.id,
+              phone: cleanPhone,
+              sender: "admin",
+              sender_name: "Sofía 🦊",
+              text: botMsg,
+              status: "sent",
+              created_at: replyTimeIso,
+            });
+          }
+          await (supabase as any).from("whatsapp_messages").insert(rowsToInsert);
+        }
+      };
+
+      // Si Mario o Nydia tomaron el control manual en este chat, guardar mensaje entrante pero Sofía no interrumpe
+      const isManualPaused =
+        (parsedNotes?.manualUntil && new Date(parsedNotes.manualUntil).getTime() > Date.now()) ||
+        parsedNotes?.agentMode === "manual" ||
+        parsedNotes?.agentMode === false;
+      if (isManualPaused) {
+        await persistConversationTurn(text);
+        return NextResponse.json({ success: true, event: "sofia_paused_manual_mode" });
+      }
+
+      // Permitir apartar directamente desde DM (ej. "apártame el gel Into The Night", "agrégame 1 crema...")
+      const dmReserveRegex = /\b(ap[aá]rtame|agr[eé]game|ponme|echame|[eé]chame|quiero\s+(?:apartar|comprar|llevarme))\b/i;
+      if (dmReserveRegex.test(text)) {
+        const { qty } = detectGroupPurchaseIntent(text, text);
+        const dmRes = await createProductReservation(text, cleanPhone, 120, qty);
+        if (dmRes.success && dmRes.product) {
+          const confirmMsg = `¡Listo${knownClientName ? `, ${knownClientName.split(" ")[0]}` : ""}! Ya te aparté *${dmRes.product.name}* ($${dmRes.product.price} MXN) en tu bolsita 🦊 Cuando gustes cerrar tu pedido dime si prefieres tarjeta, SPEI o contra entrega en Puebla/Cholula.`;
+          await persistConversationTurn(text, confirmMsg);
+          await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), confirmMsg);
+          return NextResponse.json({ success: true, event: "dm_reservation_created", sku: dmRes.product.sku });
         }
       }
 
@@ -388,9 +515,9 @@ export async function POST(req: NextRequest) {
             .join("\n");
         }
 
-        const hasRealName = clientName && !/cliente/i.test(clientName);
         const dmReply = await generateHumanReply({
-          userMessage: `${hasRealName ? `[Cliente: ${clientName}] ` : ""}${text}`,
+          userMessage: text,
+          clientName: knownClientName,
           history: chatHistory,
           catalogContext: `CARRITO ACTUAL DEL CLIENTE (ÚSALO SI PREGUNTA CUÁNTO LLEVA O QUÉ TIENE):\n${fullCartText}\nTOTAL ACTUAL DEL CARRITO: $${fullCartTotal} MXN`,
           productName: prodName,
@@ -402,64 +529,118 @@ export async function POST(req: NextRequest) {
             : "",
         });
 
-        if (chatForHist?.id) {
-          await (supabase as any).from("whatsapp_messages").insert([
-            { chat_id: chatForHist.id, sender: "client", text, status: "read" },
-            { chat_id: chatForHist.id, sender: "admin", text: dmReply, status: "sent" },
-          ]);
-        }
+        await persistConversationTurn(text, dmReply);
 
         await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), dmReply);
         return NextResponse.json({ success: true, event: "dm_sofia_replied" });
       }
 
-      // Si no tiene apartado activo pero pregunta en DM (ej. "¿es seguro?", "¿son originales?"), Sofía también responde
-      // Si no tiene apartado activo pero pregunta en DM, pasarle únicamente stock de Bath & Body Works
+      // Cargar TODO el inventario físico disponible en tienda (sin truncar a 35 ni limitar solo a una marca)
       const { data: liveStockRaw } = await (supabase as any)
         .from("products")
-        .select("title, public_price, stock, image_url")
+        .select("title, sku, category, public_price, stock, image_url, is_active")
         .gt("stock", 0)
-        .ilike("title", "%Bath%Body%")
-        .limit(35);
-      const liveStock = liveStockRaw || [];
+        .limit(350);
 
-      const catalogContext = Array.isArray(liveStock)
-        ? liveStock
-            .map((p: any) => `- ${p.title}: $${Number(p.public_price || 0)} MXN (Stock: ${p.stock})`)
-            .join("\n")
-        : "";
+      const liveStock = (Array.isArray(liveStockRaw) ? liveStockRaw : []).filter((p: any) => {
+        if (p.is_active === false) return false;
+        const skuUpper = String(p.sku || "").toUpperCase();
+        if (skuUpper.startsWith("CJ") || skuUpper.startsWith("JP-")) return false;
+        return true;
+      });
 
-      // Si el cliente pide fotos o ver opciones de algo en específico, buscar foto real (normalizando plurales)
+      // Normalizar búsqueda tomando mensaje actual + últimas 2 preguntas del cliente en el historial
+      const recentClientQuery = [
+        ...chatHistory.filter((m) => m.sender === "client").slice(-2).map((m) => m.text),
+        text,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .replace(/\bin\s+to\b/g, "into")
+        .replace(/\bbodys?\b|\bsplash\b|\bmist\b/g, "bruma")
+        .replace(/\blociones\b|\bloci[oó]n\b|\blotion\b/g, "crema")
+        .replace(/\bgeles\b/g, "gel")
+        .replace(/\bcremas\b/g, "crema")
+        .replace(/\bvelas\b/g, "vela")
+        .replace(/\bcarros?\b/g, "auto");
+
+      const stopWords = new Set([
+        "hola", "buenas", "buenos", "tardes", "dias", "noches", "una", "uno", "unos", "unas",
+        "duda", "pregunta", "disculpa", "oye", "tendras", "tendrás", "tienes", "tienen",
+        "manejaras", "manejas", "hay", "busco", "quiero", "saber", "precio", "cuanto",
+        "cuesta", "vale", "del", "las", "los", "por", "para", "con", "que", "como", "esta",
+      ]);
+
+      const queryTokens = Array.from(
+        new Set(
+          recentClientQuery
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .split(/\s+/)
+            .filter((w) => w.length >= 3 && !stopWords.has(w))
+        )
+      );
+
+      const scoredMatches =
+        queryTokens.length > 0
+          ? liveStock
+              .map((p: any) => {
+                const normTitle = String(p.title || "")
+                  .toLowerCase()
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "");
+                const hits = queryTokens.filter((tok) => normTitle.includes(tok)).length;
+                return { p, hits };
+              })
+              .filter((x) => x.hits > 0)
+              .sort((a, b) => b.hits - a.hits)
+          : [];
+
+      const directMatchesBlock =
+        scoredMatches.length > 0
+          ? `COINCIDENCIAS MÁS CERCANAS A LA PREGUNTA DEL CLIENTE:\n${scoredMatches
+              .slice(0, 12)
+              .map(
+                ({ p }) =>
+                  `* ${p.title}: $${Number(p.public_price || 0)} MXN (Disponibles: ${p.stock})`
+              )
+              .join("\n")}\n\n`
+          : "";
+
+      const fullCatalogBlock =
+        liveStock.length > 0
+          ? `CATÁLOGO COMPLETO EN STOCK FÍSICO (${liveStock.length} productos):\n${liveStock
+              .map(
+                (p: any) =>
+                  `- ${p.title}: $${Number(p.public_price || 0)} MXN (Stock: ${p.stock})`
+              )
+              .join("\n")}`
+          : "Sin productos con stock físico en este momento.";
+
+      const catalogContext = `${directMatchesBlock}${fullCatalogBlock}`;
+
+      // Si el cliente pide foto/ver opciones y hay coincidencia con imagen real (no placeholder), adjuntarla
       let matchedPhotoUrl = "";
-      if (/\b(foto|fotos|imagen|imágenes|muéstrame|muestrame|ver|tienes|opciones|muestras)\b/i.test(text) && Array.isArray(liveStock)) {
-        const words = text
-          .toLowerCase()
-          .replace(/\bgeles\b/g, "gel")
-          .replace(/\bcremas\b/g, "crema")
-          .replace(/\bprotectores\b/g, "protector")
-          .replace(/\bcarros\b/g, "auto")
-          .split(/\s+/)
-          .filter((w: string) => w.length >= 3);
-        const matched = liveStock.find((p: any) =>
-          words.some((w: string) => String(p.title || "").toLowerCase().includes(w))
+      if (
+        /\b(foto|fotos|imagen|im[aá]genes|mu[eé]strame|ver|opciones|muestras)\b/i.test(text) &&
+        scoredMatches.length > 0
+      ) {
+        const bestWithImg = scoredMatches.find(
+          ({ p }) => p.image_url && !String(p.image_url).includes("no-image")
         );
-        if (matched?.image_url) matchedPhotoUrl = matched.image_url;
+        if (bestWithImg?.p?.image_url) matchedPhotoUrl = bestWithImg.p.image_url;
       }
 
       const generalReply = await generateHumanReply({
         userMessage: text,
+        clientName: knownClientName,
         history: chatHistory,
         catalogContext,
         nodeTemplate: "",
       });
 
-      // Guardar ambos mensajes en whatsapp_messages para que la memoria funcione al segundo
-      if (chatForHist?.id) {
-        await (supabase as any).from("whatsapp_messages").insert([
-          { chat_id: chatForHist.id, sender: "client", text, status: "read" },
-          { chat_id: chatForHist.id, sender: "admin", text: generalReply, status: "sent" },
-        ]);
-      }
+      await persistConversationTurn(text, generalReply);
 
       await sendViaWhatsAppBridge(String(rawPhone || cleanPhone), generalReply, undefined, undefined, matchedPhotoUrl || undefined);
       return NextResponse.json({
