@@ -11135,7 +11135,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             {/* Contenido scrolleable */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs overscroll-contain">
+            <div className="p-4 space-y-4 overflow-y-auto flex-1 min-h-0 text-xs overscroll-contain">
               {/* Botón de Escáner de Cámara */}
               <div className="flex gap-2">
                 <button
