@@ -9681,7 +9681,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         )}
 
         {showAddModal && (
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden overscroll-contain">
+          <div data-lenis-prevent className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4 overflow-hidden overscroll-contain">
             <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto border border-slate-200 overscroll-contain">
               {/* Header compacto */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3">
