@@ -30,32 +30,25 @@ export default function FoxDropLogo({
 
   return (
     <div className={`inline-flex items-center gap-2 select-none group cursor-pointer ${className}`}>
-      {/* Texto 3D FOXDROP con relieve original Geist */}
+      {/* Wordmark plano + zorrito FoxDrop */}
       <div className="flex flex-col justify-center leading-none">
         <span
-          className={`font-black tracking-normal uppercase ${textSizes[size].title} transition-transform duration-200 group-hover:scale-[1.02]`}
+          className={`font-semibold tracking-tight ${textSizes[size].title}`}
           style={{
             fontFamily: 'var(--font-geist-logo), var(--font-sans), sans-serif',
-            color: '#CE8B54',
-            backgroundImage: 'linear-gradient(180deg, #E6A76E 0%, #C47F46 70%, #9E5B26 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 2px 0px #5E310F) drop-shadow(0 3px 2px rgba(0,0,0,0.5))',
-            fontWeight: 950,
-            letterSpacing: '-0.02em',
+            color: '#E3B888',
           }}
         >
-          FOXDROP
+          FoxDrop
         </span>
         {showTagline && (
           <span
-            className={`font-black tracking-[0.25em] uppercase text-[#E3B888] mt-0.5 ${textSizes[size].tag}`}
+            className={`font-normal text-[#E3B888]/80 mt-0.5 ${textSizes[size].tag}`}
             style={{
               fontFamily: 'var(--font-geist-logo), var(--font-sans), sans-serif',
-              textShadow: '0 1px 2px rgba(0,0,0,0.5)',
             }}
           >
-            TU ATAJO AL MUNDO
+            Tu atajo al mundo
           </span>
         )}
       </div>
