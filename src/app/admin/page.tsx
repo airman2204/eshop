@@ -11117,7 +11117,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* MODAL SISTEMA POS MÓVIL (PUNTO DE VENTA FÍSICO) */}
       {/* ======================================================== */}
       {showPosModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden overscroll-contain">
+        <div data-lenis-prevent className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden overscroll-contain">
           <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 overscroll-contain">
             {/* Cabecera del POS */}
             <div className="bg-[#2D4A58] text-white p-4 flex items-center justify-between">
@@ -11224,7 +11224,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 )}
 
                 {/* Lista interactiva de productos coincidentes */}
-                <div className="max-h-48 overflow-y-auto overscroll-contain border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
+                <div data-lenis-prevent className="max-h-48 overflow-y-auto overscroll-contain border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
                   {(() => {
                     const cleanTerm = posSearchTerm.trim().toLowerCase();
                     const filtered = products.filter(p => {
