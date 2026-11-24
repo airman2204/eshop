@@ -11097,8 +11097,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* MODAL SISTEMA POS MÓVIL (PUNTO DE VENTA FÍSICO) */}
       {/* ======================================================== */}
       {showPosModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden overscroll-contain">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 overscroll-contain">
             {/* Cabecera del POS */}
             <div className="bg-[#2D4A58] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -11124,7 +11124,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
 
             {/* Contenido scrolleable */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs overscroll-contain">
               {/* Botón de Escáner de Cámara */}
               <div className="flex gap-2">
                 <button
