@@ -11234,8 +11234,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       return (
                         String(p.title || '').toLowerCase().includes(cleanTerm) ||
                         String(p.sku || '').toLowerCase().includes(cleanTerm) ||
-                        String(p.category || '').toLowerCase().includes(cleanTerm) ||
-                        String(p.description || '').toLowerCase().includes(cleanTerm)
+                        String(p.category || '').toLowerCase().includes(cleanTerm)
                       );
                     });
 
