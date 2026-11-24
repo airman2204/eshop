@@ -2837,25 +2837,35 @@ export default function AdminCRM() {
           return p;
         }));
       } else {
-        // ALTA NUEVA
-        await createProductInDb({
-          title: newTitle,
-          description: newDescription.trim() || undefined,
-          sku: newSku.trim() || undefined,
-          categoryName: newCategory,
-          brand: newBrand,
-          baseCostUsd: calculatedCostUsd,
-          baseCostMxn: costMxn,
-          shippingCostAllocated: shippingPerUnit,
-          publicPrice: newPublicPrice,
-          discountPercent: newDiscountPercent,
-          stock: newStock,
-          imageUrl: finalImages[0],
-          images: finalImages,
-          isCombo,
-          comboProductIds: isCombo ? selectedComboProductIds : [],
-          isActive: newIsActive,
-        });
+        // ALTA NUEVA: si el SKU ya existe en inventario, sumar stock al registro existente en lugar de duplicar fila
+        const normalizedNewSku = newSku.trim().toLowerCase();
+        const existingBySku = normalizedNewSku
+          ? products.find(p => p.sku && p.sku.trim().toLowerCase() === normalizedNewSku)
+          : undefined;
+
+        if (existingBySku) {
+          const mergedStock = (existingBySku.stock || 0) + (newStock || 1);
+          await updateProductInDb(existingBySku.id, { stock: mergedStock });
+        } else {
+          await createProductInDb({
+            title: newTitle,
+            description: newDescription.trim() || undefined,
+            sku: newSku.trim() || undefined,
+            categoryName: newCategory,
+            brand: newBrand,
+            baseCostUsd: calculatedCostUsd,
+            baseCostMxn: costMxn,
+            shippingCostAllocated: shippingPerUnit,
+            publicPrice: newPublicPrice,
+            discountPercent: newDiscountPercent,
+            stock: newStock,
+            imageUrl: finalImages[0],
+            images: finalImages,
+            isCombo,
+            comboProductIds: isCombo ? selectedComboProductIds : [],
+            isActive: newIsActive,
+          });
+        }
 
         const updatedProducts = await getActiveProducts(true);
         if (updatedProducts && updatedProducts.length > 0) {
