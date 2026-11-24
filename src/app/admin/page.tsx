@@ -5750,8 +5750,8 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <th className="py-3 px-3 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[215px] w-[215px] z-20">Estado & Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredProducts.map((p) => {
+                  <tbody key={searchTerm.trim().toLowerCase() || 'all'} className="divide-y divide-slate-100">
+                    {filteredProducts.map((p, idx) => {
                       const isOutOfStock = (p.stock || 0) <= 0;
                       const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
                       const isPaused = p.isActive === false;
@@ -5759,7 +5759,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
                       return (
                         <tr 
-                          key={p.id} 
+                          key={`${p.id}-${idx}`} 
                           className={`transition ${
                             isSelected 
                               ? 'bg-orange-50/70 border-l-4 border-l-[#E65F2B]' 
@@ -11224,7 +11224,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 )}
 
                 {/* Lista interactiva de productos coincidentes */}
-                <div data-lenis-prevent className="max-h-48 overflow-y-auto overscroll-contain border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
+                <div key={`${posSearchTerm.trim().toLowerCase()}-${posCategoryFilter}`} data-lenis-prevent className="max-h-48 overflow-y-auto overscroll-contain border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 shadow-inner">
                   {(() => {
                     const cleanTerm = posSearchTerm.trim().toLowerCase();
                     const filtered = products.filter(p => {
@@ -11247,9 +11247,9 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       );
                     }
 
-                    return filtered.map(prod => (
+                    return filtered.map((prod, idx) => (
                       <button
-                        key={prod.id}
+                        key={`${prod.id}-${idx}`}
                         type="button"
                         onClick={() => handleAddToCartPos(prod)}
                         className="w-full text-left p-2.5 hover:bg-orange-50/60 flex items-center justify-between transition group"
