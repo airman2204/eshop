@@ -289,6 +289,17 @@ export default function AdminCRM() {
 
   // Sistema POS Móvil (Punto de Venta Físico para Celular)
   const [showPosModal, setShowPosModal] = useState(false);
+
+  useEffect(() => {
+    if (showPosModal || showAddModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showPosModal, showAddModal]);
   const [posCart, setPosCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [posClientPhone, setPosClientPhone] = useState('');
   const [posClientName, setPosClientName] = useState('');
