@@ -476,6 +476,12 @@ export default function AdminCRM() {
 
   // Ordenamiento Dinámico de la Tabla de Inventario
   const [inventorySortBy, setInventorySortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'stock_asc' | 'stock_desc' | 'margin_desc'>('default');
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const ITEMS_PER_PAGE = 40;
+
+  useEffect(() => {
+    setInventoryPage(1);
+  }, [searchTerm, stockFilter, inventoryCategoryFilter, inventoryBatchFilter, inventoryScope, inventorySortBy]);
 
   // Modal de Impresión de Etiquetas con Código de Barras / QR
   const [showBarcodePrintModal, setShowBarcodePrintModal] = useState(false);
@@ -5295,6 +5301,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   ))}
                 </select>
 
+                {/* Lote Selector Compacto */}
+                {inventoryScope === 'physical' && batches.length > 0 && (
+                  <select
+                    value={inventoryBatchFilter}
+                    onChange={e => setInventoryBatchFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400 max-w-[170px]"
+                  >
+                    <option value="all">Todos los lotes ({scopedProducts.length})</option>
+                    {batches.map(b => (
+                      <option key={b.id} value={b.id}>
+                        {b.batchName} (+${b.costPerUnit.toFixed(0)})
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 {/* Botón Exportar CSV / Excel */}
                 <button
                   onClick={handleExportInventoryCsv}
@@ -5740,8 +5762,10 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       <th className="py-3 px-3 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[215px] w-[215px] z-20">Estado & Acciones</th>
                     </tr>
                   </thead>
-                  <tbody key={searchTerm.trim().toLowerCase() || 'all'} className="divide-y divide-slate-100">
-                    {filteredProducts.map((p, idx) => {
+                  <tbody key={`${searchTerm.trim().toLowerCase() || 'all'}-p${inventoryPage}`} className="divide-y divide-slate-100">
+                    {filteredProducts
+                      .slice((inventoryPage - 1) * ITEMS_PER_PAGE, inventoryPage * ITEMS_PER_PAGE)
+                      .map((p, idx) => {
                       const isOutOfStock = (p.stock || 0) <= 0;
                       const isLowStock = (p.stock || 0) > 0 && (p.stock || 0) <= 3;
                       const isPaused = p.isActive === false;
@@ -5835,14 +5859,38 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                 {(() => {
                                   const matchedBatch = (p.batchId ? batches.find(b => b.id === p.batchId) : null)
                                     || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
-                                  const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
-                                    ? p.batchName
-                                    : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
+                                  const currentBatchId = matchedBatch?.id || '';
 
                                   return (
-                                    <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]" title={displayName}>
-                                      {displayName}
-                                    </span>
+                                    <select
+                                      value={currentBatchId}
+                                      onChange={async (e) => {
+                                        const newBatch = batches.find(b => b.id === e.target.value);
+                                        if (!newBatch) return;
+                                        setProducts(prev => prev.map(item => item.id === p.id ? {
+                                          ...item,
+                                          batchId: newBatch.id,
+                                          batchName: newBatch.batchName,
+                                          shippingCostAllocated: newBatch.costPerUnit,
+                                        } : item));
+                                        try {
+                                          await updateProductInDb(p.id, {
+                                            batchId: newBatch.id,
+                                            batchName: newBatch.batchName,
+                                            shippingCostAllocated: newBatch.costPerUnit,
+                                          } as any);
+                                        } catch (err) {
+                                          console.error('Error actualizando lote:', err);
+                                        }
+                                      }}
+                                      className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-lg text-[10px] font-bold max-w-[140px] focus:outline-none cursor-pointer"
+                                      title="Cambiar lote rápido"
+                                    >
+                                      {!currentBatchId && <option value="">{p.batchName || 'Sin lote'}</option>}
+                                      {batches.map(b => (
+                                        <option key={b.id} value={b.id}>{b.batchName}</option>
+                                      ))}
+                                    </select>
                                   );
                                 })()}
                                 <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${(Number(p.shippingCostAllocated) || 0).toFixed(2)} flete</span>
