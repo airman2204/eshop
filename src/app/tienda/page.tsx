@@ -172,6 +172,7 @@ export default function TiendaFoxDrop() {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const holdIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [sortBy, setSortBy] = useState<'default' | 'price_asc' | 'price_desc' | 'discount_desc' | 'name_asc' | 'name_desc'>('default');
+  const [onlyInStock, setOnlyInStock] = useState(false);
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -1231,6 +1232,9 @@ export default function TiendaFoxDrop() {
   // - 'all': Todo el catálogo completo
   const displayedProducts = (() => {
     let prods = baseFilteredProducts;
+    if (onlyInStock) {
+      prods = prods.filter(p => Number(p.stock || 0) > 0);
+    }
     if (activeTab === 'deals') {
       prods = baseFilteredProducts.filter(p => Boolean(p.discountPercent && p.discountPercent > 0));
     } else if (activeTab === 'new') {
@@ -3303,6 +3307,19 @@ export default function TiendaFoxDrop() {
               )}
               
             </div>
+
+            {/* FILTRO RÁPIDO: SOLO DISPONIBLES */}
+            <button
+              type="button"
+              onClick={() => setOnlyInStock(v => !v)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                onlyInStock
+                  ? 'bg-[#2D4A58] text-white border-[#2D4A58] shadow-xs'
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {onlyInStock ? '✓ Solo disponibles' : 'Solo disponibles'}
+            </button>
 
             {/* SELECTOR DE FILTRO DE ORDENAMIENTO (PRECIO / A-Z) */}
             <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
