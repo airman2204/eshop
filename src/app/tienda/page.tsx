@@ -2949,7 +2949,7 @@ export default function TiendaFoxDrop() {
                         <div className="space-y-1 max-w-[216px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
                             <span className="inline-block text-[10px] font-medium text-[#EFE9DF]/85">
-                              {currentSlide.subtitle || 'Importación directa EUA y Japón'}
+                              {currentSlide.subtitle || 'Productos originales importados'}
                             </span>
                           )}
                           <h2 className="text-[13px] sm:text-sm font-medium text-white leading-snug line-clamp-2">
@@ -3054,7 +3054,7 @@ export default function TiendaFoxDrop() {
                         <div className="space-y-1.5 max-w-[380px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
                             <span className="inline-block text-xs font-medium text-[#EFE9DF]/85">
-                              {currentSlide.subtitle || 'Importación directa EUA y Japón'}
+                              {currentSlide.subtitle || 'Productos originales importados'}
                             </span>
                           )}
                           <h1 className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-snug">

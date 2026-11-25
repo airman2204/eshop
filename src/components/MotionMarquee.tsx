@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const ITEMS = [
-  'Importación Directa de EUA 🇺🇸',
+  'Productos originales importados',
   'Stock Limitado',
   'Envíos a Todo México',
   'Encargos Especiales',
