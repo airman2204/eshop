@@ -5263,6 +5263,44 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               )}
             </div>
 
+            {/* Medusa-style KPI Strip */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <button
+                type="button"
+                onClick={() => setStockFilter('all')}
+                className={`text-left p-4 rounded-xl border transition cursor-pointer ${stockFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'}`}
+              >
+                <div className={`text-[11px] font-semibold uppercase tracking-wider ${stockFilter === 'all' ? 'text-slate-300' : 'text-slate-500'}`}>Total productos</div>
+                <div className="text-2xl font-bold mt-1">{scopedProducts.length}</div>
+              </button>
+              <div className="p-4 rounded-xl border border-slate-200 bg-white text-slate-900">
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Valor inventario</div>
+                <div className="text-2xl font-bold mt-1 text-emerald-700">
+                  ${scopedProducts.reduce((acc, p) => acc + (Number(p.publicPrice || 0) * Math.max(0, Number(p.stock || 0))), 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStockFilter('low_stock')}
+                className={`text-left p-4 rounded-xl border transition cursor-pointer ${stockFilter === 'low_stock' ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-sm' : 'bg-white border-slate-200 hover:border-amber-300 text-slate-900'}`}
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-600">Stock bajo (≤3)</div>
+                <div className="text-2xl font-bold mt-1 text-amber-700">
+                  {scopedProducts.filter(p => { const s = Number(p.stock || 0); return s > 0 && s <= 3; }).length}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStockFilter('out_of_stock')}
+                className={`text-left p-4 rounded-xl border transition cursor-pointer ${stockFilter === 'out_of_stock' ? 'bg-rose-50 border-rose-400 text-rose-950 shadow-sm' : 'bg-white border-slate-200 hover:border-rose-300 text-slate-900'}`}
+              >
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-rose-600">Agotados (0)</div>
+                <div className="text-2xl font-bold mt-1 text-rose-700">
+                  {scopedProducts.filter(p => Number(p.stock || 0) <= 0).length}
+                </div>
+              </button>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">
