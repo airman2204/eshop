@@ -4692,7 +4692,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   className="w-full p-3 rounded-xl font-medium transition flex items-center justify-between border bg-red-950 text-white font-bold border-red-500/50 shadow-md"
                 >
                   <span className="flex items-center gap-2.5">
-                    <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                    <Globe className="w-4 h-4 text-red-400" /> Catálogo Japón (Rakuten)
                   </span>
                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-red-500/30 text-red-200 border border-red-400/40">
                     Tokio
@@ -4714,7 +4714,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             >
               <div className="flex items-center gap-2.5 text-left">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'saleads' ? 'bg-white/20 text-white' : 'bg-[#D96B27]/20 text-[#D96B27]'}`}>
-                  <span className="text-sm">🦊</span>
+                  <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="block font-bold text-xs leading-none">
@@ -4802,7 +4802,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                  <Globe className={`w-4 h-4 ${crmSubTab === 'japan' ? 'text-red-400' : 'text-slate-400'}`} /> Catálogo Japón (Rakuten)
                 </span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-400/30">
                   Tokio
@@ -5208,7 +5208,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <Package className={`w-3.5 h-3.5 ${inventoryScope === 'physical' ? 'text-[#E65F2B]' : 'text-slate-400'}`} />
-                  <span>📦 Inventario Físico (Bodega / Boutique)</span>
+                  <span>Inventario Físico (Bodega / Boutique)</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                     inventoryScope === 'physical' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
@@ -5226,7 +5226,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   }`}
                 >
                   <Globe className={`w-3.5 h-3.5 ${inventoryScope === 'cj_international' ? 'text-indigo-200' : 'text-slate-400'}`} />
-                  <span>✈️ Importación CJ</span>
+                  <span>Importación CJ</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                     inventoryScope === 'cj_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
@@ -5243,7 +5243,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <span>🎌</span>
+                  <ShoppingBag className={`w-3.5 h-3.5 ${inventoryScope === 'japan_international' ? 'text-red-200' : 'text-slate-400'}`} />
                   <span>Importación Japón</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                     inventoryScope === 'japan_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
