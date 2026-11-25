@@ -44,14 +44,32 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [resFilter, setResFilter] = useState<'active' | 'converted' | 'all'>('active');
   const [subView, setSubView] = useState<'broadcast' | 'board' | 'flow' | 'chat'>('broadcast');
   const [chatNamesByPhone, setChatNamesByPhone] = useState<Record<string, string>>({});
-  const [sofiaChatMsgs, setSofiaChatMsgs] = useState<{ role: 'user' | 'sofia'; text: string }[]>([
-    {
-      role: 'sofia',
+  const [sofiaChatMsgs, setSofiaChatMsgs] = useState<{ role: 'user' | 'sofia'; text: string }[]>(() => {
+    const welcome = {
+      role: 'sofia' as const,
       text: '¡Hola! Ya tengo cargado todo tu inventario físico con precios, costos y stock real. Pregúntame qué paquetes o combos podemos armar hoy.',
-    },
-  ]);
+    };
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('foxdrop_sofia_admin_chat');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [welcome];
+  });
   const [sofiaChatInput, setSofiaChatInput] = useState('');
   const [sofiaChatLoading, setSofiaChatLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('foxdrop_sofia_admin_chat', JSON.stringify(sofiaChatMsgs.slice(-60)));
+    } catch {}
+    const el = document.getElementById('sofia-admin-chat-scroll');
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [sofiaChatMsgs, sofiaChatLoading]);
 
   const handleSendSofiaChat = async (customText?: string) => {
     const textToSend = (customText ?? sofiaChatInput).trim();
@@ -1245,7 +1263,7 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAFAFA]">
+          <div id="sofia-admin-chat-scroll" data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3 bg-[#FAFAFA]">
             {sofiaChatMsgs.map((m, idx) => (
               <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
