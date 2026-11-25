@@ -72,44 +72,52 @@ export default function CookieBanner() {
   return (
     <>
       {/* BANNER FLOTANTE INFERIOR */}
-      <div className="fixed bottom-4 left-4 right-4 sm:left-6 sm:right-auto sm:max-w-sm z-40">
-        <div className="bg-[#0F3E36] text-white p-4 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.16)] border border-white/[0.12] space-y-3">
+      <div className="fixed bottom-3 left-3 right-3 sm:left-6 sm:right-auto sm:max-w-md z-50 animate-in slide-in-from-bottom duration-300">
+        <div className="bg-[#0F3E36] text-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-2xl border border-white/15 backdrop-blur-md space-y-3.5">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Cookie className="w-4 h-4 stroke-[1.5] text-[#E3B888] shrink-0" />
-              <h4 className="font-medium text-xs text-white">
-                Privacidad y cookies
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#DF7F2D] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Cookie className="w-4 h-4" />
+              </div>
+              <h4 className="font-black text-sm text-white tracking-tight">
+                Privacidad y Cookies en FoxDrop
               </h4>
             </div>
             <button
               onClick={handleAcceptEssential}
-              className="text-white/60 hover:text-white p-1 rounded-md transition-colors duration-150 cursor-pointer"
+              className="text-white/60 hover:text-white p-1 rounded-full transition cursor-pointer"
               title="Cerrar y aceptar solo necesarias"
             >
-              <X className="w-4 h-4 stroke-[1.5]" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-xs text-white/75 leading-relaxed">
-            Usamos cookies para mantener tu carrito y medir visitas de forma anónima.{' '}
-            <Link href="/privacidad" className="text-[#E3B888] font-medium hover:underline">
-              Aviso de privacidad
-            </Link>
+          <p className="text-xs text-[#D3E0DC] leading-relaxed">
+            Utilizamos cookies propias y de terceros para mantener tu carrito activo, recordar tu sesión y optimizar tu experiencia con métricas anónimas. Consulta nuestro{' '}
+            <Link href="/privacidad" className="text-[#DF7F2D] font-bold hover:underline">
+              Aviso de Privacidad
+            </Link>.
           </p>
 
-          <div className="flex items-center gap-2 pt-0.5">
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <button
               onClick={handleAcceptAll}
-              className="flex-1 h-8 bg-[#E65F2B] hover:bg-[#D45321] text-white font-medium px-3 rounded-lg text-xs transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 bg-[#DF7F2D] hover:bg-[#C96E24] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <Check className="w-3.5 h-3.5 stroke-[1.5]" />
-              <span>Aceptar</span>
+              <Check className="w-3.5 h-3.5" />
+              <span>Aceptar todas</span>
             </button>
             <button
               onClick={handleAcceptEssential}
-              className="h-8 bg-white/[0.08] hover:bg-white/[0.14] text-white font-medium px-3 rounded-lg text-xs transition-colors duration-150 border border-white/[0.12] cursor-pointer whitespace-nowrap"
+              className="bg-white/10 hover:bg-white/20 text-white font-semibold py-2.5 px-3.5 rounded-xl text-xs transition border border-white/15 cursor-pointer whitespace-nowrap"
             >
               Solo necesarias
+            </button>
+            <button
+              onClick={() => setShowDetails(true)}
+              className="text-xs text-white/70 hover:text-white underline py-1 text-center sm:hidden cursor-pointer"
+            >
+              Ver detalles
             </button>
           </div>
         </div>

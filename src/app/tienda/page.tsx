@@ -2179,7 +2179,7 @@ export default function TiendaFoxDrop() {
 
   return (
     <div 
-      className={`min-h-screen w-full overflow-x-clip ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F7F4EE] text-[#1F1B16]'} flex flex-col font-sans antialiased selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}
+      className={`min-h-screen ${storeSettings?.halloweenThemeEnabled ? 'theme-halloween-store' : 'bg-[#F5F2EC] text-[#113B34]'} flex flex-col font-sans selection:bg-[#E65F2B] selection:text-white pb-20 md:pb-0 relative`}
     >
       {/* Atmósfera dinámica de Halloween (Noche mística, murciélagos y rayos) */}
       {storeSettings?.halloweenThemeEnabled && <HalloweenAtmosphere />}
@@ -2203,23 +2203,27 @@ export default function TiendaFoxDrop() {
         </div>
       </div>
       
-      {/* 0. BARRA INFORMATIVA SUPERIOR */}
-      <aside aria-label="Aviso de beneficios FoxDrop" className="bg-[#EFE9DF] text-[#1F1B16] text-xs py-1.5 px-4 border-b border-[#1F1B16]/[0.08] text-center">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5">
-          <span className="font-medium text-[#1F1B16]">
-            Envíos asegurados a todo México
+      {/* ======================================================== */}
+      {/* 0. TICKER SUPERIOR DE ANUNCIOS & ENVÍOS (ESTILO TJ MAXX) */}
+      {/* ======================================================== */}
+      <aside aria-label="Aviso de beneficios FoxDrop" className="bg-[#FAF6F0] text-[#0F3E36] text-[11px] font-bold py-1.5 px-4 border-b border-[#E8DFC8]/60 tracking-tight text-center">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+          <span className="font-extrabold text-[#0F3E36] flex items-center gap-1">
+            {isHalloween && <span>🎃</span>}
+            <span>envíos seguros a todo México</span>
           </span>
-          <span className="text-[#7B7266]">·</span>
-          <span className="text-[#5E554A]">
-            Mercado Pago, SPEI y contra entrega en Puebla y Cholula
+          <span className="text-gray-400">|</span>
+          <span className="text-gray-600 font-medium flex items-center gap-1">
+            {isHalloween && <span>🦇</span>}
+            <span>pagos protegidos vía transferencia SPEI y entrega garantizada</span>
           </span>
-          <span className="text-[#7B7266] hidden sm:inline">·</span>
+          <span className="text-gray-400 hidden sm:inline">|</span>
           <button 
             type="button" 
             onClick={() => setInfoModal('envios')}
-            className="text-[#0F3E36] hover:underline font-medium hidden sm:inline cursor-pointer"
+            className="text-[#DF7F2D] hover:underline font-bold hidden sm:inline cursor-pointer"
           >
-            Ver tarifas y puntos
+            {isHalloween ? 'ver detalles y promociones ›' : 'ver detalles ›'}
           </button>
         </div>
       </aside>
@@ -2414,12 +2418,15 @@ export default function TiendaFoxDrop() {
         </div>
       )}
 
-      {/* 1. HEADER PRINCIPAL — VERDE BOSQUE EMBLEMÁTICO DE FOXDROP */}
-      <header className="bg-[#0F3E36] sticky top-0 z-40 text-white border-b border-black/15">
+      {/* ======================================================== */}
+      {/* 1. HEADER PRINCIPAL ESTILO TJ MAXX (CON FONDO VERDE BOSQUE EMBLEMÁTICO DE FOXDROP) */}
+      {/* ======================================================== */}
+      <header className="bg-[#0F3E36] sticky top-0 z-40 shadow-md text-white border-b border-[#0B332C]">
         
-        {/* FILA SUPERIOR (DESKTOP): UTILIDADES */}
-        <div className="hidden md:block border-b border-white/[0.08] bg-[#0B332C]/80">
-          <div className="max-w-7xl mx-auto px-6 h-8 flex items-center justify-end gap-6 text-xs font-normal text-white/75">
+        {/* FILA SUPERIOR (DESKTOP): UTILIDADES (Sign In, Rewards, Favoritos, Carrito) */}
+        <div className="hidden md:block border-b border-white/10 bg-[#0B332C]/70">
+          <div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-end gap-6 text-[11px] font-semibold text-white/80">
+            {/* MI CUENTA / INICIAR SESIÓN */}
             {user ? (
               <button
                 type="button"
@@ -2431,22 +2438,23 @@ export default function TiendaFoxDrop() {
                     setCurrentView('account');
                   }
                 }}
-                className="flex items-center gap-1.5 hover:text-white transition-colors duration-150 cursor-pointer text-white font-medium"
+                className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-amber-300 font-bold"
               >
-                <User className="w-3.5 h-3.5 stroke-[1.5] text-white/75" />
-                <span>{user.name ? user.name.split(' ')[0] : 'Mi cuenta'}</span>
+                <User className="w-3.5 h-3.5 text-amber-300" />
+                <span>hola, {user.name ? user.name.split(' ')[0] : 'mi cuenta'}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={openAuthModal}
-                className="flex items-center gap-1.5 hover:text-white transition-colors duration-150 cursor-pointer text-white/75"
+                className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
               >
-                <User className="w-3.5 h-3.5 stroke-[1.5] text-white/70" />
-                <span>Iniciar sesión</span>
+                <User className="w-3.5 h-3.5 text-[#DF7F2D]" />
+                <span>iniciar sesión</span>
               </button>
             )}
 
+            {/* REWARDS / CLUB FOXDROP */}
             <button
               type="button"
               onClick={() => {
@@ -2457,12 +2465,13 @@ export default function TiendaFoxDrop() {
                   setCurrentView('account');
                 }
               }}
-              className="flex items-center gap-1.5 hover:text-white transition-colors duration-150 cursor-pointer text-white/75"
+              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer text-white/80"
             >
-              <Award className="w-3.5 h-3.5 stroke-[1.5] text-white/70" />
-              <span>Club FoxDrop</span>
+              <Award className="w-3.5 h-3.5 text-amber-400" />
+              <span>club fox rewards</span>
             </button>
 
+            {/* FAVORITOS */}
             <button
               type="button"
               onClick={() => {
@@ -2474,16 +2483,16 @@ export default function TiendaFoxDrop() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className="flex items-center gap-1.5 hover:text-white transition-colors duration-150 cursor-pointer relative text-white/75 tabular-nums"
+              className="flex items-center gap-1.5 hover:text-white transition cursor-pointer relative text-white/80"
             >
-              <Heart className={`w-3.5 h-3.5 stroke-[1.5] ${favorites.length > 0 ? 'text-[#E65F2B] fill-[#E65F2B]' : 'text-white/70'}`} />
-              <span>Favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
+              <Heart className={`w-3.5 h-3.5 ${favorites.length > 0 ? 'text-rose-400 fill-rose-400' : 'text-[#DF7F2D]'}`} />
+              <span>favoritos {favorites.length > 0 && `(${favorites.length})`}</span>
             </button>
           </div>
         </div>
 
-        {/* FILA CENTRAL: LOGO + BUSCADOR + ACCIONES */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 sm:gap-6">
+        {/* FILA CENTRAL TIPO AMAZON / MERCADO LIBRE: LOGO IZQUIERDA + BUSCADOR PROTAGÓNICO CENTRADO + ACCIONES DERECHA */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 sm:gap-6">
           
           {/* LADO IZQUIERDO: LOGO DE FOXDROP */}
           <div 
@@ -2491,15 +2500,15 @@ export default function TiendaFoxDrop() {
               setCurrentView('store');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="cursor-pointer shrink-0 flex items-center gap-2"
+            className="cursor-pointer shrink-0 transition-transform hover:scale-102 flex items-center gap-2"
             title="Ir al inicio de FoxDrop"
           >
             <FoxDropLogo size="lg" variant="dark" />
           </div>
 
-          {/* CENTRO: BARRA DE BÚSQUEDA */}
+          {/* CENTRO: BARRA DE BÚSQUEDA PROTAGÓNICA (AMAZON / MERCADO LIBRE STYLE) */}
           <div className="flex-1 max-w-2xl relative">
-            <div className="flex items-center w-full h-10 bg-white rounded-lg overflow-hidden border border-white/15 focus-within:border-[#E65F2B] transition-colors duration-150">
+            <div className="flex items-center w-full bg-white rounded-xl shadow-xs overflow-hidden border-2 border-transparent focus-within:border-[#DF7F2D] transition">
               <input
                 type="text"
                 value={searchTerm}
@@ -2512,15 +2521,15 @@ export default function TiendaFoxDrop() {
                   }
                   if (currentView === 'account') setCurrentView('store');
                 }}
-                placeholder="Buscar fragancias, marcas o SKU"
-                className="w-full bg-white text-[#1F1B16] placeholder-[#7B7266] pl-3.5 pr-8 text-xs sm:text-sm font-normal outline-none"
+                placeholder="Buscar productos, marcas y tesoros en FoxDrop..."
+                className="w-full bg-white text-gray-900 placeholder-gray-400 pl-4 pr-10 py-2.5 text-xs sm:text-sm font-medium outline-none"
               />
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm('')}
-                  className="p-1.5 text-[#7B7266] hover:text-[#1F1B16] transition-colors duration-150"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 transition"
                 >
-                  <X className="w-4 h-4 stroke-[1.5]" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
               <button 
@@ -2530,10 +2539,10 @@ export default function TiendaFoxDrop() {
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="h-full bg-[#E65F2B] hover:bg-[#D45321] text-white px-4 flex items-center justify-center transition-colors duration-150 cursor-pointer shrink-0"
+                className="bg-[#DF7F2D] hover:bg-[#C96E24] text-white px-4 sm:px-5 py-2.5 flex items-center justify-center transition cursor-pointer shrink-0 font-bold"
                 title="Buscar"
               >
-                <Search className="w-4 h-4 stroke-[1.5]" />
+                <Search className="w-4 h-4" />
               </button>
             </div>
 
@@ -2663,8 +2672,9 @@ export default function TiendaFoxDrop() {
             )}
           </div>
 
-          {/* LADO DERECHO: ACCIONES RÁPIDAS */}
+          {/* LADO DERECHO: ACCIONES RÁPIDAS (CUENTA, FAVORITOS Y CARRITO) */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            {/* MI CUENTA */}
             {user ? (
               <button
                 type="button"
@@ -2676,38 +2686,39 @@ export default function TiendaFoxDrop() {
                     setCurrentView('account');
                   }
                 }}
-                className="hidden sm:flex flex-col text-left text-white/80 hover:text-white transition-colors duration-150 cursor-pointer"
+                className="hidden sm:flex flex-col text-left hover:text-amber-300 transition cursor-pointer"
               >
-                <span className="text-[11px] text-white/65 leading-tight">{user.name ? user.name.split(' ')[0] : 'Cliente'}</span>
-                <span className="text-xs font-medium text-white">Mi cuenta</span>
+                <span className="text-[10px] text-white/70 leading-tight">Hola, {user.name ? user.name.split(' ')[0] : 'Cliente'}</span>
+                <span className="text-xs font-black text-amber-300 flex items-center gap-0.5">Mi Cuenta</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={openAuthModal}
-                className="hidden sm:flex flex-col text-left text-white/80 hover:text-white transition-colors duration-150 cursor-pointer"
+                className="hidden sm:flex flex-col text-left hover:text-white transition cursor-pointer"
               >
-                <span className="text-[11px] text-white/65 leading-tight">Cuenta</span>
-                <span className="text-xs font-medium text-white">Iniciar sesión</span>
+                <span className="text-[10px] text-white/70 leading-tight">Bienvenido</span>
+                <span className="text-xs font-black text-white flex items-center gap-0.5">Iniciar Sesión</span>
               </button>
             )}
 
+            {/* CARRITO PRINCIPAL DESTACADO */}
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="h-10 bg-white/[0.08] hover:bg-white/[0.14] text-white px-3.5 rounded-lg transition-colors duration-150 flex items-center gap-2.5 cursor-pointer border border-white/[0.12]"
+              className="bg-white/10 hover:bg-white/20 text-white px-3 sm:px-4 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer border border-white/15"
             >
               <div className="relative">
-                <ShoppingCart className="w-4 h-4 stroke-[1.5] text-white" />
+                <ShoppingCart className="w-5 h-5 text-amber-300" />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#E65F2B] text-white text-[10px] font-medium tabular-nums rounded-full w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-[#DF7F2D] text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
                     {cartItemCount}
                   </span>
                 )}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-[11px] text-white/65 leading-tight">Carrito</span>
-                <span className="text-xs font-medium tabular-nums text-white">
+                <span className="text-[10px] text-white/75 leading-tight">Carrito</span>
+                <span className="text-xs font-black text-white">
                   ${cart.reduce((acc, i) => acc + (i.product.publicPrice * i.quantity), 0).toFixed(0)} MXN
                 </span>
               </div>
@@ -2715,10 +2726,53 @@ export default function TiendaFoxDrop() {
           </div>
         </div>
 
-        {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS — QUIET CHROME */}
-        <div className="border-t border-white/[0.08] bg-[#0B332C]/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-2 text-xs sm:text-[13px] font-medium overscroll-x-contain touch-pan-x">
+        {/* ANIMACIONES DE LUCES NAVIDEÑAS QUE PRENDEN Y APAGAN */}
+        <style>{`
+          @keyframes xmasLightCycleA {
+            0%, 100% { opacity: 1; filter: brightness(1.35); transform: scale(1.08); }
+            45%, 55% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+          }
+          @keyframes xmasLightCycleB {
+            0%, 10% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+            50%, 90% { opacity: 1; filter: brightness(1.35); transform: scale(1.08); }
+            100% { opacity: 0.22; filter: brightness(0.5); transform: scale(0.88); box-shadow: none !important; }
+          }
+          @keyframes xmasLightCycleC {
+            0%, 30%, 100% { opacity: 1; filter: brightness(1.4); transform: scale(1.1); }
+            60%, 85% { opacity: 0.2; filter: brightness(0.45); transform: scale(0.85); box-shadow: none !important; }
+          }
+          .xmas-bulb-red {
+            background: radial-gradient(circle at 35% 35%, #ff9999, #ff1e1e 60%, #990000);
+            box-shadow: 0 0 8px 2px rgba(255, 38, 38, 0.95), 0 0 16px 4px rgba(255, 38, 38, 0.55);
+            animation: xmasLightCycleA 1.4s infinite ease-in-out;
+          }
+          .xmas-bulb-gold {
+            background: radial-gradient(circle at 35% 35%, #fff6b3, #ffcc00 60%, #b38600);
+            box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.95), 0 0 16px 4px rgba(255, 200, 0, 0.55);
+            animation: xmasLightCycleB 1.4s infinite ease-in-out;
+          }
+          .xmas-bulb-green {
+            background: radial-gradient(circle at 35% 35%, #b3ffcc, #00e64d 60%, #006622);
+            box-shadow: 0 0 8px 2px rgba(0, 230, 77, 0.95), 0 0 16px 4px rgba(0, 230, 77, 0.55);
+            animation: xmasLightCycleC 1.6s infinite ease-in-out;
+          }
+          .xmas-bulb-blue {
+            background: radial-gradient(circle at 35% 35%, #b3f0ff, #00bfff 60%, #0059b3);
+            box-shadow: 0 0 8px 2px rgba(0, 191, 255, 0.95), 0 0 16px 4px rgba(0, 191, 255, 0.55);
+            animation: xmasLightCycleA 1.7s infinite ease-in-out 0.4s;
+          }
+          .xmas-bulb-warm {
+            background: radial-gradient(circle at 35% 35%, #ffffff, #ffe699 60%, #cc9900);
+            box-shadow: 0 0 8px 2px rgba(255, 235, 160, 0.95), 0 0 14px 4px rgba(255, 215, 100, 0.55);
+            animation: xmasLightCycleB 1.5s infinite ease-in-out 0.25s;
+          }
+        `}</style>
+
+        {/* FILA INFERIOR: BARRA DE DEPARTAMENTOS EN PLECA TRANSPARENTE CON HOVER Y ACTIVO */}
+        <div className="border-t border-white/10 bg-[#0B332C]/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-start gap-4 sm:gap-6 overflow-x-auto no-scrollbar py-2.5 text-xs sm:text-[13px] font-extrabold tracking-tight overscroll-x-contain touch-pan-x">
             
+            {/* BOTÓN DESTACADO BATH & BODY WORKS (BODEGA DISPONIBLE) */}
             <button
               type="button"
               onClick={() => {
@@ -2730,15 +2784,17 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition-colors duration-150 shrink-0 cursor-pointer flex items-center px-3 py-1.5 rounded-lg ${
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                 selectedBrand === 'Bath & Body Works' && bbwCollection === 'all'
-                  ? 'bg-white text-[#0F3E36] font-semibold'
-                  : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#0F3E36] shadow-md ring-2 ring-amber-300'
+                  : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
               }`}
             >
+              <span>🌸</span>
               <span>Bath & Body Works</span>
             </button>
 
+            {/* TIENDAS / MARCAS DINÁMICAS DESDE INVENTARIO */}
             {Array.from(
               new Set(
                 products
@@ -2764,16 +2820,18 @@ export default function TiendaFoxDrop() {
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`transition-colors duration-150 shrink-0 cursor-pointer flex items-center px-3 py-1.5 rounded-lg ${
+                className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                   selectedBrand === brandName
-                    ? 'bg-white text-[#0F3E36] font-semibold'
-                    : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-[#0F3E36] shadow-md ring-2 ring-amber-300'
+                    : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
                 }`}
               >
+                <span>✨</span>
                 <span>{brandName}</span>
               </button>
             ))}
 
+            {/* ESPECIAL NAVIDEÑO */}
             <button
               type="button"
               onClick={() => {
@@ -2785,15 +2843,17 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition-colors duration-150 shrink-0 cursor-pointer flex items-center px-3 py-1.5 rounded-lg ${
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                 selectedBrand === 'Bath & Body Works' && bbwCollection === 'holiday'
-                  ? 'bg-white text-[#0F3E36] font-semibold'
-                  : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                  ? 'bg-gradient-to-r from-red-600 via-emerald-700 to-red-600 text-white shadow-md ring-2 ring-amber-300'
+                  : 'bg-white/10 text-amber-200 hover:bg-white/20 hover:text-white border border-amber-300/30'
               }`}
             >
-              <span>Edición invierno</span>
+              <span>🎄</span>
+              <span>Especial Navideño</span>
             </button>
 
+            {/* CATÁLOGO INTERNACIONAL */}
             <button
               type="button"
               onClick={() => {
@@ -2805,17 +2865,17 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`transition-colors duration-150 shrink-0 cursor-pointer flex items-center px-3 py-1.5 rounded-lg ${
+              className={`transition shrink-0 cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-black text-xs sm:text-[13px] ${
                 selectedCategory === 'Internacional' && selectedBrand === 'Todas'
-                  ? 'bg-white text-[#0F3E36] font-semibold'
-                  : 'text-white/80 hover:bg-white/[0.08] hover:text-white'
+                  ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-300'
+                  : 'bg-white/10 text-indigo-200 hover:bg-white/20 hover:text-white border border-indigo-300/30'
               }`}
             >
-              <span>Catálogo internacional</span>
+              <span>✈️</span>
+              <span>FoxDrop Internacional</span>
             </button>
 
-            <span className="h-4 w-px bg-white/[0.12] mx-1 shrink-0" />
-
+            {/* SECCIÓN TRENDING / MÁS VENDIDO */}
             <button
               type="button"
               onClick={() => {
@@ -2825,19 +2885,21 @@ export default function TiendaFoxDrop() {
                 const el = document.getElementById('catalog-section');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-white/75 hover:text-white transition-colors duration-150 shrink-0 cursor-pointer px-2 py-1.5"
+              className="text-white/80 hover:text-white transition shrink-0 cursor-pointer"
             >
               Tendencias
             </button>
 
+            {/* SECCIÓN PEDIDOS ESPECIALES */}
             <button
               type="button"
               onClick={() => setShowCustomOrderModal(true)}
-              className="text-white/75 hover:text-white transition-colors duration-150 shrink-0 cursor-pointer px-2 py-1.5"
+              className="text-[#E3B888] hover:text-white transition shrink-0 cursor-pointer flex items-center gap-1"
             >
-              Encargos especiales
+              <span>Encargos Especiales</span>
             </button>
 
+            {/* LIQUIDACIÓN CONDICIONAL (SOLO SI ESTÁ ACTIVADA DESDE EL ADMIN) */}
             {storeSettings.showClearanceBanner && (
               <button
                 type="button"
@@ -2848,13 +2910,13 @@ export default function TiendaFoxDrop() {
                   const el = document.getElementById('catalog-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`transition-colors duration-150 shrink-0 cursor-pointer px-2 py-1.5 font-medium ${
+                className={`transition shrink-0 cursor-pointer font-black ${
                   activeTab === 'deals'
-                    ? 'text-[#E65F2B] underline underline-offset-4'
-                    : 'text-[#E65F2B] hover:text-white'
+                    ? 'text-[#DF7F2D] underline underline-offset-4 decoration-2'
+                    : 'text-[#DF7F2D] hover:text-amber-300'
                 }`}
               >
-                Liquidación
+                Liquidación 🔥
               </button>
             )}
           </div>
@@ -2945,27 +3007,29 @@ export default function TiendaFoxDrop() {
 
                     {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
                     {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
-                      <div className="relative z-20 w-[58%] p-3.5 sm:p-4 flex flex-col justify-center pointer-events-none">
-                        <div className="space-y-1 max-w-[216px]">
+                      <div className="relative z-20 w-[58%] p-3 sm:p-4 flex flex-col justify-center pointer-events-none">
+                        <div className="space-y-1 max-w-[210px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
-                            <span className="inline-block text-[10px] font-medium text-[#EFE9DF]/85">
-                              {currentSlide.subtitle || 'Productos originales importados'}
+                            <span className="inline-block text-[7.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                             </span>
                           )}
-                          <h2 className="text-[13px] sm:text-sm font-medium text-white leading-snug line-clamp-2">
+                          <h2 className="text-[12px] sm:text-[13px] font-black text-white leading-tight drop-shadow-sm line-clamp-2">
                             {isDefaultSlide 
-                              ? 'Fragancias y cuidado original directo a tu puerta'
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
                               : currentSlide.title}
                           </h2>
                           {isDefaultSlide && (
-                            <p className="text-[11px] text-white/75 leading-snug font-normal hidden xs:block line-clamp-2 pt-0.5">
-                              Piezas verificadas en bodega local con entrega garantizada
+                            <p className="text-[8px] sm:text-[9.5px] text-emerald-100/90 leading-tight font-medium hidden xs:block line-clamp-2 drop-shadow-xs pt-0.5">
+                              Descubre tesoros mundiales con calidad garantizada.
                             </p>
                           )}
                         </div>
 
                         {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                          <div className="pt-2.5 pointer-events-auto">
+                          <div className="pt-2 pointer-events-auto">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -2975,10 +3039,10 @@ export default function TiendaFoxDrop() {
                                 const el = document.getElementById('catalog-section');
                                 el?.scrollIntoView({ behavior: 'smooth' });
                               }}
-                              className="bg-[#E65F2B] hover:bg-[#D45321] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg transition-[background-color,transform] duration-150 active:scale-[0.98] flex items-center gap-1 cursor-pointer w-fit"
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F06000] text-white text-[8.5px] sm:text-[9.5px] font-black px-2.5 sm:px-3 py-1 rounded-full shadow-[0_2px_8px_rgba(230,82,0,0.6)] border border-amber-200/40 transition transform active:scale-95 flex items-center gap-1 cursor-pointer w-fit"
                             >
                               <span>{currentSlide.cta_text}</span>
-                              <ArrowRight className="w-3 h-3 stroke-[1.5]" />
+                              <ArrowRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                             </button>
                           </div>
                         )}
@@ -3050,27 +3114,29 @@ export default function TiendaFoxDrop() {
 
                     {/* CONTENIDO TIPOGRÁFICO DINÁMICO */}
                     {Boolean(isDefaultSlide || (currentSlide.title && currentSlide.title.trim()) || (currentSlide.subtitle && currentSlide.subtitle.trim()) || (currentSlide.cta_text && currentSlide.cta_text.trim())) && (
-                      <div className="relative z-20 w-[52%] p-6 lg:p-8 flex flex-col justify-center pointer-events-none">
-                        <div className="space-y-1.5 max-w-[380px]">
+                      <div className="relative z-20 w-[52%] p-5 lg:p-7 xl:p-8 flex flex-col justify-center pointer-events-none">
+                        <div className="space-y-1.5 max-w-[340px]">
                           {(currentSlide.subtitle || isDefaultSlide) && (
-                            <span className="inline-block text-xs font-medium text-[#EFE9DF]/85">
-                              {currentSlide.subtitle || 'Productos originales importados'}
+                            <span className="inline-block text-[9.5px] font-black tracking-widest text-[#E3B888] uppercase drop-shadow-xs">
+                              {currentSlide.subtitle || 'TU ATAJO AL MUNDO'}
                             </span>
                           )}
-                          <h1 className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-snug">
+                          <h1 className="text-base sm:text-lg lg:text-xl font-black text-white leading-tight drop-shadow-sm">
                             {isDefaultSlide 
-                              ? 'Fragancias y cuidado original directo a tu puerta'
+                              ? (user?.name 
+                                  ? `¡Hola, ${user.name.split(' ')[0]}! El mundo, directo a tu puerta.` 
+                                  : '¡Hola! El mundo, directo a tu puerta.')
                               : currentSlide.title}
                           </h1>
                           {isDefaultSlide && (
-                            <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-normal max-w-[340px]">
-                              Existencias físicas verificadas en Puebla con envío asegurado a todo México
+                            <p className="text-xs sm:text-[13px] text-emerald-100/90 leading-snug font-medium drop-shadow-xs max-w-[320px]">
+                              Descubre tesoros mundiales con calidad garantizada.
                             </p>
                           )}
                         </div>
 
                         {Boolean(currentSlide.cta_text && currentSlide.cta_text.trim()) && (
-                          <div className="pt-3.5 pointer-events-auto">
+                          <div className="pt-3 pointer-events-auto">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -3080,10 +3146,10 @@ export default function TiendaFoxDrop() {
                                 const el = document.getElementById('catalog-section');
                                 el?.scrollIntoView({ behavior: 'smooth' });
                               }}
-                              className="h-9 bg-[#E65F2B] hover:bg-[#D45321] text-white font-medium px-4 rounded-lg text-xs transition-[background-color,transform] duration-150 active:scale-[0.98] flex items-center gap-1.5 cursor-pointer w-fit"
+                              className="bg-gradient-to-r from-[#FF7A1A] to-[#E65200] hover:from-[#FF8C33] hover:to-[#F05E00] text-white font-black px-4.5 py-2 rounded-full text-xs shadow-[0_4px_16px_rgba(230,82,0,0.55)] border border-amber-200/40 transition transform hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer w-fit group"
                             >
                               <span>{currentSlide.cta_text}</span>
-                              <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
+                              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                             </button>
                           </div>
                         )}
@@ -3114,169 +3180,216 @@ export default function TiendaFoxDrop() {
             })()}
           </section>
 
-          {/* CINTILLO DE GARANTÍAS FOXDROP */}
-          <section className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-1 relative">
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 rounded-xl p-3.5 transition-colors duration-150 ${
+          {/* CINTILLO DE CONFIANZA TIPO AMAZON / MERCADO LIBRE */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-1 relative">
+            {/* Murciélagos naranjas brillantes con halo de fuego a los costados del cintillo */}
+            {isHalloween && (
+              <>
+                <div 
+                  aria-hidden="true" 
+                  className="hidden lg:flex items-center justify-center absolute -left-8 top-1/2 -translate-y-1/2 pointer-events-none select-none z-10"
+                >
+                  <svg viewBox="0 0 48 26" className="w-10 h-6 text-[#FF7A1A] drop-shadow-[0_0_12px_rgba(255,122,26,0.9)] animate-pulse" fill="currentColor">
+                    <path d="M24 16 C20 8, 12 4, 2 8 C6 14, 9 17, 12 16 C16 21, 21 20, 24 16 Z" />
+                    <path d="M24 16 C28 8, 36 4, 46 8 C42 14, 39 17, 36 16 C32 21, 27 20, 24 16 Z" />
+                    <circle cx="24" cy="11" r="3" />
+                  </svg>
+                </div>
+                <div 
+                  aria-hidden="true" 
+                  className="hidden lg:flex items-center justify-center absolute -right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none z-10"
+                >
+                  <svg viewBox="0 0 48 26" className="w-10 h-6 text-[#FF7A1A] drop-shadow-[0_0_12px_rgba(255,122,26,0.9)] animate-pulse" fill="currentColor">
+                    <path d="M24 16 C20 8, 12 4, 2 8 C6 14, 9 17, 12 16 C16 21, 21 20, 24 16 Z" />
+                    <path d="M24 16 C28 8, 36 4, 46 8 C42 14, 39 17, 36 16 C32 21, 27 20, 24 16 Z" />
+                    <circle cx="24" cy="11" r="3" />
+                  </svg>
+                </div>
+              </>
+            )}
+
+            <div className="mb-3 rounded-2xl overflow-hidden shadow-sm">
+              <MotionMarquee />
+            </div>
+
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-2.5 rounded-2xl p-3 shadow-2xs transition-colors duration-300 ${
               isHalloween 
                 ? 'bg-[#0B1A28]/80 backdrop-blur-md border border-orange-500/25 text-gray-200' 
-                : 'bg-[#FDFBF7] border border-[#1F1B16]/[0.08] text-[#1F1B16]'
+                : 'bg-white border border-gray-200/90 text-gray-700'
             }`}>
               <div className="flex items-center gap-2.5 px-2">
-                <Truck className="w-4 h-4 stroke-[1.5] shrink-0 text-[#5E554A]" />
+                <Truck className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-orange-400' : 'text-[#DF7F2D]'}`} />
                 <div>
-                  <p className={`text-xs font-medium leading-tight ${isHalloween ? 'text-white' : 'text-[#1F1B16]'}`}>Envíos a todo México</p>
-                  <p className="text-[11px] text-[#7B7266]">Entrega local en Puebla</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Envíos Rápidos</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Cobertura a todo México</p>
                 </div>
               </div>
-              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-[#1F1B16]/[0.08]'}`}>
-                <ShieldCheck className="w-4 h-4 stroke-[1.5] shrink-0 text-[#5E554A]" />
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <ShieldCheck className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 <div>
-                  <p className={`text-xs font-medium leading-tight ${isHalloween ? 'text-white' : 'text-[#1F1B16]'}`}>Compra protegida</p>
-                  <p className="text-[11px] text-[#7B7266]">100% original importado</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Compra Protegida</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Garantía en cada pedido</p>
                 </div>
               </div>
-              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-[#1F1B16]/[0.08]'}`}>
-                <Coins className="w-4 h-4 stroke-[1.5] shrink-0 text-[#5E554A]" />
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <Coins className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-amber-400' : 'text-amber-500'}`} />
                 <div>
-                  <p className={`text-xs font-medium leading-tight ${isHalloween ? 'text-white' : 'text-[#1F1B16]'}`}>Club FoxDrop</p>
-                  <p className="text-[11px] text-[#7B7266]">Puntos en cada pedido</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Puntos Fox Rewards</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Canjeables por dinero</p>
                 </div>
               </div>
-              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-[#1F1B16]/[0.08]'}`}>
-                <Send className="w-4 h-4 stroke-[1.5] shrink-0 text-[#5E554A]" />
+              <div className={`flex items-center gap-2.5 px-2 border-l ${isHalloween ? 'border-white/10' : 'border-gray-100'}`}>
+                <Send className={`w-5 h-5 shrink-0 ${isHalloween ? 'text-orange-400' : 'text-[#0F3E36]'}`} />
                 <div>
-                  <p className={`text-xs font-medium leading-tight ${isHalloween ? 'text-white' : 'text-[#1F1B16]'}`}>Encargos especiales</p>
-                  <p className="text-[11px] text-[#7B7266]">Cotización bajo pedido</p>
+                  <p className={`text-xs font-black leading-tight ${isHalloween ? 'text-white' : 'text-gray-900'}`}>Pedidos Especiales</p>
+                  <p className={`text-[10px] ${isHalloween ? 'text-gray-400' : 'text-gray-400'}`}>Traemos lo que busques</p>
                 </div>
               </div>
             </div>
           </section>
 
 
-      {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO */}
+      {/* ======================================================== */}
+      {/* 4. SECCIÓN PRINCIPAL: CATÁLOGO / LO NUEVO / TODOS */}
+      {/* ======================================================== */}
       <section id="catalog-section" className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1F1B16]/[0.08] pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200/90 pb-4">
           <div>
-            <h3 className="text-xl sm:text-2xl font-medium text-[#1F1B16]">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#DF7F2D] animate-pulse" />
+              <h3 className="text-xl sm:text-2xl font-black text-[#0F3E36] tracking-tight">
+                {selectedCategory === 'Internacional'
+                  ? 'FoxDrop Internacional • Envíos de Fábrica a Domicilio'
+                  : bbwCollection === 'holiday'
+                  ? 'Especial Navideño • Bath & Body Works'
+                  : bbwCollection === 'car'
+                  ? 'Auto & Difusores • Bath & Body Works'
+                  : bbwCollection === 'candles_home'
+                  ? 'Velas Aromáticas & Wallflowers • Bath & Body Works'
+                  : bbwCollection === 'bodycare'
+                  ? 'Cuidado Corporal & Jabones • Bath & Body Works'
+                  : bbwCollection === 'pocketbac'
+                  ? 'Geles PocketBac & Accesorios • Bath & Body Works'
+                  : bbwCollection === 'fall'
+                  ? 'Cosecha de Otoño • Bath & Body Works'
+                  : 'Catálogo Bath & Body Works'
+                }
+              </h3>
+            </div>
+            <p className="text-xs text-gray-500 font-medium">
               {selectedCategory === 'Internacional'
-                ? 'Catálogo internacional'
-                : bbwCollection === 'holiday'
-                ? 'Edición invierno · Bath & Body Works'
-                : bbwCollection === 'car'
-                ? 'Auto y difusores · Bath & Body Works'
-                : bbwCollection === 'candles_home'
-                ? 'Velas y Wallflowers · Bath & Body Works'
-                : bbwCollection === 'bodycare'
-                ? 'Cuidado corporal y jabones · Bath & Body Works'
-                : bbwCollection === 'pocketbac'
-                ? 'Geles PocketBac y accesorios · Bath & Body Works'
-                : bbwCollection === 'fall'
-                ? 'Colección de otoño · Bath & Body Works'
-                : selectedBrand !== 'Todas'
-                ? `Catálogo ${selectedBrand}`
-                : 'Catálogo disponible'
-              }
-            </h3>
-            <p className="text-xs text-[#5E554A] mt-0.5">
-              {selectedCategory === 'Internacional'
-                ? 'Artículos de importación bajo pedido con envío directo a domicilio'
-                : 'Piezas originales importadas con envío asegurado en toda la República'}
+                ? 'Artículos exclusivos de importación con envío asegurado directo a tu domicilio.'
+                : 'Fragancias originales con garantía FoxDrop y envíos asegurados a toda la República Mexicana.'}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {dealsProducts.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('deals');
-                  setSelectedCategory('Todas');
-                }}
-                className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors duration-150 cursor-pointer border ${
-                  activeTab === 'deals'
-                    ? 'bg-[#0F3E36] text-white border-[#0F3E36]'
-                    : 'bg-[#FDFBF7] text-[#1F1B16] border-[#1F1B16]/[0.08] hover:bg-[#EFE9DF]'
-                }`}
-              >
-                Ofertas
-              </button>
-            )}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* PESTAÑAS DE VISTA RÁPIDA ESTILO TJ MAXX */}
+            <div className="bg-[#EAE5DC] p-1 rounded-xl flex items-center text-xs font-bold text-gray-700">
+              
+              {dealsProducts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('deals');
+                    setSelectedCategory('Todas');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    activeTab === 'deals' ? 'bg-[#DF7F2D] text-white shadow-xs' : 'hover:text-[#0F3E36]'
+                  }`}
+                >
+                  Ofertas 🔥
+                </button>
+              )}
+              
+            </div>
 
-            <div className="flex items-center gap-1.5 bg-[#FDFBF7] border border-[#1F1B16]/[0.08] rounded-lg px-2.5 h-9">
-              <span className="text-xs text-[#7B7266] hidden sm:inline">Ordenar:</span>
+            {/* SELECTOR DE FILTRO DE ORDENAMIENTO (PRECIO / A-Z) */}
+            <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Ordenar:</span>
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value as any)}
-                className="bg-transparent text-xs font-medium text-[#1F1B16] focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
               >
-                <option value="default">Recomendados</option>
-                <option value="discount_desc">Mayor descuento</option>
-                <option value="price_asc">Precio: menor a mayor</option>
-                <option value="price_desc">Precio: mayor a menor</option>
-                <option value="name_asc">Nombre: A–Z</option>
-                <option value="name_desc">Nombre: Z–A</option>
+                <option value="default">Recomendados / Novedades</option>
+                <option value="discount_desc">Mayor Descuento (% OFF 🔥)</option>
+                <option value="price_asc">Precio: Menor a Mayor ($ ↑)</option>
+                <option value="price_desc">Precio: Mayor a Menor ($ ↓)</option>
+                <option value="name_asc">Nombre: A - Z</option>
+                <option value="name_desc">Nombre: Z - A</option>
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-[#FDFBF7] border border-[#1F1B16]/[0.08] rounded-lg px-2.5 h-9">
-              <span className="text-xs text-[#7B7266] hidden sm:inline">Precio:</span>
+            {/* FILTRO POR RANGO DE PRECIO */}
+            <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+              <span className="text-[11px] font-bold text-gray-500 hidden sm:inline">Presupuesto:</span>
               <select
                 value={priceFilter}
                 onChange={e => setPriceFilter(e.target.value as any)}
-                className="bg-transparent text-xs font-medium text-[#1F1B16] focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
               >
-                <option value="all">Todos</option>
-                <option value="under150">Menos de $150</option>
-                <option value="150to350">$150 – $350</option>
-                <option value="above350">Más de $350</option>
+                <option value="all">Cualquier Precio</option>
+                <option value="under150">Menos de $150 MXN</option>
+                <option value="150to350">$150 - $350 MXN</option>
+                <option value="above350">Más de $350 MXN</option>
               </select>
             </div>
+
 
             {selectedCategory !== 'Todas' && (
               <button
                 onClick={() => setSelectedCategory('Todas')}
-                className="h-9 bg-[#EFE9DF] hover:bg-[#E5DEC9] text-[#1F1B16] text-xs font-medium px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 cursor-pointer"
+                className="bg-orange-50 hover:bg-orange-100 text-[#E65F2B] text-xs font-bold px-3 py-1.5 rounded-lg transition border border-orange-200 flex items-center gap-1 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5 stroke-[1.5]" />
-                <span>{selectedCategory}</span>
+                <X className="w-3.5 h-3.5" />
+                <span>Quitar filtro ({selectedCategory})</span>
               </button>
             )}
+
+
           </div>
         </div>
 
-        {/* BARRA DE SUB-COLECCIONES BATH & BODY WORKS */}
+        {/* BARRA DE SUB-COLECCIONES BATH & BODY WORKS — REDISEÑO ELEGANTE Y LIMPIO */}
         {selectedBrand === 'Bath & Body Works' && (
-          <div className="bg-[#FDFBF7] border border-[#1F1B16]/[0.08] rounded-xl p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h4 className="text-sm font-medium text-[#1F1B16]">
-                  Colecciones Bath & Body Works
-                </h4>
-                <p className="text-xs text-[#7B7266]">
-                  Filtra por línea o presentación
-                </p>
+          <div className="bg-white border border-gray-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5 animate-in fade-in slide-in-from-top duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-base shadow-2xs border border-pink-100">
+                  🌸
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-black text-[#0F3E36] tracking-tight">
+                    Colecciones Bath & Body Works
+                  </h4>
+                  <p className="text-xs text-gray-500 font-medium">
+                    Explora por temporada o tipo de fragancia
+                  </p>
+                </div>
               </div>
               {bbwCollection !== 'all' && (
                 <button
                   type="button"
                   onClick={() => setBbwCollection('all')}
-                  className="text-xs font-medium text-[#0F3E36] hover:underline flex items-center gap-1 cursor-pointer w-fit"
+                  className="text-xs font-bold text-[#E65F2B] hover:text-[#c44a1b] flex items-center gap-1 cursor-pointer w-fit"
                 >
-                  <X className="w-3.5 h-3.5 stroke-[1.5]" />
+                  <X className="w-3.5 h-3.5" />
                   <span>Mostrar todo</span>
                 </button>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            {/* Píldoras de colecciones estilo TJ Maxx / Sephora */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               {[
-                { id: 'all', label: 'Todo' },
-                { id: 'bodycare', label: 'Cuidado corporal y jabones' },
-                { id: 'pocketbac', label: 'Geles PocketBac' },
-                { id: 'candles_home', label: 'Velas y Wallflowers' },
-                { id: 'car', label: 'Auto y difusores' },
-                { id: 'holiday', label: 'Edición invierno' },
-                { id: 'fall', label: 'Otoño' },
+                { id: 'all', label: 'Todo el Catálogo', icon: '✨' },
+                { id: 'holiday', label: 'Especial Navideño', icon: '🎄', special: true },
+                { id: 'car', label: 'Auto & Difusores', icon: '🚗' },
+                { id: 'candles_home', label: 'Velas & Wallflower', icon: '🕯️' },
+                { id: 'bodycare', label: 'Cuidado Corporal & Jabones', icon: '🧴' },
+                { id: 'pocketbac', label: 'Geles PocketBac', icon: '🧼' },
+                { id: 'fall', label: 'Cosecha de Otoño', icon: '🍂' },
               ].map(col => {
                 const isActive = bbwCollection === col.id;
                 return (
@@ -3284,12 +3397,15 @@ export default function TiendaFoxDrop() {
                     key={col.id}
                     type="button"
                     onClick={() => setBbwCollection(col.id as any)}
-                    className={`shrink-0 h-8 px-3 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center cursor-pointer ${
+                    className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                       isActive
-                        ? 'bg-[#0F3E36] text-white'
-                        : 'bg-[#EFE9DF]/70 hover:bg-[#EFE9DF] text-[#1F1B16]'
+                        ? 'bg-[#0F3E36] text-white shadow-sm ring-2 ring-[#0F3E36]/20'
+                        : col.special
+                        ? 'bg-gradient-to-r from-red-50 to-emerald-50 text-emerald-950 border border-emerald-200/80 hover:border-emerald-300'
+                        : 'bg-gray-50/80 hover:bg-gray-100 text-gray-700 border border-gray-200/80 hover:border-gray-300'
                     }`}
                   >
+                    <span className="text-sm">{col.icon}</span>
                     <span>{col.label}</span>
                   </button>
                 );
@@ -3346,55 +3462,73 @@ export default function TiendaFoxDrop() {
                     setModalQuantity(1);
                     setSelectedProduct(product);
                   }}
-                  className="bg-white rounded-2xl p-3 flex flex-col justify-between hover:border-[#1F1B16]/20 transition-[border-color,box-shadow] duration-150 cursor-pointer group relative border border-[#1F1B16]/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                  className={`bg-white rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:shadow-lg transition-all duration-200 cursor-pointer group relative border ${isImportItem ? "border-indigo-200/90 shadow-2xs" : "border-gray-200/80 shadow-2xs"}`}
                 >
-                  {/* BADGES SUPERIORES Y FAVORITO */}
-                  <div className="flex items-center justify-between absolute top-3 left-3 right-3 z-10 pointer-events-none">
+                  {/* BADGES SUPERIORES: DESCUENTO / STOCK / COMBO / FAVORITO */}
+                  <div className="flex items-center justify-between absolute top-2.5 left-2.5 right-2.5 z-10 pointer-events-none">
                     <div className="flex flex-wrap items-center gap-1">
-                      {hasDiscount && (
-                        <span className="bg-[#16A34A] text-white font-medium tabular-nums text-[11px] px-2 py-0.5 rounded-md">
+                      {isHalloween && hasDiscount && (
+                        <span className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5 border border-amber-300/40">
+                          🎃 {product.discountPercent}% OFF
+                        </span>
+                      )}
+                      {!isHalloween && hasDiscount && (
+                        <span className="bg-emerald-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-xs">
                           -{product.discountPercent}%
                         </span>
                       )}
                       {product.isCombo && (
-                        <span className="bg-[#0F3E36] text-white font-medium text-[11px] px-2 py-0.5 rounded-md">
-                          Combo
+                        <span className="bg-[#E65F2B] text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" /> COMBO
                         </span>
                       )}
                       {product.stock === 1 ? (
-                        <span className="bg-[#EFE9DF] text-[#1F1B16] border border-[#1F1B16]/[0.08] font-medium text-[11px] px-2 py-0.5 rounded-md">
-                          Última pieza
+                        <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5 animate-pulse">
+                          🔥 ¡Última pieza!
                         </span>
                       ) : null}
                     </div>
 
                     <button
                       onClick={(e) => toggleFav(product.id, e)}
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150 pointer-events-auto border border-[#1F1B16]/[0.08] ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition pointer-events-auto backdrop-blur-md shadow-xs ${
                         isFav 
-                          ? 'bg-rose-50 text-[#DC2626]' 
-                          : 'bg-white/90 text-[#7B7266] hover:text-[#1F1B16] hover:bg-white'
+                          ? 'bg-rose-50 text-rose-500' 
+                          : 'bg-white/80 text-gray-400 hover:text-rose-500 hover:bg-white'
                       }`}
                       title={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
                     >
-                      <Heart className={`w-3.5 h-3.5 stroke-[1.5] ${isFav ? 'fill-[#DC2626]' : ''}`} />
+                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-rose-500' : ''}`} />
                     </button>
                   </div>
 
-                  {/* IMAGEN DE PRODUCTO */}
-                  <div className="aspect-square bg-white rounded-xl flex items-center justify-center p-3 overflow-hidden relative">
+                  {/* IMAGEN DE PRODUCTO SOBRE FONDO BLANCO PURO ESTILO AMAZON */}
+                  <div className="aspect-square bg-white rounded-2xl flex items-center justify-center p-3 overflow-hidden transition relative">
                     <img
                       src={getSafeProductImage(product.images?.[0])}
                       alt={product.title}
-                      className="max-h-full w-auto object-contain"
+                      className="max-h-full w-auto object-contain group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
                       }}
                     />
 
-                    {/* Acción rápida de compra en la paleta FoxDrop */}
-                    <div className="absolute bottom-2 right-2 pointer-events-auto">
+                    {/* Pleca de logística sutil en la parte inferior izquierda */}
+                    <div className="absolute bottom-1.5 left-1.5 pointer-events-none">
+                      {product.brand === 'CJ Dropshipping' || product.sku?.startsWith('CJ-') ? (
+                        <span className="bg-indigo-950/85 backdrop-blur-xs text-indigo-100 text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-xs border border-indigo-400/20">
+                          ✈️ Internacional
+                        </span>
+                      ) : (
+                        <span className="bg-[#072520]/85 backdrop-blur-xs text-emerald-200 text-[8px] font-bold px-1.5 py-0.5 rounded-sm shadow-xs border border-emerald-400/20">
+                          ⚡ 24-48 hrs
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Botón amarillo '+' circular flotante como en Amazon */}
+                    <div className="absolute bottom-1.5 right-1.5 pointer-events-auto">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -3402,56 +3536,68 @@ export default function TiendaFoxDrop() {
                           setModalQuantity(1);
                           setSelectedProduct(product);
                         }}
-                        className="w-8 h-8 rounded-lg bg-[#0F3E36] hover:bg-[#E65F2B] active:scale-[0.97] text-white flex items-center justify-center transition-[background-color,transform] duration-150 cursor-pointer"
-                        title="Ver producto y agregar"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFD814] hover:bg-[#F7CA00] active:scale-95 text-gray-900 flex items-center justify-center shadow-md transition cursor-pointer border border-[#FCD200]"
+                        title="Ver producto y comprar"
                       >
-                        <Plus className="w-4 h-4 stroke-[1.75]" />
+                        <Plus className="w-4 h-4 stroke-[3]" />
                       </button>
                     </div>
                   </div>
 
-                  {/* DETALLES DE PRECIO Y ARTÍCULO */}
-                  <div className="pt-2.5 flex-1 flex flex-col justify-between">
-                    <div className="space-y-0.5 tabular-nums">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-base sm:text-lg font-medium text-[#1F1B16]">
-                          ${product.publicPrice.toFixed(0)} <span className="text-xs font-normal text-[#7B7266]">MXN</span>
-                        </span>
-                        {hasDiscount ? (
-                          <span className="text-xs text-[#7B7266] line-through font-normal">
-                            ${originalPrice.toFixed(0)}
+                  {/* DETALLES DE PRECIO Y PROMOCIÓN ESTILO AMAZON */}
+                  <div className="pt-2 flex-1 flex flex-col justify-between">
+
+
+                    {/* PRECIO ACTUAL Y VALOR DE REFERENCIA DE ANTES (VERDE #0F3E36) */}
+                    <div className="pt-1.5 space-y-1">
+                      <div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-base sm:text-lg font-black text-[#0F3E36] tracking-tight">
+                            ${product.publicPrice.toFixed(0)} <span className="text-[10px] font-bold text-gray-500">MXN</span>
                           </span>
-                        ) : null}
+                          {hasDiscount ? (
+                            <span className="text-[11px] text-gray-400 line-through font-medium">
+                              ${originalPrice.toFixed(0)}
+                            </span>
+                          ) : null}
+                        </div>
+                        {hasDiscount && (
+                          <span className="text-[10px] font-bold text-emerald-700 block">
+                            Ahorras ${(originalPrice - product.publicPrice).toFixed(0)} MXN
+                          </span>
+                        )}
                       </div>
-                      {hasDiscount && (
-                        <span className="text-[11px] font-medium text-[#16A34A] block">
-                          Ahorras ${(originalPrice - product.publicPrice).toFixed(0)} MXN
-                        </span>
-                      )}
                     </div>
 
+                    {/* Título del producto limpio en 2 líneas */}
                     <div className="pt-1.5">
-                      <h4 className="text-xs sm:text-[13px] font-medium text-[#1F1B16] line-clamp-2 leading-snug group-hover:text-[#0F3E36] transition-colors duration-150">
+                      <h4 className="text-xs sm:text-[13px] font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-[#0F3E36] transition">
                         {product.title}
                       </h4>
+                      {/* Descripción breve del artículo */}
                       {product.description && (
-                        <p className="text-[11px] text-[#5E554A] line-clamp-2 leading-snug mt-1 font-normal">
-                          {product.description}
+                        <p className="text-[10.5px] text-gray-500 line-clamp-2 leading-snug mt-1 font-normal">
+                          {product.description || (isImportItem ? 'Producto de importación directa a tu domicilio.' : '')}
                         </p>
                       )}
                     </div>
 
-                    {/* SIGNATURE FOXDROP: Origen / Marca + estado de stock real en mono */}
-                    <div className="pt-2.5 flex items-center justify-between text-[11px] border-t border-[#1F1B16]/[0.06] mt-2.5">
-                      <span className="text-[11px] font-normal text-[#5E554A] truncate">
-                        {isImportItem
-                          ? 'Importación directa'
-                          : (product.brand && !product.brand.toLowerCase().includes('cj dropshipping') ? product.brand : product.category)}
+                    {/* Procedencia / Marca / Calificación con avioncito y colores de antes */}
+                    <div className="pt-2 flex items-center justify-between text-[11px] border-t border-gray-100 mt-2">
+                      <span className="text-[10px] font-semibold text-[#0F3E36] hover:underline uppercase tracking-wider truncate flex items-center gap-1">
+                        {isImportItem ? (
+                          <>
+                            <span>✈️</span>
+                            <span>Internacional</span>
+                          </>
+                        ) : (
+                          <span>{product.brand && !product.brand.toLowerCase().includes('cj dropshipping') ? product.brand : product.category}</span>
+                        )}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 font-mono tabular-nums text-[11px] text-[#7B7266] shrink-0">
-                        <span className={`w-1.5 h-1.5 rounded-full ${isImportItem ? 'bg-[#7B7266]' : product.stock <= 2 ? 'bg-amber-500' : 'bg-[#16A34A]'}`} />
-                        <span>{isImportItem ? 'Bajo pedido' : `${product.stock} disp`}</span>
-                      </span>
+                      <div className="flex items-center gap-1 font-bold text-gray-700 shrink-0">
+                        <span className="text-amber-400 text-xs">★</span>
+                        <span>4.8</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5877,35 +6023,38 @@ export default function TiendaFoxDrop() {
 
 
       {/* ======================================================== */}
-      {/* 5. FOOTER UNIFICADO EN VERDE BOSQUE PROFUNDO */}
-      <footer className="bg-[#0A2621] text-white mt-16 pt-12 pb-24 md:pb-10 border-t border-white/[0.08] text-xs w-full">
+      {/* 5. FOOTER UNIFICADO EN COLOR VERDE BOSQUE (#0F3E36) */}
+      {/* ======================================================== */}
+      {/* 5. FOOTER OFICIAL CORPORATIVO (AMAZON / MERCADO LIBRE STYLE) */}
+      {/* ======================================================== */}
+      <footer className="bg-[#0A2621] text-white mt-14 pt-12 pb-24 md:pb-8 border-t border-white/10 text-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-10">
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             
             {/* COL 1: IDENTIDAD & MARCA */}
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               <FoxDropLogo size="md" variant="dark" />
               <p className="text-white/70 text-xs leading-relaxed max-w-xs">
-                Curaduría de fragancias, cuidado personal y coleccionables originales importados con envío asegurado en todo México.
+                Tu atajo al mundo. Curaduría y productos exclusivos de importación con inspección de calidad y envíos garantizados a todo México.
               </p>
               <div className="pt-1">
                 <a
                   href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '522223806846'}?text=${encodeURIComponent('Hola FoxDrop, tengo una duda sobre un producto.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs bg-white/[0.08] hover:bg-white/[0.14] text-white font-medium px-3.5 h-9 rounded-lg transition-colors duration-150 border border-white/[0.12]"
+                  className="inline-flex items-center gap-2 text-xs bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 font-bold px-3 py-2 rounded-xl transition border border-emerald-500/30"
                 >
-                  <MessageSquare className="w-4 h-4 stroke-[1.5] text-white/80" />
-                  <span>Atención por WhatsApp</span>
+                  <MessageSquare className="w-4 h-4 text-emerald-400" />
+                  <span>Atención directa por WhatsApp</span>
                 </a>
               </div>
             </div>
 
             {/* COL 2: COMPRA & SERVICIOS */}
             <div className="space-y-3">
-              <h4 className="font-medium text-xs text-white">Catálogo y servicios</h4>
-              <ul className="space-y-2 text-white/70 text-xs">
+              <h4 className="font-black text-xs uppercase tracking-wider text-[#DF7F2D]">Catálogo & Servicios</h4>
+              <ul className="space-y-2 text-white/75 text-xs">
                 <li>
                   <button 
                     onClick={() => {
@@ -5914,9 +6063,9 @@ export default function TiendaFoxDrop() {
                       const el = document.getElementById('catalog-section');
                       el?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer"
                   >
-                    Novedades e importaciones
+                    Novedades e Importaciones
                   </button>
                 </li>
                 {dealsProducts.length > 0 && (
@@ -5928,18 +6077,18 @@ export default function TiendaFoxDrop() {
                         const el = document.getElementById('catalog-section');
                         el?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                      className="hover:text-white hover:underline transition text-left cursor-pointer"
                     >
-                      Ofertas activas
+                      Ofertas & Descuentos
                     </button>
                   </li>
                 )}
                 <li>
                   <button 
                     onClick={() => setShowCustomOrderModal(true)}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer text-amber-300 font-semibold"
                   >
-                    Encargos especiales
+                    Encargos Especiales
                   </button>
                 </li>
                 <li>
@@ -5952,9 +6101,9 @@ export default function TiendaFoxDrop() {
                         setCurrentView('account');
                       }
                     }}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer"
                   >
-                    Club FoxDrop
+                    Club Fox Rewards
                   </button>
                 </li>
               </ul>
@@ -5962,38 +6111,41 @@ export default function TiendaFoxDrop() {
 
             {/* COL 3: ATENCIÓN & AYUDA */}
             <div className="space-y-3">
-              <h4 className="font-medium text-xs text-white">Ayuda y garantías</h4>
-              <ul className="space-y-2 text-white/70 text-xs">
+              <h4 className="font-black text-xs uppercase tracking-wider text-[#DF7F2D]">Ayuda & Garantías</h4>
+              <ul className="space-y-2 text-white/75 text-xs">
                 <li>
                   <button 
                     onClick={() => setInfoModal('envios')}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer flex items-center gap-1.5"
                   >
-                    Políticas de envío
+                    <Truck className="w-3.5 h-3.5 text-gray-400" />
+                    <span>Políticas de Envío</span>
                   </button>
                 </li>
                 <li>
                   <button 
                     onClick={() => setInfoModal('devoluciones')}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer flex items-center gap-1.5"
                   >
-                    Garantía y devoluciones
+                    <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
+                    <span>Garantía y Devoluciones</span>
                   </button>
                 </li>
                 <li>
                   <button 
                     onClick={() => setInfoModal('privacidad')}
-                    className="hover:text-white transition-colors duration-150 text-left cursor-pointer"
+                    className="hover:text-white hover:underline transition text-left cursor-pointer flex items-center gap-1.5"
                   >
-                    Aviso de privacidad
+                    <ShieldCheck className="w-3.5 h-3.5 text-gray-400" />
+                    <span>Aviso de Privacidad</span>
                   </button>
                 </li>
                 <li>
                   <Link 
                     href="/terminos"
-                    className="hover:text-white transition-colors duration-150 text-left inline-block"
+                    className="hover:text-white hover:underline transition text-left flex items-center gap-1.5"
                   >
-                    Términos y condiciones
+                    <span>Términos y Condiciones</span>
                   </Link>
                 </li>
               </ul>
@@ -6001,20 +6153,27 @@ export default function TiendaFoxDrop() {
 
             {/* COL 4: PAGOS SEGUROS & CONFIANZA */}
             <div className="space-y-3">
-              <h4 className="font-medium text-xs text-white">Formas de pago</h4>
-              <div className="space-y-2 pt-0.5">
-                <div className="flex items-center gap-3 bg-white/[0.05] border border-white/[0.08] px-3 py-2.5 rounded-xl">
-                  <CreditCard className="w-4 h-4 stroke-[1.5] text-white/70 shrink-0" />
+              <h4 className="font-black text-xs uppercase tracking-wider text-[#DF7F2D]">Formas de Pago Seguras</h4>
+              <p className="text-white/70 text-xs">
+                Paga de forma protegida, inmediata y con confirmación digital:
+              </p>
+              <div className="grid grid-cols-1 gap-2 pt-1">
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl hover:bg-white/10 transition">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                    <CreditCard className="w-4 h-4" />
+                  </div>
                   <div>
-                    <span className="font-medium text-white block text-xs">Transferencia SPEI</span>
-                    <span className="text-[11px] text-white/60">Confirmación inmediata sin comisión</span>
+                    <span className="font-bold text-white block text-xs">Transferencia SPEI</span>
+                    <span className="text-[10px] text-white/60">Acreditación instantánea 24/7 sin comisión</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-white/[0.05] border border-white/[0.08] px-3 py-2.5 rounded-xl">
-                  <ShieldCheck className="w-4 h-4 stroke-[1.5] text-white/70 shrink-0" />
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl hover:bg-white/10 transition">
+                  <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
                   <div>
-                    <span className="font-medium text-white block text-xs">Mercado Pago y contra entrega</span>
-                    <span className="text-[11px] text-white/60">Tarjeta protegida o efectivo en Puebla</span>
+                    <span className="font-bold text-white block text-xs">Tarjetas de Débito & Crédito</span>
+                    <span className="text-[10px] text-white/60">Disponible para importación internacional</span>
                   </div>
                 </div>
               </div>
@@ -6023,11 +6182,11 @@ export default function TiendaFoxDrop() {
           </div>
 
           {/* COPYRIGHT & SELLO DE SEGURIDAD */}
-          <div className="pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between text-xs text-white/55 gap-4">
-            <p>© 2026 FoxDrop México. Todos los derechos reservados.</p>
-            <div className="flex items-center gap-1.5 text-white/70 text-xs">
-              <ShieldCheck className="w-4 h-4 stroke-[1.5] text-white/70" />
-              <span>Conexión cifrada TLS y compra protegida</span>
+          <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/60 gap-4">
+            <p>© 2026 FoxDrop. Todos los derechos reservados. Comercio electrónico seguro en México.</p>
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Conexión cifrada SSL & Compra 100% Protegida</span>
             </div>
           </div>
 
@@ -6035,49 +6194,63 @@ export default function TiendaFoxDrop() {
       </footer>
 
       {/* MODAL INFORMATIVO (ENVÍOS / DEVOLUCIONES / PRIVACIDAD) */}
+      {/* Partículas de Halloween al agregar al carrito */}
+      {halloweenSparks.map(spark => (
+        <span
+          key={spark.id}
+          className="fixed pointer-events-none select-none z-[9999] text-xl transition-all duration-1000 ease-out animate-bounce"
+          style={{
+            left: `${spark.x}px`,
+            top: `${spark.y}px`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          {spark.emoji}
+        </span>
+      ))}
       {infoModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-[#FDFBF7] border border-[#1F1B16]/[0.08] rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)] relative">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in duration-200">
             <button
               onClick={() => setInfoModal(null)}
-              className="absolute top-4 right-4 text-[#7B7266] hover:text-[#1F1B16] p-1.5 rounded-lg hover:bg-[#EFE9DF] transition-colors duration-150 cursor-pointer"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
             >
-              <X className="w-4 h-4 stroke-[1.5]" />
+              <X className="w-5 h-5" />
             </button>
 
             {infoModal === 'envios' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#EFE9DF] text-[#0F3E36] flex items-center justify-center">
-                    <Truck className="w-4 h-4 stroke-[1.5]" />
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-[#0F3E36] flex items-center justify-center font-bold">
+                    <Truck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-medium text-[#1F1B16]">Políticas de envío</h3>
-                    <p className="text-xs text-[#7B7266]">Entregas locales en Puebla y cobertura nacional</p>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Política de Envíos</h3>
+                    <p className="text-xs text-gray-400 font-medium">Entregas seguras y cobertura nacional</p>
                   </div>
                 </div>
-                <div className="space-y-3 text-xs text-[#5E554A] leading-relaxed bg-[#F7F4EE] p-4 rounded-xl border border-[#1F1B16]/[0.08]">
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Envíos nacionales e internacionales</strong>
-                    Enviamos a cualquier código postal de la República Mexicana mediante paquetería certificada con número de rastreo.
+                    <strong className="text-gray-900 block font-bold mb-0.5">📦 Envíos Nacionales e Internacionales:</strong>
+                    Enviamos a cualquier código postal de la República Mexicana mediante paqueterías certificadas con número de rastreo oficial.
                   </p>
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Medios de pago</strong>
-                    Aceptamos transferencia SPEI, tarjeta vía Mercado Pago y pago contra entrega en puntos acordados de Puebla y Cholula.
+                    <strong className="text-gray-900 block font-bold mb-0.5">💳 Medios de Pago Protegidos:</strong>
+                    Aceptamos transferencias electrónicas SPEI con acreditación inmediata y pago con tarjetas bancarias de débito/crédito para pedidos de importación.
                   </p>
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Tiempos de entrega</strong>
-                    El inventario físico se despacha en 24 a 48 horas hábiles; los artículos de importación bajo pedido toman de 10 a 15 días hábiles.
+                    <strong className="text-gray-900 block font-bold mb-0.5">⏱️ Tiempos de Entrega:</strong>
+                    Los pedidos de catálogo local se despachan en 24 a 48 horas hábiles. Los pedidos de importación directa tienen un tiempo de tránsito asegurado de 10 a 15 días hábiles.
                   </p>
                 </div>
-                <div>
+                <div className="pt-1">
                   <Link
                     href="/terminos"
                     onClick={() => setInfoModal(null)}
-                    className="text-xs font-medium text-[#0F3E36] hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
                   >
-                    <span>Ver términos y condiciones</span>
-                    <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
+                    <span>Ver Términos y Condiciones completos</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -6086,36 +6259,36 @@ export default function TiendaFoxDrop() {
             {infoModal === 'devoluciones' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#EFE9DF] text-[#0F3E36] flex items-center justify-center">
-                    <ShieldCheck className="w-4 h-4 stroke-[1.5]" />
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100 text-[#DF7F2D] flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-medium text-[#1F1B16]">Garantía y devoluciones</h3>
-                    <p className="text-xs text-[#7B7266]">Autenticidad verificada en cada pedido</p>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Garantía y Devoluciones</h3>
+                    <p className="text-xs text-gray-400 font-medium">Calidad asegurada en cada compra</p>
                   </div>
                 </div>
-                <div className="space-y-3 text-xs text-[#5E554A] leading-relaxed bg-[#F7F4EE] p-4 rounded-xl border border-[#1F1B16]/[0.08]">
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Garantía de autenticidad</strong>
-                    Cada artículo se revisa físicamente antes de su empaque para asegurar estado íntegro y procedencia original.
+                    <strong className="text-gray-900 block font-bold mb-0.5">🛡️ Garantía de Calidad FoxDrop:</strong>
+                    Cada producto es revisado minuciosamente antes de su entrega para asegurar su perfecto estado y autenticidad.
                   </p>
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Plazo de reporte</strong>
-                    En caso de daño de traslado o defecto de origen, cuentas con 7 días naturales tras recibir tu paquete para solicitar cambio o reembolso.
+                    <strong className="text-gray-900 block font-bold mb-0.5">🔄 Plazo de Reporte:</strong>
+                    Si tu artículo presenta algún defecto de fábrica o daño de traslado, cuentas con 7 días naturales tras recibirlo para solicitar tu reemplazo o reembolso.
                   </p>
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Atención directa</strong>
-                    Escríbenos por WhatsApp con foto de tu pedido y número de folio para resolverlo sin trámites largos.
+                    <strong className="text-gray-900 block font-bold mb-0.5">💬 Atención Sin Complicaciones:</strong>
+                    Solo escríbenos directamente por WhatsApp con fotos o video de tu paquete para una solución inmediata.
                   </p>
                 </div>
-                <div>
+                <div className="pt-1">
                   <Link
                     href="/terminos"
                     onClick={() => setInfoModal(null)}
-                    className="text-xs font-medium text-[#0F3E36] hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
                   >
-                    <span>Ver políticas completas</span>
-                    <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
+                    <span>Ver Políticas de Devolución completas</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -6124,32 +6297,32 @@ export default function TiendaFoxDrop() {
             {infoModal === 'privacidad' && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-[#EFE9DF] text-[#0F3E36] flex items-center justify-center">
-                    <ShieldCheck className="w-4 h-4 stroke-[1.5]" />
+                  <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-medium text-[#1F1B16]">Aviso de privacidad</h3>
-                    <p className="text-xs text-[#7B7266]">Uso responsable de tus datos de contacto</p>
+                    <h3 className="text-lg font-black text-[#0F3E36]">Aviso de Privacidad</h3>
+                    <p className="text-xs text-gray-400 font-medium">Protección estricta de tu información</p>
                   </div>
                 </div>
-                <div className="space-y-3 text-xs text-[#5E554A] leading-relaxed bg-[#F7F4EE] p-4 rounded-xl border border-[#1F1B16]/[0.08]">
+                <div className="space-y-3 text-xs text-gray-600 leading-relaxed bg-[#FAF6F0] p-4 rounded-2xl border border-gray-100">
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Finalidad operativa</strong>
-                    Tu nombre, teléfono y dirección se utilizan únicamente para procesar entregas, emitir comprobantes y acreditar puntos en Club FoxDrop.
+                    <strong className="text-gray-900 block font-bold mb-0.5">🔒 Uso Exclusivo:</strong>
+                    Tus datos (nombre, teléfono y correo electrónico) son utilizados únicamente para la confirmación y entrega de tus pedidos y la asignación de tus puntos FoxDrop.
                   </p>
                   <p>
-                    <strong className="text-[#1F1B16] block font-medium mb-0.5">Confidencialidad</strong>
-                    No vendemos ni compartimos datos personales con terceros ajenos a la mensajería de entrega.
+                    <strong className="text-gray-900 block font-bold mb-0.5">🚫 Cero Spam o Venta de Datos:</strong>
+                    Nunca venderemos, rentaremos ni compartiremos tus datos con agencias de publicidad externas ni terceros.
                   </p>
                 </div>
-                <div>
+                <div className="pt-1">
                   <Link
                     href="/privacidad"
                     onClick={() => setInfoModal(null)}
-                    className="text-xs font-medium text-[#0F3E36] hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-bold text-[#DF7F2D] hover:underline flex items-center gap-1"
                   >
-                    <span>Leer aviso de privacidad integral</span>
-                    <ArrowRight className="w-3.5 h-3.5 stroke-[1.5]" />
+                    <span>Ver Aviso de Privacidad Integral completo</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -6157,9 +6330,9 @@ export default function TiendaFoxDrop() {
 
             <button
               onClick={() => setInfoModal(null)}
-              className="w-full h-10 bg-[#0F3E36] hover:bg-[#154E45] text-white font-medium rounded-lg text-xs transition-colors duration-150 cursor-pointer"
+              className="w-full bg-[#0F3E36] hover:bg-[#185348] text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer"
             >
-              Cerrar
+              Entendido
             </button>
           </div>
         </div>
@@ -6198,35 +6371,36 @@ export default function TiendaFoxDrop() {
           : products.filter(p => !((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))));
         const crossSellItems = getCrossSellRecommendations(selectedProduct, relatedCatalog, 2);
 
-        // Formatear la descripción limpiando markdown y emojis iniciales de plantilla
+        // Formatear la descripción estilo "Acerca de este artículo" de Amazon/Mercado Libre (limpiando asteriscos markdown * **Título**: texto)
         const formattedDescriptionLines = (displayDescription || '')
           .split(/\n+|\s*\*\s+(?=\*\*)/)
-          .map(line => line.trim().replace(/^\*\s+/, '').replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/u, ''))
+          .map(line => line.trim().replace(/^\*\s+/, ''))
           .filter(Boolean);
 
         return (
         <div
-          data-lenis-prevent
           onClick={() => setSelectedProduct(null)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center sm:p-4 cursor-pointer"
+          className="fixed inset-0 bg-black/65 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center sm:p-4 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="product-modal-content bg-[#FDFBF7] text-[#1F1B16] rounded-t-2xl sm:rounded-2xl max-w-4xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-6 relative shadow-[0_12px_32px_rgba(0,0,0,0.16)] border border-[#1F1B16]/[0.08] cursor-default"
+            className="product-modal-content bg-white rounded-t-3xl sm:rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[90vh] sm:max-h-[92vh] overflow-y-auto custom-scrollbar p-5 sm:p-7 space-y-6 relative shadow-2xl animate-in slide-in-from-bottom duration-200 cursor-default"
           >
-            {/* TIRADOR VISUAL PARA MÓVIL */}
-            <div className="w-10 h-1 bg-[#1F1B16]/15 rounded-full mx-auto sm:hidden mb-1" />
+            
+            {/* TIRADOR VISUAL PARA MÓVIL (BOTTOM SHEET HANDLE) */}
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto sm:hidden mb-1" />
 
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 z-20 text-[#7B7266] hover:text-[#1F1B16] p-2 rounded-lg bg-[#EFE9DF]/70 hover:bg-[#EFE9DF] transition-colors duration-150 cursor-pointer"
+              className="absolute top-4 right-4 z-20 text-gray-500 hover:text-gray-900 p-2 rounded-full bg-gray-100/80 hover:bg-gray-200 transition cursor-pointer"
               title="Cerrar"
             >
-              <X className="w-4 h-4 stroke-[1.5]" />
+              <X className="w-5 h-5" />
             </button>
 
+            {/* SECCIÓN SUPERIOR EN 2 COLUMNAS AMPLIAS ESTILO AMAZON / MERCADO LIBRE */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
-              {/* COLUMNA IZQUIERDA: GALERÍA */}
+              {/* COLUMNA IZQUIERDA (5 COLS): GALERÍA PRINCIPAL Y MINIATURAS */}
               <div className="md:col-span-5 space-y-3 md:sticky md:top-0">
                 <div 
                   onMouseEnter={() => !selectedModalVideo && setIsZoomActive(true)}
@@ -6238,7 +6412,7 @@ export default function TiendaFoxDrop() {
                     const y = ((e.clientY - rect.top) / rect.height) * 100;
                     setZoomCoords({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
                   }}
-                  className="aspect-square bg-white rounded-xl p-4 flex items-center justify-center border border-[#1F1B16]/[0.08] relative overflow-hidden cursor-crosshair group"
+                  className="aspect-square bg-white rounded-2xl p-4 flex items-center justify-center border border-gray-200/80 relative overflow-hidden cursor-crosshair group shadow-2xs"
                 >
                   {selectedModalVideo ? (
                     <video
@@ -6247,7 +6421,7 @@ export default function TiendaFoxDrop() {
                       controls
                       autoPlay
                       playsInline
-                      className="w-full h-full object-contain rounded-lg bg-black"
+                      className="w-full h-full object-contain rounded-xl bg-black"
                     />
                   ) : (
                     <img
@@ -6261,50 +6435,53 @@ export default function TiendaFoxDrop() {
                         (e.currentTarget as HTMLImageElement).src = '/no-image.svg';
                       }}
                       style={isZoomActive ? {
-                        transform: 'scale(2.1)',
+                        transform: 'scale(2.2)',
                         transformOrigin: `${zoomCoords.x}% ${zoomCoords.y}%`
                       } : {}}
-                      className="max-h-full object-contain transition-transform duration-150 ease-out pointer-events-none select-none"
+                      className="max-h-full object-contain transition-transform duration-100 ease-out pointer-events-none select-none"
                     />
                   )}
                   {selectedProduct.isCombo && (
-                    <span className="absolute top-3 left-3 bg-[#0F3E36] text-white text-[11px] font-medium px-2.5 py-0.5 rounded-md z-10 pointer-events-none">
-                      Combo
+                    <span className="absolute top-3 left-3 bg-[#E65F2B] text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 z-10 pointer-events-none">
+                      <Sparkles className="w-3 h-3" /> COMBO PROMOCIONAL
                     </span>
                   )}
+                  {/* Pista visual de zoom */}
                   {!selectedModalVideo && (
-                    <div className="hidden sm:flex absolute bottom-2.5 right-2.5 bg-[#1F1B16]/70 text-white text-[11px] font-normal px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none items-center gap-1.5">
-                      <Search className="w-3 h-3 stroke-[1.5]" />
-                      <span>Acercar imagen</span>
+                    <div className="absolute bottom-2.5 right-2.5 bg-black/55 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-1 rounded-full opacity-70 group-hover:opacity-100 transition pointer-events-none flex items-center gap-1">
+                      <Search className="w-3 h-3" />
+                      <span>Pasa el cursor para zoom</span>
                     </div>
                   )}
                 </div>
 
-                {/* Miniaturas */}
+                {/* Miniaturas: Galería con flechas para PC + videos al frente para máxima visibilidad */}
                 {((selectedProduct.videos && selectedProduct.videos.length > 0) || (selectedProduct.images && selectedProduct.images.length > 1)) && (
                   <div className="relative group/thumbs">
+                    {/* Botón flecha izquierda para PC */}
                     <button
                       type="button"
                       onClick={() => {
                         const el = document.getElementById('product-modal-thumbs');
                         if (el) el.scrollBy({ left: -140, behavior: 'smooth' });
                       }}
-                      className="hidden sm:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-lg bg-white hover:bg-[#F7F4EE] text-[#1F1B16] border border-[#1F1B16]/[0.12] items-center justify-center transition-colors duration-150 cursor-pointer"
+                      className="hidden sm:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-md border border-slate-200 items-center justify-center transition cursor-pointer hover:scale-110 opacity-80 group-hover/thumbs:opacity-100"
                       title="Anterior"
                     >
-                      <ChevronLeft className="w-4 h-4 stroke-[1.5]" />
+                      <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
                     </button>
 
+                    {/* Botón flecha derecha para PC */}
                     <button
                       type="button"
                       onClick={() => {
                         const el = document.getElementById('product-modal-thumbs');
                         if (el) el.scrollBy({ left: 140, behavior: 'smooth' });
                       }}
-                      className="hidden sm:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-lg bg-white hover:bg-[#F7F4EE] text-[#1F1B16] border border-[#1F1B16]/[0.12] items-center justify-center transition-colors duration-150 cursor-pointer"
+                      className="hidden sm:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-white/95 hover:bg-white text-slate-700 shadow-md border border-slate-200 items-center justify-center transition cursor-pointer hover:scale-110 opacity-80 group-hover/thumbs:opacity-100"
                       title="Siguiente"
                     >
-                      <ChevronRight className="w-4 h-4 stroke-[1.5]" />
+                      <ChevronRight className="w-4 h-4 stroke-[2.5]" />
                     </button>
 
                     <div
@@ -6316,6 +6493,7 @@ export default function TiendaFoxDrop() {
                       }}
                       className="flex gap-2 overflow-x-auto pb-1 no-scrollbar items-center scroll-smooth px-1"
                     >
+                      {/* 1. FOTOS DEL PRODUCTO */}
                       {selectedProduct.images?.map((imgUrl, i) => (
                         <button
                           key={`img-${i}`}
@@ -6324,30 +6502,35 @@ export default function TiendaFoxDrop() {
                             setSelectedModalVideo(null);
                             setActiveModalImageIndex(i);
                           }}
-                          className={`w-14 h-14 rounded-lg p-1 border transition-colors duration-150 shrink-0 cursor-pointer bg-white ${
-                            !selectedModalVideo && activeModalImageIndex === i ? 'border-[#0F3E36] ring-1 ring-[#0F3E36]' : 'border-[#1F1B16]/[0.08] hover:border-[#1F1B16]/25'
+                          className={`w-14 h-14 rounded-xl p-1 border-2 transition shrink-0 cursor-pointer ${
+                            !selectedModalVideo && activeModalImageIndex === i ? 'border-[#E65F2B] ring-2 ring-orange-200 bg-orange-50/20' : 'border-gray-200 hover:border-gray-300 bg-white'
                           }`}
                         >
-                          <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
+                          <img src={getSafeProductImage(imgUrl)} alt={`Foto ${i + 1}`} className="w-full h-full object-contain rounded-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }} />
                         </button>
                       ))}
 
+                      {/* 2. VIDEOS DEL PRODUCTO (AL FINAL DE LAS FOTOS, ACCESIBLES DIRECTAMENTE CON LAS FLECHAS) */}
                       {selectedProduct.videos?.map((vidUrl, vIdx) => (
                         <button
                           key={`vid-${vIdx}`}
                           type="button"
                           onClick={() => setSelectedModalVideo(vidUrl)}
-                          className={`w-16 h-14 rounded-lg border transition-colors duration-150 shrink-0 cursor-pointer flex flex-col items-center justify-center bg-[#1F1B16] text-white ${
+                          className={`w-16 h-14 rounded-xl border-2 transition shrink-0 cursor-pointer flex flex-col items-center justify-center relative overflow-hidden shadow-xs group ${
                             selectedModalVideo === vidUrl
-                              ? 'border-[#E65F2B] ring-1 ring-[#E65F2B]'
-                              : 'border-[#1F1B16]/[0.12] hover:bg-[#2A251F]'
+                              ? 'border-[#E65F2B] ring-2 ring-orange-300 bg-gradient-to-br from-slate-900 to-indigo-950 text-white'
+                              : 'border-amber-400/90 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white hover:border-[#E65F2B] ring-1 ring-amber-200/50'
                           }`}
-                          title="Ver video del producto"
+                          title="Ver Video Demostrativo"
                         >
-                          <span className="text-[11px] font-medium">Video</span>
-                          {selectedProduct.videos && selectedProduct.videos.length > 1 && (
-                            <span className="text-[10px] font-mono text-white/70">#{vIdx + 1}</span>
-                          )}
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs group-hover:scale-125 transition">▶️</span>
+                            <span className="text-[9px] font-black tracking-wider text-amber-300 uppercase">VIDEO</span>
+                          </div>
+                          <span className="text-[8px] font-bold text-white/80 mt-0.5">
+                            {selectedProduct.videos && selectedProduct.videos.length > 1 ? `#${vIdx + 1}` : 'En vivo'}
+                          </span>
+                          <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         </button>
                       ))}
                     </div>
@@ -6355,92 +6538,92 @@ export default function TiendaFoxDrop() {
                 )}
               </div>
 
-              {/* COLUMNA DERECHA: TÍTULO, PRECIO, OPCIONES Y ACCIONES */}
+              {/* COLUMNA DERECHA (7 COLS): TÍTULO, PRECIO, OPCIONES Y COMPRA INMEDIATA */}
               <div className="md:col-span-7 space-y-4">
-                {/* 1. CABECERA: CATEGORÍA, SKU Y ESTADO REAL */}
-                <div className="space-y-2 pr-8">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="text-[#5E554A] font-medium">
+                {/* 1. CABECERA: CATEGORÍA, DISPONIBILIDAD Y TÍTULO */}
+                <div className="space-y-1.5 pr-8">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] text-[#E65F2B] bg-orange-50 border border-orange-200/70 px-2.5 py-0.5 rounded-full uppercase font-black tracking-wider">
                       {selectedProduct.category}
                     </span>
-                    {selectedProduct.sku && (
-                      <>
-                        <span className="text-[#7B7266]">·</span>
-                        <span className="font-mono text-[11px] text-[#7B7266]">
-                          {selectedProduct.sku}
-                        </span>
-                      </>
-                    )}
-                    <span className="text-[#7B7266]">·</span>
                     {displayStock <= 0 ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#DC2626]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
-                        Agotado
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Agotado temporalmente
                       </span>
                     ) : displayStock === 1 ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1F1B16]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Última pieza disponible
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                        ¡Última pieza disponible!
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#16A34A] tabular-nums">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                        {displayStock} disponibles
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Disponible ({displayStock} pzas)
+                      </span>
+                    )}
+                    {selectedProduct.isCombo && (
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Precio especial todo incluido
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-medium text-[#1F1B16] leading-snug">
+                  <h3 className="text-lg sm:text-2xl font-black text-[#1F2D3D] leading-snug">
                     {selectedProduct.title}
                   </h3>
                 </div>
 
-                {/* 2. BLOQUE DE PRECIO */}
-                <div className="bg-[#F7F4EE] border border-[#1F1B16]/[0.08] rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 tabular-nums">
+                {/* 2. BLOQUE DE PRECIO Y RECOMPENSAS ESTILO MERCADO LIBRE */}
+                <div className="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-medium text-[#1F1B16]">
-                        ${effectivePrice.toFixed(0)} <span className="text-xs font-normal text-[#7B7266]">MXN</span>
+                      <span className="text-3xl sm:text-4xl font-black text-gray-950 tracking-tight">
+                        ${effectivePrice.toFixed(0)} <span className="text-xs font-bold text-gray-500">MXN</span>
                       </span>
                       {selectedProduct.discountPercent && selectedProduct.discountPercent > 0 ? (
                         <>
-                          <span className="text-xs text-[#7B7266] line-through">
+                          <span className="text-xs text-gray-400 line-through">
                             ${(effectivePrice / (1 - (selectedProduct.discountPercent / 100))).toFixed(0)} MXN
                           </span>
-                          <span className="text-xs font-medium text-[#16A34A]">
-                            -{selectedProduct.discountPercent}%
+                          <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            {selectedProduct.discountPercent}% OFF
                           </span>
                         </>
                       ) : null}
                     </div>
-                    <p className="text-xs text-[#5E554A] mt-1">
+                    <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                       {isImportProd
-                        ? 'Envío internacional directo a domicilio (10 a 15 días hábiles)'
-                        : 'Despacho en 24 a 48 h a todo México y entregas locales en Puebla'}
+                        ? '✈️ Envío internacional directo a tu domicilio (10 a 15 días hábiles)'
+                        : '⚡ Envío rápido a todo México y entregas en Puebla'}
                     </p>
                   </div>
 
-                  <span className="text-xs text-[#5E554A] bg-white border border-[#1F1B16]/[0.08] px-3 py-1.5 rounded-lg">
-                    +{calculateEarnedPoints(effectivePrice, clubSettings?.pesosPerPoint || 10)} puntos Club FoxDrop
-                  </span>
+                  {/* PUNTOS CLUB FOXDROP COMPACTO */}
+                  <div className="bg-amber-50 border border-amber-200/90 rounded-xl px-3 py-1.5 flex items-center gap-1.5 text-[11px] text-amber-950 font-semibold">
+                    <Sparkles className="w-3.5 h-3.5 text-[#E65F2B] shrink-0" />
+                    <span>
+                      Ganas <strong>+{calculateEarnedPoints(effectivePrice, clubSettings?.pesosPerPoint || 10)} {clubSettings?.currencySymbol || '⭐'}</strong> en Club FoxDrop
+                    </span>
+                  </div>
                 </div>
 
-                {/* 3. SELECTOR DE VARIANTES */}
+                {/* 3. SELECTOR DE OPCIONES / MODELOS ESTILO AMAZON (CUADRÍCULA LIMPIA Y ORDENADA) */}
                 {hasVariants && (
-                  <div className="space-y-2 border-t border-[#1F1B16]/[0.08] pt-3">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <div className="text-[#5E554A] min-w-0">
-                        <span>Variante: </span>
-                        <span className="font-medium text-[#1F1B16] break-words">
+                  <div className="space-y-2 border-t border-gray-100 pt-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-xs text-slate-700 min-w-0">
+                        <span className="font-semibold text-slate-500">Opción seleccionada: </span>
+                        <span className="font-black text-[#0F3E36] break-words">
                           {activeVariant?.name || 'Opción 1'}
                         </span>
                       </div>
-                      <span className="font-mono tabular-nums text-[11px] text-[#7B7266] shrink-0">
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full shrink-0">
                         {selectedProduct.variants!.length} opciones
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1.5 bg-[#F7F4EE] rounded-xl border border-[#1F1B16]/[0.08]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto custom-scrollbar p-1.5 bg-slate-50/70 rounded-2xl border border-slate-200/70">
                       {selectedProduct.variants!.map((v, vIdx) => {
                         const isSelectedVar = selectedVariantIndex === vIdx;
                         return (
@@ -6452,30 +6635,32 @@ export default function TiendaFoxDrop() {
                               setSelectedModalVideo(null);
                               if (v.image) setActiveModalImageIndex(-1);
                             }}
-                            className={`p-2 rounded-lg border text-left transition-colors duration-150 cursor-pointer flex items-center gap-2.5 relative bg-white ${
+                            className={`p-2 rounded-xl border text-left transition cursor-pointer flex items-center gap-2.5 relative ${
                               isSelectedVar
-                                ? 'border-[#0F3E36] ring-1 ring-[#0F3E36]'
-                                : 'border-[#1F1B16]/[0.08] hover:border-[#1F1B16]/25'
+                                ? 'border-[#0F3E36] bg-white ring-2 ring-[#0F3E36]/20 shadow-xs'
+                                : 'border-slate-200/90 bg-white/80 hover:bg-white hover:border-slate-300'
                             }`}
                           >
                             {v.image && (
                               <img
                                 src={getSafeProductImage(v.image)}
                                 alt={v.name}
-                                className="w-10 h-10 rounded object-cover shrink-0 border border-[#1F1B16]/[0.06]"
+                                className="w-10 h-10 rounded-lg object-cover shrink-0 border border-slate-100 bg-slate-50"
                                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = "/no-image.svg"; }}
                               />
                             )}
-                            <div className="min-w-0 flex-1 tabular-nums">
-                              <span className="block text-xs font-medium text-[#1F1B16] leading-snug line-clamp-2" title={v.name}>
+                            <div className="min-w-0 flex-1">
+                              <span className={`block text-[11px] leading-snug line-clamp-2 ${isSelectedVar ? 'font-black text-[#0F3E36]' : 'font-semibold text-slate-700'}`} title={v.name}>
                                 {v.name}
                               </span>
-                              <span className="block text-xs text-[#5E554A] mt-0.5">
+                              <span className="block text-xs font-black text-[#E65F2B] mt-0.5">
                                 ${v.publicPrice.toFixed(0)} MXN
                               </span>
                             </div>
                             {isSelectedVar && (
-                              <Check className="w-4 h-4 stroke-[1.75] text-[#0F3E36] shrink-0" />
+                              <span className="w-4 h-4 rounded-full bg-[#0F3E36] text-white flex items-center justify-center shrink-0">
+                                <Check className="w-2.5 h-2.5" />
+                              </span>
                             )}
                           </button>
                         );
@@ -6484,30 +6669,30 @@ export default function TiendaFoxDrop() {
                   </div>
                 )}
 
-                {/* DESGLOSE DE COMBO */}
+                {/* DESGLOSE DE PRODUCTOS INCLUIDOS EN ESTE COMBO */}
                 {selectedProduct.isCombo && selectedProduct.comboProductIds && selectedProduct.comboProductIds.length > 0 && (
-                  <div className="bg-[#F7F4EE] border border-[#1F1B16]/[0.08] rounded-xl p-3.5 space-y-2">
-                    <span className="text-xs font-medium text-[#1F1B16] block">
-                      Incluye {selectedProduct.comboProductIds.length} artículos
+                  <div className="bg-orange-50/70 border border-orange-200 rounded-2xl p-3 space-y-2">
+                    <span className="text-xs font-bold text-orange-950 flex items-center gap-1">
+                      📦 Este combo incluye {selectedProduct.comboProductIds.length} artículos:
                     </span>
                     <div className="space-y-1.5">
                       {products
                         .filter(p => selectedProduct.comboProductIds?.includes(p.id))
                         .map(includedProd => (
-                          <div key={includedProd.id} className="flex items-center justify-between bg-white p-2 rounded-lg border border-[#1F1B16]/[0.08] text-xs">
-                            <div className="flex items-center gap-2 min-w-0">
+                          <div key={includedProd.id} className="flex items-center justify-between bg-white/90 p-2 rounded-xl border border-orange-100 text-xs">
+                            <div className="flex items-center gap-2">
                               <img
                                 src={getSafeProductImage(includedProd.images[0])}
                                 alt={includedProd.title}
                                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                                className="w-7 h-7 object-contain rounded shrink-0"
+                                className="w-7 h-7 object-contain rounded"
                               />
-                              <div className="min-w-0">
-                                <span className="font-medium text-[#1F1B16] block truncate">{includedProd.title}</span>
-                                <span className="text-[11px] text-[#7B7266] block">{includedProd.category}</span>
+                              <div>
+                                <span className="font-bold text-slate-800 block line-clamp-1">{includedProd.title}</span>
+                                <span className="text-[10px] text-slate-400 block">{includedProd.category}</span>
                               </div>
                             </div>
-                            <span className="text-[11px] text-[#16A34A] font-medium shrink-0 ml-2">
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                               Incluido
                             </span>
                           </div>
@@ -6516,61 +6701,44 @@ export default function TiendaFoxDrop() {
                   </div>
                 )}
 
-                {/* 4. ACCIONES DE COMPRA — 1 PRIMARIA (#E65F2B) + 1 SECUNDARIA NEUTRA */}
-                <div className="space-y-3 pt-2 border-t border-[#1F1B16]/[0.08]">
+                {/* 4. CAJA DE COMPRA DIRECTA (CANTIDAD + BOTONES DE ACCIÓN A LA VISTA SIN SCROLL) */}
+                <div className="space-y-3 pt-2 border-t border-gray-100">
                   {displayStock > 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 bg-[#F7F4EE] border border-[#1F1B16]/[0.08] rounded-lg px-3 h-9 tabular-nums">
-                        <span className="text-xs text-[#5E554A]">Cantidad</span>
+                      <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                        <span className="text-xs font-bold text-slate-700">Cantidad:</span>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => setModalQuantity(prev => Math.max(1, prev - 1))}
                             disabled={modalQuantity <= 1}
-                            className="w-6 h-6 rounded bg-white border border-[#1F1B16]/[0.12] flex items-center justify-center text-[#1F1B16] hover:bg-[#EFE9DF] disabled:opacity-40 cursor-pointer transition-colors duration-150"
+                            className="w-7 h-7 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
                           >
-                            <Minus className="w-3 h-3 stroke-[1.5]" />
+                            <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-6 text-center font-medium text-xs text-[#1F1B16]">
+                          <span className="w-7 text-center font-black text-sm text-slate-900">
                             {modalQuantity}
                           </span>
                           <button
                             type="button"
                             onClick={() => setModalQuantity(prev => Math.min(displayStock, prev + 1))}
                             disabled={modalQuantity >= displayStock}
-                            className="w-6 h-6 rounded bg-white border border-[#1F1B16]/[0.12] flex items-center justify-center text-[#1F1B16] hover:bg-[#EFE9DF] disabled:opacity-40 cursor-pointer transition-colors duration-150"
+                            className="w-7 h-7 rounded-lg bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 cursor-pointer transition"
                           >
-                            <Plus className="w-3 h-3 stroke-[1.5]" />
+                            <Plus className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs text-[#5E554A]">
-                        <ShieldCheck className="w-4 h-4 stroke-[1.5] text-[#0F3E36] shrink-0" />
-                        <span>SPEI, tarjeta y compra protegida</span>
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>💳 Tarjetas • ⚡ Mercado Pago • Compra Protegida</span>
                       </div>
                     </div>
                   )}
 
+                  {/* BOTONES PRINCIPALES LADO A LADO EN ESCRITORIO ESTILO MERCADO LIBRE / AMAZON */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      disabled={displayStock <= 0}
-                      onClick={() => {
-                        addToCart(productToBuy, undefined, modalQuantity);
-                        setSelectedProduct(null);
-                      }}
-                      className="w-full h-11 bg-[#E65F2B] hover:bg-[#D45321] active:scale-[0.98] disabled:bg-[#7B7266]/40 text-white font-medium px-4 rounded-lg text-sm transition-[background-color,transform] duration-150 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <ShoppingCart className="w-4 h-4 stroke-[1.5] shrink-0" />
-                      <span>
-                        {displayStock <= 0 
-                          ? 'Agotado' 
-                          : modalQuantity > 1 
-                            ? `Agregar ${modalQuantity} al carrito` 
-                            : 'Agregar al carrito'}
-                      </span>
-                    </button>
-
                     {displayStock > 0 && (
                       <button
                         type="button"
@@ -6579,38 +6747,57 @@ export default function TiendaFoxDrop() {
                           setSelectedProduct(null);
                           handleCheckoutInit();
                         }}
-                        className="w-full h-11 bg-[#EFE9DF] hover:bg-[#E4DDD0] active:scale-[0.98] text-[#1F1B16] border border-[#1F1B16]/[0.10] font-medium px-4 rounded-lg text-sm transition-[background-color,transform] duration-150 cursor-pointer flex items-center justify-center gap-2 tabular-nums"
+                        className="w-full bg-[#0F3E36] hover:bg-[#154E45] active:scale-98 text-white font-black py-3 px-4 rounded-xl text-xs sm:text-sm transition shadow-md cursor-pointer flex items-center justify-center gap-2"
                       >
-                        <span>Comprar ahora · ${(effectivePrice * modalQuantity).toFixed(0)} MXN</span>
+                        <Zap className="w-4 h-4 text-amber-300 fill-amber-300 shrink-0" />
+                        <span>Comprar Ahora • ${(effectivePrice * modalQuantity).toFixed(0)} MXN</span>
                       </button>
                     )}
+
+                    <button
+                      disabled={displayStock <= 0}
+                      onClick={() => {
+                        addToCart(productToBuy, undefined, modalQuantity);
+                        setSelectedProduct(null);
+                      }}
+                      className="w-full bg-[#E65F2B] hover:bg-[#D45321] active:scale-98 disabled:bg-gray-400 text-white font-black py-3 px-4 rounded-xl text-xs sm:text-sm transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <ShoppingCart className="w-4 h-4 shrink-0" />
+                      <span>
+                        {displayStock <= 0 
+                          ? 'Agotado' 
+                          : modalQuantity > 1 
+                            ? `Agregar ${modalQuantity} al carrito` 
+                            : 'Agregar al carrito'}
+                      </span>
+                    </button>
                   </div>
 
-                  {/* ENLACES SECUNDARIOS SILENCIOSOS: WHATSAPP Y COMPARTIR */}
-                  <div className="flex items-center justify-between pt-1 text-xs text-[#5E554A]">
-                    {!isImportProd ? (
+                  {/* FILA DE ACCIONES RÁPIDAS: WHATSAPP DIRECTO (SOLO BOUTIQUE) & COMPARTIR */}
+                  <div className={`grid ${isImportProd ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+                    {!isImportProd && (
                       <button
                         type="button"
                         onClick={() => {
-                          const msg = `Hola FoxDrop, me interesa este artículo de la tienda:\n\n• ${selectedProduct.title}\n• Cantidad: ${modalQuantity}\n• Total: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n\n¿Está disponible para entrega o envío?`;
+                          const msg = `¡Hola FoxDrop! Me interesa comprar este artículo visto en su tienda:\n\n• *${selectedProduct.title}*\n• Cantidad: ${modalQuantity}\n• Precio: $${(selectedProduct.publicPrice * modalQuantity).toFixed(0)} MXN\n• Enlace: https://foxdrop.mx/tienda\n\n¿Tienen entrega o envío disponible en 24 a 48 hrs?`;
                           const whatsappNum = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "522223806846";
                           const waUrl = whatsappNum 
                             ? `https://wa.me/${whatsappNum}?text=${encodeURIComponent(msg)}`
                             : `https://wa.me/?text=${encodeURIComponent(msg)}`;
                           window.open(waUrl, '_blank');
                         }}
-                        className="hover:text-[#0F3E36] transition-colors duration-150 inline-flex items-center gap-1.5 cursor-pointer py-1"
+                        className="bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs truncate px-2"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 stroke-[1.5]" />
-                        <span>Preguntar o pedir por WhatsApp</span>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span className="truncate">Pedir por WhatsApp</span>
                       </button>
-                    ) : <span />}
+                    )}
 
                     <button
                       type="button"
                       onClick={() => {
                         const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/tienda?id=${selectedProduct.id}` : 'https://foxdrop.mx/tienda';
-                        const shareText = `${selectedProduct.title} ($${selectedProduct.publicPrice} MXN) en FoxDrop:\n${shareUrl}`;
+                        const shareText = `¡Mira este producto en FoxDrop! ${selectedProduct.title} por solo $${selectedProduct.publicPrice} MXN:\n${shareUrl}`;
                         if (navigator.share) {
                           navigator.share({ title: selectedProduct.title, text: shareText, url: shareUrl }).catch(() => {});
                         } else if (navigator.clipboard) {
@@ -6619,16 +6806,16 @@ export default function TiendaFoxDrop() {
                           setTimeout(() => setShareCopied(false), 2500);
                         }
                       }}
-                      className="hover:text-[#1F1B16] transition-colors duration-150 inline-flex items-center gap-1.5 cursor-pointer py-1"
+                      className="bg-gray-100 hover:bg-gray-200 active:scale-98 text-gray-800 font-bold py-2 rounded-xl text-[11px] transition flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200 truncate px-2"
                     >
                       {shareCopied ? (
-                        <span className="text-[#16A34A] inline-flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5 stroke-[1.5]" /> Enlace copiado
+                        <span className="text-emerald-700 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> ¡Copiado!
                         </span>
                       ) : (
                         <>
-                          <Share2 className="w-3.5 h-3.5 stroke-[1.5]" />
-                          <span>Compartir enlace</span>
+                          <Share2 className="w-3.5 h-3.5 text-gray-500" />
+                          <span>Compartir este artículo</span>
                         </>
                       )}
                     </button>
@@ -6637,32 +6824,37 @@ export default function TiendaFoxDrop() {
               </div>
             </div>
 
-            {/* SECCIÓN INFERIOR: DETALLES DEL ARTÍCULO Y RELACIONADOS */}
-            <div className="border-t border-[#1F1B16]/[0.08] pt-5 space-y-5">
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-[#1F1B16]">
-                  Detalles del artículo
+            {/* SECCIÓN INFERIOR A ANCHO COMPLETO: "ACERCA DE ESTE ARTÍCULO" ESTILO AMAZON / MERCADO LIBRE */}
+            <div className="border-t border-slate-200/80 pt-5 space-y-4">
+              <div className="space-y-2.5">
+                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#E65F2B]" />
+                  <span style={{ color: '#0f172a' }}>Acerca de este artículo y características</span>
                 </h4>
-                <div className="rounded-xl p-4 space-y-2 text-xs sm:text-[13px] leading-relaxed bg-[#F7F4EE] border border-[#1F1B16]/[0.08] text-[#5E554A]">
+                <div 
+                  className="rounded-2xl p-4 space-y-2 text-xs sm:text-[13px] leading-relaxed border"
+                  style={{ backgroundColor: '#f8fafc', borderColor: '#e2e8f0', color: '#334155' }}
+                >
                   {formattedDescriptionLines.map((line, lIdx) => {
                     const cleanedLine = line.replace(/\*\*/g, '').replace(/^[•*]\s*/, '').trim();
-                    const isSectionHeader = /^(Características|Beneficios|Especificaciones)/i.test(cleanedLine) && cleanedLine.endsWith(':');
+                    const isSectionHeader = /^(✨|📐|📦|Características|Beneficios|Especificaciones)/i.test(cleanedLine) && cleanedLine.endsWith(':');
                     if (isSectionHeader) {
                       return (
-                        <h5 key={lIdx} className="font-medium text-xs sm:text-sm pt-2 first:pt-0 border-b border-[#1F1B16]/[0.08] pb-1 text-[#1F1B16]">
-                          {cleanedLine.replace(/:$/, '')}
+                        <h5 key={lIdx} className="font-black text-xs sm:text-sm pt-2 first:pt-0 border-b pb-1" style={{ color: '#0f172a', borderColor: '#cbd5e1' }}>
+                          {cleanedLine}
                         </h5>
                       );
                     }
 
+                    // Si la línea tiene formato "**Subtítulo**: texto" o "• Propiedad: Valor"
                     const kvMatch = cleanedLine.match(/^([^:]{2,38}):\s+(.+)$/);
                     if (kvMatch) {
                       return (
                         <div key={lIdx} className="flex items-start gap-2 py-0.5">
-                          <span className="w-1 h-1 rounded-full bg-[#7B7266] mt-2 shrink-0" />
-                          <p>
-                            <strong className="font-medium text-[#1F1B16]">{kvMatch[1]}:</strong>{' '}
-                            <span>{kvMatch[2]}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0F3E36] mt-2 shrink-0" />
+                          <p style={{ color: '#334155' }}>
+                            <strong className="font-black" style={{ color: '#0f172a' }}>{kvMatch[1]}:</strong>{' '}
+                            <span style={{ color: '#334155' }}>{kvMatch[2]}</span>
                           </p>
                         </div>
                       );
@@ -6671,23 +6863,26 @@ export default function TiendaFoxDrop() {
                     if (line.trim().startsWith('•') || line.trim().startsWith('*')) {
                       return (
                         <div key={lIdx} className="flex items-start gap-2 py-0.5">
-                          <span className="w-1 h-1 rounded-full bg-[#7B7266] mt-2 shrink-0" />
-                          <p>{cleanedLine}</p>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E65F2B] mt-2 shrink-0" />
+                          <p style={{ color: '#334155' }}>{cleanedLine}</p>
                         </div>
                       );
                     }
 
                     return (
-                      <p key={lIdx}>{cleanedLine}</p>
+                      <p key={lIdx} style={{ color: '#334155' }}>
+                        {cleanedLine}
+                      </p>
                     );
                   })}
                 </div>
               </div>
 
+              {/* RECOMENDACIONES DE PRODUCTOS RELACIONADOS */}
               {crossSellItems.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-[#5E554A]">
-                    Artículos relacionados
+                <div className="pt-1">
+                  <p className="text-[11px] font-black uppercase tracking-wider mb-2 flex items-center gap-1" style={{ color: '#475569' }}>
+                    <Sparkles className="w-3 h-3 text-[#E65F2B]" /> También te podría interesar:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {crossSellItems.map((rec) => (
@@ -6697,23 +6892,23 @@ export default function TiendaFoxDrop() {
                           setModalQuantity(1);
                           setSelectedProduct(rec);
                         }}
-                        className="bg-[#F7F4EE] hover:bg-[#EFE9DF] border border-[#1F1B16]/[0.08] rounded-xl p-2.5 cursor-pointer transition-colors duration-150 flex items-center gap-3"
+                        className="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2.5 cursor-pointer transition flex items-center gap-2.5"
                       >
                         <img
-                          src={getSafeProductImage(rec.images[0])}
-                          alt={rec.title}
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
-                          className="w-10 h-10 object-contain rounded bg-white p-1 border border-[#1F1B16]/[0.06] shrink-0"
-                        />
-                        <div className="min-w-0 tabular-nums">
-                          <p className="text-xs font-medium text-[#1F1B16] truncate">{rec.title}</p>
-                          <p className="text-xs text-[#5E554A] mt-0.5">${rec.publicPrice.toFixed(0)} MXN</p>
-                        </div>
+                              src={getSafeProductImage(rec.images[0])}
+                              alt={rec.title}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/no-image.svg'; }}
+                              className="w-8 h-8 object-contain rounded"
+                            />
+                            <div className="overflow-hidden">
+                              <p className="text-[10px] font-bold text-gray-800 truncate">{rec.title}</p>
+                              <p className="text-[10px] font-black text-[#E65F2B]">${rec.publicPrice.toFixed(0)}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
             </div>
           </div>
         </div>

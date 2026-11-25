@@ -30,10 +30,8 @@ export async function POST(req: NextRequest) {
     });
 
     const catalogSummary = physicalProducts
-      .map((p: any) => {
-        const cost = Number(p.base_cost_mxn || 0) + Number(p.shipping_cost_allocated || 0);
-        return `- ${p.title} | SKU: ${p.sku || "S/N"} | Cat: ${p.category || "General"} | Precio: $${Number(p.public_price || 0)} MXN | Costo: $${cost.toFixed(0)} MXN | Stock: ${p.stock}`;
-      })
+      .slice(0, 140)
+      .map((p: any) => `- ${p.title} | $${Number(p.public_price || 0)} | Stock:${p.stock}`)
       .join("\n");
 
     const historyText = Array.isArray(history) && history.length > 0

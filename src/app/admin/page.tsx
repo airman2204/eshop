@@ -4473,7 +4473,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
   // DASHBOARD PRINCIPAL DEL CRM ADMIN
   // =========================================================================
   return (
-    <div className={`min-h-screen ${storeSettings.adminDarkMode ? 'admin-dark-mode bg-[#141415] text-[#EDEDED]' : 'bg-[#FAFAFA] text-[#171717]'} flex font-sans antialiased selection:bg-[#E65F2B] selection:text-white relative`}>
+    <div className={`min-h-screen ${storeSettings.adminDarkMode ? 'admin-dark-mode bg-[#0B131A] text-slate-100' : 'bg-[#F4F6F8] text-[#222E3C]'} flex font-sans selection:bg-[#E65F2B] selection:text-white relative`}>
       
       {/* ======================================================== */}
       {/* MODAL DE BLINDAJE Y GESTIÓN DE 2FA (GOOGLE AUTHENTICATOR) */}
@@ -4646,263 +4646,297 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         />
       )}
 
-      {/* MENÚ LATERAL (SIDEBAR) — GRAPHITE NEUTRAL RAMP */}
-      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#0F0F10] text-[#A1A1A6] flex flex-col z-50 shrink-0 transition-transform duration-200 border-r border-white/[0.08] ${
+      {/* MENÚ LATERAL (SIDEBAR) ELEGANTE & LIMPIO */}
+      <aside className={`fixed md:sticky top-0 left-0 h-screen w-64 bg-[#0F172A] text-slate-300 flex flex-col z-50 shrink-0 transition-transform duration-200 ease-in-out border-r border-slate-800/80 shadow-xl ${
         mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
         {/* Cabecera del Menú Lateral */}
-        <div className="px-4 h-16 border-b border-white/[0.08] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <FoxDropLogo size="sm" showTagline={false} />
-            <span className="text-[11px] font-mono text-[#85858B] border-l border-white/[0.12] pl-2.5">
-              Admin
-            </span>
+        <div className="p-4 sm:p-5 border-b border-slate-800/60 flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <FoxDropLogo size="sm" showTagline={true} />
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="inline-block bg-[#E65F2B]/15 text-[#E65F2B] text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-md border border-[#E65F2B]/20">
+                PANEL DE CONTROL
+              </span>
+            </div>
           </div>
           <button
             onClick={() => setMobileSidebarOpen(false)}
-            className="md:hidden text-[#85858B] hover:text-[#EDEDED] p-1.5 rounded-lg transition-colors duration-150"
+            className="md:hidden text-slate-400 hover:text-white p-1 rounded-lg transition"
             title="Cerrar menú"
           >
-            <X className="w-4 h-4 stroke-[1.5]" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Listado de Navegación con Categorías */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 text-[13px] scrollbar-thin">
+        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-4 text-xs scrollbar-thin">
           {/* Si el usuario es vendedora de Japón (Veronica), mostrar ÚNICAMENTE el acceso al Catálogo Japón */}
           {adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com' ? (
             <div className="space-y-3">
-              <div className="p-3 bg-[#19191B] border border-white/[0.08] rounded-xl">
-                <span className="text-xs font-medium text-[#A1A1A6] block mb-1">
-                  Acceso de curaduría
+              <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl">
+                <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block mb-1">
+                  Acceso Especial
                 </span>
-                <p className="text-[#EDEDED] font-medium text-xs">
-                  Catálogo Japón · Rakuten
+                <p className="text-white font-bold text-xs">
+                  Vendedora Oficial • Catálogo Japón
                 </p>
-                <p className="text-xs text-[#85858B] mt-1 leading-relaxed">
-                  Explora y preselecciona novedades importadas de Tokio en tu lista privada.
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Explora y preselecciona novedades importadas de Tokio en tu Wishlist privada.
                 </p>
               </div>
 
               <div>
                 <button
                   onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
-                  className="w-full h-9 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center justify-between bg-[#232325] text-[#EDEDED] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  className="w-full p-3 rounded-xl font-medium transition flex items-center justify-between border bg-red-950 text-white font-bold border-red-500/50 shadow-md"
                 >
                   <span className="flex items-center gap-2.5">
-                    <Globe className="w-4 h-4 stroke-[1.5] text-[#A1A1A6]" /> Catálogo Japón
+                    <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
                   </span>
-                  <span className="text-[11px] font-mono text-[#85858B]">
-                    JP
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-red-500/30 text-red-200 border border-red-400/40">
+                    Tokio
                   </span>
                 </button>
               </div>
             </div>
           ) : (
             <>
-          {/* GRUPO 0: CANALES COMERCIALES */}
+          {/* BOTÓN DESTACADO: AGENCY COMMAND CENTER */}
           <div>
-            <span className="text-xs font-normal text-[#85858B] px-2.5 mb-2 block">
-              Comercial y canales
-            </span>
-            <div className="space-y-0.5">
-              <button
-                onClick={() => { setCrmSubTab('saleads'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
-                  crmSubTab === 'saleads'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Megaphone className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'saleads' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>FoxDrop Agency</span>
-                </span>
-              </button>
-
+            <button
+              onClick={() => { setCrmSubTab('saleads'); setMobileSidebarOpen(false); }}
+              className={`w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
+                crmSubTab === 'saleads'
+                  ? 'bg-gradient-to-r from-[#14352F] to-[#D96B27] text-white border-[#D96B27] shadow-md'
+                  : 'bg-slate-900/60 text-slate-200 border-slate-800 hover:border-[#D96B27]/60 hover:bg-slate-800/60'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 text-left">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'saleads' ? 'bg-white/20 text-white' : 'bg-[#D96B27]/20 text-[#D96B27]'}`}>
+                  <span className="text-sm">🦊</span>
+                </div>
+                <div>
+                  <span className="block font-bold text-xs leading-none">
+                    FoxDrop Agency
+                  </span>
+                  <span className={`text-[10px] font-normal ${crmSubTab === 'saleads' ? 'text-white/80' : 'text-slate-400'}`}>Anuncios & Campañas</span>
+                </div>
+              </div>
+            </button>
+              {/* BOTÓN SOCIAL COMMERCE FLOW (REACT FLOW + BOT) */}
               <button
                 onClick={() => { setCrmSubTab('social_flow' as any); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
                   (crmSubTab as string) === 'social_flow'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-950/30'
+                    : 'bg-emerald-950/20 text-emerald-200 border-emerald-900/40 hover:border-emerald-700/60 hover:bg-emerald-900/30'
                 }`}
               >
-                <span className="flex items-center gap-2.5">
-                  <MessageSquare className={`w-4 h-4 stroke-[1.5] shrink-0 ${(crmSubTab as string) === 'social_flow' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Sofía Shopper</span>
-                </span>
+                <div className="flex items-center gap-2.5 text-left">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${(crmSubTab as string) === 'social_flow' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="block font-bold text-xs leading-none">
+                      Sofía Shopper
+                    </span>
+                  </div>
+                </div>
               </button>
 
+              {/* BOTÓN CAMPAÑAS & CUPONES QR */}
               <button
                 onClick={() => { setCrmSubTab('campaigns'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
                   crmSubTab === 'campaigns'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-500 shadow-md shadow-amber-950/30'
+                    : 'bg-amber-950/20 text-amber-200 border-amber-900/40 hover:border-amber-700/60 hover:bg-amber-900/30'
                 }`}
               >
-                <span className="flex items-center gap-2.5">
-                  <QrCode className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'campaigns' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Campañas y QR</span>
-                </span>
+                <div className="flex items-center gap-2.5 text-left">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'campaigns' ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-300'}`}>
+                    <Megaphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="block font-bold text-xs leading-none flex items-center gap-1">
+                      Campañas
+                      <span className="bg-amber-400/20 text-amber-300 text-[8px] px-1 py-0.2 rounded font-mono">QR</span>
+                    </span>
+                    <span className={`text-[10px] font-normal ${crmSubTab === 'campaigns' ? 'text-white/80' : 'text-amber-300/70'}`}>Cupones & Stickers</span>
+                  </div>
+                </div>
               </button>
-            </div>
           </div>
 
           {/* GRUPO 1: OPERACIONES & CATÁLOGO */}
-          <div className="mt-6">
-            <span className="text-xs font-normal text-[#85858B] px-2.5 mb-2 block">
+          <div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
               Operaciones
             </span>
             <div className="space-y-0.5">
+              {/* CJ DROPSHIPPING IMPORTADOR */}
               <button
-                onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
-                  crmSubTab === 'inventory' || crmSubTab === 'batches'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                onClick={() => { setCrmSubTab('cj_dropship'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'cj_dropship'
+                    ? 'bg-indigo-900/60 text-white font-bold border border-indigo-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Package className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'inventory' || crmSubTab === 'batches' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Inventario</span>
+                  <Globe className={`w-4 h-4 ${crmSubTab === 'cj_dropship' ? 'text-indigo-400' : 'text-slate-400'}`} /> Catálogo CJ (Dropship)
                 </span>
-                <span className="text-xs font-mono tabular-nums text-[#85858B]">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                  Global
+                </span>
+              </button>
+
+              {/* RAKUTEN JAPÓN IMPORTADOR */}
+              <button
+                onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'japan'
+                    ? 'bg-red-950 text-white font-bold border border-red-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base leading-none">🎌</span> Catálogo Japón (Rakuten)
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-300 border border-red-400/30">
+                  Tokio
+                </span>
+              </button>
+
+              {/* 1. INVENTARIO (Catálogo + Lotes) */}
+              <button
+                onClick={() => { setCrmSubTab('inventory'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'inventory' || crmSubTab === 'batches'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Package className={`w-4 h-4 ${crmSubTab === 'inventory' || crmSubTab === 'batches' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Inventario
+                </span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {products.length}
                 </span>
               </button>
 
+              {/* 2. PEDIDOS (Activos + Historial + Cancelados + Carritos + Encargos) */}
               <button
                 onClick={() => { setCrmSubTab('orders'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
                   crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Truck className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Pedidos</span>
+                  <Truck className={`w-4 h-4 ${crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Pedidos
                 </span>
-                <span className={`text-xs font-mono tabular-nums ${activeOrders.length > 0 ? 'text-[#4CC38A]' : 'text-[#85858B]'}`}>
-                  {activeOrders.length > 0 ? activeOrders.length : orders.length}
-                </span>
+                {activeOrders.length > 0 ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    {activeOrders.length}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
+                    {orders.length}
+                  </span>
+                )}
               </button>
 
+              {/* 3. WHATSAPP CENTRAL */}
               <button
                 onClick={() => {
                   setShowFloatingWhatsApp(false);
                   setCrmSubTab('whatsapp');
                   setMobileSidebarOpen(false);
                 }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between border ${
                   crmSubTab === 'whatsapp' 
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-emerald-500/15 text-emerald-300 font-bold border-emerald-500/40 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 border-transparent'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <MessageSquare className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'whatsapp' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>WhatsApp Central</span>
+                  <MessageSquare className={`w-4 h-4 ${crmSubTab === 'whatsapp' ? 'text-emerald-400' : 'text-slate-400'}`} /> WhatsApp Central
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4CC38A]" title="Conectado" />
-              </button>
-
-              <button
-                onClick={() => { setCrmSubTab('cj_dropship'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
-                  crmSubTab === 'cj_dropship'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <Globe className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'cj_dropship' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Catálogo CJ</span>
+                <span className="text-[9px] font-semibold uppercase px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Live
                 </span>
-                <span className="text-[11px] font-mono text-[#85858B]">CJ</span>
-              </button>
-
-              <button
-                onClick={() => { setCrmSubTab('japan'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
-                  crmSubTab === 'japan'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <ShoppingBag className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'japan' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Catálogo Japón</span>
-                </span>
-                <span className="text-[11px] font-mono text-[#85858B]">JP</span>
               </button>
             </div>
           </div>
 
           {/* GRUPO 2: CLIENTES & GESTIÓN */}
-          <div className="mt-6">
-            <span className="text-xs font-normal text-[#85858B] px-2.5 mb-2 block">
-              Gestión y clientes
+          <div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
+              Gestión & Clientes
             </span>
             <div className="space-y-0.5">
+              {/* 4. CLIENTES & CLUB */}
               <button
                 onClick={() => { setCrmSubTab('clients'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
                   crmSubTab === 'clients' || crmSubTab === 'loyalty'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <Users className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'clients' || crmSubTab === 'loyalty' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Clientes y Club</span>
+                  <Users className={`w-4 h-4 ${crmSubTab === 'clients' || crmSubTab === 'loyalty' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Clientes & Club
                 </span>
-                <span className="text-xs font-mono tabular-nums text-[#85858B]">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/40">
                   {clients.length}
                 </span>
               </button>
 
+              {/* 5. FINANZAS & MARGEN */}
               <button
                 onClick={() => { setCrmSubTab('finance'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
                   crmSubTab === 'finance' 
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <BarChart3 className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'finance' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Finanzas y margen</span>
+                  <BarChart3 className={`w-4 h-4 ${crmSubTab === 'finance' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Finanzas & Margen
                 </span>
               </button>
 
+              {/* 5.1 MÉTRICAS & SEO / SEM */}
               <button
                 onClick={() => { setCrmSubTab('analytics'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
                   crmSubTab === 'analytics' 
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <TrendingUp className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'analytics' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Métricas y tráfico</span>
+                  <TrendingUp className={`w-4 h-4 ${crmSubTab === 'analytics' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Métricas & SEO/SEM
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">
+                  Live
                 </span>
               </button>
 
+              {/* 6. TIENDA & CONFIGURACIÓN (Carrusel + Envíos & Pagos) */}
               <button
                 onClick={() => { setCrmSubTab('carousel'); setMobileSidebarOpen(false); }}
-                className={`w-full h-9 px-2.5 rounded-lg transition-colors duration-150 flex items-center justify-between ${
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
                   crmSubTab === 'carousel' || crmSubTab === 'shipping_payments'
-                    ? 'bg-[#232325] text-[#EDEDED] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                    : 'text-[#A1A1A6] hover:bg-[#19191B] hover:text-[#EDEDED]'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs' 
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
                 <span className="flex items-center gap-2.5">
-                  <SlidersHorizontal className={`w-4 h-4 stroke-[1.5] shrink-0 ${crmSubTab === 'carousel' || crmSubTab === 'shipping_payments' ? 'text-[#E65F2B]' : 'text-[#85858B]'}`} />
-                  <span>Configuración tienda</span>
+                  <Sparkles className={`w-4 h-4 ${crmSubTab === 'carousel' || crmSubTab === 'shipping_payments' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Configuración Tienda
                 </span>
               </button>
             </div>
@@ -4912,31 +4946,31 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-white/[0.08] bg-[#0F0F10] space-y-2.5">
+        <div className="p-3 pb-6 md:pb-3 safe-area-bottom border-t border-slate-800/80 bg-slate-950/40 space-y-2">
           {!(adminSession?.role === 'seller_japan' || adminSession?.email === 'veronica.hdz.ms@gmail.com') && (
             <button
               onClick={() => {
                 setShowPosModal(true);
                 setMobileSidebarOpen(false);
               }}
-              className="hidden md:flex w-full h-9 bg-[#E65F2B] hover:bg-[#D45321] active:scale-[0.98] text-white font-medium px-3 rounded-lg text-[13px] items-center justify-center gap-2 transition-[background-color,transform] duration-150 shadow-[inset_0_1px_0_rgba(255,255,255,0.16)] cursor-pointer"
+              className="hidden md:flex w-full bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold py-2.5 px-3 rounded-xl text-xs items-center justify-center gap-2 transition shadow-sm cursor-pointer"
             >
-              <QrCode className="w-4 h-4 stroke-[1.5]" />
-              <span>Punto de venta POS</span>
+              <ShoppingBag className="w-4 h-4" />
+              <span>Punto de Venta POS</span>
             </button>
           )}
 
-          <div className="flex items-center justify-between pt-1 text-[#85858B] text-xs px-1">
-            <div className="truncate max-w-[176px]">
-              <span className="block text-[#EDEDED] font-medium truncate">{adminSession?.email?.split('@')[0]}</span>
-              <span className="block text-[11px] text-[#85858B] truncate font-mono">{adminSession?.email}</span>
+          <div className="flex items-center justify-between pt-1 text-slate-400 text-[11px] px-1">
+            <div className="truncate max-w-[170px]">
+              <span className="block text-white font-semibold truncate">{adminSession?.email?.split('@')[0]}</span>
+              <span className="block text-[10px] text-slate-500 truncate">{adminSession?.email}</span>
             </div>
             <button
               onClick={handleLogout}
-              title="Cerrar sesión"
-              className="p-1.5 rounded-lg text-[#85858B] hover:text-[#E5484D] hover:bg-white/[0.06] transition-colors duration-150 cursor-pointer"
+              title="Cerrar Sesión"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
             >
-              <LogOut className="w-4 h-4 stroke-[1.5]" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -4944,105 +4978,113 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
       {/* CONTENEDOR DERECHO (HEADER SUPERIOR + MAIN) */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* HEADER SUPERIOR — QUIET GRAPHITE CHROME */}
-        <header className="border-b border-black/[0.08] bg-white/95 backdrop-blur-md sticky top-0 z-40">
-          <div className="px-4 sm:px-8 h-16 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* HEADER SUPERIOR */}
+        <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-40">
+          <div className="px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               {crmSubTab === 'whatsapp' ? (
                 <div className="flex items-center gap-2 md:hidden">
                   <button
                     onClick={() => setCrmSubTab('inventory')}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#171717] text-white text-xs font-medium active:scale-[0.98] transition-[background-color,transform] duration-150"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xs active:scale-95 transition"
                     title="Salir al inventario"
                   >
-                    <ArrowLeft className="w-4 h-4 stroke-[1.5] text-[#E65F2B]" />
+                    <ArrowLeft className="w-4 h-4 text-[#E65F2B]" />
                     <span>Panel</span>
                   </button>
                   <button
                     onClick={() => setMobileSidebarOpen(true)}
-                    className="p-2 rounded-lg text-[#525252] hover:bg-[#F4F4F5] transition-colors duration-150"
+                    className="p-1.5 rounded-xl text-slate-600 hover:bg-slate-100 transition"
                     title="Abrir menú lateral"
                   >
-                    <Menu className="w-5 h-5 stroke-[1.5]" />
+                    <Menu className="w-5 h-5" />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="md:hidden p-2 -ml-2 rounded-lg text-[#525252] hover:bg-[#F4F4F5] transition-colors duration-150 shrink-0"
+                  className="md:hidden p-2 -ml-2 rounded-xl text-slate-600 hover:bg-slate-100 transition shrink-0"
                   title="Abrir menú lateral"
                 >
-                  <Menu className="w-5 h-5 stroke-[1.5]" />
+                  <Menu className="w-5 h-5" />
                 </button>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="font-medium text-base sm:text-lg text-[#171717] truncate">
-                  {(crmSubTab === 'inventory' || crmSubTab === 'batches') && 'Inventario y catálogo'}
-                  {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Pedidos'}
-                  {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Clientes y Club FoxDrop'}
-                  {crmSubTab === 'finance' && 'Finanzas y margen'}
-                  {crmSubTab === 'analytics' && 'Métricas y tráfico'}
-                  {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Configuración de la tienda'}
-                  {crmSubTab === 'whatsapp' && 'WhatsApp Central'}
-                  {crmSubTab === 'cj_dropship' && 'Catálogo CJ Dropshipping'}
-                  {crmSubTab === 'japan' && 'Catálogo Japón · Rakuten'}
-                  {(crmSubTab === 'saleads' || crmSubTab === 'agent') && 'FoxDrop Agency'}
-                  {crmSubTab === 'campaigns' && 'Campañas y cupones QR'}
-                </h1>
-                <p className="text-xs text-[#737373] hidden sm:block truncate">
-                  {(crmSubTab === 'inventory' || crmSubTab === 'batches') && 'Existencias físicas, lotes de importación y precios de venta'}
-                  {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Despacho de pedidos activos, historial, cancelaciones y carritos'}
-                  {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Directorio de compradores, consumo e incentivos de lealtad'}
-                  {crmSubTab === 'finance' && 'Rendimiento neto, costos de importación y márgenes por lote'}
-                  {crmSubTab === 'analytics' && 'Visitas, origen de tráfico, embudo de conversión y píxeles'}
-                  {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners de portada, métodos de entrega y cuentas SPEI'}
-                  {crmSubTab === 'whatsapp' && 'Atención al cliente y seguimiento de apartados'}
-                  {crmSubTab === 'cj_dropship' && 'Importación bajo demanda con envío directo al domicilio del cliente'}
-                  {crmSubTab === 'japan' && 'Curaduría e importación directa desde Rakuten Japón'}
-                  {(crmSubTab === 'saleads' || crmSubTab === 'agent') && 'Creativos publicitarios y campañas para Meta y TikTok'}
-                  {crmSubTab === 'campaigns' && 'Códigos QR promocionales, vigencia, escaneos e impresión'}
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-sm xs:text-base sm:text-lg text-slate-900 tracking-tight truncate">
+                    {(crmSubTab === 'inventory' || crmSubTab === 'batches') && 'Inventario & Catálogo'}
+                    {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Gestión de Pedidos'}
+                    {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Clientes & Club FoxDrop'}
+                    {crmSubTab === 'finance' && 'Margen de Utilidad & Finanzas'}
+                    {crmSubTab === 'analytics' && 'Métricas, SEO/SEM & Trazabilidad'}
+                    {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Configuración de la Tienda'}
+                    {crmSubTab === 'whatsapp' && 'WhatsApp Central FoxDrop'}
+                    {crmSubTab === 'cj_dropship' && 'Catálogo Global & Importador CJ Dropshipping'}
+                    {crmSubTab === 'japan' && 'Catálogo Oficial Japón — Rakuten Ichiba 🎌'}
+                    {crmSubTab === 'japan' && 'Catálogo Oficial Japón — Rakuten Ichiba 🎌'}
+                    {crmSubTab === 'saleads' && 'FoxAds AI — Motor Publicitario Inteligente'}
+                    {crmSubTab === 'agent' && 'FoxAds AI — Motor Publicitario Inteligente'}
+                    {crmSubTab === 'campaigns' && 'Campañas — Cupones QR & Stickers Tabloide'}
+                  </h1>
+                </div>
+                <p className="text-xs text-slate-500 hidden sm:block truncate mt-0.5">
+                  {(crmSubTab === 'inventory' || crmSubTab === 'batches') && 'Catálogo maestro de productos, existencias en tiempo real y costeo de lotes'}
+                  {(crmSubTab === 'orders' || crmSubTab === 'order_history' || crmSubTab === 'cancelled_orders' || crmSubTab === 'carts' || crmSubTab === 'special_orders') && 'Despacho de pedidos activos, historial de ventas, cancelaciones y carritos'}
+                  {(crmSubTab === 'clients' || crmSubTab === 'loyalty') && 'Directorio de compradores, historial de consumo y configuración de puntos'}
+                  {crmSubTab === 'finance' && 'Rendimiento financiero neto, costos de importación y análisis de márgenes'}
+                    {crmSubTab === 'analytics' && 'Trazabilidad de visitas, origen de tráfico orgánico y pauta, embudo de conversión y Pixels'}
+                  {(crmSubTab === 'carousel' || crmSubTab === 'shipping_payments') && 'Banners principales de la tienda, métodos de entrega y cuentas bancarias SPEI'}
+                  {crmSubTab === 'whatsapp' && 'Bandeja unificada para atención y seguimiento directo por chat'}
+                  {crmSubTab === 'cj_dropship' && 'Busca productos virales de bajo costo en China y publícalos con 1 clic en FoxDrop'}
+                    {crmSubTab === 'japan' && 'Explora e importa figuras originales, cartas coleccionables, dulces y novedades directo desde Japón'}
+                    {crmSubTab === 'japan' && 'Explora e importa figuras originales, cartas coleccionables, dulces y novedades directo desde Japón'}
+                  {(crmSubTab === 'saleads' || crmSubTab === 'agent') && 'Genera creativos publicitarios, copys de alto impacto y publica en Meta (IG/FB) y TikTok'}
+                    {crmSubTab === 'campaigns' && 'Genera promociones con QR únicos, controla la vigencia, monitorea escaneos y canjes, e imprime en tabloide'}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Selector Rápido Modo Oscuro */}
               <button
                 type="button"
                 onClick={toggleAdminDarkMode}
-                className={`h-8 px-2.5 rounded-lg transition-colors duration-150 cursor-pointer flex items-center gap-2 text-xs font-medium border ${
+                className={`p-1.5 sm:px-3 sm:py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border ${
                   storeSettings.adminDarkMode
-                    ? 'bg-[#232325] text-[#EDEDED] border-white/[0.08] hover:bg-[#2C2C2E]'
-                    : 'bg-[#F4F4F5] text-[#525252] border-black/[0.08] hover:bg-[#E4E4E7]'
+                    ? 'bg-slate-800 text-amber-300 border-slate-700 hover:bg-slate-700'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
                 }`}
-                title={storeSettings.adminDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                title={storeSettings.adminDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
               >
-                {storeSettings.adminDarkMode ? <Sun className="w-4 h-4 stroke-[1.5] text-[#A1A1A6]" /> : <Moon className="w-4 h-4 stroke-[1.5] text-[#525252]" />}
-                <span className="hidden sm:inline">{storeSettings.adminDarkMode ? 'Modo claro' : 'Modo oscuro'}</span>
+                {storeSettings.adminDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                <span className="hidden sm:inline">{storeSettings.adminDarkMode ? 'Modo Claro' : 'Modo Oscuro'}</span>
               </button>
 
               <a
                 href="/tienda"
                 target="_blank"
-                className="h-8 px-3 bg-[#171717] hover:bg-[#262626] text-white font-medium text-xs rounded-lg transition-colors duration-150 flex items-center gap-1.5"
+                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs"
               >
-                <span className="hidden sm:inline">Ver tienda</span>
+                <span className="hidden sm:inline">Ver Tienda</span>
                 <span className="sm:hidden text-xs">Tienda</span>
-                <ArrowUpRight className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
               </a>
             </div>
           </div>
 
           {/* BANNER FLOTANTE DE NOTIFICACIÓN EN TIEMPO REAL */}
           {adminRealtimeToast && (
-            <div className="bg-[#141415] text-[#EDEDED] px-4 sm:px-8 py-2.5 border-t border-white/[0.08] flex items-center justify-between">
+            <div className="bg-gradient-to-r from-slate-900 to-[#0F3E36] text-white px-4 py-2.5 shadow-lg border-b border-white/10 flex items-center justify-between animate-in slide-in-from-top duration-300">
               <div className="flex items-center gap-3">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${
-                  adminRealtimeToast.type === 'new_order' ? 'bg-[#4CC38A]' :
-                  adminRealtimeToast.type === 'cancelled' ? 'bg-[#E5484D]' : 'bg-[#E65F2B]'
-                }`} />
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                  adminRealtimeToast.type === 'new_order' ? 'bg-emerald-500 text-white animate-bounce' :
+                  adminRealtimeToast.type === 'cancelled' ? 'bg-rose-500 text-white' : 'bg-[#DF7F2D] text-white'
+                }`}>
+                  <Bell className="w-4 h-4" />
+                </div>
                 <div className="text-xs">
-                  <span className="font-medium text-[#EDEDED] mr-2">{adminRealtimeToast.title}</span>
-                  <span className="text-[#A1A1A6]">{adminRealtimeToast.message}</span>
+                  <span className="font-extrabold block text-amber-300">{adminRealtimeToast.title}</span>
+                  <span className="text-white/90">{adminRealtimeToast.message}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -5051,15 +5093,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     setCrmSubTab('orders');
                     setAdminRealtimeToast(null);
                   }}
-                  className="bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] text-xs font-medium px-3 py-1 rounded-md border border-white/[0.08] transition-colors duration-150 cursor-pointer"
+                  className="bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition cursor-pointer"
                 >
-                  Ver pedidos
+                  Ver Pedidos
                 </button>
                 <button
                   onClick={() => setAdminRealtimeToast(null)}
-                  className="text-[#85858B] hover:text-[#EDEDED] p-1 transition-colors duration-150"
+                  className="text-white/60 hover:text-white p-1"
                 >
-                  <X className="w-4 h-4 stroke-[1.5]" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -5153,22 +5195,22 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
           </div>
         )}
 
-            {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.08] pb-3">
-              <div className="flex items-center gap-2 flex-wrap">
+            {/* SUB-BARRA DE NAVEGACIÓN INVENTARIO: SEPARACIÓN DE DOBLE INVENTARIO */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setInventoryScope('physical')}
-                  className={`h-9 px-3.5 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center gap-2 cursor-pointer ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
                     inventoryScope === 'physical'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5] hover:text-[#171717]'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <Package className={`w-4 h-4 stroke-[1.5] ${inventoryScope === 'physical' ? 'text-[#E65F2B]' : 'text-[#737373]'}`} />
-                  <span>Inventario físico</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${
-                    inventoryScope === 'physical' ? 'text-white/70' : 'text-[#737373]'
+                  <Package className={`w-3.5 h-3.5 ${inventoryScope === 'physical' ? 'text-[#E65F2B]' : 'text-slate-400'}`} />
+                  <span>📦 Inventario Físico (Bodega / Boutique)</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'physical' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {products.filter(p => !((p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping')))).length}
                   </span>
@@ -5177,16 +5219,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="button"
                   onClick={() => setInventoryScope('cj_international')}
-                  className={`h-9 px-3.5 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center gap-2 cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
                     inventoryScope === 'cj_international'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5] hover:text-[#171717]'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <Globe className={`w-4 h-4 stroke-[1.5] ${inventoryScope === 'cj_international' ? 'text-[#E65F2B]' : 'text-[#737373]'}`} />
-                  <span>Importación CJ</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${
-                    inventoryScope === 'cj_international' ? 'text-white/70' : 'text-[#737373]'
+                  <Globe className={`w-3.5 h-3.5 ${inventoryScope === 'cj_international' ? 'text-indigo-200' : 'text-slate-400'}`} />
+                  <span>✈️ Importación CJ</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'cj_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {products.filter(p => (p.sku && p.sku.startsWith('CJ')) || (p.brand && p.brand.toLowerCase().includes('cj dropshipping'))).length}
                   </span>
@@ -5195,16 +5237,16 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="button"
                   onClick={() => setInventoryScope('japan_international')}
-                  className={`h-9 px-3.5 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center gap-2 cursor-pointer ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
                     inventoryScope === 'japan_international'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5] hover:text-[#171717]'
+                      ? 'bg-red-700 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  <ShoppingBag className={`w-4 h-4 stroke-[1.5] ${inventoryScope === 'japan_international' ? 'text-[#E65F2B]' : 'text-[#737373]'}`} />
+                  <span>🎌</span>
                   <span>Importación Japón</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${
-                    inventoryScope === 'japan_international' ? 'text-white/70' : 'text-[#737373]'
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                    inventoryScope === 'japan_international' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {products.filter(p => (p.sku && p.sku.startsWith('JP-')) || (p.brand && p.brand.toLowerCase().includes('rakuten'))).length}
                   </span>
@@ -5215,11 +5257,11 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="button"
                   onClick={() => setCrmSubTab('batches')}
-                  className="h-9 px-3.5 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center gap-2 bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5] hover:text-[#171717] cursor-pointer self-start sm:self-auto"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 cursor-pointer self-start sm:self-auto"
                 >
-                  <Layers className="w-4 h-4 stroke-[1.5] text-[#737373]" />
-                  <span>Lotes de flete</span>
-                  <span className="font-mono tabular-nums text-[11px] text-[#737373]">
+                  <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Lotes de Fletes Prorrateados</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-semibold text-slate-600">
                     {batches.length}
                   </span>
                 </button>
@@ -5227,39 +5269,37 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <button
                   type="button"
                   onClick={() => setCrmSubTab('cj_dropship')}
-                  className="h-9 px-3.5 rounded-lg text-xs font-medium transition-colors duration-150 flex items-center gap-2 bg-white border border-black/[0.08] text-[#171717] hover:bg-[#F4F4F5] cursor-pointer self-start sm:self-auto"
+                  className="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 cursor-pointer self-start sm:self-auto"
                 >
-                  <Plus className="w-4 h-4 stroke-[1.5] text-[#E65F2B]" />
-                  <span>Importar desde CJ</span>
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>+ Importar más desde Catálogo CJ</span>
                 </button>
               )}
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-medium text-[#171717]">
+                <h2 className="text-xl font-bold text-slate-900">
                   {inventoryScope === 'cj_international'
-                    ? 'Catálogo de importación CJ'
-                    : inventoryScope === 'japan_international'
-                    ? 'Catálogo de importación Japón'
-                    : 'Inventario físico en bodega'}
+                    ? 'Catálogo Virtual de Importación (CJ Dropshipping)'
+                    : 'Control de Inventario Físico (Bodega / Boutique)'}
                 </h2>
-                <p className="text-xs text-[#737373] mt-0.5">
+                <p className="text-xs text-slate-500">
                   {inventoryScope === 'cj_international'
-                    ? 'Artículos de envío directo al cliente sin inversión previa en inventario'
-                    : 'Existencias físicas en México, lotes de importación, etiquetas y precios'}
+                    ? 'Artículos de envío internacional directo al cliente (sin inversión previa en stock físico ni etiquetas).'
+                    : 'Administra existencias físicas en México, lotes de importación, etiquetas y precios de boutique.'}
                 </p>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
-                  <Search className="w-4 h-4 stroke-[1.5] absolute left-3 top-1/2 -translate-y-1/2 text-[#737373]" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Buscar SKU o producto"
+                    placeholder="Buscar SKU, título..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="h-9 pl-9 pr-3 bg-white border border-black/[0.08] rounded-lg text-xs text-[#171717] placeholder:text-[#737373] focus:outline-none focus:border-[#171717] w-44 sm:w-56 transition-colors duration-150"
+                    className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-slate-400 w-44 sm:w-56"
                   />
                 </div>
 
@@ -5267,7 +5307,7 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 <select
                   value={inventoryCategoryFilter}
                   onChange={e => setInventoryCategoryFilter(e.target.value)}
-                  className="h-9 px-3 bg-white border border-black/[0.08] rounded-lg text-xs text-[#525252] font-medium focus:outline-none focus:border-[#171717] transition-colors duration-150"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400"
                 >
                   <option value="all">Todas las categorías</option>
                   {Array.from(new Set(scopedProducts.map(p => p.category).filter(Boolean))).map(cat => (
@@ -5278,140 +5318,156 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                 {/* Botón Exportar CSV / Excel */}
                 <button
                   onClick={handleExportInventoryCsv}
-                  title="Exportar inventario a CSV"
-                  className="h-9 bg-white hover:bg-[#F4F4F5] text-[#525252] border border-black/[0.08] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5"
+                  title="Exportar inventario a Excel / CSV"
+                  className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-2xs"
                 >
-                  <FileSpreadsheet className="w-4 h-4 stroke-[1.5] text-[#737373]" />
+                  <FileSpreadsheet className="w-4 h-4 text-slate-500" />
                   <span className="hidden sm:inline">Exportar CSV</span>
                 </button>
 
-                {/* Botón Imprimir Todas las Etiquetas */}
+                {/* Botón Imprimir Todas las Etiquetas (Solo para Inventario Físico Boutique) */}
                 {inventoryScope === 'physical' && (
                   <button
                     onClick={() => handleOpenBarcodePrintModal(filteredProducts.length > 0 ? filteredProducts : scopedProducts)}
-                    title="Imprimir etiquetas de código de barras"
-                    className="h-9 bg-white hover:bg-[#F4F4F5] text-[#171717] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-black/[0.08] cursor-pointer"
+                    title="Imprimir etiquetas de todos los productos del inventario físico actual"
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs border border-slate-700 cursor-pointer"
                   >
-                    <Printer className="w-4 h-4 stroke-[1.5] text-[#737373]" />
-                    <span className="tabular-nums">Etiquetas ({filteredProducts.length})</span>
+                    <Printer className="w-4 h-4 text-cyan-400" />
+                    <span>Imprimir Todas ({filteredProducts.length})</span>
                   </button>
                 )}
 
                 <button
                   onClick={handleOpenCreateProduct}
-                  className="h-9 bg-[#E65F2B] hover:bg-[#D45321] active:scale-[0.98] text-white font-medium text-xs px-3.5 rounded-lg transition-[background-color,transform] duration-150 flex items-center gap-1.5"
+                  className="bg-[#E65F2B] hover:bg-[#D45321] text-white font-semibold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs"
                 >
-                  <Plus className="w-4 h-4 stroke-[1.5]" /> Nuevo producto
+                  <Plus className="w-4 h-4" /> Nuevo Producto
                 </button>
               </div>
             </div>
 
-            {/* KPIS COMPACTOS — STAT CARDS LIMPIAS CON TABULAR-NUMS (UNSLOP PASS 7) */}
+            {/* CINTA FINANCIERA & KPIS SEGÚN ÁMBITO (FÍSICO BOUTIQUE VS CATÁLOGO VIRTUAL CJ) */}
             {inventoryScope === 'cj_international' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Catálogo CJ activo</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
-                    {scopedProducts.length}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 text-white p-4 rounded-2xl shadow-sm border border-indigo-800/60">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <Globe className="w-3 h-3 text-indigo-400" /> Catálogo CJ Activo
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    {totalCjVariantsCount} variantes disponibles
+                  <span className="text-lg sm:text-xl font-black text-white">
+                    {scopedProducts.length} <span className="text-[11px] font-normal text-indigo-300">productos</span>
                   </span>
-                </div>
-
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Costo puesto en México</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
-                    ${minCjCost.toFixed(0)}–${maxCjCost.toFixed(0)}
-                  </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    Promedio ${avgCjLandedCost.toFixed(0)} MXN
+                  <span className="text-[10px] text-indigo-300/80 block truncate">
+                    {totalCjVariantsCount} modelos disponibles en total
                   </span>
                 </div>
 
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Precio de venta</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
-                    ${minCjPrice.toFixed(0)}–${maxCjPrice.toFixed(0)}
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-sky-400" /> Rango Costo Puesto en MX
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    Promedio ${avgCjPublicPrice.toFixed(0)} MXN
+                  <span className="text-base sm:text-lg font-black text-sky-300">
+                    ${minCjCost.toFixed(0)} - ${maxCjCost.toFixed(0)} <span className="text-[10px] font-normal text-sky-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-indigo-300/80 block truncate">
+                    Prod + flete (prom: ${avgCjLandedCost.toFixed(0)})
                   </span>
                 </div>
 
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Utilidad por pedido</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#16A34A] mt-1 block">
-                    +${minCjProfit.toFixed(0)}–${maxCjProfit.toFixed(0)}
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Rango Precios en Tienda
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    Margen prom. {avgCjMarginPercent.toFixed(0)}%
+                  <span className="text-base sm:text-lg font-black text-emerald-400">
+                    ${minCjPrice.toFixed(0)} - ${maxCjPrice.toFixed(0)} <span className="text-[10px] font-normal text-emerald-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-300/80 block truncate">
+                    Precio venta (prom: ${avgCjPublicPrice.toFixed(0)})
+                  </span>
+                </div>
+
+                <div className="space-y-0.5 border-l border-indigo-800/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 block flex items-center gap-1">
+                    <Percent className="w-3 h-3 text-amber-400" /> Tu Ganancia Libre / Venta
+                  </span>
+                  <span className="text-base sm:text-lg font-black text-amber-300">
+                    +${minCjProfit.toFixed(0)} a +${maxCjProfit.toFixed(0)} <span className="text-[10px] font-normal text-amber-200/80">MXN</span>
+                  </span>
+                  <span className="text-[10px] text-amber-400/90 font-bold block truncate">
+                    Margen prom: {avgCjMarginPercent.toFixed(0)}% por pedido
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Unidades en bodega</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
-                    {totalInventoryUnits.toLocaleString('es-MX')}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-700/60">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <Package className="w-3 h-3 text-[#E65F2B]" /> Total Unidades
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    {scopedProducts.length} SKUs registrados
+                  <span className="text-lg sm:text-xl font-black font-semibold text-white">
+                    {totalInventoryUnits} <span className="text-[11px] font-normal text-slate-400">pzas</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 block truncate">
+                    {scopedProducts.length} artículos únicos en bodega
                   </span>
                 </div>
 
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Capital invertido</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-blue-400" /> Capital Invertido
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-blue-300">
                     ${totalInvestment.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    {unpricedProducts.length > 0 ? `${pricedProducts.length} con costo asignado` : 'Costo total de adquisición'}
+                  <span className="text-[10px] text-slate-400 block">
+                    {unpricedProducts.length > 0 ? `${pricedProducts.length} art. con precio` : 'Costo de adquisición'}
                   </span>
                 </div>
 
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Valor en piso</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#171717] mt-1 block">
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-400" /> Valor en Piso
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-emerald-400">
                     ${totalExpectedRevenue.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    {unpricedProducts.length > 0 ? `${unpricedProducts.length} sin precio público` : 'Venta proyectada total'}
+                  <span className="text-[10px] text-emerald-300/80 block">
+                    {unpricedProducts.length > 0 ? `${unpricedProducts.length} art. pendientes de precio` : 'Venta total proyectada'}
                   </span>
                 </div>
 
-                <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-                  <span className="text-xs text-[#737373] block">Utilidad estimada</span>
-                  <span className="text-2xl font-medium tabular-nums text-[#16A34A] mt-1 block">
+                <div className="space-y-0.5 border-l border-slate-700/60 pl-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1">
+                    <Percent className="w-3 h-3 text-amber-400" /> Utilidad Estimada
+                  </span>
+                  <span className="text-lg sm:text-xl font-black font-semibold text-amber-300">
                     +${totalExpectedProfit.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
-                  <span className="text-xs text-[#737373] mt-1 block tabular-nums">
-                    Margen promedio {avgMargin.toFixed(0)}%
+                  <span className="text-[10px] text-amber-400/80 font-bold block">
+                    Margen prom: {avgMargin.toFixed(0)}%
                   </span>
                 </div>
               </div>
             )}
 
-            {/* TABS DE FILTRADO POR LOTE DE IMPORTACIÓN */}
+            {/* TABS DE FILTRADO POR LOTE DE IMPORTACIÓN (Solo para Inventario Físico Boutique) */}
             {inventoryScope === 'physical' && batches.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                <span className="text-xs font-medium text-[#737373] shrink-0 mr-1">
-                  Lote:
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
+                  <Layers className="w-3.5 h-3.5 text-[#E65F2B]" /> Lote:
                 </span>
 
                 <button
                   type="button"
                   onClick={() => setInventoryBatchFilter('all')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                     inventoryBatchFilter === 'all'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <span>Todos</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${
-                    inventoryBatchFilter === 'all' ? 'text-white/70' : 'text-[#737373]'
+                  <span>Todos los lotes</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
+                    inventoryBatchFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                   }`}>
                     {scopedProducts.length}
                   </span>
@@ -5431,17 +5487,21 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                       key={b.id}
                       type="button"
                       onClick={() => setInventoryBatchFilter(b.id)}
-                      className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl font-semibold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                         isSelected
-                          ? 'bg-[#171717] text-white'
-                          : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5] hover:text-[#171717]'
+                          ? 'bg-[#E65F2B] text-white shadow-xs border border-orange-600'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-orange-50/60 hover:text-orange-950 hover:border-orange-200'
                       }`}
                     >
+                      <Package className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-[#E65F2B]'}`} />
                       <span>{b.batchName}</span>
-                      <span className={`font-mono tabular-nums text-[11px] ${
-                        isSelected ? 'text-white/70' : 'text-[#737373]'
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                        isSelected ? 'bg-black/20 text-white' : 'bg-orange-100 text-orange-900 font-bold'
                       }`}>
                         {countForBatch}
+                      </span>
+                      <span className={`text-[10px] hidden md:inline opacity-80 font-normal ${isSelected ? 'text-orange-100' : 'text-slate-400'}`}>
+                        (+${b.costPerUnit.toFixed(2)} flete)
                       </span>
                     </button>
                   );
@@ -5454,87 +5514,89 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                 <button
                   onClick={() => setStockFilter('all')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'all'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   <span>Todos</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'all' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
                     {scopedProducts.length}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setStockFilter('low_stock')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-2 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'low_stock'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>Bajo stock (1–3)</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'low_stock' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'low_stock' ? 'bg-white' : 'bg-amber-500'}`}></span>
+                  <span>Bajo Stock (1 a 3)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'low_stock' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 font-bold'}`}>
                     {countLowStock}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setStockFilter('out_of_stock')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-2 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'out_of_stock'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
-                  <span>Agotados</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'out_of_stock' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'out_of_stock' ? 'bg-white' : 'bg-rose-500'}`}></span>
+                  <span>Agotados (0)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'out_of_stock' ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-700 font-bold'}`}>
                     {countOutOfStock}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setStockFilter('healthy')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-2 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'healthy'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-                  <span>Stock óptimo (&gt;3)</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'healthy' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <span className={`w-2 h-2 rounded-full ${stockFilter === 'healthy' ? 'bg-white' : 'bg-emerald-500'}`}></span>
+                  <span>Stock Óptimo (&gt;3)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'healthy' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 font-bold'}`}>
                     {countHealthy}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setStockFilter('combos')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'combos'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
+                  <Layers className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Combos</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'combos' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'combos' ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700 font-bold'}`}>
                     {countCombos}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setStockFilter('inactive')}
-                  className={`h-8 px-3 rounded-lg font-medium transition-colors duration-150 flex items-center gap-1.5 shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 shrink-0 ${
                     stockFilter === 'inactive'
-                      ? 'bg-[#171717] text-white'
-                      : 'bg-white border border-black/[0.08] text-[#525252] hover:bg-[#F4F4F5]'
+                      ? 'bg-slate-700 text-white shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
                   }`}
                 >
-                  <span>Pausados</span>
-                  <span className={`font-mono tabular-nums text-[11px] ${stockFilter === 'inactive' ? 'text-white/70' : 'text-[#737373]'}`}>
+                  <Power className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Inactivos</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${stockFilter === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 font-bold'}`}>
                     {countInactive}
                   </span>
                 </button>
@@ -5542,141 +5604,160 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
 
               {/* Selector de Ordenamiento */}
               <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
-                <span className="text-xs text-[#737373]">Ordenar:</span>
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] text-slate-500 font-medium">Ordenar:</span>
                 <select
                   value={inventorySortBy}
                   onChange={e => setInventorySortBy(e.target.value as any)}
-                  className="h-8 px-2.5 bg-white border border-black/[0.08] rounded-lg text-xs text-[#171717] font-medium focus:outline-none focus:border-[#171717] transition-colors duration-150"
+                  className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-slate-400 shadow-2xs"
                 >
-                  <option value="default">Recientes</option>
-                  <option value="price_asc">Precio: menor a mayor</option>
-                  <option value="price_desc">Precio: mayor a menor</option>
-                  <option value="stock_asc">Stock: menor a mayor</option>
-                  <option value="stock_desc">Stock: mayor a menor</option>
-                  <option value="margin_desc">Mayor margen</option>
+                  <option value="default">Por defecto (Recientes)</option>
+                  <option value="price_asc">Precio: Menor a Mayor</option>
+                  <option value="price_desc">Precio: Mayor a Menor</option>
+                  <option value="stock_asc">Stock: Menor a Mayor (Agotándose)</option>
+                  <option value="stock_desc">Stock: Mayor a Menor</option>
+                  <option value="margin_desc">Margen: Mayor a Menor (+Rentables)</option>
                 </select>
               </div>
             </div>
 
-            {/* BARRA DE ACCIONES EN LOTE */}
+            {/* BARRA FLOTANTE DE ACCIONES EN LOTE AMPLIADA */}
             {selectedProductIds.length > 0 && (
-              <div className="bg-[#141415] text-[#EDEDED] p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 border border-white/[0.08]">
-                <div className="flex items-center gap-2.5">
-                  <span className="bg-[#E65F2B] text-white text-xs font-medium px-2.5 py-1 rounded-md tabular-nums">
-                    {selectedProductIds.length} seleccionados
+              <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 border border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="bg-[#E65F2B] text-white text-xs font-black px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                    <CheckSquare className="w-4 h-4" />
+                    <span>{selectedProductIds.length} seleccionados</span>
+                  </div>
+                  <span className="text-xs text-slate-300 hidden sm:inline">
+                    Acciones operativas masivas en un solo clic.
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Encender en tienda masivo */}
                   <button
                     onClick={() => handleBulkToggleActive(true)}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-emerald-600 shadow-xs cursor-pointer"
+                    title="Activar todos los seleccionados en tienda"
                   >
-                    <Power className="w-3.5 h-3.5 stroke-[1.5] text-[#4CC38A]" />
-                    <span>Activar</span>
+                    <Power className="w-3.5 h-3.5" />
+                    <span>Encender ({selectedProductIds.length})</span>
                   </button>
 
+                  {/* Pausar en tienda masivo */}
                   <button
                     onClick={() => handleBulkToggleActive(false)}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                    title="Pausar / ocultar en tienda"
                   >
-                    <Power className="w-3.5 h-3.5 stroke-[1.5] text-[#E5484D]" />
+                    <Power className="w-3.5 h-3.5 text-rose-400" />
                     <span>Pausar</span>
                   </button>
 
+                  {/* Ajustar Stock Masivo */}
                   <button
                     onClick={() => setShowBulkStockModal(true)}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                    title="Sumar o restar piezas a todos"
                   >
-                    <Package className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
-                    <span>Ajustar stock</span>
+                    <Package className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Ajustar Stock</span>
                   </button>
 
+                  {/* Imprimir Etiquetas Código de Barras (Solo en Inventario Físico Boutique) */}
                   {inventoryScope === 'physical' && (
                     <button
                       onClick={() => {
                         const prods = products.filter(p => selectedProductIds.includes(p.id));
                         handleOpenBarcodePrintModal(prods);
                       }}
-                      className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                      className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-700 shadow-xs cursor-pointer"
+                      title="Imprimir etiquetas de códigos de barras / precios"
                     >
-                      <Printer className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
-                      <span>Etiquetas</span>
+                      <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Etiquetas ({selectedProductIds.length})</span>
                     </button>
                   )}
 
+                  {/* Aplicar Descuento / Oferta Masivo */}
                   <button
                     onClick={() => setShowBulkDiscountModal(true)}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Aplicar oferta o descuento promocional a los seleccionados"
                   >
-                    <Percent className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
-                    <span>Descuento</span>
+                    <Percent className="w-3.5 h-3.5 text-white" />
+                    <span>Oferta / Descuento</span>
                   </button>
 
+                  {/* Asignar Tienda / Marca Masivo */}
                   <button
                     onClick={() => {
                       setBulkTargetBrand(officialBrands[0]?.name || 'Bath & Body Works');
                       setShowBulkBrandModal(true);
                     }}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-gradient-to-r from-amber-600 to-[#DF7F2D] hover:from-amber-500 hover:to-[#e68835] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    title="Asignar tienda/marca a todos los seleccionados de un jalón"
                   >
-                    <ShoppingBag className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
-                    <span>Marca</span>
+                    <ShoppingBag className="w-3.5 h-3.5 text-white" />
+                    <span>🏬 Tienda ({selectedProductIds.length})</span>
                   </button>
 
+                  {/* Cambiar Categoría */}
                   <button
                     onClick={handleOpenBulkCategoryModal}
-                    className="h-8 bg-[#232325] hover:bg-[#2C2C2E] text-[#EDEDED] font-medium text-xs px-3 rounded-lg transition-colors duration-150 flex items-center gap-1.5 border border-white/[0.08] cursor-pointer"
+                    className="bg-[#2D4A58] hover:bg-[#3d6072] text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-2 border border-slate-700 shadow-xs cursor-pointer"
                   >
-                    <Tag className="w-3.5 h-3.5 stroke-[1.5] text-[#A1A1A6]" />
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
                     <span>Categoría</span>
                   </button>
 
+                  {/* Deseleccionar */}
                   <button
                     onClick={handleClearSelectedProducts}
-                    className="h-8 text-[#A1A1A6] hover:text-[#EDEDED] font-medium text-xs px-2.5 rounded-lg transition-colors duration-150 flex items-center gap-1 cursor-pointer"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 cursor-pointer"
                   >
-                    <X className="w-3.5 h-3.5 stroke-[1.5]" />
-                    <span>Limpiar</span>
+                    <X className="w-3.5 h-3.5" />
+                    <span>Deseleccionar</span>
                   </button>
                 </div>
               </div>
             )}
 
             {/* TABLA DE PRODUCTOS (DESKTOP) Y TARJETAS TÁCTILES (MÓVIL) */}
-            <div className="bg-white border border-black/[0.08] rounded-xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
               {/* VISTA DESKTOP (TABLA COMPLETA) */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-xs text-[#525252] min-w-[1320px] tabular-nums">
-                  <thead className="bg-[#FAFAFA] text-[#737373] font-medium border-b border-black/[0.08] text-xs">
+                <table className="w-full text-left text-xs text-slate-600 min-w-[1320px]">
+                  <thead className="bg-slate-50 text-slate-400 font-bold border-b border-slate-200 uppercase text-[10px]">
                     <tr>
                       <th className="py-3 px-3 w-10 text-center">
                         <button
                           type="button"
                           onClick={handleSelectAllVisibleProducts}
                           title={filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.includes(p.id)) ? "Deseleccionar todos" : "Seleccionar todos"}
-                          className="text-[#737373] hover:text-[#171717] transition-colors duration-150 cursor-pointer"
+                          className="text-slate-500 hover:text-slate-800 transition cursor-pointer"
                         >
                           {filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.includes(p.id)) ? (
-                            <CheckSquare className="w-4 h-4 text-[#E65F2B]" />
+                            <CheckSquare className="w-5 h-5 text-[#E65F2B] fill-orange-100" />
                           ) : (
-                            <Square className="w-4 h-4 text-[#737373] hover:text-[#171717] stroke-[1.5]" />
+                            <Square className="w-5 h-5 text-slate-500 hover:text-slate-700 stroke-[2.2]" />
                           )}
                         </button>
                       </th>
-                      <th className="py-3 px-4 font-medium min-w-[320px]">Artículo</th>
-                      <th className="py-3 px-4 font-medium min-w-[130px]">
-                        {inventoryScope === 'cj_international' ? 'Origen y variantes' : 'Lote y flete'}
+                      <th className="py-3 px-4 min-w-[320px]">Artículo</th>
+                      <th className="py-3 px-4 min-w-[130px]">
+                        {inventoryScope === 'cj_international' ? 'Origen / Opciones' : 'Lote / Flete'}
                       </th>
-                      <th className="py-3 px-4 font-medium text-[#171717] min-w-[100px]">
-                        {inventoryScope === 'cj_international' ? 'Costo puesto MX' : 'Costo total'}
+                      <th className="py-3 px-4 font-black text-slate-900 min-w-[100px]">
+                        {inventoryScope === 'cj_international' ? 'Costo Puesto MX' : 'Costo Total'}
                       </th>
-                      <th className="py-3 px-4 font-medium text-[#171717] min-w-[110px]">Precio venta</th>
-                      <th className="py-3 px-4 font-medium text-[#171717] min-w-[90px]">Utilidad</th>
-                      <th className="py-3 px-2 font-medium text-center w-[145px] min-w-[145px]">
-                        {inventoryScope === 'cj_international' ? 'Cupo virtual' : 'Stock rápido'}
+                      <th className="py-3 px-4 text-emerald-600 font-black min-w-[110px]">Precio Venta</th>
+                      <th className="py-3 px-4 text-emerald-700 min-w-[90px]">Utilidad</th>
+                      <th className="py-3 px-2 text-center w-[145px] min-w-[145px]">
+                        {inventoryScope === 'cj_international' ? 'Cupo Virtual' : 'Stock Rápido'}
                       </th>
-                      <th className="py-3 px-3 font-medium text-right sticky right-0 bg-[#FAFAFA] border-l border-black/[0.08] min-w-[215px] w-[215px] z-20">Estado y acciones</th>
+                      <th className="py-3 px-3 text-right sticky right-0 bg-slate-50 border-l border-slate-200/80 min-w-[215px] w-[215px] z-20">Estado & Acciones</th>
                     </tr>
                   </thead>
                   <tbody key={searchTerm.trim().toLowerCase() || 'all'} className="divide-y divide-slate-100">
@@ -5732,39 +5813,39 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                               </div>
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-medium text-[#171717] leading-snug break-words max-w-[340px]" title={p.title}>{p.title}</span>
+                                  <span className="font-bold text-slate-900 leading-snug break-words max-w-[340px]" title={p.title}>{p.title}</span>
                                   {p.isCombo && (
-                                    <span className="bg-[#F4F4F5] text-[#525252] text-[10px] font-mono px-1.5 py-0.5 rounded border border-black/[0.08]">
-                                      Combo
+                                    <span className="bg-purple-100 text-purple-800 text-[9px] font-black px-1.5 py-0.2 rounded-full border border-purple-200">
+                                      COMBO
                                     </span>
                                   )}
                                   {isPaused && (
-                                    <span className="bg-[#F4F4F5] text-[#737373] text-[10px] font-medium px-1.5 py-0.5 rounded">
-                                      Pausado
+                                    <span className="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.2 rounded-full">
+                                      PAUSADO
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[11px] text-[#737373] font-mono">{p.sku} · {p.category}</span>
+                                <span className="text-[10px] text-slate-400">{p.sku} • {p.category}</span>
                               </div>
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
                             {inventoryScope === 'cj_international' ? (
                               <>
-                                <span className="bg-[#F4F4F5] text-[#525252] border border-black/[0.08] px-2 py-0.5 rounded-md text-[11px] font-mono inline-flex items-center gap-1">
-                                  CJ · Directo
+                                <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1">
+                                  <span>✈️ CJ Dropshipping</span>
                                 </span>
                                 {p.variants && p.variants.length > 0 ? (
                                   <button
                                     type="button"
                                     onClick={() => setPreviewingVariantsProduct(p)}
-                                    className="text-[11px] font-medium text-[#525252] hover:text-[#171717] underline block mt-1 cursor-pointer text-left"
+                                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 underline block mt-0.5 cursor-pointer text-left"
                                     title="Ver modelos, costos y precios"
                                   >
-                                    {p.variants.length} variantes
+                                    👁️ {p.variants.length} opciones / modelos (ver)
                                   </button>
                                 ) : (
-                                  <span className="text-[11px] text-[#737373] block mt-1">
+                                  <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
                                     Envío directo MX
                                   </span>
                                 )}
@@ -5776,16 +5857,15 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                                     || batches.find(b => Math.abs(b.costPerUnit - (p.shippingCostAllocated || 0)) < 0.05);
                                   const displayName = p.batchName && p.batchName !== 'Lote 1 (+Flete)' && p.batchName !== 'Lote 1'
                                     ? p.batchName
-                                    : (matchedBatch?.batchName || p.batchName || 'Lote base');
+                                    : (matchedBatch?.batchName || p.batchName || 'Lote de Importación');
 
                                   return (
-                                    <span className="bg-[#F4F4F5] text-[#171717] border border-black/[0.08] px-2 py-0.5 rounded-md text-[11px] font-mono inline-flex items-center gap-1.5 max-w-[140px] truncate" title={displayName}>
-                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isOutOfStock ? 'bg-[#DC2626]' : isLowStock ? 'bg-amber-500' : 'bg-[#16A34A]'}`} />
-                                      <span className="truncate">{displayName}</span>
+                                    <span className="bg-orange-50 text-[#E65F2B] border border-orange-200 px-2 py-0.5 rounded-full text-[10px] font-bold block truncate max-w-[130px]" title={displayName}>
+                                      {displayName}
                                     </span>
                                   );
                                 })()}
-                                <span className="text-[11px] text-[#737373] font-mono tabular-nums block mt-1">+${(Number(p.shippingCostAllocated) || 0).toFixed(2)} flete</span>
+                                <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">+${(Number(p.shippingCostAllocated) || 0).toFixed(2)} flete</span>
                               </>
                             )}
                           </td>
@@ -11047,29 +11127,29 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
       {/* MODAL SISTEMA POS MÓVIL (PUNTO DE VENTA FÍSICO) */}
       {/* ======================================================== */}
       {showPosModal && (
-        <div data-lenis-prevent className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden overscroll-contain">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-black/[0.08] overflow-hidden overscroll-contain">
+        <div data-lenis-prevent className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden overscroll-contain">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 overscroll-contain">
             {/* Cabecera del POS */}
-            <div className="bg-[#141415] text-[#EDEDED] px-4 py-3.5 flex items-center justify-between border-b border-white/[0.08]">
+            <div className="bg-[#2D4A58] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#232325] border border-white/[0.08] flex items-center justify-center text-[#E65F2B]">
-                  <QrCode className="w-4 h-4 stroke-[1.5]" />
+                <div className="w-9 h-9 rounded-xl bg-[#E65F2B] flex items-center justify-center text-white shadow-md">
+                  <QrCode className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm flex items-center gap-2">
-                    Punto de venta
-                    <span className="text-[#85858B] text-[11px] font-mono">
+                  <h3 className="font-black text-sm tracking-tight flex items-center gap-1.5">
+                    POS Móvil FoxDrop
+                    <span className="bg-orange-500/20 text-orange-300 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
                       Mostrador
                     </span>
                   </h3>
-                  <p className="text-xs text-[#A1A1A6]">Descuento directo de inventario físico</p>
+                  <p className="text-[11px] text-gray-300">Venta física con descuento directo de inventario</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowPosModal(false)}
-                className="w-8 h-8 rounded-lg bg-[#232325] hover:bg-[#2C2C2E] text-[#A1A1A6] hover:text-[#EDEDED] flex items-center justify-center transition-colors duration-150"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
               >
-                <X className="w-4 h-4 stroke-[1.5]" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -11083,32 +11163,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                     setScannerContext('pos_sale');
                     setShowCameraScanner(true);
                   }}
-                  className="flex-1 h-11 bg-[#E65F2B] hover:bg-[#D45321] text-white font-medium px-4 rounded-xl flex items-center justify-center gap-2 transition-[background-color,transform] duration-150 active:scale-[0.98]"
+                  className="flex-1 bg-gradient-to-r from-[#E65F2B] to-[#d44e1d] hover:from-[#d44e1d] hover:to-[#be4215] text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-md flex items-center justify-center gap-2.5 transition active:scale-[0.98]"
                 >
-                  <Camera className="w-4 h-4 stroke-[1.5]" />
-                  <span className="text-sm">Escanear código de barras o QR</span>
+                  <Camera className="w-5 h-5 animate-pulse" />
+                  <span className="text-sm">Escanear Código de Barras / QR</span>
                 </button>
               </div>
 
-              {/* Selector de Producto con Buscador */}
+              {/* Selector de Producto con Buscador Inteligente tipo Tienda */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-[#171717] block">
-                    Inventario disponible
+                  <label className="text-[11px] font-bold text-slate-700 block">
+                    Buscar en inventario disponible:
                   </label>
-                  <span className="text-xs font-mono tabular-nums text-[#737373]">
-                    {products.filter(p => p.stock > 0).length} en stock
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {products.filter(p => p.stock > 0).length} productos en stock
                   </span>
                 </div>
 
+                {/* Input de Búsqueda estilo Tienda */}
                 <div className="relative">
-                  <Search className="w-4 h-4 stroke-[1.5] absolute left-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
                     value={posSearchTerm}
                     onChange={e => setPosSearchTerm(e.target.value)}
-                    placeholder="Buscar SKU o producto"
-                    className="w-full h-9 bg-[#F4F4F5] border border-black/[0.08] rounded-lg pl-9 pr-8 text-xs text-[#171717] placeholder:text-[#737373] focus:outline-none focus:border-[#171717] focus:bg-white transition-colors duration-150"
+                    placeholder="Buscar por nombre, SKU, código de barras o categoría..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#E65F2B] focus:bg-white transition"
                   />
                   {posSearchTerm && (
                     <button
