@@ -4702,71 +4702,51 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
             </div>
           ) : (
             <>
-          {/* BOTÓN DESTACADO: AGENCY COMMAND CENTER */}
+          {/* GRUPO 0: COMERCIAL & CANALES */}
           <div>
-            <button
-              onClick={() => { setCrmSubTab('saleads'); setMobileSidebarOpen(false); }}
-              className={`w-full p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
-                crmSubTab === 'saleads'
-                  ? 'bg-gradient-to-r from-[#14352F] to-[#D96B27] text-white border-[#D96B27] shadow-md'
-                  : 'bg-slate-900/60 text-slate-200 border-slate-800 hover:border-[#D96B27]/60 hover:bg-slate-800/60'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 text-left">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'saleads' ? 'bg-white/20 text-white' : 'bg-[#D96B27]/20 text-[#D96B27]'}`}>
-                  <Megaphone className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="block font-bold text-xs leading-none">
-                    FoxDrop Agency
-                  </span>
-                  <span className={`text-[10px] font-normal ${crmSubTab === 'saleads' ? 'text-white/80' : 'text-slate-400'}`}>Anuncios & Campañas</span>
-                </div>
-              </div>
-            </button>
-              {/* BOTÓN SOCIAL COMMERCE FLOW (REACT FLOW + BOT) */}
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-1.5 block">
+              Comercial & Canales
+            </span>
+            <div className="space-y-0.5">
               <button
-                onClick={() => { setCrmSubTab('social_flow' as any); setMobileSidebarOpen(false); }}
-                className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
-                  (crmSubTab as string) === 'social_flow'
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500 shadow-md shadow-emerald-950/30'
-                    : 'bg-emerald-950/20 text-emerald-200 border-emerald-900/40 hover:border-emerald-700/60 hover:bg-emerald-900/30'
+                onClick={() => { setCrmSubTab('saleads'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'saleads'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs'
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-left">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${(crmSubTab as string) === 'social_flow' ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-300'}`}>
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="block font-bold text-xs leading-none">
-                      Sofía Shopper
-                    </span>
-                  </div>
-                </div>
+                <span className="flex items-center gap-2.5">
+                  <Megaphone className={`w-4 h-4 ${crmSubTab === 'saleads' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> FoxDrop Agency
+                </span>
               </button>
 
-              {/* BOTÓN CAMPAÑAS & CUPONES QR */}
               <button
-                onClick={() => { setCrmSubTab('campaigns'); setMobileSidebarOpen(false); }}
-                className={`w-full mt-2 p-2.5 rounded-xl font-medium transition flex items-center justify-between border ${
-                  crmSubTab === 'campaigns'
-                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white border-amber-500 shadow-md shadow-amber-950/30'
-                    : 'bg-amber-950/20 text-amber-200 border-amber-900/40 hover:border-amber-700/60 hover:bg-amber-900/30'
+                onClick={() => { setCrmSubTab('social_flow' as any); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  (crmSubTab as string) === 'social_flow'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs'
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-left">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${crmSubTab === 'campaigns' ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-300'}`}>
-                    <Megaphone className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="block font-bold text-xs leading-none flex items-center gap-1">
-                      Campañas
-                      <span className="bg-amber-400/20 text-amber-300 text-[8px] px-1 py-0.2 rounded font-mono">QR</span>
-                    </span>
-                    <span className={`text-[10px] font-normal ${crmSubTab === 'campaigns' ? 'text-white/80' : 'text-amber-300/70'}`}>Cupones & Stickers</span>
-                  </div>
-                </div>
+                <span className="flex items-center gap-2.5">
+                  <MessageSquare className={`w-4 h-4 ${(crmSubTab as string) === 'social_flow' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Sofía Shopper
+                </span>
               </button>
+
+              <button
+                onClick={() => { setCrmSubTab('campaigns'); setMobileSidebarOpen(false); }}
+                className={`w-full px-3 py-2 rounded-xl font-medium transition flex items-center justify-between ${
+                  crmSubTab === 'campaigns'
+                    ? 'bg-slate-800 text-white font-bold border border-slate-700/60 shadow-xs'
+                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <QrCode className={`w-4 h-4 ${crmSubTab === 'campaigns' ? 'text-[#E65F2B]' : 'text-slate-400'}`} /> Campañas QR
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* GRUPO 1: OPERACIONES & CATÁLOGO */}
