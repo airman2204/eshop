@@ -66,7 +66,11 @@ ${catalogSummary || "Sin inventario físico disponible."}`;
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: fullPrompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 8192,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
           }),
         }
       );
