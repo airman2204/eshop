@@ -5317,6 +5317,33 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </select>
                 )}
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    const headers = ['SKU', 'Titulo', 'Categoria', 'Lote', 'Stock', 'PrecioPublico'];
+                    const rows = filteredProducts.map(p => [
+                      `"${(p.sku || '').replace(/"/g, '""')}"`,
+                      `"${(p.title || '').replace(/"/g, '""')}"`,
+                      `"${(p.category || '').replace(/"/g, '""')}"`,
+                      `"${(p.batchName || '').replace(/"/g, '""')}"`,
+                      Number(p.stock || 0),
+                      Number(p.publicPrice || 0).toFixed(2),
+                    ].join(','));
+                    const csv = [headers.join(','), ...rows].join('\n');
+                    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `inventario-foxdrop-${new Date().toISOString().slice(0, 10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 transition cursor-pointer"
+                  title="Descargar inventario filtrado en CSV"
+                >
+                  Exportar CSV
+                </button>
+
                 {/* Botón Exportar CSV / Excel */}
                 <button
                   onClick={handleExportInventoryCsv}
