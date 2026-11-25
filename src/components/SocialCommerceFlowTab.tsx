@@ -61,8 +61,18 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
     if (!customText) setSofiaChatInput('');
     setSofiaChatLoading(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_token') || '' : '';
-      const email = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_email') || '' : '';
+      let token = '';
+      let email = '';
+      if (typeof window !== 'undefined') {
+        try {
+          const sess = JSON.parse(localStorage.getItem('foxdrop_admin_session') || '{}');
+          token = sess.token || localStorage.getItem('foxdrop_admin_token') || '';
+          email = sess.email || localStorage.getItem('foxdrop_admin_email') || '';
+        } catch {
+          token = localStorage.getItem('foxdrop_admin_token') || '';
+          email = localStorage.getItem('foxdrop_admin_email') || '';
+        }
+      }
       const res = await fetch('/api/admin/sofia-chat', {
         method: 'POST',
         headers: {
