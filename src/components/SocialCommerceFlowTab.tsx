@@ -42,8 +42,50 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
   const [previews, setPreviews] = useState<{ id: string; name: string; sku: string; caption: string; imageUrl: string }[]>([]);
   const [activeReservations, setActiveReservations] = useState<any[]>([]);
   const [resFilter, setResFilter] = useState<'active' | 'converted' | 'all'>('active');
-  const [subView, setSubView] = useState<'broadcast' | 'board' | 'flow'>('broadcast');
+  const [subView, setSubView] = useState<'broadcast' | 'board' | 'flow' | 'chat'>('broadcast');
   const [chatNamesByPhone, setChatNamesByPhone] = useState<Record<string, string>>({});
+  const [sofiaChatMsgs, setSofiaChatMsgs] = useState<{ role: 'user' | 'sofia'; text: string }[]>([
+    {
+      role: 'sofia',
+      text: '¡Hola! Ya tengo cargado todo tu inventario físico con precios, costos y stock real. Pregúntame qué paquetes o combos podemos armar hoy.',
+    },
+  ]);
+  const [sofiaChatInput, setSofiaChatInput] = useState('');
+  const [sofiaChatLoading, setSofiaChatLoading] = useState(false);
+
+  const handleSendSofiaChat = async (customText?: string) => {
+    const textToSend = (customText ?? sofiaChatInput).trim();
+    if (!textToSend || sofiaChatLoading) return;
+    const nextHistory = [...sofiaChatMsgs, { role: 'user' as const, text: textToSend }];
+    setSofiaChatMsgs(nextHistory);
+    if (!customText) setSofiaChatInput('');
+    setSofiaChatLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_token') || '' : '';
+      const email = typeof window !== 'undefined' ? localStorage.getItem('foxdrop_admin_email') || '' : '';
+      const res = await fetch('/api/admin/sofia-chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(email ? { 'x-admin-email': email } : {}),
+        },
+        body: JSON.stringify({ message: textToSend, history: nextHistory.slice(-10) }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.reply) {
+        throw new Error(json.error || 'No se pudo obtener respuesta');
+      }
+      setSofiaChatMsgs((prev) => [...prev, { role: 'sofia', text: json.reply }]);
+    } catch (err: any) {
+      setSofiaChatMsgs((prev) => [
+        ...prev,
+        { role: 'sofia', text: `Error: ${err?.message || 'No pude responder en este momento.'}` },
+      ]);
+    } finally {
+      setSofiaChatLoading(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -559,6 +601,13 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
               className={`px-3 py-1.5 rounded-lg transition ${subView === 'flow' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
             >
               🧠 Flujo Sofía
+            </button>
+            <button
+              type="button"
+              onClick={() => setSubView('chat')}
+              className={`px-3 py-1.5 rounded-lg transition ${subView === 'chat' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              💬 Chat con Sofía
             </button>
           </div>
           <button
@@ -1158,6 +1207,81 @@ export default function SocialCommerceFlowTab({ products: initialProducts = [] }
           </div>
         )}
       </div>
+      )}
+
+      {subView === 'chat' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[620px] overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Chat privado con Sofía</h3>
+              <p className="text-xs text-slate-500">Consulta paquetes, combos, precios y combinaciones con tu stock real</p>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                'Sugiere 3 paquetes de regalo con buen margen',
+                'Arma combos para mover productos con más stock',
+                'Combos Bath & Body Works de $400 a $600 MXN',
+              ].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  disabled={sofiaChatLoading}
+                  onClick={() => handleSendSofiaChat(q)}
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer disabled:opacity-50"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAFAFA]">
+            {sofiaChatMsgs.map((m, idx) => (
+              <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
+                    m.role === 'user'
+                      ? 'bg-[#171717] text-white'
+                      : 'bg-white border border-slate-200 text-slate-800 shadow-2xs'
+                  }`}
+                >
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {sofiaChatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-slate-200 text-slate-500 rounded-2xl px-4 py-2.5 text-xs">
+                  Sofía está revisando tu inventario...
+                </div>
+              </div>
+            )}
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendSofiaChat();
+            }}
+            className="p-3 border-t border-slate-200 bg-white flex items-center gap-2"
+          >
+            <input
+              type="text"
+              value={sofiaChatInput}
+              onChange={(e) => setSofiaChatInput(e.target.value)}
+              placeholder="Pregúntale a Sofía sobre paquetes, precios o inventario..."
+              className="flex-1 h-10 px-3.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-slate-400"
+            />
+            <button
+              type="submit"
+              disabled={sofiaChatLoading || !sofiaChatInput.trim()}
+              className="h-10 px-4 rounded-xl bg-[#E65F2B] hover:bg-[#D45321] text-white text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer transition"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Enviar</span>
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
