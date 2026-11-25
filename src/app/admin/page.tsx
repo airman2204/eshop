@@ -6158,6 +6158,34 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   </tbody>
                 </table>
               </div>
+              {filteredProducts.length > ITEMS_PER_PAGE && (
+                <div className="hidden md:flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs">
+                  <span className="text-slate-600 font-medium">
+                    Mostrando {(inventoryPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(inventoryPage * ITEMS_PER_PAGE, filteredProducts.length)} de {filteredProducts.length} productos
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={inventoryPage <= 1}
+                      onClick={() => setInventoryPage(p => Math.max(1, p - 1))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Anterior
+                    </button>
+                    <span className="font-bold text-slate-700 px-2">
+                      Página {inventoryPage} de {Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={inventoryPage >= Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)}
+                      onClick={() => setInventoryPage(p => Math.min(Math.ceil(filteredProducts.length / ITEMS_PER_PAGE), p + 1))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* VISTA MÓVIL OPTIMIZADA (TARJETAS INTUITIVAS TIPO APP) */}
               <div className="md:hidden divide-y divide-slate-100">
