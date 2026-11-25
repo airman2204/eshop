@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const { data: rawProducts } = await (supabase as any)
       .from("products")
-      .select("title, sku, category, brand, public_price, base_cost_mxn, shipping_cost_allocated, stock, is_active")
+      .select("*")
       .gt("stock", 0)
       .limit(400);
 
