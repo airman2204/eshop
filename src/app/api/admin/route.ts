@@ -993,6 +993,7 @@ export async function POST(req: NextRequest) {
         : (product.imageUrl ? [product.imageUrl] : ["/no-image.svg"]);
 
       const insertRecord: any = {
+        id: product.id || crypto.randomUUID(),
         sku,
         title: product.title,
         description: product.description || "Artículo verificado por FoxDrop.",
