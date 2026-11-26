@@ -3956,6 +3956,36 @@ export default function AdminCRM() {
         }
       })();
 
+      // Actualizar lista local de clientes para que el siguiente ticket lo detecte al instante
+      if (cleanPhone !== 'Mostrador') {
+        setClients(prev => {
+          const cleanInput = cleanPhone.replace(/[^0-9]/g, '');
+          const exists = prev.some(c => cleanInput && String(c.phone || '').replace(/[^0-9]/g, '').includes(cleanInput));
+          if (exists) {
+            return prev.map(c => {
+              const cp = String(c.phone || '').replace(/[^0-9]/g, '');
+              if (cleanInput && cp.includes(cleanInput)) {
+                return {
+                  ...c,
+                  name: posClientName.trim() || c.name,
+                  loyaltyPoints: (Number(c.loyaltyPoints) || 0) + posPointsEarned,
+                };
+              }
+              return c;
+            });
+          }
+          return [{
+            id: `cli-${Date.now()}`,
+            name: cleanName,
+            phone: cleanPhone,
+            email: 'Sin correo',
+            loyaltyPoints: posPointsEarned,
+            totalSpent: posPointsEarned * 10,
+            ordersCount: 1,
+          } as any, ...prev];
+        });
+      }
+
       // Limpiar carrito y cupón
       setPosCart([]);
       setPosClientPhone('');
