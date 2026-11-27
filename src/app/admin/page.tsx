@@ -11643,6 +11643,25 @@ Cuando ingreses a nuestra tienda en línea con este número de celular (${ticket
                   )}
                 </div>
 
+                {!posAppliedCoupon && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPosAppliedCoupon({ code: 'MOSTRADOR10', discountPercent: 10, campaignName: 'Descuento Mostrador 10%' })}
+                      className="flex-1 py-1.5 px-2.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-[11px] font-bold text-amber-900 transition cursor-pointer"
+                    >
+                      🏷️ 10% Mostrador
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPosAppliedCoupon({ code: 'MOSTRADOR15', discountPercent: 15, campaignName: 'Descuento Mostrador 15%' })}
+                      className="flex-1 py-1.5 px-2.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-[11px] font-bold text-amber-900 transition cursor-pointer"
+                    >
+                      🏷️ 15% Mostrador
+                    </button>
+                  </div>
+                )}
+
                 {posAppliedCoupon ? (
                   <div className="flex items-center justify-between bg-white border border-emerald-300 rounded-xl p-2.5 shadow-2xs">
                     <div className="flex items-center gap-2">
