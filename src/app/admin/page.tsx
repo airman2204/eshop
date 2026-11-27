@@ -3813,15 +3813,15 @@ export default function AdminCRM() {
     });
     if (fromClients) return fromClients;
     const fromOrders = orders.find(o => {
-      const rawPhone = (o as any).customerPhone || (o as any).customer_phone || (o as any).phone || (o as any).whatsapp || (o as any).shippingAddress?.phone || '';
+      const rawPhone = (o as any).client_phone || (o as any).clientPhone || (o as any).customerPhone || (o as any).customer_phone || (o as any).phone || (o as any).whatsapp || (o as any).shippingAddress?.phone || '';
       const cleanOrderPhone = String(rawPhone).replace(/[^0-9]/g, '');
       return cleanOrderPhone.includes(clean10);
     });
     if (fromOrders) {
       return {
         id: `ord-${fromOrders.id}`,
-        name: (fromOrders as any).customerName || (fromOrders as any).customer_name || (fromOrders as any).shippingAddress?.fullName || 'Cliente en Tienda',
-        phone: (fromOrders as any).customerPhone || (fromOrders as any).customer_phone || (fromOrders as any).phone || posClientPhone,
+        name: (fromOrders as any).client_name || (fromOrders as any).clientName || (fromOrders as any).customerName || (fromOrders as any).customer_name || (fromOrders as any).shippingAddress?.fullName || 'Cliente en Tienda',
+        phone: (fromOrders as any).client_phone || (fromOrders as any).clientPhone || (fromOrders as any).customerPhone || (fromOrders as any).customer_phone || (fromOrders as any).phone || posClientPhone,
         email: 'Sin correo',
         loyaltyPoints: 0,
       } as any;
