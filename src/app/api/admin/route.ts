@@ -1590,6 +1590,7 @@ export async function POST(req: NextRequest) {
         .from("orders")
         .insert([
           {
+            id: crypto.randomUUID(),
             order_number: orderNumber,
             user_id: resolvedUserId,
             client_name: sale.clientName || existingProfile?.full_name || "Venta en Tienda Física",
