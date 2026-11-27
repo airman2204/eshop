@@ -3803,11 +3803,29 @@ export default function AdminCRM() {
   const posPointsEarned = Math.floor(posTotal / (clubSettings.pesosPerPoint || 10));
 
   // Cliente detectado en tiempo real según el teléfono tecleado en el POS
-  const posDetectedClient = posClientPhone.trim() ? clients.find(c => {
+  const posDetectedClient = (() => {
     const cleanInput = posClientPhone.replace(/[^0-9]/g, '');
-    const cleanClientPhone = String(c.phone || '').replace(/[^0-9]/g, '');
-    return cleanInput && cleanClientPhone.includes(cleanInput);
-  }) : null;
+    if (!cleanInput || cleanInput.length < 7) return null;
+    const fromClients = clients.find(c => {
+      const cleanClientPhone = String(c.phone || '').replace(/[^0-9]/g, '');
+      return cleanClientPhone.includes(cleanInput);
+    });
+    if (fromClients) return fromClients;
+    const fromOrders = orders.find(o => {
+      const cleanOrderPhone = String((o as any).customerPhone || (o as any).customer_phone || '').replace(/[^0-9]/g, '');
+      return cleanOrderPhone.includes(cleanInput);
+    });
+    if (fromOrders) {
+      return {
+        id: `ord-${fromOrders.id}`,
+        name: (fromOrders as any).customerName || (fromOrders as any).customer_name || 'Cliente en Tienda',
+        phone: (fromOrders as any).customerPhone || (fromOrders as any).customer_phone || posClientPhone,
+        email: 'Sin correo',
+        loyaltyPoints: 0,
+      } as any;
+    }
+    return null;
+  })();
 
   // Confirmar Venta POS y descontar stock
   const handleConfirmPosSale = async () => {
