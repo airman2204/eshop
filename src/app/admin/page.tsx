@@ -3806,20 +3806,22 @@ export default function AdminCRM() {
   const posDetectedClient = (() => {
     const cleanInput = posClientPhone.replace(/[^0-9]/g, '');
     if (!cleanInput || cleanInput.length < 7) return null;
+    const clean10 = cleanInput.slice(-10);
     const fromClients = clients.find(c => {
       const cleanClientPhone = String(c.phone || '').replace(/[^0-9]/g, '');
-      return cleanClientPhone.includes(cleanInput);
+      return cleanClientPhone.includes(clean10);
     });
     if (fromClients) return fromClients;
     const fromOrders = orders.find(o => {
-      const cleanOrderPhone = String((o as any).customerPhone || (o as any).customer_phone || '').replace(/[^0-9]/g, '');
-      return cleanOrderPhone.includes(cleanInput);
+      const rawPhone = (o as any).customerPhone || (o as any).customer_phone || (o as any).phone || (o as any).whatsapp || (o as any).shippingAddress?.phone || '';
+      const cleanOrderPhone = String(rawPhone).replace(/[^0-9]/g, '');
+      return cleanOrderPhone.includes(clean10);
     });
     if (fromOrders) {
       return {
         id: `ord-${fromOrders.id}`,
-        name: (fromOrders as any).customerName || (fromOrders as any).customer_name || 'Cliente en Tienda',
-        phone: (fromOrders as any).customerPhone || (fromOrders as any).customer_phone || posClientPhone,
+        name: (fromOrders as any).customerName || (fromOrders as any).customer_name || (fromOrders as any).shippingAddress?.fullName || 'Cliente en Tienda',
+        phone: (fromOrders as any).customerPhone || (fromOrders as any).customer_phone || (fromOrders as any).phone || posClientPhone,
         email: 'Sin correo',
         loyaltyPoints: 0,
       } as any;
